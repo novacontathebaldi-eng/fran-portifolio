@@ -56,7 +56,7 @@ export const Home: React.FC = () => {
         </div>
         
         {/* Horizontal Scroll Container */}
-        <div className="flex overflow-x-auto pb-12 space-x-6 md:space-x-8 px-6 no-scrollbar snap-x snap-mandatory">
+        <div className="flex overflow-x-auto pb-12 space-x-6 md:space-x-8 px-6 md:px-16 lg:px-24 no-scrollbar snap-x snap-mandatory">
           {projects.slice(0, 5).map((project) => (
             <Link 
               to={`/project/${project.id}`} 
