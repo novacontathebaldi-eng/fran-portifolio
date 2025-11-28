@@ -1,7 +1,15 @@
 
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { Project, User, SiteContent } from '../types';
 import { MOCK_PROJECTS, MOCK_USER_CLIENT, MOCK_USER_ADMIN } from '../data';
+
+export type ToastType = 'success' | 'error' | 'info';
+
+interface ToastState {
+  message: string;
+  type: ToastType;
+  isVisible: boolean;
+}
 
 interface ProjectContextType {
   projects: Project[];
@@ -13,6 +21,11 @@ interface ProjectContextType {
   updateProject: (project: Project) => void;
   deleteProject: (id: string) => void;
   updateSiteContent: (content: SiteContent) => void;
+  
+  // Toast Logic
+  toast: ToastState;
+  showToast: (message: string, type?: ToastType) => void;
+  hideToast: () => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -21,6 +34,20 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
+  // Toast State
+  const [toast, setToast] = useState<ToastState>({ message: '', type: 'info', isVisible: false });
+
+  const showToast = useCallback((message: string, type: ToastType = 'info') => {
+    setToast({ message, type, isVisible: true });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, isVisible: false }));
+    }, 3000);
+  }, []);
+
+  const hideToast = useCallback(() => {
+    setToast(prev => ({ ...prev, isVisible: false }));
+  }, []);
+
   // Default content
   const [siteContent, setSiteContent] = useState<SiteContent>({
     about: {
@@ -71,7 +98,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       addProject, 
       updateProject, 
       deleteProject,
-      updateSiteContent 
+      updateSiteContent,
+      toast,
+      showToast,
+      hideToast
     }}>
       {children}
     </ProjectContext.Provider>

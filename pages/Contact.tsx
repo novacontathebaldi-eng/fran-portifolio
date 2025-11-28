@@ -1,23 +1,38 @@
 
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Instagram, Linkedin, Send } from 'lucide-react';
+import { useProjects } from '../context/ProjectContext';
+import { motion } from 'framer-motion';
 
 export const Contact: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
+  const { showToast } = useProjects();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
+    showToast('Mensagem enviada com sucesso!', 'success');
   };
 
   return (
     <div className="min-h-screen pt-24 pb-24">
       <div className="container mx-auto px-6">
-        <h1 className="text-4xl md:text-5xl font-serif mb-12 text-center md:text-left">Fale Conosco</h1>
+        <motion.h1 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl md:text-5xl font-serif mb-12 text-center md:text-left"
+        >
+          Fale Conosco
+        </motion.h1>
 
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
           {/* Info Side */}
-          <div className="lg:w-1/3 space-y-10">
+          <motion.div 
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="lg:w-1/3 space-y-10"
+          >
             <div>
               <p className="text-base md:text-lg text-secondary leading-relaxed mb-8">
                 Estamos prontos para transformar sua visão em realidade. Entre em contato para agendar uma reunião inicial ou solicitar um orçamento.
@@ -62,14 +77,19 @@ export const Contact: React.FC = () => {
             <div className="pt-8 border-t border-gray-100">
                <h3 className="font-bold text-sm uppercase tracking-wide mb-4">Siga-nos</h3>
                <div className="flex space-x-4">
-                 <button className="p-2 border border-gray-200 rounded-full hover:bg-black hover:text-white transition"><Instagram className="w-5 h-5" /></button>
-                 <button className="p-2 border border-gray-200 rounded-full hover:bg-black hover:text-white transition"><Linkedin className="w-5 h-5" /></button>
+                 <button className="p-2 border border-gray-200 rounded-full hover:bg-black hover:text-white transition active:scale-95"><Instagram className="w-5 h-5" /></button>
+                 <button className="p-2 border border-gray-200 rounded-full hover:bg-black hover:text-white transition active:scale-95"><Linkedin className="w-5 h-5" /></button>
                </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Form Side */}
-          <div className="lg:w-2/3 bg-gray-50 p-6 md:p-12 rounded-2xl">
+          <motion.div 
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="lg:w-2/3 bg-gray-50 p-6 md:p-12 rounded-2xl"
+          >
             {!submitted ? (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -103,13 +123,13 @@ export const Contact: React.FC = () => {
                   <textarea className="w-full bg-white border border-gray-200 p-3 md:p-4 rounded h-40 focus:outline-none focus:border-black transition" placeholder="Conte-nos um pouco sobre seu projeto..." required></textarea>
                 </div>
 
-                <button type="submit" className="w-full md:w-auto bg-black text-white px-8 py-4 rounded-full font-bold uppercase tracking-wider hover:bg-accent hover:text-black transition flex items-center justify-center space-x-2">
+                <button type="submit" className="w-full md:w-auto bg-black text-white px-8 py-4 rounded-full font-bold uppercase tracking-wider hover:bg-accent hover:text-black transition flex items-center justify-center space-x-2 active:scale-95 duration-200 shadow-lg">
                   <span>Enviar Mensagem</span>
                   <Send className="w-4 h-4" />
                 </button>
               </form>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center py-20">
+              <div className="h-full flex flex-col items-center justify-center text-center py-20 animate-fadeIn">
                 <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
                   <Send className="w-8 h-8" />
                 </div>
@@ -118,7 +138,7 @@ export const Contact: React.FC = () => {
                 <button onClick={() => setSubmitted(false)} className="mt-8 text-sm font-bold underline">Enviar outra mensagem</button>
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
 
         {/* FAQ Preview */}

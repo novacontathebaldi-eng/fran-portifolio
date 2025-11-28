@@ -6,7 +6,7 @@ import { Plus, Edit, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOu
 import { SiteContent } from '../../types';
 
 export const AdminDashboard: React.FC = () => {
-  const { projects, deleteProject, currentUser, logout, siteContent, updateSiteContent } = useProjects();
+  const { projects, deleteProject, currentUser, logout, siteContent, updateSiteContent, showToast } = useProjects();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'content'>('dashboard');
   
@@ -16,12 +16,14 @@ export const AdminDashboard: React.FC = () => {
   const handleDelete = (id: string) => {
     if (confirm('Tem certeza que deseja excluir este projeto?')) {
       deleteProject(id);
+      showToast('Projeto excluído.', 'info');
     }
   };
 
   const handleLogout = () => {
     logout();
     navigate('/auth');
+    showToast('Logout realizado.', 'info');
   };
 
   const handleContentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -37,7 +39,7 @@ export const AdminDashboard: React.FC = () => {
 
   const saveContent = () => {
     updateSiteContent(contentForm);
-    alert('Conteúdo atualizado com sucesso!');
+    showToast('Conteúdo atualizado com sucesso!', 'success');
   };
 
   return (
@@ -55,33 +57,33 @@ export const AdminDashboard: React.FC = () => {
         <nav className="flex-1 px-4 space-y-3 mt-4">
           <button 
             onClick={() => setActiveTab('dashboard')} 
-            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 ${activeTab === 'dashboard' ? 'bg-white text-black font-bold shadow-lg transform scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 active:scale-95 ${activeTab === 'dashboard' ? 'bg-white text-black font-bold shadow-lg transform scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
           >
             <LayoutDashboard className="w-5 h-5" />
             <span>Visão Geral</span>
           </button>
           <button 
             onClick={() => setActiveTab('projects')} 
-            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 ${activeTab === 'projects' ? 'bg-white text-black font-bold shadow-lg transform scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 active:scale-95 ${activeTab === 'projects' ? 'bg-white text-black font-bold shadow-lg transform scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
           >
             <FolderOpen className="w-5 h-5" />
             <span>Projetos</span>
           </button>
           <button 
             onClick={() => setActiveTab('content')} 
-            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 ${activeTab === 'content' ? 'bg-white text-black font-bold shadow-lg transform scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 active:scale-95 ${activeTab === 'content' ? 'bg-white text-black font-bold shadow-lg transform scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
           >
             <FileText className="w-5 h-5" />
             <span>Conteúdo</span>
           </button>
           <button 
-            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 text-gray-400 hover:bg-white/5 hover:text-white`}
+            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 text-gray-400 hover:bg-white/5 hover:text-white active:scale-95`}
           >
             <Users className="w-5 h-5" />
             <span>Clientes</span>
           </button>
           <button 
-            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 text-gray-400 hover:bg-white/5 hover:text-white`}
+            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 text-gray-400 hover:bg-white/5 hover:text-white active:scale-95`}
           >
             <Settings className="w-5 h-5" />
             <span>Configurações</span>
@@ -102,7 +104,7 @@ export const AdminDashboard: React.FC = () => {
             <LogOut className="w-4 h-4" />
             <span>Sair do Sistema</span>
           </button>
-          <Link to="/" className="flex items-center justify-center space-x-2 text-xs text-center text-white bg-neutral-800 hover:bg-neutral-700 rounded-lg py-3 transition w-full">
+          <Link to="/" className="flex items-center justify-center space-x-2 text-xs text-center text-white bg-neutral-800 hover:bg-neutral-700 rounded-lg py-3 transition w-full active:scale-95">
             <span>Ver Site Online</span>
             <ExternalLink className="w-3 h-3" />
           </Link>
@@ -185,7 +187,7 @@ export const AdminDashboard: React.FC = () => {
                    <h1 className="text-4xl font-serif text-gray-900">Gerenciar Portfólio</h1>
                    <p className="text-gray-500 mt-2">Adicione, edite ou remova projetos do site.</p>
                 </div>
-                <Link to="/admin/project/new" className="bg-black text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:bg-accent hover:text-black transition shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                <Link to="/admin/project/new" className="bg-black text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:bg-accent hover:text-black transition shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 duration-200">
                   <Plus className="w-5 h-5" />
                   <span className="font-bold text-sm">Novo Projeto</span>
                 </Link>
@@ -220,10 +222,10 @@ export const AdminDashboard: React.FC = () => {
                           <td className="p-6 text-sm text-gray-500 font-mono">{project.year}</td>
                           <td className="p-6 text-right">
                             <div className="flex justify-end space-x-3">
-                              <Link to={`/admin/project/edit/${project.id}`} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Editar">
+                              <Link to={`/admin/project/edit/${project.id}`} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition active:scale-95" title="Editar">
                                 <Edit className="w-5 h-5" />
                               </Link>
-                              <button onClick={() => handleDelete(project.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Excluir">
+                              <button onClick={() => handleDelete(project.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition active:scale-95" title="Excluir">
                                 <Trash2 className="w-5 h-5" />
                               </button>
                             </div>
@@ -247,7 +249,7 @@ export const AdminDashboard: React.FC = () => {
                    <h1 className="text-4xl font-serif text-gray-900">Gerenciar Conteúdo</h1>
                    <p className="text-gray-500 mt-2">Edite os textos das páginas principais.</p>
                  </div>
-                 <button onClick={saveContent} className="bg-black text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:bg-accent hover:text-black transition shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                 <button onClick={saveContent} className="bg-black text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:bg-accent hover:text-black transition shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 duration-200">
                     <Save className="w-5 h-5" />
                     <span className="font-bold text-sm">Salvar Alterações</span>
                  </button>
