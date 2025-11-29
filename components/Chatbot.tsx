@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook } from 'lucide-react';
+import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../context/ProjectContext';
 import { ChatMessage, Project } from '../types';
@@ -8,51 +8,38 @@ import { Link, useNavigate } from 'react-router-dom';
 
 export const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const { sendMessageToAI, currentUser, projects, addAdminNote, showToast } = useProjects();
+  // Use messages from Context to ensure persistence/sync across components
+  const { sendMessageToAI, currentUser, projects, addAdminNote, showToast, currentChatMessages, createNewChat } = useProjects();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (messages.length === 0) {
-      setMessages([{
-        id: 'init',
-        role: 'model',
-        text: currentUser 
-          ? `Olá ${currentUser.name.split(' ')[0]}. Sou o concierge digital. Como posso auxiliar hoje?`
-          : "Olá. Sou o concierge digital da Fran Siller. Posso agendar uma reunião, mostrar projetos ou anotar um recado para a Fran."
-      }]);
-    }
-  }, [currentUser]);
+  // Initial greeting if empty
+  const displayMessages = currentChatMessages.length > 0 ? currentChatMessages : [{
+    id: 'init',
+    role: 'model',
+    text: currentUser 
+      ? `Olá ${currentUser.name.split(' ')[0]}. Sou o concierge digital. Como posso auxiliar hoje?`
+      : "Olá. Sou o concierge digital da Fran Siller. Posso agendar uma reunião, mostrar projetos ou anotar um recado para a Fran."
+  }];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [displayMessages]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: input };
-    setMessages(prev => [...prev, userMsg]);
+    const userText = input;
     setInput('');
     setIsLoading(true);
 
     try {
-      const response = await sendMessageToAI(input);
+      const response = await sendMessageToAI(userText);
       
-      const botMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'model',
-        text: response.text,
-        uiComponent: response.uiComponent
-      };
-      
-      setMessages(prev => [...prev, botMsg]);
-
       // Handle Actions returned by the API
       if (response.actions && response.actions.length > 0) {
         response.actions.forEach((action: any) => {
@@ -73,7 +60,7 @@ export const Chatbot: React.FC = () => {
       }
 
     } catch (err) {
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Desculpe, tive uma oscilação de conexão." }]);
+      // Error handling is mostly done in context, but we ensure loading stops
     } finally {
       setIsLoading(false);
     }
@@ -159,12 +146,17 @@ export const Chatbot: React.FC = () => {
                    <span className="text-[10px] text-gray-400 flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Online</span>
                  </div>
                </div>
-               <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-white/10 rounded-full transition"><X className="w-5 h-5 text-gray-400 hover:text-white" /></button>
+               <div className="flex gap-2">
+                 <button onClick={createNewChat} className="p-1 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-white" title="Nova Conversa">
+                   <RefreshCw className="w-5 h-5" />
+                 </button>
+                 <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-white/10 rounded-full transition"><X className="w-5 h-5 text-gray-400 hover:text-white" /></button>
+               </div>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
-              {messages.map((msg) => (
+              {displayMessages.map((msg: any) => (
                 <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[85%] rounded-2xl p-4 text-sm ${msg.role === 'user' ? 'bg-black text-white rounded-br-none' : 'bg-white border border-gray-200 rounded-bl-none text-gray-700 shadow-sm'}`}>
                     {msg.text && <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>}
@@ -195,7 +187,7 @@ export const Chatbot: React.FC = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ex: Deixe um recado para Fran..." 
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-0 transition-colors"
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 py-3 text-base md:text-sm focus:outline-none focus:border-black focus:ring-0 transition-colors"
               />
               <button type="submit" disabled={isLoading} className="bg-black text-white p-3 rounded-full hover:bg-accent hover:text-black transition disabled:opacity-50 flex-shrink-0 shadow-lg">
                 <Send className="w-4 h-4" />

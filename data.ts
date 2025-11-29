@@ -90,7 +90,37 @@ export const MOCK_USER_CLIENT: User = {
   role: 'client',
   bio: 'Amante de arte e empreendedora.',
   projects: [MOCK_PROJECTS[0]],
-  favorites: ['2', '5']
+  favorites: ['2', '5'],
+  folders: [
+    {
+      id: 'f1',
+      name: 'Anteprojeto',
+      createdAt: new Date().toISOString(),
+      files: [
+        { id: 'doc1', name: 'Planta Baixa V1.pdf', url: '#', type: 'pdf', size: '2.4 MB', createdAt: new Date().toISOString() },
+        { id: 'doc2', name: 'Moodboard Sala.jpg', url: 'https://picsum.photos/800/600', type: 'image', size: '1.1 MB', createdAt: new Date().toISOString() }
+      ]
+    },
+    {
+      id: 'f2',
+      name: 'Renders 3D',
+      createdAt: new Date().toISOString(),
+      files: [
+        { id: 'doc3', name: 'Fachada Principal.jpg', url: 'https://picsum.photos/800/600', type: 'image', size: '4.5 MB', createdAt: new Date().toISOString() }
+      ]
+    },
+    {
+      id: 'f3',
+      name: 'Contratos e Financeiro',
+      createdAt: new Date().toISOString(),
+      files: []
+    }
+  ],
+  memories: [
+    { id: 'm1', topic: 'Preferência', content: 'Prefere tons terrosos e madeira clara.', type: 'user_defined', createdAt: new Date().toISOString() },
+    { id: 'm2', topic: 'Família', content: 'Tem dois filhos e um gato.', type: 'system_detected', createdAt: new Date().toISOString() }
+  ],
+  chats: []
 };
 
 export const MOCK_USER_ADMIN: User = {
@@ -99,5 +129,8 @@ export const MOCK_USER_ADMIN: User = {
   email: 'admin@fran.com',
   role: 'admin',
   avatar: 'https://ui-avatars.com/api/?name=Fran+Siller&background=000&color=fff',
-  bio: 'Arquiteta Principal'
+  bio: 'Arquiteta Principal',
+  folders: [],
+  memories: [],
+  chats: []
 };

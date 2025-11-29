@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, ShoppingBag, User, LayoutDashboard } from 'lucide-react';
+import { Search, ShoppingBag, User, LayoutDashboard } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
 import { Chatbot } from './Chatbot';
 
@@ -29,6 +29,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     setIsMenuOpen(false);
     setSearchOpen(false);
   }, [location]);
+
+  // Lock body scroll when menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMenuOpen]);
+
+  const handleLinkClick = () => {
+    setIsMenuOpen(false);
+  };
 
   // Handle Search Typing (Mock Suggestion)
   const showSuggestions = searchQuery.length > 0;
@@ -64,7 +80,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="fixed inset-0 bg-white/98 backdrop-blur-xl z-[70] animate-fadeIn flex flex-col justify-start md:justify-center pt-24 md:pt-0">
           <div className="container mx-auto px-6 py-8 relative">
             <button onClick={() => setSearchOpen(false)} className="absolute top-4 right-4 md:-top-20 md:right-0 p-2 hover:bg-gray-100 rounded-full transition">
-              <X className="w-8 h-8 text-black" />
+              <span className="sr-only">Fechar</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
             <h2 className="text-2xl md:text-3xl font-serif mb-8 text-center text-gray-400">Buscar Projeto</h2>
             <input 
@@ -89,11 +106,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       )}
 
       {/* Navigation Bar */}
-      <nav className={`fixed w-full z-50 transition-all duration-500 ease-in-out ${isMenuOpen ? 'bg-transparent pointer-events-none' : navClasses}`}>
+      <nav className={`fixed w-full transition-all duration-500 ease-in-out ${isMenuOpen ? 'z-[60] bg-transparent' : 'z-50 ' + navClasses}`}>
         <div className="container mx-auto px-6 flex justify-between items-center relative">
           
           {/* Logo */}
-          <Link to="/" className={`text-xl md:text-2xl font-serif tracking-tight font-bold z-[60] relative uppercase transition-colors duration-300 pointer-events-auto ${logoClasses}`}>
+          <Link to="/" onClick={handleLinkClick} className={`text-xl md:text-2xl font-serif tracking-tight font-bold z-[60] relative uppercase transition-colors duration-300 pointer-events-auto ${logoClasses}`}>
             FRAN<span className="text-accent">.</span>
           </Link>
 
@@ -126,31 +143,52 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             )}
           </div>
 
-          {/* Mobile Toggle Button */}
+          {/* Mobile Toggle Button (Animated X) */}
           <button 
-            className={`md:hidden z-[60] transition-colors duration-300 pointer-events-auto ${isMenuOpen ? 'text-black' : iconClasses}`} 
+            className={`md:hidden z-[60] relative w-12 h-12 flex items-center justify-center focus:outline-none transition-colors duration-300 pointer-events-auto ${isMenuOpen ? 'text-black' : iconClasses}`} 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Menu"
+            aria-label={isMenuOpen ? "Fechar Menu" : "Abrir Menu"}
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <div className="w-6 h-5 relative flex flex-col justify-between">
+              {/* Top Line - Rotate to make one leg of X */}
+              <span 
+                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 ${
+                  isMenuOpen ? 'top-1/2 -translate-y-1/2 rotate-45' : 'top-0 rotate-0'
+                }`} 
+              />
+              
+              {/* Middle Line - Fade out */}
+              <span 
+                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 top-1/2 -translate-y-1/2 ${
+                  isMenuOpen ? 'opacity-0' : 'opacity-100'
+                }`} 
+              />
+              
+              {/* Bottom Line - Rotate to make other leg of X */}
+              <span 
+                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 ${
+                  isMenuOpen ? 'top-1/2 -translate-y-1/2 -rotate-45' : 'bottom-0 rotate-0'
+                }`} 
+              />
+            </div>
           </button>
         </div>
       </nav>
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
-        <div className="fixed inset-0 bg-white/98 backdrop-blur-xl z-[55] flex flex-col pt-24 pb-8 px-6 animate-fadeIn text-primary md:hidden overflow-y-auto pointer-events-auto">
+        <div className="fixed inset-0 bg-white/40 backdrop-blur-xl z-[55] flex flex-col pt-24 pb-8 px-6 animate-fadeIn text-primary md:hidden overflow-y-auto pointer-events-auto">
           <div className="flex flex-col space-y-6 flex-grow">
-            <Link to="/" className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-100 pb-4">Início</Link>
-            <Link to="/about" className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-100 pb-4">Sobre</Link>
-            <Link to="/portfolio" className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-100 pb-4">Portfólio</Link>
+            <Link to="/" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Início</Link>
+            <Link to="/about" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Sobre</Link>
+            <Link to="/portfolio" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Portfólio</Link>
             {settings.enableShop && (
-              <Link to="/services" className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-100 pb-4">Serviços</Link>
+              <Link to="/services" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Serviços</Link>
             )}
-            <Link to="/contact" className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-100 pb-4">Contato</Link>
+            <Link to="/contact" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Contato</Link>
             
             <div className="pt-4 space-y-4">
-              <Link to={currentUser ? "/profile" : "/auth"} className="flex items-center space-x-3 text-lg font-medium hover:text-accent transition">
+              <Link to={currentUser ? "/profile" : "/auth"} onClick={handleLinkClick} className="flex items-center space-x-3 text-lg font-medium hover:text-accent transition">
                 <User className="w-5 h-5" />
                 <span>Minha Conta</span>
               </Link>
@@ -159,18 +197,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <span>Buscar</span>
               </button>
               {settings.enableShop && (
-                <Link to="/budget" className="flex items-center space-x-3 text-lg font-medium hover:text-accent transition">
+                <Link to="/budget" onClick={handleLinkClick} className="flex items-center space-x-3 text-lg font-medium hover:text-accent transition">
                   <ShoppingBag className="w-5 h-5" />
                   <span>Orçamento</span>
                 </Link>
               )}
               {currentUser?.role === 'admin' && (
-                <Link to="/admin" className="text-lg font-bold text-accent pt-2 block">Acessar Admin</Link>
+                <Link to="/admin" onClick={handleLinkClick} className="text-lg font-bold text-accent pt-2 block">Acessar Admin</Link>
               )}
             </div>
           </div>
           
-          <div className="mt-8 text-xs text-gray-400 uppercase tracking-widest text-center">
+          <div className="mt-8 text-xs text-gray-500 uppercase tracking-widest text-center">
             Fran Siller Arquitetura
           </div>
         </div>

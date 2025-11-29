@@ -25,6 +25,38 @@ export interface Project {
 
 export type UserRole = 'admin' | 'client';
 
+export interface ClientMemory {
+  id: string;
+  topic: string; // e.g., "Style Preference", "Family", "Budget"
+  content: string; // e.g., "Likes minimalist, hates red colors"
+  type: 'user_defined' | 'system_detected'; // User added vs AI deduced
+  createdAt: string;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string; // Auto-generated or "New Chat"
+  messages: ChatMessage[];
+  createdAt: string;
+  lastUpdated: string;
+}
+
+export interface ClientFile {
+  id: string;
+  name: string;
+  url: string;
+  type: 'pdf' | 'image' | 'video' | 'cad' | 'other';
+  size: string;
+  createdAt: string;
+}
+
+export interface ClientFolder {
+  id: string;
+  name: string;
+  createdAt: string;
+  files: ClientFile[];
+}
+
 export interface User {
   id: string;
   name: string;
@@ -35,7 +67,9 @@ export interface User {
   bio?: string;
   projects?: Project[];
   favorites?: string[];
-  documents?: { name: string; date: string; url: string; type: 'pdf' | 'dwg' }[]; // New for Client Area
+  folders?: ClientFolder[]; // New Folder Structure
+  memories?: ClientMemory[]; // New: Long-term memory
+  chats?: ChatSession[]; // New: Chat history
 }
 
 export interface ServicePackage {
@@ -46,11 +80,30 @@ export interface ServicePackage {
   features: string[];
 }
 
+// Updated Interfaces for Dynamic Content
+export interface StatItem {
+  id: string;
+  value: string;
+  label: string;
+}
+
+export interface PillarItem {
+  id: string;
+  title: string;
+  description: string;
+  icon?: string; // Optional icon identifier
+}
+
 export interface SiteContent {
   about: {
     heroTitle: string;
     heroSubtitle: string;
+    heroImage: string; // New
+    profileImage: string; // New
     bio: string;
+    stats: StatItem[]; // New
+    pillars: PillarItem[]; // New
+    recognition: string[]; // New
   }
 }
 

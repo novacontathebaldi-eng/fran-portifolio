@@ -1,9 +1,5 @@
-
-import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
-
-export const config = {
-  runtime: 'edge',
-};
+import { GoogleGenAI, Type } from "@google/genai";
+import { User, ClientMemory, ChatMessage } from '../types';
 
 // Define tools for GenUI & Actions
 const tools = [
@@ -58,98 +54,122 @@ const tools = [
   }
 ];
 
-export default async function handler(req: Request) {
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+export async function chatWithConcierge(
+  message: ChatMessage[] | string, 
+  context: { user: User | null; memories: ClientMemory[] }, 
+  aiConfig: any
+) {
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey) {
+    return { 
+      text: "O sistema de IA está em modo de demonstração (Sem API Key).",
+      role: 'model'
+    };
   }
 
-  try {
-    const { message, context, config: aiConfig } = await req.json();
-    const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-      return new Response(JSON.stringify({ 
-        text: "O sistema de IA está em modo de demonstração (Sem API Key).",
-        role: 'model'
-      }), { status: 200 });
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey });
+  
+  // Construct System Instruction with Memories
+  let systemInstruction = aiConfig?.systemInstruction || "You are a helpful assistant for Fran Siller Architecture.";
+  
+  if (context?.user) {
+    systemInstruction += `\n\nYou are talking to a registered client named ${context.user.name} (Role: ${context.user.role}).`;
     
-    // Construct System Instruction
-    let systemInstruction = aiConfig?.systemInstruction || "You are a helpful assistant for Fran Siller Architecture.";
-    if (context?.user) {
-      systemInstruction += `\n\nYou are talking to ${context.user.name} (${context.user.role}).`;
+    // Inject Client Memories securely
+    if (context.memories && context.memories.length > 0) {
+      systemInstruction += `\n\nHERE IS WHAT YOU KNOW ABOUT THIS CLIENT (USE THIS CONTEXT TO PERSONALIZE ANSWERS):`;
+      context.memories.forEach((mem: any) => {
+         systemInstruction += `\n- [${mem.topic}]: ${mem.content}`;
+      });
+      systemInstruction += `\n\nNote: Do not explicitly list these facts unless relevant. Use them to shape your tone and suggestions.`;
     }
+  } else {
+    systemInstruction += `\n\nYou are talking to a visitor (Guest). Be polite and try to understand their needs to convert them into a lead.`;
+  }
 
-    const modelName = aiConfig?.model || 'gemini-2.5-flash';
+  const modelName = aiConfig?.model || 'gemini-2.5-flash';
 
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: message,
-      config: {
-        systemInstruction: systemInstruction,
-        tools: tools,
-        temperature: aiConfig?.temperature || 0.7,
-      },
-    });
+  // Format history for Gemini
+  let contents = [];
+  if (Array.isArray(message)) {
+    contents = message.map((msg: any) => ({
+      role: msg.role,
+      parts: [{ text: msg.text }]
+    }));
+  } else {
+    contents = [{ role: 'user', parts: [{ text: typeof message === 'string' ? message : '' }] }];
+  }
 
-    const candidate = response.candidates?.[0];
-    const modelText = candidate?.content?.parts?.find(p => p.text)?.text;
-    const functionCalls = candidate?.content?.parts?.filter(p => p.functionCall).map(p => p.functionCall);
+  // Filter out system messages or non-standard roles if any
+  contents = contents.filter(c => c.role === 'user' || c.role === 'model');
 
-    let responseData: any = {
-      role: 'model',
-      text: modelText || "",
-      actions: []
-    };
+  try {
+      const response = await ai.models.generateContent({
+        model: modelName,
+        contents: contents,
+        config: {
+          systemInstruction: systemInstruction,
+          tools: tools,
+          temperature: aiConfig?.temperature || 0.7,
+        },
+      });
 
-    // Process all function calls
-    if (functionCalls && functionCalls.length > 0) {
-      for (const call of functionCalls) {
-        if (call.name === 'showProjects') {
-          responseData.uiComponent = { type: 'ProjectCarousel', data: call.args };
-          if (!responseData.text) responseData.text = "Separei alguns projetos do nosso portfólio para você.";
-        } 
-        else if (call.name === 'saveClientNote') {
-          // Send action to frontend to save via Context
-          responseData.actions.push({
-            type: 'saveNote',
-            payload: {
-              userName: call.args['name'],
-              userContact: call.args['contact'] || 'Não informado',
-              message: call.args['message'],
-              source: 'chatbot'
-            }
-          });
-          if (!responseData.text) responseData.text = "Perfeito! Já anotei seu recado e notifiquei nossa equipe administrativa.";
-        }
-        else if (call.name === 'getSocialLinks') {
-          responseData.uiComponent = { type: 'SocialLinks', data: {} };
-          if (!responseData.text) responseData.text = "Aqui estão nossos canais diretos. Fique à vontade para nos chamar!";
-        }
-        else if (call.name === 'navigateSite') {
-          responseData.actions.push({
-            type: 'navigate',
-            payload: { path: call.args['path'] }
-          });
-          if (!responseData.text) responseData.text = "Levando você para lá agora mesmo.";
+      // Use the direct properties from the SDK response for better reliability
+      const modelText = response.text;
+      const functionCalls = response.functionCalls;
+
+      let responseData: any = {
+        role: 'model',
+        text: modelText || "",
+        actions: []
+      };
+
+      // Process all function calls
+      if (functionCalls && functionCalls.length > 0) {
+        for (const call of functionCalls) {
+          if (call.name === 'showProjects') {
+            responseData.uiComponent = { type: 'ProjectCarousel', data: call.args };
+            if (!responseData.text) responseData.text = "Separei alguns projetos do nosso portfólio para você.";
+          } 
+          else if (call.name === 'saveClientNote') {
+            responseData.actions.push({
+              type: 'saveNote',
+              payload: {
+                userName: call.args['name'],
+                userContact: call.args['contact'] || 'Não informado',
+                message: call.args['message'],
+                source: 'chatbot'
+              }
+            });
+            if (!responseData.text) responseData.text = "Perfeito! Já anotei seu recado e notifiquei nossa equipe administrativa.";
+          }
+          else if (call.name === 'getSocialLinks') {
+            responseData.uiComponent = { type: 'SocialLinks', data: {} };
+            if (!responseData.text) responseData.text = "Aqui estão nossos canais diretos. Fique à vontade para nos chamar!";
+          }
+          else if (call.name === 'navigateSite') {
+            responseData.actions.push({
+              type: 'navigate',
+              payload: { path: call.args['path'] }
+            });
+            if (!responseData.text) responseData.text = "Levando você para lá agora mesmo.";
+          }
         }
       }
-    }
 
-    // Default fallback text if empty
-    if (!responseData.text && !responseData.uiComponent) {
-      responseData.text = "Entendido.";
-    }
+      // Default fallback text if empty
+      if (!responseData.text && !responseData.uiComponent) {
+        responseData.text = "Entendido.";
+      }
 
-    return new Response(JSON.stringify(responseData), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+      return responseData;
 
   } catch (error) {
-    console.error(error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
+    console.error("AI Error:", error);
+    return {
+      role: 'model',
+      text: "Desculpe, não consegui processar sua solicitação no momento."
+    };
   }
 }
