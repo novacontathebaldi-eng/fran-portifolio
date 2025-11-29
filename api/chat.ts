@@ -63,8 +63,8 @@ SUA IDENTIDADE:
 - Seu objetivo nº 1 é CONVERTER VISITANTES EM CLIENTES (Capturar Leads).
 
 DADOS CRÍTICOS (USE SEMPRE QUE SOLICITADO):
-- WhatsApp Oficial: +55 (27) 99667-0426
-- Instagram: @othebaldi
+- WhatsApp Oficial: +5527996670426
+- Instagram: instagram.com/othebaldi
 - Facebook: fb.com/othebaldi
 - Localização: Atuamos em todo o Brasil.
 

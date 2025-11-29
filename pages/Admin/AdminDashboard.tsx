@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -277,12 +276,16 @@ export const AdminDashboard: React.FC = () => {
           <NavItem id="dashboard" icon={LayoutDashboard} label="Visão Geral" />
           <NavItem id="projects" icon={FolderOpen} label="Projetos" />
           <NavItem id="clients" icon={Users} label="Clientes & Arquivos" />
-          <NavItem id="messages" icon={MessageSquare} label="Mensagens & IA" count={unreadNotesCount} />
+          <NavItem id="messages" icon={MessageSquare} label="Recados & IA" count={unreadNotesCount} />
           <NavItem id="content" icon={FileText} label="Conteúdo Site" />
           <NavItem id="settings" icon={Settings} label="Configurações" />
         </nav>
 
         <div className="p-4 border-t border-gray-800">
+          <Link to="/" className="flex items-center space-x-3 w-full p-4 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition mb-1">
+            <ArrowLeft className="w-5 h-5" />
+            <span>Voltar ao Site</span>
+          </Link>
           <button onClick={handleLogout} className="flex items-center space-x-3 w-full p-4 text-red-400 hover:bg-white/5 rounded-xl transition">
             <LogOut className="w-5 h-5" />
             <span>Sair</span>
@@ -570,7 +573,7 @@ export const AdminDashboard: React.FC = () => {
           {/* Messages View */}
           {activeTab === 'messages' && (
             <div className="animate-fadeIn">
-              <h2 className="text-3xl font-serif font-bold mb-8">Central de Mensagens</h2>
+              <h2 className="text-3xl font-serif font-bold mb-8">Central de Recados & IA</h2>
               
               <div className="grid grid-cols-1 gap-6">
                 {/* Admin Notes */}

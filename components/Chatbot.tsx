@@ -1,5 +1,4 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../context/ProjectContext';
@@ -16,21 +15,32 @@ export const Chatbot: React.FC = () => {
 
   // Use messages from Context to ensure persistence/sync across components
   const { sendMessageToAI, currentUser, projects, addAdminNote, showToast, currentChatMessages, createNewChat, logAiFeedback } = useProjects();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Ref for the last message element to control scrolling
+  const lastMessageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Initial greeting if empty
-  const displayMessages = currentChatMessages.length > 0 ? currentChatMessages : [{
+  // Initial greeting if empty - Wrapped in useMemo to prevent re-creation on every render (causing scroll glitches)
+  const defaultMessages = useMemo<ChatMessage[]>(() => [{
     id: 'init',
     role: 'model',
     text: currentUser 
       ? `Olá ${currentUser.name.split(' ')[0]}. Sou o Concierge Digital Fran Siller. Como posso tornar seu dia melhor?`
       : "Olá. Bem-vindo à Fran Siller Arquitetura. Sou seu Concierge Digital. Deseja conhecer nosso portfólio ou falar sobre um projeto?"
-  }];
+  }], [currentUser]);
 
+  const displayMessages = currentChatMessages.length > 0 ? currentChatMessages : defaultMessages;
+
+  // Scroll logic: Go to the top of the last message (block: 'start')
+  // Triggered when messages change or chat is opened.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [displayMessages]);
+    if (isOpen) {
+      // Small timeout to ensure the modal animation has finished or DOM is ready
+      setTimeout(() => {
+        lastMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+  }, [displayMessages, isOpen]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,16 +101,6 @@ export const Chatbot: React.FC = () => {
       type: type
     });
 
-    // We manually update the local UI state for immediate feedback
-    // Ideally logAiFeedback updates the context which triggers re-render, 
-    // but context update logic might need to be explicit about updating the message array item.
-    // For now, visual feedback relies on the button click effect or we assume context updates propagate.
-    // To ensure immediate visual update without complex context reducers for this specific field:
-    // We can rely on the fact that logAiFeedback in context doesn't deeply update the message array yet in the provided code.
-    // So we just show Toast for now or rely on a simple local state approach if we were strictly local.
-    // However, the best UX is updating the context. 
-    // Let's assume logAiFeedback handles backend, we show a toast or rely on button active state if persisted.
-    
     if (type === 'like') showToast("Obrigado pelo feedback positivo!", "success");
     else showToast("Obrigado. Vamos melhorar.", "info");
   };
@@ -206,8 +206,12 @@ export const Chatbot: React.FC = () => {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4 scroll-smooth">
-              {displayMessages.map((msg: any) => (
-                <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+              {displayMessages.map((msg: any, idx: number) => (
+                <div 
+                  key={msg.id} 
+                  ref={idx === displayMessages.length - 1 ? lastMessageRef : null}
+                  className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                >
                   <div className={`max-w-[85%] rounded-2xl p-4 text-sm shadow-sm ${
                     msg.role === 'user' 
                       ? 'bg-black text-white rounded-br-none' 
@@ -258,7 +262,6 @@ export const Chatbot: React.FC = () => {
                    </div>
                  </div>
               )}
-              <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}
