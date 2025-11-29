@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { User, ClientMemory, ChatMessage } from '../types';
 
@@ -7,30 +8,30 @@ const tools = [
     functionDeclarations: [
       {
         name: 'showProjects',
-        description: 'Display a carousel of architectural projects based on specific criteria.',
+        description: 'Display a carousel of architectural projects based on specific criteria like Residential, Commercial, or Interiors.',
         parameters: {
           type: Type.OBJECT,
           properties: {
-            category: { type: Type.STRING, description: 'Residencial, Comercial, or Interiores' },
+            category: { type: Type.STRING, description: 'The project category: Residencial, Comercial, or Interiores' },
           },
         }
       },
       {
         name: 'saveClientNote',
-        description: 'Save a client lead, note, or message to the admin dashboard. Use this when the user wants to leave a message, request a quote, or be contacted.',
+        description: 'MANDATORY: Use this tool whenever the user explicitly asks to leave a message, request a quote, schedule a meeting, or be contacted. This tool saves their data to the admin dashboard.',
         parameters: {
           type: Type.OBJECT,
           properties: {
-            name: { type: Type.STRING, description: 'The client name' },
-            contact: { type: Type.STRING, description: 'The client phone or email' },
-            message: { type: Type.STRING, description: 'Summary of the client request or message' }
+            name: { type: Type.STRING, description: 'The client name. Ask if not provided.' },
+            contact: { type: Type.STRING, description: 'The client phone or email. Ask if not provided.' },
+            message: { type: Type.STRING, description: 'A summary of what the client wants (e.g., "Quote for apartment renovation").' }
           },
           required: ['name', 'message']
         }
       },
       {
         name: 'getSocialLinks',
-        description: 'Provide buttons for WhatsApp, Instagram, and Facebook. Use this when the user asks for contact, social media, or wants to chat directly.',
+        description: 'MANDATORY: Use this tool when the user asks for WhatsApp, Instagram, Facebook, or asks "How to contact you directly?". It returns clickable buttons.',
         parameters: {
           type: Type.OBJECT,
           properties: {},
@@ -38,13 +39,13 @@ const tools = [
       },
       {
         name: 'navigateSite',
-        description: 'Navigate the user to a specific page on the website.',
+        description: 'Navigate the user to a specific page on the website (e.g., Portfolio, Contact, About, Services).',
         parameters: {
           type: Type.OBJECT,
           properties: {
             path: { 
               type: Type.STRING, 
-              description: 'The route path (e.g., "/portfolio", "/contact", "/about", "/services")' 
+              description: 'The route path. Options: "/portfolio", "/contact", "/about", "/services", "/profile"' 
             }
           },
           required: ['path']
@@ -70,22 +71,44 @@ export async function chatWithConcierge(
 
   const ai = new GoogleGenAI({ apiKey });
   
-  // Construct System Instruction with Memories
-  let systemInstruction = aiConfig?.systemInstruction || "You are a helpful assistant for Fran Siller Architecture.";
+  // Construct System Instruction
+  let systemInstruction = `
+    VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA.
+    
+    SUA IDENTIDADE:
+    - Sofisticado, minimalista, atencioso e altamente eficiente.
+    - Você não é apenas um bot, é uma extensão da experiência de luxo do escritório.
+    - Seu objetivo nº 1 é CONVERTER VISITANTES EM CLIENTES (Capturar Leads).
+    
+    DADOS CRÍTICOS (USE SEMPRE QUE SOLICITADO):
+    - WhatsApp Oficial: +55 (27) 99667-0426
+    - Instagram: @othebaldi
+    - Facebook: fb.com/othebaldi
+    - Localização: Atuamos em todo o Brasil.
+
+    REGRAS DE COMPORTAMENTO:
+    1. Se o usuário demonstrar interesse em projeto, peça gentilmente o nome e contato para salvar um recado (Use a tool 'saveClientNote') OU ofereça o botão do WhatsApp (Use a tool 'getSocialLinks').
+    2. Se perguntarem "Como falo com a Fran?", use a tool 'getSocialLinks'.
+    3. Se perguntarem "Onde vejo projetos?", use a tool 'showProjects' ou 'navigateSite' para /portfolio.
+    4. Seja breve e elegante. Evite textos longos. Use formatação limpa.
+    5. Fale Português do Brasil de forma culta.
+  `;
   
   if (context?.user) {
-    systemInstruction += `\n\nYou are talking to a registered client named ${context.user.name} (Role: ${context.user.role}).`;
+    systemInstruction += `\n\nCONTEXTO DO USUÁRIO LOGADO:
+    - Nome: ${context.user.name}
+    - Role: ${context.user.role}
+    `;
     
     // Inject Client Memories securely
     if (context.memories && context.memories.length > 0) {
-      systemInstruction += `\n\nHERE IS WHAT YOU KNOW ABOUT THIS CLIENT (USE THIS CONTEXT TO PERSONALIZE ANSWERS):`;
+      systemInstruction += `\n\nO QUE JÁ SABEMOS SOBRE ESTE CLIENTE (USE PARA PERSONALIZAR, MAS NÃO LISTE EXPLICITAMENTE):`;
       context.memories.forEach((mem: any) => {
          systemInstruction += `\n- [${mem.topic}]: ${mem.content}`;
       });
-      systemInstruction += `\n\nNote: Do not explicitly list these facts unless relevant. Use them to shape your tone and suggestions.`;
     }
   } else {
-    systemInstruction += `\n\nYou are talking to a visitor (Guest). Be polite and try to understand their needs to convert them into a lead.`;
+    systemInstruction += `\n\nESTADO: O usuário é um VISITANTE (Guest). Tente descobrir o nome dele sutilmente durante a conversa.`;
   }
 
   const modelName = aiConfig?.model || 'gemini-2.5-flash';
@@ -111,7 +134,7 @@ export async function chatWithConcierge(
         config: {
           systemInstruction: systemInstruction,
           tools: tools,
-          temperature: aiConfig?.temperature || 0.7,
+          temperature: aiConfig?.temperature || 0.5, // Lower temperature for more consistent tool usage
         },
       });
 
@@ -130,7 +153,7 @@ export async function chatWithConcierge(
         for (const call of functionCalls) {
           if (call.name === 'showProjects') {
             responseData.uiComponent = { type: 'ProjectCarousel', data: call.args };
-            if (!responseData.text) responseData.text = "Separei alguns projetos do nosso portfólio para você.";
+            if (!responseData.text) responseData.text = "Com prazer. Aqui estão alguns projetos selecionados do nosso portfólio.";
           } 
           else if (call.name === 'saveClientNote') {
             responseData.actions.push({
@@ -142,25 +165,25 @@ export async function chatWithConcierge(
                 source: 'chatbot'
               }
             });
-            if (!responseData.text) responseData.text = "Perfeito! Já anotei seu recado e notifiquei nossa equipe administrativa.";
+            if (!responseData.text) responseData.text = "Anotei seus dados e encaminhei para nossa equipe prioritária. Entraremos em contato em breve.";
           }
           else if (call.name === 'getSocialLinks') {
             responseData.uiComponent = { type: 'SocialLinks', data: {} };
-            if (!responseData.text) responseData.text = "Aqui estão nossos canais diretos. Fique à vontade para nos chamar!";
+            if (!responseData.text) responseData.text = "Aqui estão nossos canais diretos para um atendimento mais ágil.";
           }
           else if (call.name === 'navigateSite') {
             responseData.actions.push({
               type: 'navigate',
               payload: { path: call.args['path'] }
             });
-            if (!responseData.text) responseData.text = "Levando você para lá agora mesmo.";
+            if (!responseData.text) responseData.text = "Redirecionando você agora.";
           }
         }
       }
 
       // Default fallback text if empty
       if (!responseData.text && !responseData.uiComponent) {
-        responseData.text = "Entendido.";
+        responseData.text = "Como posso ajudar com algo mais específico?";
       }
 
       return responseData;
@@ -169,7 +192,7 @@ export async function chatWithConcierge(
     console.error("AI Error:", error);
     return {
       role: 'model',
-      text: "Desculpe, não consegui processar sua solicitação no momento."
+      text: "Perdão, encontrei uma instabilidade momentânea. Poderia repetir?"
     };
   }
 }

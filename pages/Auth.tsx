@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
 
 export const Auth: React.FC = () => {
@@ -40,14 +40,22 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useProjects();
   const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    
     const user = login(email);
-    if (user?.role === 'admin') {
-      navigate('/admin');
+    
+    if (user) {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/profile');
+      }
     } else {
-      navigate('/profile');
+      setError('Email não encontrado. Tente "cliente@exemplo.com.br" ou "admin@fran.com".');
     }
   };
 
@@ -56,6 +64,13 @@ const Login: React.FC = () => {
       <h2 className="text-3xl font-serif mb-2">Entrar</h2>
       <p className="text-secondary mb-8">Acesse o painel do seu projeto.</p>
       
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm flex items-center gap-2">
+          <AlertCircle className="w-4 h-4" />
+          {error}
+        </div>
+      )}
+
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
           <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Email</label>
@@ -66,7 +81,7 @@ const Login: React.FC = () => {
             className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" 
             placeholder="voce@exemplo.com.br" 
           />
-          <span className="text-xs text-gray-400 mt-1 block">Dica: Use "admin@fran.com" para ver o painel administrativo.</span>
+          <span className="text-xs text-gray-400 mt-1 block">Dica: Use "admin@fran.com" ou "cliente@exemplo.com.br"</span>
         </div>
         <div>
           <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Senha</label>

@@ -4,6 +4,7 @@ import { useProjects } from '../context/ProjectContext';
 import { User, Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Project, ClientMemory, ClientFolder } from '../types';
+import { Navigate } from 'react-router-dom';
 
 export const ClientArea: React.FC = () => {
   const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory } = useProjects();
@@ -19,7 +20,10 @@ export const ClientArea: React.FC = () => {
   // File Navigation State
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
-  if (!currentUser) return null;
+  // CRITICAL FIX: Redirect to Auth if no user is logged in
+  if (!currentUser) {
+    return <Navigate to="/auth" replace />;
+  }
 
   const currentFolder = currentUser.folders?.find(f => f.id === currentFolderId);
 

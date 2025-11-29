@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ReactNode } from 'react';
+import React, { useState, useEffect, ReactNode, Component } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info, X, RefreshCw } from 'lucide-react';
@@ -19,18 +19,17 @@ import { ProjectProvider, useProjects } from './context/ProjectContext';
 // Catches render errors to prevent the entire app from crashing (White Screen of Death)
 
 interface ErrorBoundaryProps {
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 interface ErrorBoundaryState {
   hasError: boolean;
 }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = {
+    hasError: false
+  };
 
   static getDerivedStateFromError(error: any): ErrorBoundaryState {
     return { hasError: true };

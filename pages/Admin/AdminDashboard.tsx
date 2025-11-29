@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft } from 'lucide-react';
+import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot } from 'lucide-react';
 import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder } from '../../types';
 
 // Mock Supabase Upload Simulation
@@ -275,7 +276,7 @@ export const AdminDashboard: React.FC = () => {
           <NavItem id="dashboard" icon={LayoutDashboard} label="Visão Geral" />
           <NavItem id="projects" icon={FolderOpen} label="Projetos" />
           <NavItem id="clients" icon={Users} label="Clientes & Arquivos" />
-          <NavItem id="messages" icon={MessageSquare} label="Mensagens" count={unreadNotesCount} />
+          <NavItem id="messages" icon={MessageSquare} label="Mensagens & IA" count={unreadNotesCount} />
           <NavItem id="content" icon={FileText} label="Conteúdo Site" />
           <NavItem id="settings" icon={Settings} label="Configurações" />
         </nav>
@@ -583,14 +584,17 @@ export const AdminDashboard: React.FC = () => {
           {/* Messages View */}
           {activeTab === 'messages' && (
             <div className="animate-fadeIn">
-               <h2 className="text-3xl font-serif font-bold mb-8">Mensagens</h2>
+               <h2 className="text-3xl font-serif font-bold mb-8">Mensagens & Recados</h2>
                <div className="space-y-4">
                   {adminNotes.length === 0 && <p className="text-gray-400">Nenhuma mensagem.</p>}
                   {adminNotes.map(note => (
                     <div key={note.id} className={`p-6 rounded-xl border transition ${note.status === 'new' ? 'bg-white border-accent shadow-md' : 'bg-gray-50 border-gray-200 opacity-75'}`}>
                        <div className="flex justify-between items-start mb-2">
                           <div>
-                             <h4 className="font-bold text-lg">{note.userName}</h4>
+                             <h4 className="font-bold text-lg flex items-center gap-2">
+                               {note.userName}
+                               {note.source === 'chatbot' && <Bot className="w-4 h-4 text-accent" title="Via Chatbot IA" />}
+                             </h4>
                              <p className="text-sm text-gray-500">{note.userContact}</p>
                           </div>
                           <div className="flex gap-2">
@@ -606,7 +610,7 @@ export const AdminDashboard: React.FC = () => {
                        <div className="mt-3 flex gap-2 text-xs text-gray-400 uppercase tracking-wide">
                           <span>{new Date(note.date).toLocaleString()}</span>
                           <span>•</span>
-                          <span>{note.source === 'chatbot' ? 'Via Chatbot' : 'Formulário'}</span>
+                          <span className={note.source === 'chatbot' ? 'text-accent font-bold' : ''}>{note.source === 'chatbot' ? 'Via Concierge Digital' : 'Formulário de Contato'}</span>
                        </div>
                     </div>
                   ))}
