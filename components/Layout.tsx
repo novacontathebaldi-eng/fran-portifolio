@@ -25,7 +25,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { currentUser, settings } = useProjects();
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    // Increased threshold to 50px for a more deliberate transition
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -80,13 +81,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Determine if the current page has a hero section that requires a transparent header
   const isTransparentNavPage = location.pathname === '/' || location.pathname === '/about' || location.pathname.startsWith('/project/');
 
-  // Nav Classes
+  // Refactored Nav Logic for Smooth Transitions
+  // Logic: 
+  // 1. Scrolled: Compact (py-4), White/Blur, Shadow.
+  // 2. Top + Transparent Page: Tall (py-8), Transparent Gradient, White Text.
+  // 3. Top + Standard Page: Tall (py-8), White Background, Black Text.
+  
   const navClasses = isScrolled
-    ? 'bg-white/80 backdrop-blur-md shadow-sm py-4 text-primary border-b border-white/20' 
+    ? 'bg-white/90 backdrop-blur-md shadow-sm py-4 text-primary' 
     : isTransparentNavPage 
-      ? 'bg-gradient-to-b from-black/60 to-transparent py-6 text-white' 
-      : 'bg-white/80 backdrop-blur-md py-6 text-primary';
+      ? 'bg-gradient-to-b from-black/60 to-transparent py-8 text-white' 
+      : 'bg-white/95 py-8 text-primary';
 
+  // Text color condition logic maintained for child elements
   const textColorCondition = isScrolled || !isTransparentNavPage;
 
   const logoClasses = isMenuOpen 
@@ -133,8 +140,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       )}
 
-      {/* Navigation Bar */}
-      <nav className={`fixed w-full transition-all duration-500 ease-in-out ${isMenuOpen ? 'z-[60] bg-transparent' : 'z-50 ' + navClasses}`}>
+      {/* Navigation Bar - Added transition-all duration-700 ease-in-out */}
+      <nav className={`fixed w-full z-50 transition-all duration-700 ease-in-out ${isMenuOpen ? 'bg-transparent' : navClasses}`}>
         <div className="container mx-auto px-6 flex justify-between items-center relative">
           
           {/* Logo */}
