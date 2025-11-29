@@ -1,4 +1,14 @@
 
+export type BlockType = 'text' | 'image-full' | 'image-grid' | 'quote';
+
+export interface ContentBlock {
+  id: string;
+  type: BlockType;
+  content: string; // Text content or Image URL
+  items?: string[]; // For grids
+  caption?: string;
+}
+
 export interface Project {
   id: string;
   title: string;
@@ -7,9 +17,10 @@ export interface Project {
   area: number; // in sqm
   location: string;
   image: string;
-  description: string;
+  description: string; // Legacy fallback
+  blocks?: ContentBlock[]; // New CMS structure
   images: string[];
-  price?: string; // Mock for "service cost"
+  price?: string; 
 }
 
 export type UserRole = 'admin' | 'client';
@@ -22,8 +33,9 @@ export interface User {
   phone?: string;
   avatar?: string;
   bio?: string;
-  projects?: Project[]; // For clients, their assigned projects
+  projects?: Project[];
   favorites?: string[];
+  documents?: { name: string; date: string; url: string; type: 'pdf' | 'dwg' }[]; // New for Client Area
 }
 
 export interface ServicePackage {
@@ -40,4 +52,23 @@ export interface SiteContent {
     heroSubtitle: string;
     bio: string;
   }
+}
+
+export interface GlobalSettings {
+  enableShop: boolean;
+  aiConfig: {
+    model: string;
+    systemInstruction: string;
+    temperature: number;
+  };
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'model';
+  text?: string;
+  uiComponent?: {
+    type: 'ProjectCarousel' | 'ContactCard' | 'LeadForm';
+    data: any;
+  };
 }

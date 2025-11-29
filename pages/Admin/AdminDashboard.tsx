@@ -2,16 +2,17 @@
 import React, { useState } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, ExternalLink, FileText, Save } from 'lucide-react';
-import { SiteContent } from '../../types';
+import { Plus, Edit, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, ExternalLink, FileText, Save, Brain, ShoppingBag } from 'lucide-react';
+import { SiteContent, GlobalSettings } from '../../types';
 
 export const AdminDashboard: React.FC = () => {
-  const { projects, deleteProject, currentUser, logout, siteContent, updateSiteContent, showToast } = useProjects();
+  const { projects, deleteProject, currentUser, logout, siteContent, updateSiteContent, showToast, settings, updateSettings } = useProjects();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'content'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'content' | 'settings'>('dashboard');
   
-  // Local state for editing content form
+  // Local forms
   const [contentForm, setContentForm] = useState<SiteContent>(siteContent);
+  const [settingsForm, setSettingsForm] = useState<GlobalSettings>(settings);
 
   const handleDelete = (id: string) => {
     if (confirm('Tem certeza que deseja excluir este projeto?')) {
@@ -37,9 +38,29 @@ export const AdminDashboard: React.FC = () => {
     }));
   };
 
+  const handleSettingsChange = (field: string, value: any) => {
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      setSettingsForm(prev => ({
+        ...prev,
+        [parent]: {
+          ...(prev as any)[parent],
+          [child]: value
+        }
+      }));
+    } else {
+      setSettingsForm(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
   const saveContent = () => {
     updateSiteContent(contentForm);
     showToast('Conteúdo atualizado com sucesso!', 'success');
+  };
+
+  const saveSettings = () => {
+    updateSettings(settingsForm);
+    showToast('Configurações salvas.', 'success');
   };
 
   return (
@@ -55,36 +76,19 @@ export const AdminDashboard: React.FC = () => {
         </div>
         
         <nav className="flex-1 px-4 space-y-3 mt-4">
-          <button 
-            onClick={() => setActiveTab('dashboard')} 
-            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 active:scale-95 ${activeTab === 'dashboard' ? 'bg-white text-black font-bold shadow-lg transform scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
+          <button onClick={() => setActiveTab('dashboard')} className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 active:scale-95 ${activeTab === 'dashboard' ? 'bg-white text-black font-bold shadow-lg transform scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
             <LayoutDashboard className="w-5 h-5" />
             <span>Visão Geral</span>
           </button>
-          <button 
-            onClick={() => setActiveTab('projects')} 
-            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 active:scale-95 ${activeTab === 'projects' ? 'bg-white text-black font-bold shadow-lg transform scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
+          <button onClick={() => setActiveTab('projects')} className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 active:scale-95 ${activeTab === 'projects' ? 'bg-white text-black font-bold shadow-lg transform scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
             <FolderOpen className="w-5 h-5" />
             <span>Projetos</span>
           </button>
-          <button 
-            onClick={() => setActiveTab('content')} 
-            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 active:scale-95 ${activeTab === 'content' ? 'bg-white text-black font-bold shadow-lg transform scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
+          <button onClick={() => setActiveTab('content')} className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 active:scale-95 ${activeTab === 'content' ? 'bg-white text-black font-bold shadow-lg transform scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
             <FileText className="w-5 h-5" />
             <span>Conteúdo</span>
           </button>
-          <button 
-            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 text-gray-400 hover:bg-white/5 hover:text-white active:scale-95`}
-          >
-            <Users className="w-5 h-5" />
-            <span>Clientes</span>
-          </button>
-          <button 
-            className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 text-gray-400 hover:bg-white/5 hover:text-white active:scale-95`}
-          >
+          <button onClick={() => setActiveTab('settings')} className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 active:scale-95 ${activeTab === 'settings' ? 'bg-white text-black font-bold shadow-lg transform scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
             <Settings className="w-5 h-5" />
             <span>Configurações</span>
           </button>
@@ -113,7 +117,6 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto bg-gray-50">
-        {/* Mobile Header */}
         <header className="bg-neutral-900 text-white shadow-md p-4 md:hidden flex justify-between items-center sticky top-0 z-10">
            <span className="font-serif font-bold text-lg">FRAN. Admin</span>
            <button onClick={handleLogout} className="text-gray-300"><LogOut className="w-5 h-5" /></button>
@@ -143,39 +146,15 @@ export const AdminDashboard: React.FC = () => {
                   <h3 className="text-gray-500 text-sm uppercase font-bold mb-1">Visitas do Site</h3>
                   <p className="text-5xl font-serif text-gray-900">1.2k</p>
                 </div>
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-                  <div className="flex justify-between items-start mb-4">
-                     <div className="p-3 bg-gray-200 text-gray-700 rounded-lg"><Settings className="w-6 h-6" /></div>
-                  </div>
-                  <h3 className="text-gray-500 text-sm uppercase font-bold mb-1">Orçamentos Pendentes</h3>
-                  <p className="text-5xl font-serif text-gray-900">5</p>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                <h3 className="font-bold text-xl mb-6 text-gray-900 border-b pb-4">Atividade Recente</h3>
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 font-bold">P</div>
-                      <div>
-                        <p className="text-gray-900 font-medium">Novo projeto "Residência Lago" publicado</p>
-                        <p className="text-xs text-gray-500">Por {currentUser?.name}</p>
-                      </div>
+                {settings.enableShop && (
+                  <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div className="flex justify-between items-start mb-4">
+                       <div className="p-3 bg-gray-200 text-gray-700 rounded-lg"><ShoppingBag className="w-6 h-6" /></div>
                     </div>
-                    <span className="text-gray-400 text-sm">2h atrás</span>
+                    <h3 className="text-gray-500 text-sm uppercase font-bold mb-1">Orçamentos Pendentes</h3>
+                    <p className="text-5xl font-serif text-gray-900">5</p>
                   </div>
-                  <div className="flex items-center justify-between">
-                     <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600 font-bold">S</div>
-                      <div>
-                        <p className="text-gray-900 font-medium">Texto "Sobre" atualizado</p>
-                        <p className="text-xs text-gray-500">Edição de conteúdo</p>
-                      </div>
-                    </div>
-                    <span className="text-gray-400 text-sm">Ontem</span>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           )}
@@ -235,9 +214,6 @@ export const AdminDashboard: React.FC = () => {
                     </tbody>
                   </table>
                 </div>
-                {projects.length === 0 && (
-                   <div className="p-12 text-center text-gray-400">Nenhum projeto encontrado. Comece criando um!</div>
-                )}
               </div>
             </div>
           )}
@@ -257,41 +233,83 @@ export const AdminDashboard: React.FC = () => {
 
                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-3xl">
                  <h2 className="text-2xl font-serif mb-6 border-b pb-4">Página: Sobre (Quem Somos)</h2>
-                 
                  <div className="space-y-6">
                    <div>
                      <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Subtítulo (Label)</label>
-                     <input 
-                       name="heroSubtitle"
-                       value={contentForm.about.heroSubtitle}
-                       onChange={handleContentChange}
-                       className="w-full border p-3 rounded focus:outline-none focus:border-black"
-                     />
+                     <input name="heroSubtitle" value={contentForm.about.heroSubtitle} onChange={handleContentChange} className="w-full border p-3 rounded focus:outline-none focus:border-black" />
                    </div>
-
                    <div>
                      <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Título Principal (Hero)</label>
-                     <input 
-                       name="heroTitle"
-                       value={contentForm.about.heroTitle}
-                       onChange={handleContentChange}
-                       className="w-full border p-3 rounded focus:outline-none focus:border-black text-lg"
-                     />
+                     <input name="heroTitle" value={contentForm.about.heroTitle} onChange={handleContentChange} className="w-full border p-3 rounded focus:outline-none focus:border-black text-lg" />
                    </div>
-
                    <div>
                      <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Biografia Principal</label>
-                     <textarea 
-                       name="bio"
-                       value={contentForm.about.bio}
-                       onChange={handleContentChange}
-                       className="w-full border p-3 rounded focus:outline-none focus:border-black h-40"
-                     />
-                     <span className="text-xs text-gray-400 mt-1">Este texto aparecerá logo abaixo do nome "Fran Siller" na página Sobre.</span>
+                     <textarea name="bio" value={contentForm.about.bio} onChange={handleContentChange} className="w-full border p-3 rounded focus:outline-none focus:border-black h-40" />
                    </div>
                  </div>
                </div>
              </div>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="animate-fadeIn">
+              <div className="flex justify-between items-center mb-10">
+                 <div>
+                   <h1 className="text-4xl font-serif text-gray-900">Configurações Globais</h1>
+                   <p className="text-gray-500 mt-2">Definições do sistema, IA e recursos.</p>
+                 </div>
+                 <button onClick={saveSettings} className="bg-black text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:bg-accent hover:text-black transition shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 duration-200">
+                    <Save className="w-5 h-5" />
+                    <span className="font-bold text-sm">Salvar Configurações</span>
+                 </button>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                 {/* Feature Flags */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                    <h3 className="font-bold text-xl mb-6 flex items-center gap-2"><Settings className="w-5 h-5" /> Recursos do Site</h3>
+                    <div className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                      <div>
+                        <span className="font-bold block">Loja / Orçamentos</span>
+                        <span className="text-sm text-gray-500">Habilita a página de solicitação de orçamento.</span>
+                      </div>
+                      <button 
+                        onClick={() => handleSettingsChange('enableShop', !settingsForm.enableShop)}
+                        className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ${settingsForm.enableShop ? 'bg-green-500' : 'bg-gray-300'}`}
+                      >
+                        <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${settingsForm.enableShop ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+                 </div>
+
+                 {/* AI Config */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                    <h3 className="font-bold text-xl mb-6 flex items-center gap-2"><Brain className="w-5 h-5" /> Configuração Gemini AI</h3>
+                    <div className="space-y-4">
+                       <div>
+                         <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Modelo Gemini</label>
+                         <select 
+                            value={settingsForm.aiConfig.model} 
+                            onChange={(e) => handleSettingsChange('aiConfig.model', e.target.value)}
+                            className="w-full border p-2 rounded"
+                         >
+                           <option value="gemini-2.5-flash">Gemini 2.5 Flash (Rápido)</option>
+                           <option value="gemini-1.5-pro">Gemini 1.5 Pro (Raciocínio)</option>
+                         </select>
+                       </div>
+                       <div>
+                         <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Instrução do Sistema</label>
+                         <textarea 
+                            value={settingsForm.aiConfig.systemInstruction} 
+                            onChange={(e) => handleSettingsChange('aiConfig.systemInstruction', e.target.value)}
+                            className="w-full border p-2 rounded h-32 text-sm"
+                            placeholder="Como a IA deve se comportar..."
+                         />
+                       </div>
+                    </div>
+                 </div>
+               </div>
+            </div>
           )}
         </div>
       </main>

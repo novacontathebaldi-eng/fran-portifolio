@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Search, ShoppingBag, User, LayoutDashboard } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
+import { Chatbot } from './Chatbot';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,7 +17,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser } = useProjects();
+  const { currentUser, settings } = useProjects();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -36,15 +37,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isTransparentNavPage = location.pathname === '/' || location.pathname === '/about' || location.pathname.startsWith('/project/');
 
   // Nav Classes
-  // If menu is open, we hide the background of the main nav to let the overlay take over.
   const navClasses = isScrolled
     ? 'bg-white/80 backdrop-blur-md shadow-sm py-4 text-primary border-b border-white/20' 
     : isTransparentNavPage 
       ? 'bg-gradient-to-b from-black/60 to-transparent py-6 text-white' 
       : 'bg-white/80 backdrop-blur-md py-6 text-primary';
 
-  // Text colors need to switch to black if the menu is open (because menu background is white)
-  // or if we are scrolled or on a page without transparent header support
   const textColorCondition = isScrolled || !isTransparentNavPage;
 
   const logoClasses = isMenuOpen 
@@ -55,7 +53,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     ? 'text-primary hover:text-accent' 
     : 'text-white/90 hover:text-white';
 
-  // Icons also need to adapt if menu is open
   const iconClasses = isMenuOpen
     ? 'text-primary'
     : textColorCondition ? 'text-primary' : 'text-white';
@@ -105,7 +102,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link to="/" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Início</Link>
             <Link to="/about" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Sobre</Link>
             <Link to="/portfolio" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Portfólio</Link>
-            <Link to="/services" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Serviços</Link>
+            {settings.enableShop && (
+              <Link to="/services" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Serviços</Link>
+            )}
             <Link to="/contact" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Contato</Link>
             {currentUser?.role === 'admin' && (
               <Link to="/admin" className="text-sm font-bold text-accent hover:text-white bg-black/80 px-3 py-1.5 rounded-full transition flex items-center space-x-1 backdrop-blur-sm">
@@ -119,14 +118,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className={`hidden md:flex items-center space-x-6 transition-colors duration-300 ${linkClasses}`}>
             <button onClick={() => setSearchOpen(true)} className="hover:scale-110 transition-transform"><Search className="w-5 h-5" /></button>
             <Link to={currentUser ? "/profile" : "/auth"} className="hover:scale-110 transition-transform"><User className="w-5 h-5" /></Link>
-            <Link to="/budget" className="hover:scale-110 transition-transform relative">
-              <ShoppingBag className="w-5 h-5" />
-              {currentUser?.role === 'client' && <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full ring-2 ring-white"></span>}
-            </Link>
+            {settings.enableShop && (
+              <Link to="/budget" className="hover:scale-110 transition-transform relative">
+                <ShoppingBag className="w-5 h-5" />
+                {currentUser?.role === 'client' && <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full ring-2 ring-white"></span>}
+              </Link>
+            )}
           </div>
 
           {/* Mobile Toggle Button */}
-          {/* Using pointer-events-auto to ensure it stays clickable even if nav is transparent/pointer-events-none */}
           <button 
             className={`md:hidden z-[60] transition-colors duration-300 pointer-events-auto ${isMenuOpen ? 'text-black' : iconClasses}`} 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -139,12 +139,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
-        <div className="fixed inset-0 bg-white/98 backdrop-blur-xl z-[55] flex flex-col pt-24 pb-8 px-6 animate-fadeIn text-primary md:hidden overflow-y-auto">
+        <div className="fixed inset-0 bg-white/98 backdrop-blur-xl z-[55] flex flex-col pt-24 pb-8 px-6 animate-fadeIn text-primary md:hidden overflow-y-auto pointer-events-auto">
           <div className="flex flex-col space-y-6 flex-grow">
             <Link to="/" className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-100 pb-4">Início</Link>
             <Link to="/about" className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-100 pb-4">Sobre</Link>
             <Link to="/portfolio" className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-100 pb-4">Portfólio</Link>
-            <Link to="/services" className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-100 pb-4">Serviços</Link>
+            {settings.enableShop && (
+              <Link to="/services" className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-100 pb-4">Serviços</Link>
+            )}
             <Link to="/contact" className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-100 pb-4">Contato</Link>
             
             <div className="pt-4 space-y-4">
@@ -156,10 +158,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <Search className="w-5 h-5" />
                 <span>Buscar</span>
               </button>
-              <Link to="/budget" className="flex items-center space-x-3 text-lg font-medium hover:text-accent transition">
-                <ShoppingBag className="w-5 h-5" />
-                <span>Orçamento</span>
-              </Link>
+              {settings.enableShop && (
+                <Link to="/budget" className="flex items-center space-x-3 text-lg font-medium hover:text-accent transition">
+                  <ShoppingBag className="w-5 h-5" />
+                  <span>Orçamento</span>
+                </Link>
+              )}
               {currentUser?.role === 'admin' && (
                 <Link to="/admin" className="text-lg font-bold text-accent pt-2 block">Acessar Admin</Link>
               )}
@@ -177,6 +181,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {children}
       </main>
 
+      {/* Floating Chatbot */}
+      <Chatbot />
+
       {/* Footer */}
       <footer className="bg-[#1a1a1a] text-white pt-16 pb-10">
         <div className="container mx-auto px-6">
@@ -191,7 +198,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <h4 className="text-xs font-bold uppercase tracking-widest mb-8 text-accent">Navegação</h4>
               <ul className="space-y-4 text-sm text-gray-400">
                 <li><Link to="/portfolio" className="hover:text-white transition block">Projetos</Link></li>
-                <li><Link to="/services" className="hover:text-white transition block">Serviços</Link></li>
+                {settings.enableShop && <li><Link to="/services" className="hover:text-white transition block">Serviços</Link></li>}
                 <li><Link to="/about" className="hover:text-white transition block">Sobre o Escritório</Link></li>
                 <li><Link to="/contact" className="hover:text-white transition block">Contato</Link></li>
               </ul>

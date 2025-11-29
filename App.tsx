@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 import { Layout } from './components/Layout';
@@ -78,6 +78,7 @@ const GlobalToast = () => {
 // Wrapper to handle AnimatePresence Logic
 const AnimatedRoutes = () => {
   const location = useLocation();
+  const { settings } = useProjects();
   
   return (
     <AnimatePresence mode="wait">
@@ -106,8 +107,20 @@ const AnimatedRoutes = () => {
               <Route path="/about" element={<PageTransition><About /></PageTransition>} />
               <Route path="/portfolio" element={<PageTransition><Portfolio /></PageTransition>} />
               <Route path="/project/:id" element={<PageTransition><ProjectDetails /></PageTransition>} />
-              <Route path="/services" element={<PageTransition><BudgetFlow /></PageTransition>} /> 
-              <Route path="/budget" element={<PageTransition><BudgetFlow /></PageTransition>} />
+              
+              {/* Conditional Shop Routes */}
+              {settings.enableShop ? (
+                <>
+                  <Route path="/services" element={<PageTransition><BudgetFlow /></PageTransition>} /> 
+                  <Route path="/budget" element={<PageTransition><BudgetFlow /></PageTransition>} />
+                </>
+              ) : (
+                <>
+                   <Route path="/services" element={<Navigate to="/" replace />} />
+                   <Route path="/budget" element={<Navigate to="/" replace />} />
+                </>
+              )}
+              
               <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
               <Route path="/profile" element={<PageTransition><ClientArea /></PageTransition>} />
             </Routes>

@@ -33,8 +33,8 @@ export const Portfolio: React.FC = () => {
            </div>
         </motion.div>
 
-        {/* Controls */}
-        <div className="sticky top-20 bg-white/95 backdrop-blur-sm z-20 py-4 border-b border-gray-100 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        {/* Controls - Adjusted top position to stick perfectly to the header */}
+        <div className="sticky top-[58px] md:top-[68px] bg-white/95 backdrop-blur-sm z-40 py-4 border-b border-gray-100 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all duration-300">
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
             <button 
               onClick={() => setFilterOpen(!filterOpen)} 
