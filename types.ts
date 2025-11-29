@@ -63,12 +63,26 @@ export interface GlobalSettings {
   };
 }
 
+export interface AdminNote {
+  id: string;
+  userName: string;
+  userContact: string; // Email or Phone
+  message: string;
+  date: string;
+  status: 'new' | 'read';
+  source: 'chatbot' | 'contact_form';
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'model';
   text?: string;
   uiComponent?: {
-    type: 'ProjectCarousel' | 'ContactCard' | 'LeadForm';
+    type: 'ProjectCarousel' | 'ContactCard' | 'LeadForm' | 'SocialLinks';
     data: any;
   };
+  actions?: {
+    type: 'navigate' | 'saveNote';
+    payload: any;
+  }[];
 }

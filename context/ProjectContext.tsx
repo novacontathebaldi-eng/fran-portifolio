@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { Project, User, SiteContent, GlobalSettings } from '../types';
+import { Project, User, SiteContent, GlobalSettings, AdminNote } from '../types';
 import { MOCK_PROJECTS, MOCK_USER_CLIENT, MOCK_USER_ADMIN } from '../data';
 
 export type ToastType = 'success' | 'error' | 'info';
@@ -16,6 +16,7 @@ interface ProjectContextType {
   currentUser: User | null;
   siteContent: SiteContent;
   settings: GlobalSettings;
+  adminNotes: AdminNote[];
   login: (email: string) => User | null;
   logout: () => void;
   addProject: (project: Project) => void;
@@ -25,6 +26,11 @@ interface ProjectContextType {
   updateSettings: (settings: GlobalSettings) => void;
   sendMessageToAI: (message: string) => Promise<any>;
   
+  // Admin Notes Logic
+  addAdminNote: (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => void;
+  markNoteAsRead: (id: string) => void;
+  deleteAdminNote: (id: string) => void;
+
   // Toast Logic
   toast: ToastState;
   showToast: (message: string, type?: ToastType) => void;
@@ -37,14 +43,43 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   enableShop: true,
   aiConfig: {
     model: 'gemini-2.5-flash',
-    systemInstruction: 'Você é um assistente virtual sofisticado para o escritório Fran Siller Arquitetura. Seu tom é elegante, minimalista e profissional. Você ajuda clientes a encontrar projetos, entender serviços e agendar reuniões.',
+    systemInstruction: `Você é o Concierge Digital da Fran Siller Arquitetura. 
+    Seu tom é sofisticado, acolhedor e altamente eficiente.
+    
+    Seus objetivos principais:
+    1. Converter visitantes em leads (coletando nome e contato).
+    2. Direcionar para canais oficiais (WhatsApp, Instagram).
+    3. Apresentar o portfólio de forma contextual.
+    
+    Dados de Contato Oficiais:
+    - WhatsApp: +55 (27) 99667-0426
+    - Instagram: @othebaldi
+    - Facebook: fb.com/othebaldi
+    
+    Regras de Comportamento:
+    - Se o cliente demonstrar interesse comercial, tente gentilmente pegar o contato ou oferecer o WhatsApp.
+    - Se perguntarem sobre preços, explique que depende da complexidade e ofereça uma reunião ou o link de Orçamento.
+    - Use emojis com moderação, mantendo a elegância.`,
     temperature: 0.7
   }
 };
 
+const MOCK_NOTES: AdminNote[] = [
+  {
+    id: '1',
+    userName: 'Carlos Mendes',
+    userContact: '(11) 99999-9999',
+    message: 'Interesse em projeto comercial para escritório de advocacia.',
+    date: new Date().toISOString(),
+    status: 'new',
+    source: 'contact_form'
+  }
+];
+
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [adminNotes, setAdminNotes] = useState<AdminNote[]>(MOCK_NOTES);
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'info', isVisible: false });
   
   // Settings with LocalStorage Persistence
@@ -81,7 +116,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       setCurrentUser(MOCK_USER_ADMIN);
       return MOCK_USER_ADMIN;
     } else {
-      // Enrich client mock with docs for demo
       const clientWithDocs = {
         ...MOCK_USER_CLIENT,
         documents: [
@@ -111,6 +145,29 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setProjects(prev => prev.filter(p => p.id !== id));
   };
 
+  // Admin Notes Actions
+  const addAdminNote = (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => {
+    const newNote: AdminNote = {
+      ...note,
+      id: Math.random().toString(36).substr(2, 9),
+      date: new Date().toISOString(),
+      status: 'new'
+    };
+    setAdminNotes(prev => [newNote, ...prev]);
+    // Optionally alert via toast only if current user is NOT admin (avoid noise)
+    if (currentUser?.role !== 'admin') {
+       console.log("Nota salva internamente:", newNote);
+    }
+  };
+
+  const markNoteAsRead = (id: string) => {
+    setAdminNotes(prev => prev.map(n => n.id === id ? { ...n, status: 'read' } : n));
+  };
+
+  const deleteAdminNote = (id: string) => {
+    setAdminNotes(prev => prev.filter(n => n.id !== id));
+  };
+
   const updateSiteContent = (content: SiteContent) => {
     setSiteContent(content);
   };
@@ -134,7 +191,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       return await res.json();
     } catch (error) {
       console.error(error);
-      // Fallback response if API fails (e.g., in development without serverless env)
       return { 
         role: 'model', 
         text: "Desculpe, o serviço de IA está indisponível no momento. Por favor, tente novamente mais tarde." 
@@ -148,6 +204,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       currentUser, 
       siteContent, 
       settings,
+      adminNotes,
       login, 
       logout, 
       addProject, 
@@ -156,6 +213,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       updateSiteContent,
       updateSettings,
       sendMessageToAI,
+      addAdminNote,
+      markNoteAsRead,
+      deleteAdminNote,
       toast,
       showToast,
       hideToast

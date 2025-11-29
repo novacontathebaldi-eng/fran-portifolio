@@ -2,13 +2,13 @@
 import React, { useState } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, ExternalLink, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight } from 'lucide-react';
+import { Plus, Edit, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, ExternalLink, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock } from 'lucide-react';
 import { SiteContent, GlobalSettings } from '../../types';
 
 export const AdminDashboard: React.FC = () => {
-  const { projects, deleteProject, currentUser, logout, siteContent, updateSiteContent, showToast, settings, updateSettings } = useProjects();
+  const { projects, deleteProject, currentUser, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, adminNotes, markNoteAsRead, deleteAdminNote } = useProjects();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'content' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'content' | 'settings' | 'messages'>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Local forms
@@ -64,16 +64,21 @@ export const AdminDashboard: React.FC = () => {
     showToast('Configurações salvas.', 'success');
   };
 
-  const NavItem = ({ id, icon: Icon, label }: { id: typeof activeTab, icon: any, label: string }) => (
+  const NavItem = ({ id, icon: Icon, label, count }: { id: typeof activeTab, icon: any, label: string, count?: number }) => (
     <button 
       onClick={() => { setActiveTab(id); setMobileMenuOpen(false); }} 
-      className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 active:scale-95 ${activeTab === id ? 'bg-white text-black font-bold shadow-lg md:transform md:scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+      className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 active:scale-95 relative ${activeTab === id ? 'bg-white text-black font-bold shadow-lg md:transform md:scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
     >
       <Icon className="w-5 h-5" />
       <span>{label}</span>
+      {count !== undefined && count > 0 && (
+         <span className="absolute right-4 md:right-auto md:left-36 bg-accent text-black text-[10px] font-bold px-2 py-0.5 rounded-full">{count}</span>
+      )}
       {activeTab === id && <ChevronRight className="w-4 h-4 ml-auto md:hidden" />}
     </button>
   );
+
+  const unreadNotesCount = adminNotes.filter(n => n.status === 'new').length;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row font-sans">
@@ -103,6 +108,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               <NavItem id="dashboard" icon={LayoutDashboard} label="Visão Geral" />
+              <NavItem id="messages" icon={MessageSquare} label="Recados & IA" count={unreadNotesCount} />
               <NavItem id="projects" icon={FolderOpen} label="Projetos" />
               <NavItem id="content" icon={FileText} label="Conteúdo" />
               <NavItem id="settings" icon={Settings} label="Configurações" />
@@ -133,6 +139,7 @@ export const AdminDashboard: React.FC = () => {
         
         <nav className="flex-1 px-4 space-y-3 mt-4">
           <NavItem id="dashboard" icon={LayoutDashboard} label="Visão Geral" />
+          <NavItem id="messages" icon={MessageSquare} label="Recados & IA" count={unreadNotesCount} />
           <NavItem id="projects" icon={FolderOpen} label="Projetos" />
           <NavItem id="content" icon={FileText} label="Conteúdo" />
           <NavItem id="settings" icon={Settings} label="Configurações" />
@@ -178,13 +185,16 @@ export const AdminDashboard: React.FC = () => {
                   <h3 className="text-gray-500 text-sm uppercase font-bold mb-1">Total de Projetos</h3>
                   <p className="text-4xl md:text-5xl font-serif text-gray-900">{projects.length}</p>
                 </div>
-                <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                
+                <div onClick={() => setActiveTab('messages')} className="cursor-pointer bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition group">
                   <div className="flex justify-between items-start mb-4">
-                     <div className="p-3 bg-accent text-white rounded-lg"><Users className="w-6 h-6" /></div>
+                     <div className="p-3 bg-accent text-white rounded-lg group-hover:bg-black transition-colors"><MessageSquare className="w-6 h-6" /></div>
+                     {unreadNotesCount > 0 && <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>}
                   </div>
-                  <h3 className="text-gray-500 text-sm uppercase font-bold mb-1">Visitas do Site</h3>
-                  <p className="text-4xl md:text-5xl font-serif text-gray-900">1.2k</p>
+                  <h3 className="text-gray-500 text-sm uppercase font-bold mb-1">Recados da IA</h3>
+                  <p className="text-4xl md:text-5xl font-serif text-gray-900">{unreadNotesCount}</p>
                 </div>
+
                 {settings.enableShop && (
                   <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
                     <div className="flex justify-between items-start mb-4">
@@ -196,6 +206,57 @@ export const AdminDashboard: React.FC = () => {
                 )}
               </div>
             </div>
+          )}
+
+          {activeTab === 'messages' && (
+             <div className="animate-fadeIn">
+               <div className="mb-8">
+                 <h1 className="text-3xl md:text-4xl font-serif text-gray-900">Recados & Inteligência</h1>
+                 <p className="text-gray-500 mt-2 text-sm md:text-base">Leads e mensagens coletados pelo Concierge Digital.</p>
+               </div>
+
+               <div className="space-y-4">
+                 {adminNotes.length === 0 ? (
+                   <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
+                     <div className="inline-block p-4 bg-gray-50 rounded-full mb-4"><Brain className="w-8 h-8 text-gray-300" /></div>
+                     <p className="text-gray-400">Nenhum recado recebido ainda.</p>
+                   </div>
+                 ) : (
+                   adminNotes.map(note => (
+                     <div key={note.id} className={`bg-white p-6 rounded-xl border transition ${note.status === 'new' ? 'border-l-4 border-l-accent border-y-gray-100 border-r-gray-100 shadow-md' : 'border-gray-100 opacity-80 hover:opacity-100'}`}>
+                        <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
+                           <div className="flex-1">
+                             <div className="flex items-center gap-2 mb-2">
+                               <h3 className="font-bold text-lg">{note.userName}</h3>
+                               {note.status === 'new' && <span className="bg-accent text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full">Novo</span>}
+                               <span className="text-xs text-gray-400 border border-gray-200 px-2 rounded-full capitalize">{note.source}</span>
+                             </div>
+                             <p className="text-sm text-gray-500 font-mono mb-3">{note.userContact}</p>
+                             <div className="bg-gray-50 p-4 rounded-lg text-gray-700 italic border-l-2 border-gray-200">
+                               "{note.message}"
+                             </div>
+                             <p className="text-xs text-gray-400 mt-3 flex items-center gap-1">
+                               <Clock className="w-3 h-3" /> {new Date(note.date).toLocaleDateString()} às {new Date(note.date).toLocaleTimeString()}
+                             </p>
+                           </div>
+                           <div className="flex md:flex-col gap-2 shrink-0">
+                              {note.status === 'new' && (
+                                <button onClick={() => markNoteAsRead(note.id)} className="p-2 text-green-600 hover:bg-green-50 rounded-lg flex items-center gap-2 transition" title="Marcar como lido">
+                                   <Check className="w-5 h-5" />
+                                   <span className="md:hidden text-sm font-bold">Marcar Lido</span>
+                                </button>
+                              )}
+                              <button onClick={() => deleteAdminNote(note.id)} className="p-2 text-red-400 hover:bg-red-50 rounded-lg flex items-center gap-2 transition" title="Excluir">
+                                <Trash2 className="w-5 h-5" />
+                                <span className="md:hidden text-sm font-bold">Excluir</span>
+                              </button>
+                           </div>
+                        </div>
+                     </div>
+                   ))
+                 )}
+               </div>
+             </div>
           )}
 
           {activeTab === 'projects' && (
