@@ -28,10 +28,10 @@ export const ClientArea: React.FC = () => {
         <h4 className="font-bold text-sm mb-4">Cronograma do Projeto</h4>
         <div className="space-y-0">
           {stages.map((stage, idx) => (
-            <div key={idx} className="flex gap-4 relative">
+            <div key={idx} className="flex gap-4 relative group">
               {/* Line */}
               {idx !== stages.length - 1 && (
-                <div className="absolute left-[11px] top-6 bottom-0 w-[2px] bg-gray-100 h-full"></div>
+                <div className="absolute left-[11px] top-6 bottom-0 w-[2px] bg-gray-100 h-full group-last:hidden"></div>
               )}
               
               <div className={`z-10 w-6 h-6 rounded-full flex items-center justify-center border-2 shrink-0 ${stage.status === 'completed' ? 'bg-green-500 border-green-500 text-white' : stage.status === 'current' ? 'bg-white border-black' : 'bg-gray-100 border-gray-200'}`}>
@@ -57,45 +57,51 @@ export const ClientArea: React.FC = () => {
         
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
-          <div className="w-full lg:w-1/4 bg-white rounded-xl shadow-sm p-6 h-fit">
-            <div className="flex items-center space-x-4 mb-8">
-              <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center text-xl font-serif font-bold text-white shrink-0">
+          <div className="w-full lg:w-1/4 bg-white rounded-xl shadow-sm p-4 lg:p-6 h-fit sticky lg:top-24">
+            <div className="flex items-center space-x-4 mb-6 lg:mb-8">
+              <div className="w-12 h-12 lg:w-16 lg:h-16 bg-accent rounded-full flex items-center justify-center text-lg lg:text-xl font-serif font-bold text-white shrink-0">
                 {currentUser.name.charAt(0)}
               </div>
               <div className="overflow-hidden">
-                <h3 className="font-bold truncate">{currentUser.name}</h3>
+                <h3 className="font-bold truncate text-sm lg:text-base">{currentUser.name}</h3>
                 <p className="text-xs text-secondary truncate">{currentUser.email}</p>
               </div>
             </div>
             
-            <nav className="flex lg:flex-col overflow-x-auto lg:overflow-visible gap-2 pb-2 lg:pb-0 no-scrollbar">
-              <button onClick={() => setActiveTab('projects')} className={`flex-shrink-0 lg:w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${activeTab === 'projects' ? 'bg-gray-100 font-bold' : 'text-gray-500 hover:bg-gray-50'}`}>
-                <Package className="w-5 h-5" />
+            <nav className="flex lg:flex-col overflow-x-auto lg:overflow-visible gap-2 pb-2 lg:pb-0 no-scrollbar snap-x">
+              <button onClick={() => setActiveTab('projects')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-3 rounded-lg transition text-sm ${activeTab === 'projects' ? 'bg-gray-100 font-bold text-black' : 'text-gray-500 hover:bg-gray-50'}`}>
+                <Package className="w-5 h-5 shrink-0" />
                 <span className="whitespace-nowrap">Meus Projetos</span>
               </button>
-              <button onClick={() => setActiveTab('docs')} className={`flex-shrink-0 lg:w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${activeTab === 'docs' ? 'bg-gray-100 font-bold' : 'text-gray-500 hover:bg-gray-50'}`}>
-                <FileText className="w-5 h-5" />
+              <button onClick={() => setActiveTab('docs')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-3 rounded-lg transition text-sm ${activeTab === 'docs' ? 'bg-gray-100 font-bold text-black' : 'text-gray-500 hover:bg-gray-50'}`}>
+                <FileText className="w-5 h-5 shrink-0" />
                 <span className="whitespace-nowrap">Arquivos & Contratos</span>
               </button>
-              <button onClick={() => setActiveTab('profile')} className={`flex-shrink-0 lg:w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${activeTab === 'profile' ? 'bg-gray-100 font-bold' : 'text-gray-500 hover:bg-gray-50'}`}>
-                <User className="w-5 h-5" />
+              <button onClick={() => setActiveTab('profile')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-3 rounded-lg transition text-sm ${activeTab === 'profile' ? 'bg-gray-100 font-bold text-black' : 'text-gray-500 hover:bg-gray-50'}`}>
+                <User className="w-5 h-5 shrink-0" />
                 <span className="whitespace-nowrap">Dados Pessoais</span>
               </button>
-              <button onClick={() => setActiveTab('favs')} className={`flex-shrink-0 lg:w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${activeTab === 'favs' ? 'bg-gray-100 font-bold' : 'text-gray-500 hover:bg-gray-50'}`}>
-                <Heart className="w-5 h-5" />
+              <button onClick={() => setActiveTab('favs')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-3 rounded-lg transition text-sm ${activeTab === 'favs' ? 'bg-gray-100 font-bold text-black' : 'text-gray-500 hover:bg-gray-50'}`}>
+                <Heart className="w-5 h-5 shrink-0" />
                 <span className="whitespace-nowrap">Inspirações</span>
               </button>
-              <button onClick={() => setActiveTab('settings')} className={`flex-shrink-0 lg:w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${activeTab === 'settings' ? 'bg-gray-100 font-bold' : 'text-gray-500 hover:bg-gray-50'}`}>
-                <Settings className="w-5 h-5" />
+              <button onClick={() => setActiveTab('settings')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-3 rounded-lg transition text-sm ${activeTab === 'settings' ? 'bg-gray-100 font-bold text-black' : 'text-gray-500 hover:bg-gray-50'}`}>
+                <Settings className="w-5 h-5 shrink-0" />
                 <span className="whitespace-nowrap">Configurações</span>
               </button>
               <div className="hidden lg:block pt-4 mt-4 border-t border-gray-100">
-                <button onClick={logout} className="w-full flex items-center space-x-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-lg transition">
-                  <LogOut className="w-5 h-5" />
+                <button onClick={logout} className="w-full flex items-center space-x-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-lg transition text-sm">
+                  <LogOut className="w-5 h-5 shrink-0" />
                   <span>Sair</span>
                 </button>
               </div>
             </nav>
+            <div className="lg:hidden mt-4 border-t border-gray-100 pt-4">
+               <button onClick={logout} className="w-full flex items-center justify-center space-x-2 text-red-500 text-sm py-2 bg-red-50 rounded-lg">
+                  <LogOut className="w-4 h-4" />
+                  <span>Sair da Conta</span>
+               </button>
+            </div>
           </div>
 
           {/* Content Area */}
@@ -107,13 +113,15 @@ export const ClientArea: React.FC = () => {
                 {currentUser.projects && currentUser.projects.length > 0 ? (
                   <div className="space-y-8">
                     {currentUser.projects.map(p => (
-                      <div key={p.id} className="border border-gray-200 rounded-lg p-6">
+                      <div key={p.id} className="border border-gray-200 rounded-lg p-4 md:p-6">
                         <div className="flex flex-col md:flex-row gap-6">
-                           <img src={p.image} className="w-full md:w-48 h-48 object-cover rounded shadow-sm" />
-                           <div className="flex-grow">
+                           <div className="w-full md:w-48 h-48 shrink-0">
+                              <img src={p.image} className="w-full h-full object-cover rounded shadow-sm" />
+                           </div>
+                           <div className="flex-grow min-w-0">
                              <div className="flex flex-col md:flex-row justify-between items-start mb-2 gap-2">
-                               <h3 className="text-xl font-bold font-serif">{p.title}</h3>
-                               <span className="bg-yellow-100 text-yellow-800 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">Em Andamento</span>
+                               <h3 className="text-xl font-bold font-serif truncate w-full">{p.title}</h3>
+                               <span className="bg-yellow-100 text-yellow-800 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider whitespace-nowrap">Em Andamento</span>
                              </div>
                              <p className="text-sm text-secondary mb-4 line-clamp-2">{p.description}</p>
                              
@@ -136,21 +144,21 @@ export const ClientArea: React.FC = () => {
             {activeTab === 'docs' && (
                <div className="animate-fadeIn">
                  <h2 className="text-2xl font-serif mb-6">Arquivos e Contratos</h2>
-                 <p className="text-gray-500 mb-6">Acesse plantas, contratos e memorias descritivos do seu projeto.</p>
+                 <p className="text-gray-500 mb-6 text-sm md:text-base">Acesse plantas, contratos e memorias descritivos do seu projeto.</p>
                  
                  <div className="grid grid-cols-1 gap-4">
                     {currentUser.documents?.map((doc, idx) => (
                        <div key={idx} className="flex items-center justify-between p-4 border border-gray-100 hover:border-accent rounded-lg transition group bg-white hover:shadow-sm">
-                          <div className="flex items-center gap-4">
-                             <div className={`p-3 rounded-lg ${doc.type === 'pdf' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
+                          <div className="flex items-center gap-4 min-w-0">
+                             <div className={`p-3 rounded-lg shrink-0 ${doc.type === 'pdf' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
                                 <FileText className="w-6 h-6" />
                              </div>
-                             <div>
-                               <p className="font-bold text-sm text-gray-800 group-hover:text-accent transition">{doc.name}</p>
+                             <div className="min-w-0">
+                               <p className="font-bold text-sm text-gray-800 group-hover:text-accent transition truncate pr-4">{doc.name}</p>
                                <p className="text-xs text-gray-400">{doc.date}</p>
                              </div>
                           </div>
-                          <button className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition">
+                          <button className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition shrink-0">
                              <Download className="w-5 h-5" />
                           </button>
                        </div>
@@ -186,7 +194,7 @@ export const ClientArea: React.FC = () => {
                   </div>
                   {isEditing && (
                     <div className="md:col-span-2">
-                      <button className="bg-black text-white px-6 py-2 rounded hover:bg-accent transition">Salvar Alterações</button>
+                      <button className="w-full md:w-auto bg-black text-white px-6 py-3 rounded hover:bg-accent transition font-bold">Salvar Alterações</button>
                     </div>
                   )}
                 </div>
