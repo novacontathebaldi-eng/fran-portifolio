@@ -122,7 +122,7 @@ export const Home: React.FC = () => {
             className="w-full md:w-1/2 relative"
           >
              <div className="absolute -top-6 -left-6 w-full h-full border-2 border-accent z-0 hidden md:block"></div>
-             <img src="https://picsum.photos/seed/arch_about/800/1000" alt="About" className="w-full h-auto shadow-2xl relative z-10" />
+             <img src="https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/img-sobre-home.png" alt="About" className="w-full h-auto shadow-2xl relative z-10" />
           </motion.div>
           <motion.div 
             initial={{ opacity: 0, x: 50 }}
