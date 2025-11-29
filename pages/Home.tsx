@@ -89,7 +89,7 @@ export const Home: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="flex overflow-x-auto pb-12 space-x-6 md:space-x-8 px-6 md:px-16 lg:px-24 no-scrollbar snap-x snap-mandatory"
+          className="flex overflow-x-auto pb-12 space-x-6 md:space-x-8 px-6 md:px-20 lg:px-32 xl:px-40 no-scrollbar snap-x snap-mandatory scroll-pl-6 md:scroll-pl-20"
         >
           {projects.slice(0, 5).map((project) => (
             <Link 
