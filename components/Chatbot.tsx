@@ -68,7 +68,7 @@ export const Chatbot: React.FC = () => {
       : projects.slice(0, 3);
 
     return (
-      <div className="mt-4 flex gap-4 overflow-x-auto pb-2">
+      <div className="mt-4 flex gap-4 overflow-x-auto pb-2 no-scrollbar">
         {filtered.map(p => (
           <Link to={`/project/${p.id}`} key={p.id} className="min-w-[200px] bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden block hover:border-accent transition">
             <img src={p.image} className="w-full h-24 object-cover" />
@@ -98,13 +98,13 @@ export const Chatbot: React.FC = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className="fixed bottom-24 right-6 w-[90vw] md:w-[400px] h-[500px] bg-white rounded-2xl shadow-2xl z-[90] flex flex-col border border-gray-100 overflow-hidden"
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-[400px] h-[500px] max-h-[80vh] bg-white rounded-2xl shadow-2xl z-[90] flex flex-col border border-gray-100 overflow-hidden"
           >
             {/* Header */}
-            <div className="bg-[#1a1a1a] text-white p-4 flex justify-between items-center">
+            <div className="bg-[#1a1a1a] text-white p-4 flex justify-between items-center shrink-0">
                <div className="flex items-center gap-3">
                  <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
                    <Sparkles className="w-4 h-4 text-white" />
@@ -114,14 +114,14 @@ export const Chatbot: React.FC = () => {
                    <span className="text-[10px] text-gray-400 flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Online (Gemini 2.5)</span>
                  </div>
                </div>
-               <button onClick={() => setIsOpen(false)}><X className="w-5 h-5 text-gray-400 hover:text-white" /></button>
+               <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-white/10 rounded-full transition"><X className="w-5 h-5 text-gray-400 hover:text-white" /></button>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] rounded-2xl p-4 text-sm ${msg.role === 'user' ? 'bg-black text-white rounded-br-none' : 'bg-white border border-gray-200 rounded-bl-none text-gray-700'}`}>
+                  <div className={`max-w-[85%] rounded-2xl p-4 text-sm ${msg.role === 'user' ? 'bg-black text-white rounded-br-none' : 'bg-white border border-gray-200 rounded-bl-none text-gray-700 shadow-sm'}`}>
                     {msg.text && <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>}
                     
                     {/* GenUI Rendering */}
@@ -132,7 +132,7 @@ export const Chatbot: React.FC = () => {
               ))}
               {isLoading && (
                  <div className="flex justify-start">
-                   <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none p-4 flex items-center gap-2">
+                   <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none p-4 flex items-center gap-2 shadow-sm">
                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></span>
                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></span>
@@ -143,15 +143,15 @@ export const Chatbot: React.FC = () => {
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSend} className="p-4 bg-white border-t border-gray-100 flex gap-2">
+            <form onSubmit={handleSend} className="p-4 bg-white border-t border-gray-100 flex gap-2 shrink-0">
               <input 
                 type="text" 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Pergunte sobre projetos ou serviços..." 
+                placeholder="Pergunte sobre projetos..." 
                 className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-black focus:ring-0"
               />
-              <button type="submit" disabled={isLoading} className="bg-black text-white p-2 rounded-full hover:bg-accent transition disabled:opacity-50">
+              <button type="submit" disabled={isLoading} className="bg-black text-white p-2 rounded-full hover:bg-accent transition disabled:opacity-50 flex-shrink-0">
                 <Send className="w-5 h-5" />
               </button>
             </form>
@@ -159,14 +159,21 @@ export const Chatbot: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <motion.button
-        onClick={() => setIsOpen(!isOpen)}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-black text-white rounded-full shadow-lg flex items-center justify-center z-[80] hover:bg-accent transition-colors group"
-      >
-        <MessageCircle className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-      </motion.button>
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            onClick={() => setIsOpen(true)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="fixed bottom-6 right-6 w-14 h-14 bg-black text-white rounded-full shadow-xl flex items-center justify-center z-[80] hover:bg-accent transition-colors group"
+          >
+            <MessageCircle className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </>
   );
 };

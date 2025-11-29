@@ -33,42 +33,51 @@ export const Portfolio: React.FC = () => {
            </div>
         </motion.div>
 
-        {/* Controls - Adjusted top position to stick perfectly to the header */}
-        <div className="sticky top-[58px] md:top-[68px] bg-white/95 backdrop-blur-sm z-40 py-4 border-b border-gray-100 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all duration-300">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
-            <button 
-              onClick={() => setFilterOpen(!filterOpen)} 
-              className="flex items-center space-x-2 text-sm font-medium border border-gray-200 px-4 py-2 rounded-full hover:border-black transition w-full sm:w-auto justify-center sm:justify-start active:scale-95"
-            >
-              <Filter className="w-4 h-4" />
-              <span>Filtrar</span>
-            </button>
-            <div className="relative group z-30 w-full sm:w-auto">
-              <button className="flex items-center justify-between sm:justify-start space-x-2 text-sm font-medium px-2 w-full sm:w-auto">
-                <span>Ordenar: {sortBy}</span>
-                <ChevronDown className="w-4 h-4" />
+        {/* Controls - Sticky Header Fixed */}
+        <div className="sticky top-[72px] bg-white/95 backdrop-blur-md z-40 py-4 border-b border-gray-100 mb-8 transition-all duration-300 shadow-sm -mx-6 px-6 md:mx-0 md:px-0 md:rounded-lg md:shadow-none">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            
+            {/* Filter & Sort Group */}
+            <div className="flex items-center space-x-2 md:space-x-4 flex-grow md:flex-grow-0">
+              <button 
+                onClick={() => setFilterOpen(!filterOpen)} 
+                className="flex items-center space-x-2 text-sm font-medium border border-gray-200 px-4 py-2 rounded-full hover:border-black transition active:scale-95 bg-white"
+              >
+                <Filter className="w-4 h-4" />
+                <span className="hidden xs:inline">Filtrar</span>
               </button>
-              {/* Dropdown Mock */}
-              <div className="absolute top-full left-0 w-full sm:w-40 bg-white shadow-xl rounded-lg py-2 hidden group-hover:block border border-gray-100">
-                <button onClick={() => setSortBy('Mais recentes')} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Mais recentes</button>
-                <button onClick={() => setSortBy('Relevância')} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Relevância</button>
+              
+              <div className="relative group z-30">
+                <button className="flex items-center space-x-2 text-sm font-medium px-2 py-2 hover:bg-gray-50 rounded-lg transition">
+                  <span className="text-gray-500">Ordenar:</span>
+                  <span className="font-bold text-black">{sortBy}</span>
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                {/* Dropdown Mock */}
+                <div className="absolute top-full left-0 w-48 bg-white shadow-xl rounded-lg py-2 hidden group-hover:block border border-gray-100 animate-fadeIn">
+                  <button onClick={() => setSortBy('Mais recentes')} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Mais recentes</button>
+                  <button onClick={() => setSortBy('Relevância')} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Relevância</button>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className="flex space-x-2 border border-gray-200 rounded-lg p-1 self-end md:self-auto hidden md:flex">
-             <button 
-               onClick={() => setView('grid')}
-               className={`p-2 rounded ${view === 'grid' ? 'bg-gray-100 text-black' : 'text-gray-400'}`}
-             >
-               <Grid className="w-4 h-4" />
-             </button>
-             <button 
-               onClick={() => setView('list')}
-               className={`p-2 rounded ${view === 'list' ? 'bg-gray-100 text-black' : 'text-gray-400'}`}
-             >
-               <List className="w-4 h-4" />
-             </button>
+            
+            {/* View Toggle - Visible on Mobile now */}
+            <div className="flex space-x-1 border border-gray-200 rounded-lg p-1 bg-white">
+               <button 
+                 onClick={() => setView('grid')}
+                 className={`p-2 rounded transition-colors ${view === 'grid' ? 'bg-black text-white' : 'text-gray-400 hover:text-black'}`}
+                 aria-label="Grid View"
+               >
+                 <Grid className="w-4 h-4" />
+               </button>
+               <button 
+                 onClick={() => setView('list')}
+                 className={`p-2 rounded transition-colors ${view === 'list' ? 'bg-black text-white' : 'text-gray-400 hover:text-black'}`}
+                 aria-label="List View"
+               >
+                 <List className="w-4 h-4" />
+               </button>
+            </div>
           </div>
         </div>
 
@@ -81,22 +90,22 @@ export const Portfolio: React.FC = () => {
               exit={{ height: 0, opacity: 0 }}
               className="mb-8 overflow-hidden"
             >
-              <div className="p-6 bg-gray-50 rounded-xl">
+              <div className="p-6 bg-gray-50 rounded-xl border border-gray-100">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div>
                     <h4 className="font-bold text-sm mb-3">Categoria</h4>
                     <div className="space-y-2 text-sm text-secondary">
-                      <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" className="accent-black" /> <span>Residencial</span></label>
-                      <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" className="accent-black" /> <span>Comercial</span></label>
-                      <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" className="accent-black" /> <span>Interiores</span></label>
+                      <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" className="accent-black rounded" /> <span>Residencial</span></label>
+                      <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" className="accent-black rounded" /> <span>Comercial</span></label>
+                      <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" className="accent-black rounded" /> <span>Interiores</span></label>
                     </div>
                   </div>
                   <div>
                     <h4 className="font-bold text-sm mb-3">Ano</h4>
                     <div className="space-y-2 text-sm text-secondary">
-                      <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" className="accent-black" /> <span>2024</span></label>
-                      <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" className="accent-black" /> <span>2023</span></label>
-                      <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" className="accent-black" /> <span>Arquivo</span></label>
+                      <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" className="accent-black rounded" /> <span>2024</span></label>
+                      <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" className="accent-black rounded" /> <span>2023</span></label>
+                      <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" className="accent-black rounded" /> <span>Arquivo</span></label>
                     </div>
                   </div>
                 </div>
