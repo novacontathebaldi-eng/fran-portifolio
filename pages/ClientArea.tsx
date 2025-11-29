@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useProjects } from '../context/ProjectContext';
 import { User, Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save } from 'lucide-react';
@@ -161,8 +160,8 @@ export const ClientArea: React.FC = () => {
                     {currentUser.projects.map(p => (
                       <div key={p.id} className="border border-gray-200 rounded-lg p-4 md:p-6">
                         <div className="flex flex-col md:flex-row gap-6">
-                           <div className="w-full md:w-48 h-48 shrink-0">
-                              <img src={p.image} className="w-full h-full object-cover rounded shadow-sm" />
+                           <div className="w-full md:w-48 h-48 shrink-0 overflow-hidden rounded shadow-sm">
+                              <img src={p.image} className="w-full h-full object-cover transition-transform duration-1000 ease-in-out hover:scale-110" />
                            </div>
                            <div className="flex-grow min-w-0">
                              <div className="flex flex-col md:flex-row justify-between items-start mb-2 gap-2">
@@ -386,13 +385,13 @@ export const ClientArea: React.FC = () => {
                  <h2 className="text-2xl font-serif mb-6">Inspirações Salvas</h2>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {allProjects.slice(0, 2).map(p => (
-                       <div key={p.id} className="group relative">
-                          <img src={p.image} className="w-full h-48 object-cover rounded-lg" />
-                          <div className="mt-2">
+                       <div key={p.id} className="group relative rounded-lg overflow-hidden">
+                          <img src={p.image} className="w-full h-48 object-cover transition-transform duration-1000 ease-in-out group-hover:scale-110" />
+                          <div className="mt-2 relative z-10 bg-white pt-2">
                             <h3 className="font-bold">{p.title}</h3>
                             <p className="text-xs text-gray-500">{p.category}</p>
                           </div>
-                          <button className="absolute top-2 right-2 p-2 bg-white rounded-full text-red-500 shadow-sm hover:scale-110 transition"><Heart className="w-4 h-4 fill-current" /></button>
+                          <button className="absolute top-2 right-2 p-2 bg-white rounded-full text-red-500 shadow-sm hover:scale-110 transition z-20"><Heart className="w-4 h-4 fill-current" /></button>
                        </div>
                     ))}
                  </div>

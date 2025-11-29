@@ -1,4 +1,5 @@
 
+
 import { Project, ServicePackage, User } from './types';
 
 export const MOCK_PROJECTS: Project[] = [
@@ -12,6 +13,14 @@ export const MOCK_PROJECTS: Project[] = [
     image: 'https://picsum.photos/id/10/800/600',
     description: 'Uma abordagem minimalista e moderna para viver em encostas, com foco na luz natural e materiais brutos.',
     images: ['https://picsum.photos/id/11/800/600', 'https://picsum.photos/id/12/800/600'],
+    blocks: [
+      { id: 'b1', type: 'text', content: 'Uma abordagem minimalista e moderna para viver em encostas, com foco na luz natural e materiais brutos.' },
+      { id: 'b2', type: 'image-full', content: 'https://picsum.photos/id/11/1200/800', caption: 'Fachada principal ao entardecer' },
+      { id: 'b3', type: 'heading', content: 'Conceito e Materialidade' },
+      { id: 'b4', type: 'text', content: 'O projeto partiu da premissa de integrar a construção à topografia acidentada do terreno. Utilizamos concreto aparente e madeira carbonizada para criar um contraste tátil.' },
+      { id: 'b5', type: 'image-grid', content: '', items: ['https://picsum.photos/id/12/800/600', 'https://picsum.photos/id/13/800/600'] },
+      { id: 'b6', type: 'quote', content: 'A arquitetura deve desaparecer para que a paisagem possa emergir.' }
+    ]
   },
   {
     id: '2',
@@ -23,6 +32,12 @@ export const MOCK_PROJECTS: Project[] = [
     image: 'https://picsum.photos/id/14/800/600',
     description: 'Conversão de um antigo armazém industrial em um espaço de convivência familiar acolhedor.',
     images: ['https://picsum.photos/id/15/800/600', 'https://picsum.photos/id/16/800/600'],
+    blocks: [
+      { id: 'b1', type: 'text', content: 'Conversão de um antigo armazém industrial em um espaço de convivência familiar acolhedor. O desafio foi manter a brutalidade industrial trazendo conforto térmico e acústico.' },
+      { id: 'b2', type: 'heading', content: 'Integração de Espaços' },
+      { id: 'b3', type: 'image-full', content: 'https://picsum.photos/id/15/1200/800' },
+      { id: 'b4', type: 'text', content: 'Removemos todas as paredes divisórias do térreo, criando um fluxo contínuo entre cozinha, estar e jantar.' }
+    ]
   },
   {
     id: '3',
@@ -34,6 +49,11 @@ export const MOCK_PROJECTS: Project[] = [
     image: 'https://picsum.photos/id/20/800/600',
     description: 'Espaços de escritório sustentáveis projetados para o futuro do trabalho híbrido.',
     images: ['https://picsum.photos/id/24/800/600', 'https://picsum.photos/id/26/800/600'],
+    blocks: [
+      { id: 'b1', type: 'heading', content: 'O Futuro do Trabalho' },
+      { id: 'b2', type: 'text', content: 'Espaços de escritório sustentáveis projetados para o futuro do trabalho híbrido. Foco total em áreas de descompressão e colaboração.' },
+      { id: 'b3', type: 'image-full', content: 'https://picsum.photos/id/24/1200/800' }
+    ]
   },
   {
     id: '4',
@@ -45,6 +65,7 @@ export const MOCK_PROJECTS: Project[] = [
     image: 'https://picsum.photos/id/28/800/600',
     description: 'A integração com a natureza foi o principal impulsionador para este refúgio isolado na montanha.',
     images: ['https://picsum.photos/id/29/800/600', 'https://picsum.photos/id/30/800/600'],
+    blocks: []
   },
   {
     id: '5',
@@ -56,6 +77,7 @@ export const MOCK_PROJECTS: Project[] = [
     image: 'https://picsum.photos/id/42/800/600',
     description: 'Maximizando o espaço em um micro-apartamento através de soluções inteligentes de marcenaria.',
     images: ['https://picsum.photos/id/43/800/600', 'https://picsum.photos/id/44/800/600'],
+    blocks: []
   }
 ];
 

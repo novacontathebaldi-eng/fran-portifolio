@@ -183,6 +183,12 @@ export const ProjectDetails: React.FC = () => {
                {/* Dynamic Blocks */}
                {project.blocks?.map((block) => (
                  <div key={block.id}>
+                   {block.type === 'heading' && (
+                     <h2 className="text-3xl font-serif font-bold mt-12 mb-6 text-black border-l-4 border-black pl-4">
+                       {block.content}
+                     </h2>
+                   )}
+                   
                    {block.type === 'text' && (
                      <div className="prose prose-lg text-secondary max-w-none">
                        <p className="leading-loose">{block.content}</p>
@@ -197,7 +203,13 @@ export const ProjectDetails: React.FC = () => {
 
                    {block.type === 'image-full' && (
                      <div className="w-full">
-                       <img src={block.content} className="w-full h-auto rounded-sm shadow-sm" alt="Project detail" />
+                       <div className="overflow-hidden rounded-sm shadow-sm">
+                         <img 
+                           src={block.content} 
+                           className="w-full h-auto transition-transform duration-1000 ease-in-out hover:scale-105" 
+                           alt="Project detail" 
+                         />
+                       </div>
                        {block.caption && <p className="text-xs text-gray-400 mt-2 text-center">{block.caption}</p>}
                      </div>
                    )}
@@ -205,7 +217,13 @@ export const ProjectDetails: React.FC = () => {
                    {block.type === 'image-grid' && (
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {block.items?.map((url, i) => (
-                           <img key={i} src={url} className="w-full h-64 md:h-96 object-cover rounded-sm shadow-sm" alt="Grid detail" />
+                           <div key={i} className="overflow-hidden rounded-sm shadow-sm">
+                             <img 
+                               src={url} 
+                               className="w-full h-64 md:h-96 object-cover transition-transform duration-1000 ease-in-out hover:scale-110" 
+                               alt="Grid detail" 
+                             />
+                           </div>
                         ))}
                      </div>
                    )}
@@ -214,22 +232,28 @@ export const ProjectDetails: React.FC = () => {
              </motion.div>
 
              {/* Gallery (Legacy Support) */}
-             <div className="mt-20 space-y-8 md:space-y-12">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400">Galeria Completa</h3>
-                {project.images.map((img, idx) => (
-                  <motion.div 
-                    key={idx} 
-                    initial={{ opacity: 0, y: 50 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: idx * 0.1 }}
-                    className="relative group overflow-hidden rounded-sm shadow-sm cursor-pointer"
-                    onClick={() => openLightbox(idx)}
-                  >
-                    <img src={img} className="w-full h-auto object-cover transition duration-1000 group-hover:scale-105" loading="lazy" />
-                  </motion.div>
-                ))}
-             </div>
+             {(!project.blocks || project.blocks.length === 0) && (
+               <div className="mt-20 space-y-8 md:space-y-12">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400">Galeria Completa</h3>
+                  {project.images.map((img, idx) => (
+                    <motion.div 
+                      key={idx} 
+                      initial={{ opacity: 0, y: 50 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.6, delay: idx * 0.1 }}
+                      className="relative group overflow-hidden rounded-sm shadow-sm cursor-pointer"
+                      onClick={() => openLightbox(idx)}
+                    >
+                      <img 
+                        src={img} 
+                        className="w-full h-auto object-cover transition-transform duration-1000 ease-in-out group-hover:scale-105" 
+                        loading="lazy" 
+                      />
+                    </motion.div>
+                  ))}
+               </div>
+             )}
           </div>
         </div>
       </div>

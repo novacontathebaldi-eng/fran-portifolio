@@ -295,13 +295,13 @@ export const AdminDashboard: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pt-20 md:pt-0 bg-gray-50 text-black">
+      <main className="flex-1 overflow-y-auto pt-20 md:pt-0 bg-gray-50 text-gray-900">
         <div className="p-6 md:p-10 max-w-7xl mx-auto min-h-screen">
           
           {/* Dashboard View */}
           {activeTab === 'dashboard' && (
             <div className="animate-fadeIn">
-              <h2 className="text-3xl font-serif font-bold mb-8">Bem-vinda, Fran.</h2>
+              <h2 className="text-3xl font-serif font-bold mb-8 text-black">Bem-vinda, Fran.</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -309,8 +309,8 @@ export const AdminDashboard: React.FC = () => {
                     <div className="p-3 bg-black text-white rounded-xl"><FolderOpen className="w-6 h-6" /></div>
                     <span className="text-xs font-bold bg-green-100 text-green-800 px-2 py-1 rounded">Ativos</span>
                   </div>
-                  <h3 className="text-4xl font-serif font-bold mb-1">{projects.length}</h3>
-                  <p className="text-gray-400 text-sm">Projetos Publicados</p>
+                  <h3 className="text-4xl font-serif font-bold mb-1 text-black">{projects.length}</h3>
+                  <p className="text-gray-500 text-sm">Projetos Publicados</p>
                 </div>
                 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -318,28 +318,28 @@ export const AdminDashboard: React.FC = () => {
                     <div className="p-3 bg-accent text-black rounded-xl"><MessageSquare className="w-6 h-6" /></div>
                     {unreadNotesCount > 0 && <span className="text-xs font-bold bg-red-100 text-red-800 px-2 py-1 rounded">Novas</span>}
                   </div>
-                  <h3 className="text-4xl font-serif font-bold mb-1">{adminNotes.length}</h3>
-                  <p className="text-gray-400 text-sm">Mensagens</p>
+                  <h3 className="text-4xl font-serif font-bold mb-1 text-black">{adminNotes.length}</h3>
+                  <p className="text-gray-500 text-sm">Mensagens</p>
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                   <div className="flex justify-between items-start mb-4">
                     <div className="p-3 bg-gray-100 text-black rounded-xl"><Users className="w-6 h-6" /></div>
                   </div>
-                  <h3 className="text-4xl font-serif font-bold mb-1">{users.filter(u => u.role === 'client').length}</h3>
-                  <p className="text-gray-400 text-sm">Clientes Registrados</p>
+                  <h3 className="text-4xl font-serif font-bold mb-1 text-black">{users.filter(u => u.role === 'client').length}</h3>
+                  <p className="text-gray-500 text-sm">Clientes Registrados</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                  <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                    <h3 className="font-bold text-lg mb-6 flex items-center gap-2"><FolderOpen className="w-5 h-5" /> Projetos Recentes</h3>
+                    <h3 className="font-bold text-lg mb-6 flex items-center gap-2 text-black"><FolderOpen className="w-5 h-5" /> Projetos Recentes</h3>
                     <div className="space-y-4">
                       {projects.slice(0, 3).map(p => (
                         <div key={p.id} className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition">
                           <img src={p.image} className="w-16 h-16 rounded object-cover" />
                           <div className="flex-grow">
-                            <h4 className="font-bold font-serif">{p.title}</h4>
+                            <h4 className="font-bold font-serif text-black">{p.title}</h4>
                             <p className="text-xs text-gray-500">{p.category} • {p.year}</p>
                           </div>
                           <Link to={`/admin/project/edit/${p.id}`} className="p-2 text-gray-400 hover:text-black"><Edit2 className="w-4 h-4" /></Link>
@@ -356,7 +356,7 @@ export const AdminDashboard: React.FC = () => {
           {activeTab === 'projects' && (
             <div className="animate-fadeIn">
               <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-serif font-bold">Projetos</h2>
+                <h2 className="text-3xl font-serif font-bold text-black">Projetos</h2>
                 <Link to="/admin/project/new" className="bg-black text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:bg-accent hover:text-black transition shadow-lg">
                   <Plus className="w-4 h-4" />
                   <span>Novo Projeto</span>
@@ -367,10 +367,10 @@ export const AdminDashboard: React.FC = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-100">
                     <tr>
-                      <th className="text-left p-6 text-xs font-bold uppercase text-gray-500">Projeto</th>
-                      <th className="text-left p-6 text-xs font-bold uppercase text-gray-500 hidden md:table-cell">Categoria</th>
-                      <th className="text-left p-6 text-xs font-bold uppercase text-gray-500 hidden md:table-cell">Local</th>
-                      <th className="text-right p-6 text-xs font-bold uppercase text-gray-500">Ações</th>
+                      <th className="text-left p-6 text-xs font-bold uppercase text-gray-600">Projeto</th>
+                      <th className="text-left p-6 text-xs font-bold uppercase text-gray-600 hidden md:table-cell">Categoria</th>
+                      <th className="text-left p-6 text-xs font-bold uppercase text-gray-600 hidden md:table-cell">Local</th>
+                      <th className="text-right p-6 text-xs font-bold uppercase text-gray-600">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -379,11 +379,11 @@ export const AdminDashboard: React.FC = () => {
                         <td className="p-6">
                           <div className="flex items-center space-x-4">
                             <img src={project.image} alt="" className="w-12 h-12 rounded object-cover" />
-                            <span className="font-bold font-serif">{project.title}</span>
+                            <span className="font-bold font-serif text-gray-900">{project.title}</span>
                           </div>
                         </td>
-                        <td className="p-6 text-sm text-gray-500 hidden md:table-cell">{project.category}</td>
-                        <td className="p-6 text-sm text-gray-500 hidden md:table-cell">{project.location}</td>
+                        <td className="p-6 text-sm text-gray-600 hidden md:table-cell">{project.category}</td>
+                        <td className="p-6 text-sm text-gray-600 hidden md:table-cell">{project.location}</td>
                         <td className="p-6 text-right">
                           <div className="flex justify-end space-x-2">
                             <Link to={`/admin/project/edit/${project.id}`} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"><Edit2 className="w-4 h-4" /></Link>
@@ -403,7 +403,7 @@ export const AdminDashboard: React.FC = () => {
              <div className="animate-fadeIn">
                {!selectedClient ? (
                  <>
-                   <h2 className="text-3xl font-serif font-bold mb-8">Clientes Cadastrados</h2>
+                   <h2 className="text-3xl font-serif font-bold mb-8 text-black">Clientes Cadastrados</h2>
                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {users.filter(u => u.role === 'client').map(client => (
                         <div key={client.id} onClick={() => setSelectedClient(client)} className="bg-white p-6 rounded-2xl border border-gray-100 hover:shadow-md transition cursor-pointer group">
@@ -412,7 +412,7 @@ export const AdminDashboard: React.FC = () => {
                                 {client.name.charAt(0)}
                               </div>
                               <div>
-                                <h3 className="font-bold text-lg group-hover:text-accent transition">{client.name}</h3>
+                                <h3 className="font-bold text-lg text-gray-900 group-hover:text-accent transition">{client.name}</h3>
                                 <p className="text-xs text-gray-500">{client.email}</p>
                               </div>
                            </div>
@@ -430,9 +430,9 @@ export const AdminDashboard: React.FC = () => {
                ) : (
                  <div className="space-y-8">
                     <div className="flex items-center gap-4 mb-6">
-                       <button onClick={() => { setSelectedClient(null); setCurrentAdminFolderId(null); }} className="p-2 hover:bg-gray-200 rounded-full transition"><ArrowLeft className="w-5 h-5" /></button>
+                       <button onClick={() => { setSelectedClient(null); setCurrentAdminFolderId(null); }} className="p-2 hover:bg-gray-200 rounded-full transition text-black"><ArrowLeft className="w-5 h-5" /></button>
                        <div>
-                         <h2 className="text-2xl font-serif font-bold">{selectedClient.name}</h2>
+                         <h2 className="text-2xl font-serif font-bold text-black">{selectedClient.name}</h2>
                          <p className="text-sm text-gray-500">Gerenciamento de Arquivos e Dados</p>
                        </div>
                     </div>
@@ -450,7 +450,7 @@ export const AdminDashboard: React.FC = () => {
                                <div className="p-2 bg-gray-50 rounded border border-gray-200 mb-2 animate-fadeIn">
                                   <input 
                                     autoFocus
-                                    className="w-full text-sm p-1 border border-gray-300 rounded mb-2"
+                                    className="w-full text-sm p-1 border border-gray-300 rounded mb-2 bg-white text-black"
                                     placeholder="Nome da pasta..."
                                     value={newFolderName}
                                     onChange={e => setNewFolderName(e.target.value)}
@@ -477,7 +477,7 @@ export const AdminDashboard: React.FC = () => {
                                            <input 
                                               value={editFolderName}
                                               onChange={e => setEditFolderName(e.target.value)}
-                                              className="w-full text-xs text-black border p-1 rounded"
+                                              className="w-full text-xs text-black border p-1 rounded bg-white"
                                               autoFocus
                                               onKeyDown={e => e.key === 'Enter' && handleRenameFolder()}
                                            />
@@ -533,7 +533,7 @@ export const AdminDashboard: React.FC = () => {
                                              <div className="aspect-square bg-gray-200 rounded mb-2 flex items-center justify-center text-gray-400">
                                                 {file.type === 'image' ? <ImageIcon className="w-8 h-8" /> : <FileText className="w-8 h-8" />}
                                              </div>
-                                             <p className="font-bold text-xs truncate" title={file.name}>{file.name}</p>
+                                             <p className="font-bold text-xs truncate text-gray-800" title={file.name}>{file.name}</p>
                                              <p className="text--[10px] text-gray-400">{file.size}</p>
                                              <a href={file.url} download target="_blank" className="mt-2 block text-center text-[10px] font-bold text-accent hover:underline">Baixar</a>
                                           </div>
@@ -548,11 +548,11 @@ export const AdminDashboard: React.FC = () => {
                     
                     {/* Memories Section */}
                     <div className="mt-8 bg-white p-6 rounded-xl border border-gray-200">
-                       <h3 className="font-bold mb-4 flex items-center gap-2"><Brain className="w-5 h-5" /> Memórias & Contexto IA</h3>
+                       <h3 className="font-bold mb-4 flex items-center gap-2 text-black"><Brain className="w-5 h-5" /> Memórias & Contexto IA</h3>
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {selectedClient.memories && selectedClient.memories.length > 0 ? (
                              selectedClient.memories.map(mem => (
-                                <div key={mem.id} className="bg-gray-50 p-4 rounded-lg flex justify-between items-start group">
+                                <div key={mem.id} className="bg-gray-50 p-4 rounded-lg flex justify-between items-start group border border-gray-100">
                                    <div>
                                       <span className="text-[10px] font-bold uppercase tracking-wider text-accent block mb-1">{mem.topic}</span>
                                       <p className="text-sm text-gray-700">{mem.content}</p>
@@ -574,13 +574,13 @@ export const AdminDashboard: React.FC = () => {
           {/* Messages View */}
           {activeTab === 'messages' && (
             <div className="animate-fadeIn">
-              <h2 className="text-3xl font-serif font-bold mb-8">Central de Recados & IA</h2>
+              <h2 className="text-3xl font-serif font-bold mb-8 text-black">Central de Recados & IA</h2>
               
               <div className="grid grid-cols-1 gap-6">
                 {/* Admin Notes */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                    <div className="p-6 border-b border-gray-100 bg-gray-50">
-                      <h3 className="font-bold text-lg flex items-center gap-2"><MessageSquare className="w-5 h-5" /> Recados do Chatbot</h3>
+                      <h3 className="font-bold text-lg flex items-center gap-2 text-black"><MessageSquare className="w-5 h-5" /> Recados do Chatbot</h3>
                    </div>
                    <div className="divide-y divide-gray-100">
                       {adminNotes.length === 0 ? (
@@ -591,7 +591,7 @@ export const AdminDashboard: React.FC = () => {
                              <div className="flex-grow">
                                 <div className="flex justify-between items-start mb-2">
                                    <div>
-                                     <span className="font-bold text-lg">{note.userName}</span>
+                                     <span className="font-bold text-lg text-black">{note.userName}</span>
                                      <span className="text-sm text-gray-500 ml-2">({note.userContact})</span>
                                    </div>
                                    <span className="text-xs text-gray-400 bg-white border border-gray-200 px-2 py-1 rounded">{new Date(note.date).toLocaleDateString()}</span>
@@ -651,22 +651,22 @@ export const AdminDashboard: React.FC = () => {
           {/* Content Editor View */}
           {activeTab === 'content' && (
             <div className="animate-fadeIn max-w-4xl">
-              <h2 className="text-3xl font-serif font-bold mb-8">Conteúdo do Site</h2>
+              <h2 className="text-3xl font-serif font-bold mb-8 text-black">Conteúdo do Site</h2>
               
               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
-                 <h3 className="font-bold text-xl mb-6">Página Sobre (Hero & Bio)</h3>
+                 <h3 className="font-bold text-xl mb-6 text-black">Página Sobre (Hero & Bio)</h3>
                  <div className="space-y-6">
                     <div>
                       <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Subtítulo Hero</label>
-                      <input name="heroSubtitle" value={contentForm.about.heroSubtitle} onChange={handleContentChange} className="w-full border p-3 rounded" />
+                      <input name="heroSubtitle" value={contentForm.about.heroSubtitle} onChange={handleContentChange} className="w-full border p-3 rounded bg-white text-black" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Título Hero</label>
-                      <input name="heroTitle" value={contentForm.about.heroTitle} onChange={handleContentChange} className="w-full border p-3 rounded" />
+                      <input name="heroTitle" value={contentForm.about.heroTitle} onChange={handleContentChange} className="w-full border p-3 rounded bg-white text-black" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Bio Principal</label>
-                      <textarea name="bio" value={contentForm.about.bio} onChange={handleContentChange} className="w-full border p-3 rounded h-40" />
+                      <textarea name="bio" value={contentForm.about.bio} onChange={handleContentChange} className="w-full border p-3 rounded h-40 bg-white text-black" />
                     </div>
                     
                     <div className="grid grid-cols-2 gap-6">
@@ -674,7 +674,7 @@ export const AdminDashboard: React.FC = () => {
                           <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Imagem Hero</label>
                           <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:bg-gray-50 transition cursor-pointer relative">
                              <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleImageUpload(e, 'heroImage')} />
-                             {uploading ? <span className="text-xs">Carregando...</span> : <span className="text-xs text-gray-500">Clique para alterar</span>}
+                             {uploading ? <span className="text-xs text-black">Carregando...</span> : <span className="text-xs text-gray-500">Clique para alterar</span>}
                              <img src={contentForm.about.heroImage} className="mt-2 h-20 w-full object-cover rounded" />
                           </div>
                        </div>
@@ -682,7 +682,7 @@ export const AdminDashboard: React.FC = () => {
                           <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Foto de Perfil</label>
                            <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:bg-gray-50 transition cursor-pointer relative">
                              <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleImageUpload(e, 'profileImage')} />
-                             {uploading ? <span className="text-xs">Carregando...</span> : <span className="text-xs text-gray-500">Clique para alterar</span>}
+                             {uploading ? <span className="text-xs text-black">Carregando...</span> : <span className="text-xs text-gray-500">Clique para alterar</span>}
                              <img src={contentForm.about.profileImage} className="mt-2 h-20 w-full object-contain rounded bg-gray-100" />
                           </div>
                        </div>
@@ -692,15 +692,15 @@ export const AdminDashboard: React.FC = () => {
 
               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
                  <div className="flex justify-between items-center mb-6">
-                   <h3 className="font-bold text-xl">Estatísticas</h3>
+                   <h3 className="font-bold text-xl text-black">Estatísticas</h3>
                    <button onClick={addStat} className="text-xs bg-black text-white px-3 py-1 rounded-full"><Plus className="w-3 h-3 inline mr-1" /> Adicionar</button>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {contentForm.about.stats.map(stat => (
                       <div key={stat.id} className="p-4 border border-gray-200 rounded-lg relative group">
                          <button onClick={() => removeStat(stat.id)} className="absolute top-2 right-2 text-red-400 opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
-                         <input value={stat.value} onChange={(e) => updateStat(stat.id, 'value', e.target.value)} className="font-serif text-2xl font-bold w-full border-none p-0 focus:ring-0 mb-1" placeholder="Valor" />
-                         <input value={stat.label} onChange={(e) => updateStat(stat.id, 'label', e.target.value)} className="text-xs uppercase text-gray-500 w-full border-none p-0 focus:ring-0" placeholder="Rótulo" />
+                         <input value={stat.value} onChange={(e) => updateStat(stat.id, 'value', e.target.value)} className="font-serif text-2xl font-bold w-full border-none p-0 focus:ring-0 mb-1 bg-white text-black" placeholder="Valor" />
+                         <input value={stat.label} onChange={(e) => updateStat(stat.id, 'label', e.target.value)} className="text-xs uppercase text-gray-500 w-full border-none p-0 focus:ring-0 bg-white" placeholder="Rótulo" />
                       </div>
                     ))}
                  </div>
@@ -708,14 +708,14 @@ export const AdminDashboard: React.FC = () => {
 
                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
                  <div className="flex justify-between items-center mb-6">
-                   <h3 className="font-bold text-xl">Pilares</h3>
+                   <h3 className="font-bold text-xl text-black">Pilares</h3>
                    <button onClick={addPillar} className="text-xs bg-black text-white px-3 py-1 rounded-full"><Plus className="w-3 h-3 inline mr-1" /> Adicionar</button>
                  </div>
                  <div className="space-y-4">
                     {contentForm.about.pillars.map(pillar => (
                       <div key={pillar.id} className="p-4 border border-gray-200 rounded-lg relative group bg-gray-50">
                          <button onClick={() => removePillar(pillar.id)} className="absolute top-2 right-2 text-red-400 opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
-                         <input value={pillar.title} onChange={(e) => updatePillar(pillar.id, 'title', e.target.value)} className="font-bold w-full bg-transparent border-none p-0 focus:ring-0 mb-2" placeholder="Título do Pilar" />
+                         <input value={pillar.title} onChange={(e) => updatePillar(pillar.id, 'title', e.target.value)} className="font-bold w-full bg-transparent border-none p-0 focus:ring-0 mb-2 text-black" placeholder="Título do Pilar" />
                          <textarea value={pillar.description} onChange={(e) => updatePillar(pillar.id, 'description', e.target.value)} className="text-sm text-gray-600 w-full bg-transparent border-none p-0 focus:ring-0 resize-none" placeholder="Descrição..." />
                       </div>
                     ))}
@@ -733,13 +733,13 @@ export const AdminDashboard: React.FC = () => {
           {/* Settings View */}
           {activeTab === 'settings' && (
             <div className="animate-fadeIn max-w-2xl">
-              <h2 className="text-3xl font-serif font-bold mb-8">Configurações Globais</h2>
+              <h2 className="text-3xl font-serif font-bold mb-8 text-black">Configurações Globais</h2>
 
               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-8">
                  
                  {/* AI Configuration */}
                  <div>
-                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Bot className="w-5 h-5" /> Inteligência Artificial (Chatbot)</h3>
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black"><Bot className="w-5 h-5" /> Inteligência Artificial (Chatbot)</h3>
                     
                     <div className="space-y-4">
                        <div>
@@ -747,7 +747,7 @@ export const AdminDashboard: React.FC = () => {
                           <select 
                             value={settingsForm.aiConfig.model} 
                             onChange={(e) => handleSettingsChange('aiConfig.model', e.target.value)} 
-                            className="w-full border p-3 rounded bg-gray-50 focus:outline-none focus:border-black"
+                            className="w-full border p-3 rounded bg-white text-black focus:outline-none focus:border-black"
                           >
                              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Padrão)</option>
                              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Avançado)</option>
@@ -761,7 +761,7 @@ export const AdminDashboard: React.FC = () => {
                           <textarea 
                              value={settingsForm.aiConfig.defaultGreeting}
                              onChange={(e) => handleSettingsChange('aiConfig.defaultGreeting', e.target.value)}
-                             className="w-full border p-3 rounded h-24 text-sm focus:outline-none focus:border-black"
+                             className="w-full border p-3 rounded h-24 text-sm focus:outline-none focus:border-black bg-white text-black"
                              placeholder="Ex: Olá {name}, como posso ajudar?"
                           />
                           <p className="text-xs text-gray-400 mt-1">Dica: Use <strong>{'{name}'}</strong> para inserir o nome do usuário automaticamente.</p>
@@ -779,14 +779,14 @@ export const AdminDashboard: React.FC = () => {
                                onChange={(e) => handleSettingsChange('aiConfig.temperature', parseFloat(e.target.value))}
                                className="w-full accent-black"
                              />
-                             <span className="font-mono font-bold w-12 text-right">{settingsForm.aiConfig.temperature || 0.7}</span>
+                             <span className="font-mono font-bold w-12 text-right text-black">{settingsForm.aiConfig.temperature || 0.7}</span>
                           </div>
                           <p className="text-xs text-gray-400 mt-1">Valores mais altos tornam o bot mais criativo, valores baixos mais preciso.</p>
                        </div>
 
                        <div className="border-t border-gray-100 pt-4 mt-4">
                           <div className="flex items-center justify-between mb-4">
-                             <label className="text-sm font-bold">Prompt do Sistema Personalizado</label>
+                             <label className="text-sm font-bold text-black">Prompt do Sistema Personalizado</label>
                              <div className="flex items-center gap-2">
                                 <span className={`text-xs font-bold ${settingsForm.aiConfig.useCustomSystemInstruction ? 'text-black' : 'text-gray-300'}`}>
                                    {settingsForm.aiConfig.useCustomSystemInstruction ? 'ATIVADO' : 'DESATIVADO'}
@@ -809,7 +809,7 @@ export const AdminDashboard: React.FC = () => {
                              <textarea 
                                 value={settingsForm.aiConfig.systemInstruction} 
                                 onChange={(e) => handleSettingsChange('aiConfig.systemInstruction', e.target.value)}
-                                className="w-full border p-3 rounded h-48 font-mono text-xs leading-relaxed focus:outline-none focus:border-black"
+                                className="w-full border p-3 rounded h-48 font-mono text-xs leading-relaxed focus:outline-none focus:border-black bg-white text-black"
                                 placeholder="Descreva a personalidade e regras do bot aqui..."
                                 disabled={!settingsForm.aiConfig.useCustomSystemInstruction}
                              />
@@ -820,10 +820,10 @@ export const AdminDashboard: React.FC = () => {
                  </div>
 
                  <div className="border-t border-gray-100 pt-8">
-                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><ShoppingBag className="w-5 h-5" /> E-commerce & Serviços</h3>
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black"><ShoppingBag className="w-5 h-5" /> E-commerce & Serviços</h3>
                     <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
                        <div>
-                          <span className="font-bold block">Habilitar Loja/Orçamentos</span>
+                          <span className="font-bold block text-black">Habilitar Loja/Orçamentos</span>
                           <span className="text-xs text-gray-500">Permite que clientes solicitem orçamentos pelo site.</span>
                        </div>
                        <input 

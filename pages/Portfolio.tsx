@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useProjects } from '../context/ProjectContext';
@@ -34,7 +33,6 @@ export const Portfolio: React.FC = () => {
         </motion.div>
 
         {/* Controls - Sticky Header Fixed */}
-        {/* Mobile: Full width (-mx-6), Rectangular (rounded-none), Border-y. Desktop: Rounded, Shadow-none, No Borders */}
         <div className="sticky top-[68px] md:top-[88px] bg-white/95 backdrop-blur-md z-40 py-3 md:py-4 -mx-6 px-6 md:mx-0 md:px-0 border-y border-gray-100 md:border-0 md:rounded-lg transition-all duration-300 shadow-sm md:shadow-none">
           <div className="flex flex-wrap items-center justify-between gap-2 md:gap-4">
             
@@ -127,7 +125,7 @@ export const Portfolio: React.FC = () => {
                   <img 
                     src={project.image} 
                     alt={project.title} 
-                    className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-1000 ease-in-out group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition duration-500" />
                 </div>
@@ -147,8 +145,8 @@ export const Portfolio: React.FC = () => {
              {sortedProjects.map((project) => (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={project.id}>
                 <Link to={`/project/${project.id}`} className="group flex flex-col md:flex-row gap-8 items-center border-b border-gray-100 pb-12">
-                  <div className="w-full md:w-1/3 aspect-[4/3] overflow-hidden bg-gray-200">
-                    <img src={project.image} className="w-full h-full object-cover transition duration-700 group-hover:scale-105" />
+                  <div className="w-full md:w-1/3 aspect-[4/3] overflow-hidden bg-gray-200 rounded-sm">
+                    <img src={project.image} className="w-full h-full object-cover transition-transform duration-1000 ease-in-out group-hover:scale-105" />
                   </div>
                   <div className="w-full md:w-2/3">
                     <span className="text-xs text-accent uppercase tracking-wider">{project.category}</span>

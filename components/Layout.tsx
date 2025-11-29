@@ -211,8 +211,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </nav>
 
       {/* Mobile Menu Overlay */}
+      {/* FIXED: Z-Index lowered to 45 so it sits BELOW the Nav (z-50) but ABOVE content. 
+          This ensures the close button inside Nav is clickable and visible. */}
       {isMenuOpen && (
-        <div className="fixed inset-0 bg-white/40 backdrop-blur-xl z-[55] flex flex-col pt-24 pb-8 px-6 animate-fadeIn text-primary md:hidden overflow-y-auto pointer-events-auto">
+        <div className="fixed inset-0 bg-white/40 backdrop-blur-xl z-[45] flex flex-col pt-24 pb-8 px-6 animate-fadeIn text-primary md:hidden overflow-y-auto pointer-events-auto">
           <div className="flex flex-col space-y-6 flex-grow">
             <Link to="/" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Início</Link>
             <Link to="/about" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Sobre</Link>

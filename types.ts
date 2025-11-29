@@ -1,5 +1,5 @@
 
-export type BlockType = 'text' | 'image-full' | 'image-grid' | 'quote';
+export type BlockType = 'text' | 'heading' | 'image-full' | 'image-grid' | 'quote';
 
 export interface ContentBlock {
   id: string;

@@ -100,7 +100,7 @@ export const Home: React.FC = () => {
                 <img 
                   src={project.image} 
                   alt={project.title} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-1000 ease-out"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-in-out"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition duration-500" />
               </div>
@@ -119,10 +119,16 @@ export const Home: React.FC = () => {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="w-full md:w-1/2 relative"
+            className="w-full md:w-1/2 relative group"
           >
              <div className="absolute -top-6 -left-6 w-full h-full border-2 border-accent z-0 hidden md:block"></div>
-             <img src="https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/img-sobre-home.png" alt="About" className="w-full h-auto shadow-2xl relative z-10" />
+             <div className="relative z-10 overflow-hidden shadow-2xl">
+               <img 
+                 src="https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/img-sobre-home.png" 
+                 alt="About" 
+                 className="w-full h-auto transition-transform duration-1000 ease-in-out hover:scale-105" 
+               />
+             </div>
           </motion.div>
           <motion.div 
             initial={{ opacity: 0, x: 50 }}
