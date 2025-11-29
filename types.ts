@@ -111,6 +111,7 @@ export interface GlobalSettings {
   enableShop: boolean;
   aiConfig: {
     model: string;
+    useCustomSystemInstruction: boolean; // New Toggle
     systemInstruction: string;
     temperature: number;
   };
@@ -126,6 +127,14 @@ export interface AdminNote {
   source: 'chatbot' | 'contact_form';
 }
 
+export interface AiFeedbackItem {
+  id: string;
+  userMessage: string;
+  aiResponse: string;
+  type: 'like' | 'dislike';
+  createdAt: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'model';
@@ -138,4 +147,5 @@ export interface ChatMessage {
     type: 'navigate' | 'saveNote';
     payload: any;
   }[];
+  feedback?: 'like' | 'dislike'; // UI State
 }

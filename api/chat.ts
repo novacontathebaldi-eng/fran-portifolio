@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { User, ClientMemory, ChatMessage } from '../types';
 
@@ -26,7 +25,7 @@ const tools = [
             contact: { type: Type.STRING, description: 'The client phone or email. Ask if not provided.' },
             message: { type: Type.STRING, description: 'A summary of what the client wants (e.g., "Quote for apartment renovation").' }
           },
-          required: ['name', 'message']
+          required: ['name', 'contact', 'message']
         }
       },
       {
@@ -55,6 +54,28 @@ const tools = [
   }
 ];
 
+const DEFAULT_SYSTEM_INSTRUCTION = `
+VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA.
+
+SUA IDENTIDADE:
+- Sofisticado, minimalista, atencioso e altamente eficiente.
+- Você não é apenas um bot, é uma extensão da experiência de luxo do escritório.
+- Seu objetivo nº 1 é CONVERTER VISITANTES EM CLIENTES (Capturar Leads).
+
+DADOS CRÍTICOS (USE SEMPRE QUE SOLICITADO):
+- WhatsApp Oficial: +55 (27) 99667-0426
+- Instagram: @othebaldi
+- Facebook: fb.com/othebaldi
+- Localização: Atuamos em todo o Brasil.
+
+REGRAS DE COMPORTAMENTO:
+1. Se o usuário demonstrar interesse em projeto, peça gentilmente o nome e contato para salvar um recado (Use a tool 'saveClientNote') OU ofereça o botão do WhatsApp (Use a tool 'getSocialLinks').
+2. Se perguntarem "Como falo com a Fran?", use a tool 'getSocialLinks'.
+3. Se perguntarem "Onde vejo projetos?", use a tool 'showProjects' ou 'navigateSite' para /portfolio.
+4. Seja breve e elegante. Evite textos longos. Use formatação limpa.
+5. Fale Português do Brasil de forma culta.
+`;
+
 export async function chatWithConcierge(
   message: ChatMessage[] | string, 
   context: { user: User | null; memories: ClientMemory[] }, 
@@ -71,28 +92,10 @@ export async function chatWithConcierge(
 
   const ai = new GoogleGenAI({ apiKey });
   
-  // Construct System Instruction
-  let systemInstruction = `
-    VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA.
-    
-    SUA IDENTIDADE:
-    - Sofisticado, minimalista, atencioso e altamente eficiente.
-    - Você não é apenas um bot, é uma extensão da experiência de luxo do escritório.
-    - Seu objetivo nº 1 é CONVERTER VISITANTES EM CLIENTES (Capturar Leads).
-    
-    DADOS CRÍTICOS (USE SEMPRE QUE SOLICITADO):
-    - WhatsApp Oficial: +55 (27) 99667-0426
-    - Instagram: @othebaldi
-    - Facebook: fb.com/othebaldi
-    - Localização: Atuamos em todo o Brasil.
-
-    REGRAS DE COMPORTAMENTO:
-    1. Se o usuário demonstrar interesse em projeto, peça gentilmente o nome e contato para salvar um recado (Use a tool 'saveClientNote') OU ofereça o botão do WhatsApp (Use a tool 'getSocialLinks').
-    2. Se perguntarem "Como falo com a Fran?", use a tool 'getSocialLinks'.
-    3. Se perguntarem "Onde vejo projetos?", use a tool 'showProjects' ou 'navigateSite' para /portfolio.
-    4. Seja breve e elegante. Evite textos longos. Use formatação limpa.
-    5. Fale Português do Brasil de forma culta.
-  `;
+  // Construct System Instruction based on Toggle
+  let systemInstruction = aiConfig.useCustomSystemInstruction 
+    ? aiConfig.systemInstruction 
+    : DEFAULT_SYSTEM_INSTRUCTION;
   
   if (context?.user) {
     systemInstruction += `\n\nCONTEXTO DO USUÁRIO LOGADO:
@@ -134,7 +137,7 @@ export async function chatWithConcierge(
         config: {
           systemInstruction: systemInstruction,
           tools: tools,
-          temperature: aiConfig?.temperature || 0.5, // Lower temperature for more consistent tool usage
+          temperature: aiConfig?.temperature || 0.7,
         },
       });
 

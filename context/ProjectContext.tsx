@@ -1,5 +1,6 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ChatSession, ClientFolder, ClientFile } from '../types';
+import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ChatSession, ClientFolder, ClientFile, AiFeedbackItem } from '../types';
 import { MOCK_PROJECTS, MOCK_USER_CLIENT, MOCK_USER_ADMIN } from '../data';
 import { chatWithConcierge } from '../api/chat';
 
@@ -18,6 +19,7 @@ interface ProjectContextType {
   siteContent: SiteContent;
   settings: GlobalSettings;
   adminNotes: AdminNote[];
+  aiFeedbacks: AiFeedbackItem[]; // New: Store AI Feedback
   login: (email: string) => User | null;
   logout: () => void;
   addProject: (project: Project) => void;
@@ -30,6 +32,7 @@ interface ProjectContextType {
   sendMessageToAI: (message: string) => Promise<any>;
   currentChatMessages: ChatMessage[]; // The messages currently displayed in Chatbot
   createNewChat: () => void;
+  logAiFeedback: (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => void;
   
   // Client Memory Logic (Backend Simulation)
   clientMemories: ClientMemory[]; // Only for currently logged in user
@@ -64,6 +67,7 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   enableShop: true,
   aiConfig: {
     model: 'gemini-2.5-flash',
+    useCustomSystemInstruction: false,
     systemInstruction: `Você é o Concierge Digital da Fran Siller Arquitetura. 
     Seu tom é sofisticado, acolhedor e altamente eficiente.
     
@@ -112,12 +116,21 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [currentChatMessages, setCurrentChatMessages] = useState<ChatMessage[]>([]);
   
   const [adminNotes, setAdminNotes] = useState<AdminNote[]>(MOCK_NOTES);
+  const [aiFeedbacks, setAiFeedbacks] = useState<AiFeedbackItem[]>([]);
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'info', isVisible: false });
   
   // Settings with LocalStorage Persistence
   const [settings, setSettings] = useState<GlobalSettings>(() => {
     const saved = localStorage.getItem('fran_settings');
-    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Ensure new properties exist if loading old settings
+      if (parsed.aiConfig && typeof parsed.aiConfig.useCustomSystemInstruction === 'undefined') {
+        parsed.aiConfig.useCustomSystemInstruction = false;
+      }
+      return parsed;
+    }
+    return DEFAULT_SETTINGS;
   });
 
   useEffect(() => {
@@ -395,6 +408,23 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  const logAiFeedback = (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => {
+    const newItem: AiFeedbackItem = {
+      ...item,
+      id: Math.random().toString(36).substr(2, 9),
+      createdAt: new Date().toISOString()
+    };
+    setAiFeedbacks(prev => [newItem, ...prev]);
+    
+    // Also update current messages to reflect feedback in UI state
+    setCurrentChatMessages(prev => {
+      // Find the last message from model or specific logic to match
+      // For simplicity in this mock, we assume the UI handles the 'liked/disliked' state locally
+      // but we can update it here if needed.
+      return prev;
+    });
+  };
+
   const sendMessageToAI = async (message: string) => {
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: message };
     const updatedMessages = [...currentChatMessages, userMsg];
@@ -450,6 +480,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       siteContent, 
       settings,
       adminNotes,
+      aiFeedbacks,
       login, 
       logout, 
       addProject, 
@@ -460,6 +491,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       sendMessageToAI,
       currentChatMessages,
       createNewChat,
+      logAiFeedback,
       clientMemories: currentUser?.memories || [],
       addClientMemory,
       updateClientMemory,

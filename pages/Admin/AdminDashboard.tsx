@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot } from 'lucide-react';
+import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, MessageCircleWarning, CornerDownRight, ThumbsUp } from 'lucide-react';
 import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder } from '../../types';
 
 // Mock Supabase Upload Simulation
@@ -15,7 +15,7 @@ const uploadToSupabase = async (file: File): Promise<string> => {
 };
 
 export const AdminDashboard: React.FC = () => {
-  const { projects, deleteProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, adminNotes, markNoteAsRead, deleteAdminNote, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser } = useProjects();
+  const { projects, deleteProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, adminNotes, markNoteAsRead, deleteAdminNote, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks } = useProjects();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'content' | 'settings' | 'messages' | 'clients'>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -253,6 +253,7 @@ export const AdminDashboard: React.FC = () => {
   );
 
   const unreadNotesCount = adminNotes.filter(n => n.status === 'new').length;
+  const dislikeFeedbacks = aiFeedbacks.filter(f => f.type === 'dislike');
 
   return (
     <div className="min-h-screen bg-[#111] flex font-sans text-gray-100">
@@ -432,7 +433,7 @@ export const AdminDashboard: React.FC = () => {
                        </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-8 h-[600px]">
+                    <div className="flex flex-col lg:flex-row gap-8 min-h-[600px]">
                        {/* Left: Folders */}
                        <div className="w-full lg:w-1/3 bg-white border border-gray-200 rounded-xl flex flex-col">
                           <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
@@ -502,78 +503,63 @@ export const AdminDashboard: React.FC = () => {
                        <div className="w-full lg:w-2/3 bg-white border border-gray-200 rounded-xl flex flex-col relative">
                           {!currentAdminFolderId ? (
                              <div className="flex-grow flex flex-col items-center justify-center text-gray-300">
-                                <FolderOpen className="w-16 h-16 mb-4 opacity-20" />
+                                <FolderOpen className="w-16 h-16 mb-4 opacity-50" />
                                 <p>Selecione uma pasta para gerenciar arquivos.</p>
                              </div>
                           ) : (
-                             <>
-                               {(() => {
-                                 const folder = selectedClient.folders?.find(f => f.id === currentAdminFolderId);
-                                 return (
-                                   <>
-                                     <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
-                                        <h3 className="font-bold text-sm uppercase tracking-wide text-gray-500">{folder?.name}</h3>
-                                        <label className={`flex items-center gap-2 bg-black text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer hover:bg-accent hover:text-black transition ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
-                                           {uploading ? <Clock className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                                           <span>{uploading ? 'Enviando...' : 'Upload Arquivo'}</span>
-                                           <input type="file" className="hidden" onChange={handleFileUpload} />
-                                        </label>
-                                     </div>
-                                     <div className="flex-grow overflow-y-auto p-4 space-y-2">
-                                        {folder?.files && folder.files.length > 0 ? (
-                                           folder.files.map(file => (
-                                             <div key={file.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50 group">
-                                                <div className="flex items-center gap-3">
-                                                   <div className={`p-2 rounded ${file.type === 'image' ? 'bg-blue-50 text-blue-500' : file.type === 'pdf' ? 'bg-red-50 text-red-500' : 'bg-gray-100 text-gray-500'}`}>
-                                                      {file.type === 'image' ? <ImageIcon className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
-                                                   </div>
-                                                   <div>
-                                                      <p className="text-sm font-bold text-gray-700">{file.name}</p>
-                                                      <p className="text-xs text-gray-400">{file.size} • {new Date(file.createdAt).toLocaleDateString()}</p>
-                                                   </div>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                   <a href={file.url} download target="_blank" rel="noreferrer" className="p-2 text-gray-400 hover:text-black hover:bg-gray-200 rounded transition" title="Baixar">
-                                                      <Download className="w-4 h-4" />
-                                                   </a>
-                                                   <button onClick={() => handleDeleteFile(file.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition" title="Excluir">
-                                                      <Trash2 className="w-4 h-4" />
-                                                   </button>
-                                                </div>
+                            <>
+                              <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
+                                 <h3 className="font-bold text-sm uppercase tracking-wide text-gray-500">Arquivos</h3>
+                                 <label className="cursor-pointer bg-black text-white px-3 py-1.5 rounded hover:bg-accent hover:text-black transition flex items-center gap-2 text-xs font-bold shadow-sm">
+                                    {uploading ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Upload className="w-3 h-3" />}
+                                    <span>Upload</span>
+                                    <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading} />
+                                 </label>
+                              </div>
+                              <div className="flex-grow p-4 overflow-y-auto">
+                                 {users.find(u => u.id === selectedClient.id)?.folders?.find(f => f.id === currentAdminFolderId)?.files.length === 0 ? (
+                                    <div className="text-center py-12 text-gray-400 border-2 border-dashed border-gray-100 rounded-xl">
+                                       Pasta vazia. Faça upload de documentos.
+                                    </div>
+                                 ) : (
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                       {users.find(u => u.id === selectedClient.id)?.folders?.find(f => f.id === currentAdminFolderId)?.files.map(file => (
+                                          <div key={file.id} className="group relative border border-gray-100 rounded-lg p-3 hover:shadow-md transition bg-gray-50 hover:bg-white">
+                                             <button onClick={() => handleDeleteFile(file.id)} className="absolute top-2 right-2 p-1 bg-white rounded-full shadow opacity-0 group-hover:opacity-100 hover:text-red-500 transition"><Trash2 className="w-3 h-3" /></button>
+                                             <div className="aspect-square bg-gray-200 rounded mb-2 flex items-center justify-center text-gray-400">
+                                                {file.type === 'image' ? <ImageIcon className="w-8 h-8" /> : <FileText className="w-8 h-8" />}
                                              </div>
-                                           ))
-                                        ) : (
-                                           <div className="text-center py-12 text-gray-400 border-2 border-dashed border-gray-100 rounded-lg">
-                                              Pasta vazia. Faça upload de arquivos.
-                                           </div>
-                                        )}
-                                     </div>
-                                   </>
-                                 );
-                               })()}
-                             </>
+                                             <p className="font-bold text-xs truncate" title={file.name}>{file.name}</p>
+                                             <p className="text-[10px] text-gray-400">{file.size}</p>
+                                             <a href={file.url} download target="_blank" className="mt-2 block text-center text-[10px] font-bold text-accent hover:underline">Baixar</a>
+                                          </div>
+                                       ))}
+                                    </div>
+                                 )}
+                              </div>
+                            </>
                           )}
                        </div>
                     </div>
                     
-                    {/* Admin Memories View */}
-                    <div className="mt-8">
-                       <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Brain className="w-5 h-5" /> Memórias & Contexto IA</h3>
-                       <div className="bg-white border border-gray-200 rounded-xl p-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                             {selectedClient.memories && selectedClient.memories.length > 0 ? (
-                               selectedClient.memories.map(mem => (
-                                 <div key={mem.id} className="p-4 bg-gray-50 rounded-lg border border-gray-100 relative group">
-                                    <button onClick={() => handleAdminDeleteMemory(mem.id)} className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><Trash2 className="w-3 h-3" /></button>
-                                    <span className="text-[10px] uppercase font-bold text-accent mb-1 block">{mem.topic}</span>
-                                    <p className="text-sm text-gray-700">{mem.content}</p>
-                                    <span className="text-[10px] text-gray-400 mt-2 block">{mem.type === 'system_detected' ? 'Detectado por IA' : 'Inserido Manualmente'}</span>
-                                 </div>
-                               ))
-                             ) : (
-                               <p className="text-gray-400 text-sm">Nenhuma memória registrada para este cliente.</p>
-                             )}
-                          </div>
+                    {/* Memories Section */}
+                    <div className="mt-8 bg-white p-6 rounded-xl border border-gray-200">
+                       <h3 className="font-bold mb-4 flex items-center gap-2"><Brain className="w-5 h-5" /> Memórias & Contexto IA</h3>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {selectedClient.memories && selectedClient.memories.length > 0 ? (
+                             selectedClient.memories.map(mem => (
+                                <div key={mem.id} className="bg-gray-50 p-4 rounded-lg flex justify-between items-start group">
+                                   <div>
+                                      <span className="text-[10px] font-bold uppercase tracking-wider text-accent block mb-1">{mem.topic}</span>
+                                      <p className="text-sm text-gray-700">{mem.content}</p>
+                                      <span className="text-[10px] text-gray-400 mt-2 block capitalize">{mem.type === 'system_detected' ? 'Detectado por IA' : 'Inserido por Usuário'}</span>
+                                   </div>
+                                   <button onClick={() => handleAdminDeleteMemory(mem.id)} className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><Trash2 className="w-4 h-4" /></button>
+                                </div>
+                             ))
+                          ) : (
+                             <p className="text-gray-400 text-sm">Sem memórias registradas.</p>
+                          )}
                        </div>
                     </div>
                  </div>
@@ -584,168 +570,261 @@ export const AdminDashboard: React.FC = () => {
           {/* Messages View */}
           {activeTab === 'messages' && (
             <div className="animate-fadeIn">
-               <h2 className="text-3xl font-serif font-bold mb-8">Mensagens & Recados</h2>
-               <div className="space-y-4">
-                  {adminNotes.length === 0 && <p className="text-gray-400">Nenhuma mensagem.</p>}
-                  {adminNotes.map(note => (
-                    <div key={note.id} className={`p-6 rounded-xl border transition ${note.status === 'new' ? 'bg-white border-accent shadow-md' : 'bg-gray-50 border-gray-200 opacity-75'}`}>
-                       <div className="flex justify-between items-start mb-2">
-                          <div>
-                             <h4 className="font-bold text-lg flex items-center gap-2">
-                               {note.userName}
-                               {note.source === 'chatbot' && <Bot className="w-4 h-4 text-accent" title="Via Chatbot IA" />}
-                             </h4>
-                             <p className="text-sm text-gray-500">{note.userContact}</p>
+              <h2 className="text-3xl font-serif font-bold mb-8">Central de Mensagens</h2>
+              
+              <div className="grid grid-cols-1 gap-6">
+                {/* Admin Notes */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                   <div className="p-6 border-b border-gray-100 bg-gray-50">
+                      <h3 className="font-bold text-lg flex items-center gap-2"><MessageSquare className="w-5 h-5" /> Recados do Chatbot</h3>
+                   </div>
+                   <div className="divide-y divide-gray-100">
+                      {adminNotes.length === 0 ? (
+                        <div className="p-8 text-center text-gray-400">Nenhuma mensagem nova.</div>
+                      ) : (
+                        adminNotes.map(note => (
+                          <div key={note.id} className={`p-6 hover:bg-gray-50 transition flex flex-col md:flex-row gap-4 ${note.status === 'new' ? 'bg-blue-50/30' : ''}`}>
+                             <div className="flex-grow">
+                                <div className="flex justify-between items-start mb-2">
+                                   <div>
+                                     <span className="font-bold text-lg">{note.userName}</span>
+                                     <span className="text-sm text-gray-500 ml-2">({note.userContact})</span>
+                                   </div>
+                                   <span className="text-xs text-gray-400 bg-white border border-gray-200 px-2 py-1 rounded">{new Date(note.date).toLocaleDateString()}</span>
+                                </div>
+                                <p className="text-gray-700 leading-relaxed">{note.message}</p>
+                                <span className="text-xs text-gray-400 mt-2 block uppercase tracking-wide">Via {note.source === 'chatbot' ? 'Assistente Virtual' : 'Formulário'}</span>
+                             </div>
+                             <div className="flex items-center gap-2 md:flex-col">
+                                {note.status === 'new' && (
+                                  <button onClick={() => markNoteAsRead(note.id)} className="p-2 bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition" title="Marcar como lido"><Check className="w-4 h-4" /></button>
+                                )}
+                                <button onClick={() => deleteAdminNote(note.id)} className="p-2 bg-gray-100 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-500 transition" title="Excluir"><Trash2 className="w-4 h-4" /></button>
+                             </div>
                           </div>
-                          <div className="flex gap-2">
-                             {note.status === 'new' && (
-                               <button onClick={() => markNoteAsRead(note.id)} className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-xs font-bold flex items-center gap-1">
-                                 <Check className="w-3 h-3" /> Marcar Lida
-                               </button>
-                             )}
-                             <button onClick={() => deleteAdminNote(note.id)} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>
-                          </div>
-                       </div>
-                       <p className="text-gray-700 mt-2 p-3 bg-gray-50 rounded-lg italic border-l-4 border-gray-200">"{note.message}"</p>
-                       <div className="mt-3 flex gap-2 text-xs text-gray-400 uppercase tracking-wide">
-                          <span>{new Date(note.date).toLocaleString()}</span>
-                          <span>•</span>
-                          <span className={note.source === 'chatbot' ? 'text-accent font-bold' : ''}>{note.source === 'chatbot' ? 'Via Concierge Digital' : 'Formulário de Contato'}</span>
-                       </div>
-                    </div>
-                  ))}
-               </div>
+                        ))
+                      )}
+                   </div>
+                </div>
+
+                {/* AI Feedback Dislikes */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                   <div className="p-6 border-b border-gray-100 bg-red-50">
+                      <h3 className="font-bold text-lg flex items-center gap-2 text-red-700"><ThumbsDown className="w-5 h-5" /> Feedbacks Negativos (IA)</h3>
+                   </div>
+                   <div className="divide-y divide-gray-100">
+                      {dislikeFeedbacks.length === 0 ? (
+                        <div className="p-8 text-center text-gray-400">Nenhum feedback negativo registrado. Ótimo trabalho!</div>
+                      ) : (
+                        dislikeFeedbacks.map(feedback => (
+                           <div key={feedback.id} className="p-6 hover:bg-gray-50 transition">
+                              <div className="flex items-center gap-2 mb-3 text-xs text-gray-400">
+                                 <Clock className="w-3 h-3" /> {new Date(feedback.createdAt).toLocaleString()}
+                              </div>
+                              <div className="bg-gray-50 p-4 rounded-lg mb-3">
+                                 <span className="text-xs font-bold uppercase text-gray-500 mb-1 block">Usuário</span>
+                                 <p className="text-gray-800">{feedback.userMessage}</p>
+                              </div>
+                              <div className="bg-red-50/50 p-4 rounded-lg border border-red-100 relative">
+                                 <Bot className="w-4 h-4 absolute top-4 right-4 text-red-300" />
+                                 <span className="text-xs font-bold uppercase text-red-400 mb-1 block">Resposta IA</span>
+                                 <p className="text-gray-700 italic">"{feedback.aiResponse}"</p>
+                              </div>
+                              <div className="mt-4 flex justify-end">
+                                 <Link to="/admin" onClick={() => setActiveTab('settings')} className="text-xs text-blue-500 hover:underline flex items-center gap-1">
+                                    Ajustar Prompt <Settings className="w-3 h-3" />
+                                 </Link>
+                              </div>
+                           </div>
+                        ))
+                      )}
+                   </div>
+                </div>
+              </div>
             </div>
           )}
-          
+
           {/* Content Editor View */}
           {activeTab === 'content' && (
             <div className="animate-fadeIn max-w-4xl">
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-serif font-bold">Conteúdo do Site</h2>
-                <button onClick={saveContent} className="bg-black text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:bg-accent hover:text-black transition shadow-lg sticky top-6 z-30">
-                  <Save className="w-4 h-4" />
-                  <span>Salvar Alterações</span>
-                </button>
-              </div>
-
-              <div className="space-y-8">
-                 {/* Hero Section */}
-                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <h3 className="font-bold text-lg mb-4 border-b pb-2">Home & Hero</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       <div className="col-span-2">
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Título Principal</label>
-                          <input name="heroTitle" value={contentForm.about.heroTitle} onChange={handleContentChange} className="w-full border p-3 rounded" />
-                       </div>
-                       <div className="col-span-2">
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Subtítulo</label>
-                          <input name="heroSubtitle" value={contentForm.about.heroSubtitle} onChange={handleContentChange} className="w-full border p-3 rounded" />
+              <h2 className="text-3xl font-serif font-bold mb-8">Conteúdo do Site</h2>
+              
+              <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
+                 <h3 className="font-bold text-xl mb-6">Página Sobre (Hero & Bio)</h3>
+                 <div className="space-y-6">
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Subtítulo Hero</label>
+                      <input name="heroSubtitle" value={contentForm.about.heroSubtitle} onChange={handleContentChange} className="w-full border p-3 rounded" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Título Hero</label>
+                      <input name="heroTitle" value={contentForm.about.heroTitle} onChange={handleContentChange} className="w-full border p-3 rounded" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Bio Principal</label>
+                      <textarea name="bio" value={contentForm.about.bio} onChange={handleContentChange} className="w-full border p-3 rounded h-40" />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-6">
+                       <div>
+                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Imagem Hero</label>
+                          <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:bg-gray-50 transition cursor-pointer relative">
+                             <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleImageUpload(e, 'heroImage')} />
+                             {uploading ? <span className="text-xs">Carregando...</span> : <span className="text-xs text-gray-500">Clique para alterar</span>}
+                             <img src={contentForm.about.heroImage} className="mt-2 h-20 w-full object-cover rounded" />
+                          </div>
                        </div>
                        <div>
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Imagem de Capa (Hero)</label>
-                          <div className="relative group">
-                             <img src={contentForm.about.heroImage} className="w-full h-32 object-cover rounded mb-2" />
-                             <label className="absolute inset-0 bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition cursor-pointer rounded">
-                                <Upload className="w-6 h-6 mr-2" /> Alterar
-                                <input type="file" className="hidden" onChange={(e) => handleImageUpload(e, 'heroImage')} />
-                             </label>
+                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Foto de Perfil</label>
+                           <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:bg-gray-50 transition cursor-pointer relative">
+                             <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleImageUpload(e, 'profileImage')} />
+                             {uploading ? <span className="text-xs">Carregando...</span> : <span className="text-xs text-gray-500">Clique para alterar</span>}
+                             <img src={contentForm.about.profileImage} className="mt-2 h-20 w-full object-contain rounded bg-gray-100" />
                           </div>
                        </div>
                     </div>
                  </div>
+              </div>
 
-                 {/* Bio Section */}
-                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <h3 className="font-bold text-lg mb-4 border-b pb-2">Sobre & Bio</h3>
-                    <div className="flex gap-6 flex-col md:flex-row">
-                       <div className="w-full md:w-1/3">
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Foto Perfil</label>
-                          <div className="relative group">
-                             <img src={contentForm.about.profileImage} className="w-full h-48 object-cover rounded mb-2" />
-                             <label className="absolute inset-0 bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition cursor-pointer rounded">
-                                <Upload className="w-6 h-6 mr-2" /> Alterar
-                                <input type="file" className="hidden" onChange={(e) => handleImageUpload(e, 'profileImage')} />
-                             </label>
-                          </div>
-                       </div>
-                       <div className="w-full md:w-2/3">
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Biografia</label>
-                          <textarea name="bio" value={contentForm.about.bio} onChange={handleContentChange} className="w-full border p-3 rounded h-48"></textarea>
-                       </div>
-                    </div>
+              <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
+                 <div className="flex justify-between items-center mb-6">
+                   <h3 className="font-bold text-xl">Estatísticas</h3>
+                   <button onClick={addStat} className="text-xs bg-black text-white px-3 py-1 rounded-full"><Plus className="w-3 h-3 inline mr-1" /> Adicionar</button>
                  </div>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {contentForm.about.stats.map(stat => (
+                      <div key={stat.id} className="p-4 border border-gray-200 rounded-lg relative group">
+                         <button onClick={() => removeStat(stat.id)} className="absolute top-2 right-2 text-red-400 opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
+                         <input value={stat.value} onChange={(e) => updateStat(stat.id, 'value', e.target.value)} className="font-serif text-2xl font-bold w-full border-none p-0 focus:ring-0 mb-1" placeholder="Valor" />
+                         <input value={stat.label} onChange={(e) => updateStat(stat.id, 'label', e.target.value)} className="text-xs uppercase text-gray-500 w-full border-none p-0 focus:ring-0" placeholder="Rótulo" />
+                      </div>
+                    ))}
+                 </div>
+              </div>
 
-                 {/* Stats */}
-                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <div className="flex justify-between items-center mb-4 border-b pb-2">
-                       <h3 className="font-bold text-lg">Estatísticas</h3>
-                       <button onClick={addStat} className="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-black hover:text-white transition"><Plus className="w-3 h-3 inline" /> Adicionar</button>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                       {contentForm.about.stats.map(stat => (
-                          <div key={stat.id} className="p-3 bg-gray-50 rounded border relative group">
-                             <button onClick={() => removeStat(stat.id)} className="absolute top-1 right-1 text-red-400 opacity-0 group-hover:opacity-100"><X className="w-3 h-3" /></button>
-                             <input value={stat.value} onChange={(e) => updateStat(stat.id, 'value', e.target.value)} className="font-serif text-xl font-bold bg-transparent w-full mb-1" />
-                             <input value={stat.label} onChange={(e) => updateStat(stat.id, 'label', e.target.value)} className="text-xs uppercase text-gray-500 bg-transparent w-full" />
-                          </div>
-                       ))}
-                    </div>
+               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
+                 <div className="flex justify-between items-center mb-6">
+                   <h3 className="font-bold text-xl">Pilares</h3>
+                   <button onClick={addPillar} className="text-xs bg-black text-white px-3 py-1 rounded-full"><Plus className="w-3 h-3 inline mr-1" /> Adicionar</button>
                  </div>
+                 <div className="space-y-4">
+                    {contentForm.about.pillars.map(pillar => (
+                      <div key={pillar.id} className="p-4 border border-gray-200 rounded-lg relative group bg-gray-50">
+                         <button onClick={() => removePillar(pillar.id)} className="absolute top-2 right-2 text-red-400 opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
+                         <input value={pillar.title} onChange={(e) => updatePillar(pillar.id, 'title', e.target.value)} className="font-bold w-full bg-transparent border-none p-0 focus:ring-0 mb-2" placeholder="Título do Pilar" />
+                         <textarea value={pillar.description} onChange={(e) => updatePillar(pillar.id, 'description', e.target.value)} className="text-sm text-gray-600 w-full bg-transparent border-none p-0 focus:ring-0 resize-none" placeholder="Descrição..." />
+                      </div>
+                    ))}
+                 </div>
+              </div>
+
+              <div className="fixed bottom-6 right-6 md:right-10 z-30">
+                 <button onClick={saveContent} className="bg-green-500 text-white px-8 py-4 rounded-full font-bold shadow-2xl hover:bg-green-600 transition flex items-center gap-2 transform hover:scale-105">
+                    <Save className="w-5 h-5" /> Salvar Alterações
+                 </button>
               </div>
             </div>
           )}
 
           {/* Settings View */}
           {activeTab === 'settings' && (
-             <div className="animate-fadeIn max-w-2xl">
-                <div className="flex justify-between items-center mb-8">
-                   <h2 className="text-3xl font-serif font-bold">Configurações</h2>
-                   <button onClick={saveSettings} className="bg-black text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:bg-accent hover:text-black transition shadow-lg">
-                     <Save className="w-4 h-4" />
-                     <span>Salvar</span>
-                   </button>
-                </div>
-                
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-8">
-                   <div>
-                      <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><ShoppingBag className="w-5 h-5" /> Loja & Serviços</h3>
-                      <label className="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition">
-                         <input type="checkbox" checked={settingsForm.enableShop} onChange={(e) => handleSettingsChange('enableShop', e.target.checked)} className="w-5 h-5 accent-black" />
-                         <div>
-                            <span className="font-bold block">Habilitar Orçamentos Online</span>
-                            <span className="text-xs text-gray-500">Permite que clientes vejam pacotes e solicitem orçamentos pelo site.</span>
-                         </div>
-                      </label>
-                   </div>
+            <div className="animate-fadeIn max-w-2xl">
+              <h2 className="text-3xl font-serif font-bold mb-8">Configurações Globais</h2>
 
-                   <div>
-                      <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Brain className="w-5 h-5" /> Inteligência Artificial</h3>
-                      <div className="space-y-4">
-                         <div>
-                            <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Modelo Gemini</label>
-                            <select value={settingsForm.aiConfig.model} onChange={(e) => handleSettingsChange('aiConfig.model', e.target.value)} className="w-full border p-3 rounded">
-                               <option value="gemini-2.5-flash">Gemini 2.5 Flash (Rápido)</option>
-                               <option value="gemini-3-pro-preview">Gemini 3 Pro (Raciocínio Complexo)</option>
-                            </select>
-                         </div>
-                         <div>
-                            <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Criatividade (Temperatura)</label>
-                            <input type="range" min="0" max="1" step="0.1" value={settingsForm.aiConfig.temperature} onChange={(e) => handleSettingsChange('aiConfig.temperature', parseFloat(e.target.value))} className="w-full accent-black" />
-                            <div className="flex justify-between text-xs text-gray-400">
-                               <span>Preciso (0.0)</span>
-                               <span>{settingsForm.aiConfig.temperature}</span>
-                               <span>Criativo (1.0)</span>
-                            </div>
-                         </div>
-                         <div>
-                            <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Instrução do Sistema (Persona)</label>
-                            <textarea value={settingsForm.aiConfig.systemInstruction} onChange={(e) => handleSettingsChange('aiConfig.systemInstruction', e.target.value)} className="w-full border p-3 rounded h-32 text-sm font-mono" />
-                         </div>
-                      </div>
-                   </div>
-                </div>
-             </div>
+              <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-8">
+                 
+                 {/* AI Configuration */}
+                 <div>
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Bot className="w-5 h-5" /> Inteligência Artificial (Chatbot)</h3>
+                    
+                    <div className="space-y-4">
+                       <div>
+                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Modelo LLM</label>
+                          <select 
+                            value={settingsForm.aiConfig.model} 
+                            onChange={(e) => handleSettingsChange('aiConfig.model', e.target.value)} 
+                            className="w-full border p-3 rounded bg-gray-50 focus:outline-none focus:border-black"
+                          >
+                             <option value="gemini-2.5-flash">Gemini 2.5 Flash (Padrão)</option>
+                             <option value="gemini-1.5-pro">Gemini 1.5 Pro (Avançado)</option>
+                             <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Econômico)</option>
+                             <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite (Econômico)</option>
+                          </select>
+                       </div>
+
+                       <div>
+                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Criatividade (Temperatura)</label>
+                          <div className="flex items-center gap-4">
+                             <input 
+                               type="range" 
+                               min="0" 
+                               max="1" 
+                               step="0.1"
+                               value={settingsForm.aiConfig.temperature || 0.7}
+                               onChange={(e) => handleSettingsChange('aiConfig.temperature', parseFloat(e.target.value))}
+                               className="w-full accent-black"
+                             />
+                             <span className="font-mono font-bold w-12 text-right">{settingsForm.aiConfig.temperature || 0.7}</span>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">Valores mais altos tornam o bot mais criativo, valores baixos mais preciso.</p>
+                       </div>
+
+                       <div className="border-t border-gray-100 pt-4 mt-4">
+                          <div className="flex items-center justify-between mb-4">
+                             <label className="text-sm font-bold">Prompt do Sistema Personalizado</label>
+                             <div className="flex items-center gap-2">
+                                <span className={`text-xs font-bold ${settingsForm.aiConfig.useCustomSystemInstruction ? 'text-black' : 'text-gray-300'}`}>
+                                   {settingsForm.aiConfig.useCustomSystemInstruction ? 'ATIVADO' : 'DESATIVADO'}
+                                </span>
+                                <div 
+                                   onClick={() => handleSettingsChange('aiConfig.useCustomSystemInstruction', !settingsForm.aiConfig.useCustomSystemInstruction)}
+                                   className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-300 ${settingsForm.aiConfig.useCustomSystemInstruction ? 'bg-black' : 'bg-gray-200'}`}
+                                >
+                                   <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${settingsForm.aiConfig.useCustomSystemInstruction ? 'translate-x-6' : 'translate-x-0'}`} />
+                                </div>
+                             </div>
+                          </div>
+                          
+                          <div className="relative">
+                             {!settingsForm.aiConfig.useCustomSystemInstruction && (
+                                <div className="absolute inset-0 bg-gray-50/80 z-10 flex items-center justify-center backdrop-blur-[1px] rounded border border-gray-200">
+                                   <span className="text-xs font-bold text-gray-400 bg-white px-3 py-1 rounded-full shadow-sm">Usando Prompt Padrão do Sistema</span>
+                                </div>
+                             )}
+                             <textarea 
+                                value={settingsForm.aiConfig.systemInstruction} 
+                                onChange={(e) => handleSettingsChange('aiConfig.systemInstruction', e.target.value)}
+                                className="w-full border p-3 rounded h-48 font-mono text-xs leading-relaxed focus:outline-none focus:border-black"
+                                placeholder="Descreva a personalidade e regras do bot aqui..."
+                                disabled={!settingsForm.aiConfig.useCustomSystemInstruction}
+                             />
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">Instrua o bot sobre como se comportar, tom de voz e informações críticas.</p>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="border-t border-gray-100 pt-8">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><ShoppingBag className="w-5 h-5" /> E-commerce & Serviços</h3>
+                    <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                       <div>
+                          <span className="font-bold block">Habilitar Loja/Orçamentos</span>
+                          <span className="text-xs text-gray-500">Permite que clientes solicitem orçamentos pelo site.</span>
+                       </div>
+                       <input 
+                         type="checkbox" 
+                         checked={settingsForm.enableShop} 
+                         onChange={(e) => handleSettingsChange('enableShop', e.target.checked)}
+                         className="w-6 h-6 accent-black"
+                       />
+                    </div>
+                 </div>
+
+                 <button onClick={saveSettings} className="w-full bg-black text-white px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2">
+                    <Save className="w-5 h-5" /> Salvar Configurações
+                 </button>
+              </div>
+            </div>
           )}
 
         </div>
