@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
 import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ChatSession, ClientFolder, ClientFile, AiFeedbackItem } from '../types';
 import { MOCK_PROJECTS, MOCK_USER_CLIENT, MOCK_USER_ADMIN } from '../data';
@@ -86,6 +87,7 @@ REGRAS DE COMPORTAMENTO:
 3. Se perguntarem "Onde vejo projetos?", use a tool 'showProjects' ou 'navigateSite' para /portfolio.
 4. Seja breve e elegante. Evite textos longos. Use formatação limpa.
 5. Fale Português do Brasil de forma culta.`,
+    defaultGreeting: "Olá {name}. Sou o Concierge Digital Fran Siller. Como posso tornar seu dia melhor?",
     temperature: 0.7
   }
 };
@@ -128,6 +130,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       // Ensure new properties exist if loading old settings
       if (parsed.aiConfig && typeof parsed.aiConfig.useCustomSystemInstruction === 'undefined') {
         parsed.aiConfig.useCustomSystemInstruction = false;
+      }
+      if (parsed.aiConfig && typeof parsed.aiConfig.defaultGreeting === 'undefined') {
+        parsed.aiConfig.defaultGreeting = DEFAULT_SETTINGS.aiConfig.defaultGreeting;
       }
       return parsed;
     }
@@ -427,9 +432,31 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const sendMessageToAI = async (message: string) => {
+    let updatedMessages = [...currentChatMessages];
+
+    // FIX: If this is the FIRST message, inject the default greeting into the history stack so it persists
+    if (updatedMessages.length === 0) {
+        const greetingRaw = settings.aiConfig.defaultGreeting || "Olá. Como posso ajudar?";
+        
+        // Simple placeholder replacement logic for {name}
+        let personalizedGreeting = greetingRaw;
+        if (currentUser) {
+            personalizedGreeting = greetingRaw.replace('{name}', currentUser.name.split(' ')[0]);
+        } else {
+            // Remove {name} and preceding space or comma if exists, or just replace with blank
+            personalizedGreeting = greetingRaw.replace(' {name}', '').replace('{name}', '');
+        }
+
+        updatedMessages.push({
+            id: 'init-greeting',
+            role: 'model',
+            text: personalizedGreeting
+        });
+    }
+
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: message };
-    const updatedMessages = [...currentChatMessages, userMsg];
-    setCurrentChatMessages(updatedMessages);
+    updatedMessages.push(userMsg);
+    setCurrentChatMessages(updatedMessages); // Update UI immediately to show user message + persistent greeting
 
     try {
       // Direct client-side call to the AI logic

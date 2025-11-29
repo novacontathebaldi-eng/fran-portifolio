@@ -113,6 +113,7 @@ export interface GlobalSettings {
     model: string;
     useCustomSystemInstruction: boolean; // New Toggle
     systemInstruction: string;
+    defaultGreeting: string; // New: Editable Welcome Message
     temperature: number;
   };
 }

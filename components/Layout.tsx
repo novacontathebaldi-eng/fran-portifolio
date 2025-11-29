@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, LayoutDashboard } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
@@ -14,6 +14,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // State for Chatbot visibility controlled by Footer
+  const [chatOpen, setChatOpen] = useState(false);
+  const [hideChatButton, setHideChatButton] = useState(false);
+  const footerRef = useRef<HTMLElement>(null);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,6 +46,29 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       document.body.style.overflow = 'unset';
     };
   }, [isMenuOpen]);
+
+  // Intersection Observer to hide Chatbot button near Footer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setHideChatButton(entry.isIntersecting);
+      },
+      {
+        root: null,
+        threshold: 0.1, // Trigger when 10% of the footer is visible
+      }
+    );
+
+    if (footerRef.current) {
+      observer.observe(footerRef.current);
+    }
+
+    return () => {
+      if (footerRef.current) {
+        observer.unobserve(footerRef.current);
+      }
+    };
+  }, []);
 
   const handleLinkClick = () => {
     setIsMenuOpen(false);
@@ -220,10 +248,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       {/* Floating Chatbot */}
-      <Chatbot />
+      <Chatbot isOpen={chatOpen} onToggle={setChatOpen} hideButton={hideChatButton} />
 
       {/* Footer */}
-      <footer className="bg-[#1a1a1a] text-white pt-16 pb-10">
+      <footer ref={footerRef} className="bg-[#1a1a1a] text-white pt-16 pb-10">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="md:col-span-1">
@@ -239,6 +267,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {settings.enableShop && <li><Link to="/services" className="hover:text-white transition block">Serviços</Link></li>}
                 <li><Link to="/about" className="hover:text-white transition block">Sobre o Escritório</Link></li>
                 <li><Link to="/contact" className="hover:text-white transition block">Contato</Link></li>
+                <li><button onClick={() => setChatOpen(true)} className="hover:text-white transition block text-left w-full">Ajuda e Suporte</button></li>
               </ul>
             </div>
             <div>

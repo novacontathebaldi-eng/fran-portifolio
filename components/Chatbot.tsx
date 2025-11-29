@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -5,8 +6,20 @@ import { useProjects } from '../context/ProjectContext';
 import { ChatMessage, Project } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
 
-export const Chatbot: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface ChatbotProps {
+  isOpen?: boolean;
+  onToggle?: (isOpen: boolean) => void;
+  hideButton?: boolean;
+}
+
+export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onToggle, hideButton = false }) => {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  
+  // Determine if the component is controlled by props or manages its own state
+  const isControlled = externalIsOpen !== undefined && onToggle !== undefined;
+  const isOpen = isControlled ? externalIsOpen : internalIsOpen;
+  const setIsOpen = isControlled ? onToggle : setInternalIsOpen;
+
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -14,20 +27,30 @@ export const Chatbot: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Use messages from Context to ensure persistence/sync across components
-  const { sendMessageToAI, currentUser, projects, addAdminNote, showToast, currentChatMessages, createNewChat, logAiFeedback } = useProjects();
+  const { sendMessageToAI, currentUser, projects, addAdminNote, showToast, currentChatMessages, createNewChat, logAiFeedback, settings } = useProjects();
   
   // Ref for the last message element to control scrolling
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Initial greeting if empty - Wrapped in useMemo to prevent re-creation on every render (causing scroll glitches)
-  const defaultMessages = useMemo<ChatMessage[]>(() => [{
-    id: 'init',
-    role: 'model',
-    text: currentUser 
-      ? `Olá ${currentUser.name.split(' ')[0]}. Sou o Concierge Digital Fran Siller. Como posso tornar seu dia melhor?`
-      : "Olá. Bem-vindo à Fran Siller Arquitetura. Sou seu Concierge Digital. Deseja conhecer nosso portfólio ou falar sobre um projeto?"
-  }], [currentUser]);
+  // Initial greeting - Dynamic based on Settings & User
+  const defaultMessages = useMemo<ChatMessage[]>(() => {
+    const rawGreeting = settings.aiConfig.defaultGreeting || "Olá. Como posso ajudar?";
+    
+    let processedGreeting = rawGreeting;
+    if (currentUser) {
+        processedGreeting = rawGreeting.replace('{name}', currentUser.name.split(' ')[0]);
+    } else {
+        // Clean up placeholder for guests
+        processedGreeting = rawGreeting.replace(' {name}', '').replace('{name}', '');
+    }
+
+    return [{
+        id: 'init',
+        role: 'model',
+        text: processedGreeting
+    }];
+  }, [currentUser, settings.aiConfig.defaultGreeting]);
 
   const displayMessages = currentChatMessages.length > 0 ? currentChatMessages : defaultMessages;
 
@@ -282,7 +305,7 @@ export const Chatbot: React.FC = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {!isOpen && (
+        {!isOpen && !hideButton && (
           <motion.button
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -533,7 +534,7 @@ export const AdminDashboard: React.FC = () => {
                                                 {file.type === 'image' ? <ImageIcon className="w-8 h-8" /> : <FileText className="w-8 h-8" />}
                                              </div>
                                              <p className="font-bold text-xs truncate" title={file.name}>{file.name}</p>
-                                             <p className="text-[10px] text-gray-400">{file.size}</p>
+                                             <p className="text--[10px] text-gray-400">{file.size}</p>
                                              <a href={file.url} download target="_blank" className="mt-2 block text-center text-[10px] font-bold text-accent hover:underline">Baixar</a>
                                           </div>
                                        ))}
@@ -753,6 +754,17 @@ export const AdminDashboard: React.FC = () => {
                              <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Econômico)</option>
                              <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite (Econômico)</option>
                           </select>
+                       </div>
+                       
+                       <div>
+                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Mensagem de Boas-vindas</label>
+                          <textarea 
+                             value={settingsForm.aiConfig.defaultGreeting}
+                             onChange={(e) => handleSettingsChange('aiConfig.defaultGreeting', e.target.value)}
+                             className="w-full border p-3 rounded h-24 text-sm focus:outline-none focus:border-black"
+                             placeholder="Ex: Olá {name}, como posso ajudar?"
+                          />
+                          <p className="text-xs text-gray-400 mt-1">Dica: Use <strong>{'{name}'}</strong> para inserir o nome do usuário automaticamente.</p>
                        </div>
 
                        <div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { MOCK_SERVICES } from '../data';
 import { Check, MapPin, CreditCard } from 'lucide-react';
@@ -241,7 +240,7 @@ export const BudgetFlow: React.FC = () => {
                  <motion.div 
                    initial={{ scale: 0 }}
                    animate={{ scale: 1 }}
-                   type="spring"
+                   transition={{ type: "spring" }}
                    className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6"
                  >
                    <Check className="w-10 h-10" />
