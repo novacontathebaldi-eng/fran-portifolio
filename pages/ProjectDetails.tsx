@@ -42,6 +42,18 @@ export const ProjectDetails: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxIndex, project.images.length]);
 
+  // Lock body scroll when lightbox is open
+  React.useEffect(() => {
+    if (lightboxIndex !== null) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [lightboxIndex]);
+
   return (
     <div className="bg-white">
       {/* Lightbox Modal */}
@@ -203,7 +215,13 @@ export const ProjectDetails: React.FC = () => {
 
                    {block.type === 'image-full' && (
                      <div className="w-full">
-                       <div className="overflow-hidden rounded-sm shadow-sm">
+                       <div 
+                          className="overflow-hidden rounded-sm shadow-sm cursor-zoom-in"
+                          onClick={() => {
+                            const foundIdx = project.images.indexOf(block.content);
+                            if (foundIdx >= 0) openLightbox(foundIdx);
+                          }}
+                        >
                          <img 
                            src={block.content} 
                            className="w-full h-auto transition-transform duration-1000 ease-in-out hover:scale-105" 
@@ -217,7 +235,14 @@ export const ProjectDetails: React.FC = () => {
                    {block.type === 'image-grid' && (
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {block.items?.map((url, i) => (
-                           <div key={i} className="overflow-hidden rounded-sm shadow-sm">
+                           <div 
+                              key={i} 
+                              className="overflow-hidden rounded-sm shadow-sm cursor-zoom-in"
+                              onClick={() => {
+                                const foundIdx = project.images.indexOf(url);
+                                if (foundIdx >= 0) openLightbox(foundIdx);
+                              }}
+                            >
                              <img 
                                src={url} 
                                className="w-full h-64 md:h-96 object-cover transition-transform duration-1000 ease-in-out hover:scale-110" 
@@ -242,7 +267,7 @@ export const ProjectDetails: React.FC = () => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.6, delay: idx * 0.1 }}
-                      className="relative group overflow-hidden rounded-sm shadow-sm cursor-pointer"
+                      className="relative group overflow-hidden rounded-sm shadow-sm cursor-zoom-in"
                       onClick={() => openLightbox(idx)}
                     >
                       <img 
