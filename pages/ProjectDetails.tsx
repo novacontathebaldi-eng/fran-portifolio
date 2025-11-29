@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import { useProjects } from '../context/ProjectContext';
 import { Heart, ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -12,38 +13,70 @@ export const ProjectDetails: React.FC = () => {
   
   const project = projects.find(p => p.id === id);
 
+  // LOGIC FIX:
+  // We strictly separate sources. If the project uses CMS Blocks, we ONLY use images from those blocks.
+  // If the project uses the legacy array, we ONLY use that.
+  // This prevents duplicates (showing the same image twice) and "ghost" images (images in the DB but not rendered on screen).
+  const allImages = useMemo(() => {
+    if (!project) return [];
+
+    const hasBlocks = project.blocks && project.blocks.length > 0;
+
+    if (hasBlocks) {
+      // 1. Extract only images that are actually rendered in the blocks
+      const blockImages: string[] = [];
+      project.blocks?.forEach(block => {
+        if (block.type === 'image-full' && block.content) {
+          blockImages.push(block.content);
+        }
+        if (block.type === 'image-grid' && block.items) {
+          block.items.forEach(item => {
+            if (item) blockImages.push(item);
+          });
+        }
+      });
+      // 2. Remove duplicates using Set, but preserve order of appearance
+      return Array.from(new Set(blockImages));
+    } else {
+      // Legacy Mode: Use the main images array
+      return project.images || [];
+    }
+  }, [project]);
+
   if (!project) {
     return <div className="min-h-screen flex items-center justify-center text-gray-500">Projeto não encontrado.</div>;
   }
 
   const openLightbox = (index: number) => setLightboxIndex(index);
   const closeLightbox = () => setLightboxIndex(null);
+  
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (lightboxIndex !== null) {
-      setLightboxIndex((lightboxIndex + 1) % project.images.length);
+      setLightboxIndex((lightboxIndex + 1) % allImages.length);
     }
   };
+  
   const prevImage = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (lightboxIndex !== null) {
-      setLightboxIndex((lightboxIndex - 1 + project.images.length) % project.images.length);
+      setLightboxIndex((lightboxIndex - 1 + allImages.length) % allImages.length);
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (lightboxIndex === null) return;
       if (e.key === 'Escape') closeLightbox();
-      if (e.key === 'ArrowRight') setLightboxIndex((prev) => (prev! + 1) % project.images.length);
-      if (e.key === 'ArrowLeft') setLightboxIndex((prev) => (prev! - 1 + project.images.length) % project.images.length);
+      if (e.key === 'ArrowRight') setLightboxIndex((prev) => (prev! + 1) % allImages.length);
+      if (e.key === 'ArrowLeft') setLightboxIndex((prev) => (prev! - 1 + allImages.length) % allImages.length);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxIndex, project.images.length]);
+  }, [lightboxIndex, allImages.length]);
 
   // Lock body scroll when lightbox is open
-  React.useEffect(() => {
+  useEffect(() => {
     if (lightboxIndex !== null) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -56,40 +89,51 @@ export const ProjectDetails: React.FC = () => {
 
   return (
     <div className="bg-white">
-      {/* Lightbox Modal */}
-      <AnimatePresence>
-        {lightboxIndex !== null && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 md:p-12"
-            onClick={closeLightbox}
-          >
-            <button className="absolute top-6 right-6 text-white/70 hover:text-white transition z-20">
-              <X className="w-8 h-8" />
-            </button>
-            <button onClick={prevImage} className="absolute left-4 md:left-8 text-white/50 hover:text-white transition p-2 z-20">
-              <ChevronLeft className="w-10 h-10" />
-            </button>
-            <motion.img 
-              key={lightboxIndex}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              src={project.images[lightboxIndex]} 
-              className="max-h-full max-w-full object-contain rounded-sm shadow-2xl"
-              onClick={(e) => e.stopPropagation()} 
-            />
-            <button onClick={nextImage} className="absolute right-4 md:right-8 text-white/50 hover:text-white transition p-2 z-20">
-              <ChevronRight className="w-10 h-10" />
-            </button>
-            <div className="absolute bottom-6 left-0 right-0 text-center text-white/60 text-sm tracking-widest">
-              {lightboxIndex + 1} / {project.images.length}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Lightbox Modal - Using Portal to render at document.body level ensures it floats above EVERYTHING */}
+      {createPortal(
+        <AnimatePresence>
+          {lightboxIndex !== null && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              // FIXED: w-screen h-screen fixed inset-0 ensures it covers the entire viewport on PC and Mobile
+              className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-sm flex items-center justify-center w-screen h-screen"
+              onClick={closeLightbox}
+            >
+              <button className="absolute top-6 right-6 text-white/70 hover:text-white transition z-20 p-2">
+                <X className="w-8 h-8" />
+              </button>
+              
+              <button onClick={prevImage} className="absolute left-4 md:left-8 text-white/50 hover:text-white transition p-4 z-20 hover:bg-white/10 rounded-full">
+                <ChevronLeft className="w-10 h-10" />
+              </button>
+              
+              <div className="relative w-full h-full flex items-center justify-center p-4 md:p-12">
+                <motion.img 
+                  key={lightboxIndex}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  src={allImages[lightboxIndex]} 
+                  className="max-h-full max-w-full object-contain rounded-sm shadow-2xl select-none"
+                  onClick={(e) => e.stopPropagation()} 
+                />
+              </div>
+
+              <button onClick={nextImage} className="absolute right-4 md:right-8 text-white/50 hover:text-white transition p-4 z-20 hover:bg-white/10 rounded-full">
+                <ChevronRight className="w-10 h-10" />
+              </button>
+              
+              <div className="absolute bottom-6 left-0 right-0 text-center text-white/60 text-sm tracking-widest font-medium">
+                {lightboxIndex + 1} / {allImages.length}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Hero */}
       <motion.div 
@@ -218,7 +262,7 @@ export const ProjectDetails: React.FC = () => {
                        <div 
                           className="overflow-hidden rounded-sm shadow-sm cursor-zoom-in"
                           onClick={() => {
-                            const foundIdx = project.images.indexOf(block.content);
+                            const foundIdx = allImages.indexOf(block.content);
                             if (foundIdx >= 0) openLightbox(foundIdx);
                           }}
                         >
@@ -239,7 +283,7 @@ export const ProjectDetails: React.FC = () => {
                               key={i} 
                               className="overflow-hidden rounded-sm shadow-sm cursor-zoom-in"
                               onClick={() => {
-                                const foundIdx = project.images.indexOf(url);
+                                const foundIdx = allImages.indexOf(url);
                                 if (foundIdx >= 0) openLightbox(foundIdx);
                               }}
                             >
@@ -268,7 +312,10 @@ export const ProjectDetails: React.FC = () => {
                       viewport={{ once: true }}
                       transition={{ duration: 0.6, delay: idx * 0.1 }}
                       className="relative group overflow-hidden rounded-sm shadow-sm cursor-zoom-in"
-                      onClick={() => openLightbox(idx)}
+                      onClick={() => {
+                        const foundIdx = allImages.indexOf(img);
+                        if (foundIdx >= 0) openLightbox(foundIdx);
+                      }}
                     >
                       <img 
                         src={img} 
