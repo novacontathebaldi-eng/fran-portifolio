@@ -34,23 +34,24 @@ export const Portfolio: React.FC = () => {
         </motion.div>
 
         {/* Controls - Sticky Header Fixed */}
-        <div className="sticky top-[72px] bg-white/95 backdrop-blur-md z-40 py-4 border-b border-gray-100 mb-8 transition-all duration-300 shadow-sm -mx-6 px-6 md:mx-0 md:px-0 md:rounded-lg md:shadow-none">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+        {/* Mobile: Full width (-mx-6), Rectangular (rounded-none), Border-y. Desktop: Rounded, Shadow-none, No Borders */}
+        <div className="sticky top-[68px] md:top-[88px] bg-white/95 backdrop-blur-md z-40 py-3 md:py-4 -mx-6 px-6 md:mx-0 md:px-0 border-y border-gray-100 md:border-0 md:rounded-lg transition-all duration-300 shadow-sm md:shadow-none">
+          <div className="flex flex-wrap items-center justify-between gap-2 md:gap-4">
             
             {/* Filter & Sort Group */}
             <div className="flex items-center space-x-2 md:space-x-4 flex-grow md:flex-grow-0">
               <button 
                 onClick={() => setFilterOpen(!filterOpen)} 
-                className="flex items-center space-x-2 text-sm font-medium border border-gray-200 px-4 py-2 rounded-full hover:border-black transition active:scale-95 bg-white"
+                className="flex items-center space-x-2 text-sm font-medium border border-gray-200 px-3 py-2 md:px-4 rounded-full hover:border-black transition active:scale-95 bg-white shrink-0"
               >
                 <Filter className="w-4 h-4" />
-                <span className="hidden xs:inline">Filtrar</span>
+                <span className="hidden sm:inline">Filtrar</span>
               </button>
               
               <div className="relative group z-30">
                 <button className="flex items-center space-x-2 text-sm font-medium px-2 py-2 hover:bg-gray-50 rounded-lg transition">
-                  <span className="text-gray-500">Ordenar:</span>
-                  <span className="font-bold text-black">{sortBy}</span>
+                  <span className="text-gray-500 hidden sm:inline">Ordenar:</span>
+                  <span className="font-bold text-black text-xs sm:text-sm">{sortBy}</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 {/* Dropdown Mock */}
@@ -61,8 +62,8 @@ export const Portfolio: React.FC = () => {
               </div>
             </div>
             
-            {/* View Toggle - Visible on Mobile now */}
-            <div className="flex space-x-1 border border-gray-200 rounded-lg p-1 bg-white">
+            {/* View Toggle - Always Visible */}
+            <div className="flex space-x-1 border border-gray-200 rounded-lg p-1 bg-white shrink-0 ml-auto md:ml-0">
                <button 
                  onClick={() => setView('grid')}
                  className={`p-2 rounded transition-colors ${view === 'grid' ? 'bg-black text-white' : 'text-gray-400 hover:text-black'}`}

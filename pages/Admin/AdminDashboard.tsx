@@ -79,7 +79,7 @@ export const AdminDashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row font-sans">
       
       {/* Mobile Header & Navigation */}
-      <header className="bg-neutral-900 text-white shadow-md p-4 md:hidden sticky top-0 z-30">
+      <header className="bg-neutral-900 text-white shadow-md p-4 md:hidden sticky top-0 z-50">
          <div className="flex justify-between items-center relative z-40">
            <div className="flex items-center gap-2">
              <span className="font-serif font-bold text-lg">FRAN<span className="text-accent">.</span> Admin</span>
@@ -89,9 +89,9 @@ export const AdminDashboard: React.FC = () => {
            </button>
          </div>
 
-         {/* Mobile Dropdown Menu */}
+         {/* Mobile Dropdown Menu (Accordion/Overlay) */}
          {mobileMenuOpen && (
-           <div className="absolute top-full left-0 w-full bg-neutral-900 border-t border-neutral-800 shadow-2xl animate-slideDown z-30 px-4 pb-6 pt-2 flex flex-col gap-2">
+           <div className="absolute top-full left-0 w-full bg-neutral-900 border-t border-neutral-800 shadow-2xl animate-slideDown z-30 px-4 pb-6 pt-2 flex flex-col gap-2 h-screen">
               <div className="py-4 border-b border-neutral-800 mb-2 flex items-center gap-3">
                  <div className="w-10 h-10 rounded-full bg-accent/20 border border-accent text-accent flex items-center justify-center font-serif font-bold overflow-hidden">
                    {currentUser?.name.charAt(0)}

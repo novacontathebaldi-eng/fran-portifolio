@@ -56,39 +56,46 @@ export const ClientArea: React.FC = () => {
         <h1 className="text-3xl md:text-4xl font-serif mb-8">Portal do Cliente</h1>
         
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
-          <div className="w-full lg:w-1/4 bg-white rounded-xl shadow-sm p-4 lg:p-6 h-fit sticky lg:top-24">
-            <div className="flex items-center space-x-4 mb-6 lg:mb-8">
-              <div className="w-12 h-12 lg:w-16 lg:h-16 bg-accent rounded-full flex items-center justify-center text-lg lg:text-xl font-serif font-bold text-white shrink-0">
-                {currentUser.name.charAt(0)}
-              </div>
-              <div className="overflow-hidden">
-                <h3 className="font-bold truncate text-sm lg:text-base">{currentUser.name}</h3>
-                <p className="text-xs text-secondary truncate">{currentUser.email}</p>
+          {/* Sidebar / Navigation Area */}
+          <div className="w-full lg:w-1/4 h-fit lg:sticky lg:top-24 z-30">
+            {/* Profile Info - Scrolls away on mobile */}
+            <div className="bg-white rounded-t-xl lg:rounded-xl shadow-sm p-6 lg:p-6 mb-0 lg:mb-0 border-b lg:border-b-0 border-gray-100">
+              <div className="flex items-center space-x-4 lg:mb-4">
+                <div className="w-12 h-12 lg:w-16 lg:h-16 bg-accent rounded-full flex items-center justify-center text-lg lg:text-xl font-serif font-bold text-white shrink-0">
+                  {currentUser.name.charAt(0)}
+                </div>
+                <div className="overflow-hidden">
+                  <h3 className="font-bold truncate text-sm lg:text-base">{currentUser.name}</h3>
+                  <p className="text-xs text-secondary truncate">{currentUser.email}</p>
+                </div>
               </div>
             </div>
             
-            <nav className="flex lg:flex-col overflow-x-auto lg:overflow-visible gap-2 pb-2 lg:pb-0 no-scrollbar snap-x">
-              <button onClick={() => setActiveTab('projects')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-3 rounded-lg transition text-sm ${activeTab === 'projects' ? 'bg-gray-100 font-bold text-black' : 'text-gray-500 hover:bg-gray-50'}`}>
-                <Package className="w-5 h-5 shrink-0" />
-                <span className="whitespace-nowrap">Meus Projetos</span>
-              </button>
-              <button onClick={() => setActiveTab('docs')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-3 rounded-lg transition text-sm ${activeTab === 'docs' ? 'bg-gray-100 font-bold text-black' : 'text-gray-500 hover:bg-gray-50'}`}>
-                <FileText className="w-5 h-5 shrink-0" />
-                <span className="whitespace-nowrap">Arquivos & Contratos</span>
-              </button>
-              <button onClick={() => setActiveTab('profile')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-3 rounded-lg transition text-sm ${activeTab === 'profile' ? 'bg-gray-100 font-bold text-black' : 'text-gray-500 hover:bg-gray-50'}`}>
-                <User className="w-5 h-5 shrink-0" />
-                <span className="whitespace-nowrap">Dados Pessoais</span>
-              </button>
-              <button onClick={() => setActiveTab('favs')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-3 rounded-lg transition text-sm ${activeTab === 'favs' ? 'bg-gray-100 font-bold text-black' : 'text-gray-500 hover:bg-gray-50'}`}>
-                <Heart className="w-5 h-5 shrink-0" />
-                <span className="whitespace-nowrap">Inspirações</span>
-              </button>
-              <button onClick={() => setActiveTab('settings')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-3 rounded-lg transition text-sm ${activeTab === 'settings' ? 'bg-gray-100 font-bold text-black' : 'text-gray-500 hover:bg-gray-50'}`}>
-                <Settings className="w-5 h-5 shrink-0" />
-                <span className="whitespace-nowrap">Configurações</span>
-              </button>
+            {/* Navigation Tabs - Sticky on Mobile */}
+            <nav className="bg-white rounded-b-xl lg:rounded-xl shadow-sm lg:mt-6 p-2 lg:p-4 sticky top-[72px] lg:static z-30 overflow-x-auto no-scrollbar -mx-6 px-6 lg:mx-0 lg:px-4 lg:overflow-visible border-b lg:border-0 border-gray-100">
+               <div className="flex lg:flex-col gap-2 min-w-max lg:min-w-0">
+                  <button onClick={() => { setActiveTab('projects'); window.scrollTo({top:0, behavior:'smooth'}); }} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-2 lg:py-3 rounded-full lg:rounded-lg transition text-sm ${activeTab === 'projects' ? 'bg-black text-white lg:bg-gray-100 lg:text-black font-bold' : 'text-gray-500 hover:bg-gray-50 bg-gray-100 lg:bg-transparent'}`}>
+                    <Package className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
+                    <span className="whitespace-nowrap">Meus Projetos</span>
+                  </button>
+                  <button onClick={() => { setActiveTab('docs'); window.scrollTo({top:0, behavior:'smooth'}); }} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-2 lg:py-3 rounded-full lg:rounded-lg transition text-sm ${activeTab === 'docs' ? 'bg-black text-white lg:bg-gray-100 lg:text-black font-bold' : 'text-gray-500 hover:bg-gray-50 bg-gray-100 lg:bg-transparent'}`}>
+                    <FileText className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
+                    <span className="whitespace-nowrap">Arquivos</span>
+                  </button>
+                  <button onClick={() => { setActiveTab('profile'); window.scrollTo({top:0, behavior:'smooth'}); }} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-2 lg:py-3 rounded-full lg:rounded-lg transition text-sm ${activeTab === 'profile' ? 'bg-black text-white lg:bg-gray-100 lg:text-black font-bold' : 'text-gray-500 hover:bg-gray-50 bg-gray-100 lg:bg-transparent'}`}>
+                    <User className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
+                    <span className="whitespace-nowrap">Dados</span>
+                  </button>
+                  <button onClick={() => { setActiveTab('favs'); window.scrollTo({top:0, behavior:'smooth'}); }} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-2 lg:py-3 rounded-full lg:rounded-lg transition text-sm ${activeTab === 'favs' ? 'bg-black text-white lg:bg-gray-100 lg:text-black font-bold' : 'text-gray-500 hover:bg-gray-50 bg-gray-100 lg:bg-transparent'}`}>
+                    <Heart className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
+                    <span className="whitespace-nowrap">Inspirações</span>
+                  </button>
+                  <button onClick={() => { setActiveTab('settings'); window.scrollTo({top:0, behavior:'smooth'}); }} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-2 lg:py-3 rounded-full lg:rounded-lg transition text-sm ${activeTab === 'settings' ? 'bg-black text-white lg:bg-gray-100 lg:text-black font-bold' : 'text-gray-500 hover:bg-gray-50 bg-gray-100 lg:bg-transparent'}`}>
+                    <Settings className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
+                    <span className="whitespace-nowrap">Config</span>
+                  </button>
+               </div>
+               
               <div className="hidden lg:block pt-4 mt-4 border-t border-gray-100">
                 <button onClick={logout} className="w-full flex items-center space-x-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-lg transition text-sm">
                   <LogOut className="w-5 h-5 shrink-0" />
@@ -96,8 +103,8 @@ export const ClientArea: React.FC = () => {
                 </button>
               </div>
             </nav>
-            <div className="lg:hidden mt-4 border-t border-gray-100 pt-4">
-               <button onClick={logout} className="w-full flex items-center justify-center space-x-2 text-red-500 text-sm py-2 bg-red-50 rounded-lg">
+            <div className="lg:hidden mt-4 pt-4 px-2">
+               <button onClick={logout} className="w-full flex items-center justify-center space-x-2 text-red-500 text-sm py-3 bg-white border border-red-100 rounded-lg shadow-sm">
                   <LogOut className="w-4 h-4" />
                   <span>Sair da Conta</span>
                </button>
@@ -121,7 +128,7 @@ export const ClientArea: React.FC = () => {
                            <div className="flex-grow min-w-0">
                              <div className="flex flex-col md:flex-row justify-between items-start mb-2 gap-2">
                                <h3 className="text-xl font-bold font-serif truncate w-full">{p.title}</h3>
-                               <span className="bg-yellow-100 text-yellow-800 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider whitespace-nowrap">Em Andamento</span>
+                               <span className="bg-yellow-100 text-yellow-800 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider whitespace-nowrap self-start md:self-auto">Em Andamento</span>
                              </div>
                              <p className="text-sm text-secondary mb-4 line-clamp-2">{p.description}</p>
                              
