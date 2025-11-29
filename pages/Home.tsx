@@ -33,7 +33,7 @@ export const Home: React.FC = () => {
             initial={{ scale: 1.1 }}
             animate={{ scale: 1 }}
             transition={{ duration: 2.5, ease: "easeOut" }}
-            src="https://picsum.photos/seed/arch1/1920/1080" 
+            src="https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/fundo-home.png" 
             alt="Hero Architecture" 
             className="w-full h-full object-cover"
           />
