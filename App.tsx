@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, ReactNode, Component } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -7,6 +8,7 @@ import { Home } from './pages/Home';
 import { Portfolio } from './pages/Portfolio';
 import { ProjectDetails } from './pages/ProjectDetails';
 import { About } from './pages/About';
+import { Office } from './pages/Office';
 import { Contact } from './pages/Contact';
 import { Auth } from './pages/Auth';
 import { ClientArea } from './pages/ClientArea';
@@ -163,6 +165,7 @@ const AnimatedRoutes = () => {
               <Routes location={location} key={location.pathname}>
                 <Route path="/" element={<PageTransition><Home /></PageTransition>} />
                 <Route path="/about" element={<PageTransition><About /></PageTransition>} />
+                <Route path="/office" element={<PageTransition><Office /></PageTransition>} />
                 <Route path="/portfolio" element={<PageTransition><Portfolio /></PageTransition>} />
                 <Route path="/project/:id" element={<PageTransition><ProjectDetails /></PageTransition>} />
                 

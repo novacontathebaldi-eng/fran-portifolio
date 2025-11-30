@@ -79,7 +79,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const showSuggestions = searchQuery.length > 0;
 
   // Determine if the current page has a hero section that requires a transparent header
-  const isTransparentNavPage = location.pathname === '/' || location.pathname === '/about' || location.pathname.startsWith('/project/');
+  const isTransparentNavPage = location.pathname === '/' || location.pathname === '/about' || location.pathname === '/office' || location.pathname.startsWith('/project/');
 
   // Refactored Nav Logic for Smooth Transitions
   // Logic: 
@@ -218,6 +218,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="flex flex-col space-y-6 flex-grow">
             <Link to="/" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Início</Link>
             <Link to="/about" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Sobre</Link>
+            <Link to="/office" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">O Escritório</Link>
             <Link to="/portfolio" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Portfólio</Link>
             {settings.enableShop && (
               <Link to="/services" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Serviços</Link>
@@ -274,7 +275,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <ul className="space-y-4 text-sm text-gray-400">
                 <li><Link to="/portfolio" className="hover:text-white transition block">Projetos</Link></li>
                 {settings.enableShop && <li><Link to="/services" className="hover:text-white transition block">Serviços</Link></li>}
-                <li><Link to="/about" className="hover:text-white transition block">Sobre o Escritório</Link></li>
+                <li><Link to="/office" className="hover:text-white transition block">Nosso Espaço</Link></li>
+                <li><Link to="/about" className="hover:text-white transition block">Filosofia</Link></li>
                 <li><Link to="/contact" className="hover:text-white transition block">Contato</Link></li>
                 <li><button onClick={() => setChatOpen(true)} className="hover:text-white transition block text-left w-full">Ajuda e Suporte</button></li>
               </ul>
