@@ -1,5 +1,6 @@
 
-export type BlockType = 'text' | 'heading' | 'image-full' | 'image-grid' | 'quote';
+
+export type BlockType = 'text' | 'heading' | 'image-full' | 'image-grid' | 'quote' | 'map' | 'details';
 
 export interface ContentBlock {
   id: string;
@@ -78,20 +79,38 @@ export interface ScheduleSettings {
   blockedDates: string[]; // ISO dates YYYY-MM-DD
 }
 
+export interface Address {
+  id: string;
+  label: string; // e.g., "Casa", "Trabalho", "Terreno Obra"
+  street: string;
+  number: string;
+  complement?: string;
+  district: string; // Bairro
+  city: string;
+  state: string;
+  zipCode: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string; // WhatsApp (Mandatory for registration)
   role: UserRole;
-  phone?: string;
   avatar?: string;
   bio?: string;
+  
+  // Personal Data (Optional - Profile)
+  cpf?: string; // Or CNPJ
+  birthDate?: string; // ISO Date YYYY-MM-DD
+  addresses?: Address[];
+
   projects?: Project[];
   favorites?: string[];
-  folders?: ClientFolder[]; // New Folder Structure
-  memories?: ClientMemory[]; // New: Long-term memory
-  chats?: ChatSession[]; // New: Chat history
-  appointments?: Appointment[]; // New: Scheduling
+  folders?: ClientFolder[]; 
+  memories?: ClientMemory[]; 
+  chats?: ChatSession[]; 
+  appointments?: Appointment[];
 }
 
 export interface ServicePackage {
@@ -116,6 +135,27 @@ export interface PillarItem {
   icon?: string; // Optional icon identifier
 }
 
+export interface OfficeDetails {
+  address: string; // Full string for display
+  street: string;
+  number: string;
+  district: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  mapsLink: string; // Google Maps URL
+  
+  hoursDescription: string; // e.g., "Segunda a Sexta, 09h às 18h"
+  
+  // New Block System for Office Page
+  blocks: ContentBlock[];
+  
+  // Deprecated but kept for type safety during migration if needed
+  facadeImage?: string; 
+  interiorImages?: string[];
+  aboutText?: string;
+}
+
 export interface SiteContent {
   about: {
     heroTitle: string;
@@ -126,7 +166,8 @@ export interface SiteContent {
     stats: StatItem[]; // New
     pillars: PillarItem[]; // New
     recognition: string[]; // New
-  }
+  };
+  office: OfficeDetails; // Centralized Office Data
 }
 
 export interface GlobalSettings {

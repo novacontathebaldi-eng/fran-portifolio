@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock, Map, Video, ArrowRight, LogIn } from 'lucide-react';
+import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../context/ProjectContext';
 import { ChatMessage, Project } from '../types';
@@ -11,8 +10,6 @@ interface ChatbotProps {
   onToggle?: (isOpen: boolean) => void;
   hideButton?: boolean;
 }
-
-const OFFICE_ADDRESS = "Rua José de Anchieta Fontana, 177, Centro, Santa Leopoldina - ES";
 
 export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onToggle, hideButton = false }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -141,7 +138,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const SocialLinks = () => (
     <div className="mt-4 space-y-3">
       <a 
-        href="https://wa.me/5527996670426" 
+        href="https://wa.me/5527996670426?text=Ol%C3%A1%2C%20vim%20pelo%20site%20e%20gostaria%20de%20saber%20mais." 
         target="_blank" 
         rel="noreferrer"
         className="flex items-center justify-between bg-[#25D366] text-white p-3 rounded-lg hover:brightness-105 transition shadow-sm w-full"
@@ -170,35 +167,15 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   );
 
   const CalendarWidget = ({ data }: { data: any }) => {
-    const [step, setStep] = useState<'login_check' | 'location' | 'calendar' | 'success'>('login_check');
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [viewDate, setViewDate] = useState(new Date());
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
-    
-    // Booking Details
-    const [meetingMode, setMeetingMode] = useState<'online' | 'office'>('online');
-    const [visitAddress, setVisitAddress] = useState(data?.address || '');
-    
-    // Check login on mount
-    useEffect(() => {
-        if (!currentUser) {
-            setStep('login_check');
-        } else {
-            // Determine start step
-            if (data?.type === 'visit' && !data?.address) {
-                setStep('location');
-            } else if (data?.type === 'meeting') {
-                setStep('location');
-            } else {
-                setStep('calendar');
-            }
-        }
-    }, [currentUser, data]);
+    const [booked, setBooked] = useState(false);
 
-    // Helper to generate next 5 days
+    // Helper to generate next 7 days from viewDate
     const dates = useMemo(() => {
         const arr = [];
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 5; i++) { // Show 5 days
             const d = new Date(viewDate);
             d.setDate(viewDate.getDate() + i);
             arr.push(d);
@@ -212,144 +189,54 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     };
 
     const confirmBooking = (time: string) => {
-        if (!selectedDate || !currentUser) return;
+        if (!selectedDate) return;
         
-        let finalLocation = 'Online (Link será enviado)';
-        if (data?.type === 'meeting' && meetingMode === 'office') {
-            finalLocation = OFFICE_ADDRESS;
-        } else if (data?.type === 'visit') {
-            finalLocation = visitAddress || 'Endereço a definir';
-        }
-
         addAppointment({
-            clientId: currentUser.id,
-            clientName: currentUser.name,
+            clientId: currentUser?.id || 'guest',
+            clientName: currentUser?.name || 'Visitante (Via Chat)',
             date: selectedDate,
             time: time,
             type: data?.type || 'meeting',
-            location: finalLocation,
+            location: data?.type === 'visit' ? (data?.address || 'A definir') : 'Online / Escritório',
         });
         
-        setStep('success');
-        showToast("Agendamento confirmado!", "success");
+        setBooked(true);
+        showToast("Solicitação de agendamento enviada!", "success");
     };
 
-    const renderHeader = (title: string, backAction?: () => void) => (
-        <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-500">{title}</span>
-            {backAction && (
-                <button onClick={backAction} className="text-gray-400 hover:text-black">
-                    <ChevronLeft className="w-4 h-4" />
-                </button>
-            )}
-        </div>
-    );
-
-    if (step === 'login_check') {
+    if (booked) {
         return (
-            <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-xl text-center">
-                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <LogIn className="w-5 h-5 text-gray-600" />
+            <div className="mt-4 p-4 bg-green-50 text-green-800 rounded-lg flex items-center gap-3 border border-green-100">
+                <CheckCircle className="w-5 h-5" />
+                <div>
+                    <p className="font-bold text-sm">Solicitação Recebida</p>
+                    <p className="text-xs">Aguarde a confirmação da equipe.</p>
                 </div>
-                <h4 className="font-bold text-sm mb-1">Identificação Necessária</h4>
-                <p className="text-xs text-gray-500 mb-4">Para confirmar seu agendamento, precisamos que você acesse sua conta.</p>
-                <button onClick={() => navigate('/auth')} className="bg-black text-white px-6 py-2 rounded-full text-xs font-bold hover:bg-accent hover:text-black transition">
-                    Fazer Login / Cadastro
-                </button>
-                <p className="text-[10px] text-gray-400 mt-2">Volte aqui após o login.</p>
             </div>
         );
     }
 
-    if (step === 'success') {
-        return (
-            <div className="mt-4 p-4 bg-green-50 text-green-800 rounded-lg border border-green-100 animate-fadeIn">
-                <div className="flex items-center gap-3 mb-2">
-                   <CheckCircle className="w-5 h-5" />
-                   <p className="font-bold text-sm">Solicitação Enviada</p>
-                </div>
-                <p className="text-xs mb-3">Sua solicitação está em análise. Você receberá uma notificação assim que confirmada.</p>
-                <button onClick={() => navigate('/profile')} className="w-full bg-green-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-green-700 transition">
-                    Acompanhar no Painel
-                </button>
-            </div>
-        );
-    }
-
-    if (step === 'location') {
-        return (
-            <div className="mt-4 bg-white rounded-lg border border-gray-200 p-4 shadow-sm animate-fadeIn">
-                {renderHeader("Detalhes do Local")}
-                
-                {data?.type === 'meeting' ? (
-                    <div className="space-y-3">
-                        <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition ${meetingMode === 'online' ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
-                            <input type="radio" name="mode" className="hidden" checked={meetingMode === 'online'} onChange={() => setMeetingMode('online')} />
-                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><Video className="w-4 h-4" /></div>
-                            <div className="flex-grow">
-                                <span className="block font-bold text-sm">Online (Google Meet)</span>
-                                <span className="text-xs text-gray-500">Link enviado após confirmação</span>
-                            </div>
-                            {meetingMode === 'online' && <Check className="w-4 h-4 text-black" />}
-                        </label>
-                        <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition ${meetingMode === 'office' ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
-                            <input type="radio" name="mode" className="hidden" checked={meetingMode === 'office'} onChange={() => setMeetingMode('office')} />
-                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600"><MapPin className="w-4 h-4" /></div>
-                            <div className="flex-grow">
-                                <span className="block font-bold text-sm">Presencial (Escritório)</span>
-                                <span className="text-xs text-gray-500">Santa Leopoldina - ES</span>
-                            </div>
-                            {meetingMode === 'office' && <Check className="w-4 h-4 text-black" />}
-                        </label>
-                        <button onClick={() => setStep('calendar')} className="w-full bg-black text-white py-2 rounded-lg text-xs font-bold mt-2">Continuar</button>
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        <p className="text-xs text-gray-500">Por favor, informe o endereço da obra/imóvel para a visita técnica.</p>
-                        <input 
-                            type="text" 
-                            value={visitAddress} 
-                            onChange={(e) => setVisitAddress(e.target.value)}
-                            placeholder="Ex: Av. Beira Mar, 100..."
-                            className="w-full border p-2 rounded text-sm focus:outline-none focus:border-black"
-                        />
-                        <button 
-                            disabled={!visitAddress.trim()}
-                            onClick={() => setStep('calendar')} 
-                            className="w-full bg-black text-white py-2 rounded-lg text-xs font-bold mt-2 disabled:opacity-50"
-                        >
-                            Continuar
-                        </button>
-                    </div>
-                )}
-            </div>
-        );
-    }
-
-    // Step: Calendar
     return (
-        <div className="mt-4 bg-white rounded-lg border border-gray-200 p-3 shadow-sm animate-fadeIn">
-            {renderHeader("Selecione Data & Hora", () => setStep('location'))}
-
-            <div className="flex justify-between items-center mb-3 px-1">
-                 <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate()-5); setViewDate(d); }} className="p-1 hover:bg-gray-100 rounded text-gray-400"><ChevronLeft className="w-4 h-4" /></button>
-                 <span className="text-xs font-bold">{viewDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</span>
-                 <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate()+5); setViewDate(d); }} className="p-1 hover:bg-gray-100 rounded text-gray-400"><ChevronRight className="w-4 h-4" /></button>
+        <div className="mt-4 bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+            <div className="flex justify-between items-center mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    {data?.type === 'visit' ? 'Agendar Visita' : 'Agendar Reunião'}
+                </span>
+                <div className="flex gap-1">
+                   <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate()-5); setViewDate(d); }} className="p-1 hover:bg-gray-100 rounded"><ChevronLeft className="w-4 h-4" /></button>
+                   <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate()+5); setViewDate(d); }} className="p-1 hover:bg-gray-100 rounded"><ChevronRight className="w-4 h-4" /></button>
+                </div>
             </div>
 
             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-4">
                 {dates.map((d) => {
                    const dStr = d.toISOString().split('T')[0];
                    const isSelected = selectedDate === dStr;
-                   const today = new Date().toISOString().split('T')[0];
-                   const isPast = dStr < today;
-                   
                    return (
                        <button 
                          key={dStr} 
-                         disabled={isPast}
-                         onClick={() => !isPast && handleDateClick(dStr)}
-                         className={`flex flex-col items-center justify-center min-w-[50px] p-2 rounded-lg border transition ${isSelected ? 'bg-black text-white border-black' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'} ${isPast ? 'opacity-30 cursor-not-allowed' : ''}`}
+                         onClick={() => handleDateClick(dStr)}
+                         className={`flex flex-col items-center justify-center min-w-[50px] p-2 rounded-lg border transition ${isSelected ? 'bg-black text-white border-black' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}
                        >
                            <span className="text-[10px] uppercase font-bold">{d.toLocaleDateString('pt-BR', { weekday: 'short' })}</span>
                            <span className="text-sm font-bold">{d.getDate()}</span>
@@ -360,7 +247,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
 
             {selectedDate && (
                 <div className="animate-fadeIn">
-                    <p className="text-xs text-gray-400 mb-2">Horários para {new Date(selectedDate).toLocaleDateString()}:</p>
+                    <p className="text-xs text-gray-400 mb-2">Horários disponíveis para {new Date(selectedDate).toLocaleDateString()}:</p>
                     {availableSlots.length > 0 ? (
                         <div className="grid grid-cols-3 gap-2">
                            {availableSlots.map(slot => (
@@ -374,11 +261,11 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                            ))}
                         </div>
                     ) : (
-                        <p className="text-xs text-red-400 bg-red-50 p-2 rounded text-center">Indisponível.</p>
+                        <p className="text-xs text-red-400 bg-red-50 p-2 rounded text-center">Nenhum horário disponível neste dia.</p>
                     )}
                 </div>
             )}
-            {!selectedDate && <p className="text-center text-xs text-gray-400 py-4">Selecione um dia.</p>}
+            {!selectedDate && <p className="text-center text-xs text-gray-400 py-4">Selecione um dia acima.</p>}
         </div>
     );
   };

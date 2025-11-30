@@ -107,33 +107,61 @@ const Login: React.FC = () => {
 };
 
 const Register: React.FC = () => {
+  const { registerUser } = useProjects();
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      alert("Senhas não conferem");
+      return;
+    }
+    registerUser(formData.name, formData.email, formData.phone);
+    navigate('/profile');
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   return (
     <div className="max-w-md w-full mx-auto animate-fadeIn">
       <h2 className="text-3xl font-serif mb-2">Criar Conta</h2>
       <p className="text-secondary mb-8">Comece sua jornada com Fran Siller Arquitetura.</p>
       
-      <form className="space-y-6">
+      <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
           <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Nome Completo</label>
-          <input type="text" className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" />
+          <input name="name" onChange={handleChange} required type="text" className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" />
         </div>
         <div>
           <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Email</label>
-          <input type="email" className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" />
+          <input name="email" onChange={handleChange} required type="email" className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" />
+        </div>
+        <div>
+          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">WhatsApp / Telefone</label>
+          <input name="phone" onChange={handleChange} required type="tel" placeholder="(00) 00000-0000" className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Senha</label>
-            <input type="password" className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" />
+            <input name="password" onChange={handleChange} required type="password" className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" />
           </div>
           <div>
             <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Confirmar</label>
-            <input type="password" className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" />
+            <input name="confirmPassword" onChange={handleChange} required type="password" className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" />
           </div>
         </div>
 
         <div className="text-xs text-gray-500">
-           Ao se registrar, você concorda com nossos <button className="underline">Termos de Serviço</button> e <button className="underline">Política de Privacidade</button>.
+           Ao se registrar, você concorda com nossos <button type="button" className="underline">Termos de Serviço</button> e <button type="button" className="underline">Política de Privacidade</button>.
         </div>
 
         <button className="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-accent transition">Criar Conta</button>

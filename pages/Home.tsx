@@ -1,11 +1,14 @@
-import React from 'react';
+
+
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, MapPin, Clock, X, Phone, Mail } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
-import { motion, Variants } from 'framer-motion';
+import { motion, Variants, AnimatePresence } from 'framer-motion';
 
 export const Home: React.FC = () => {
-  const { projects } = useProjects();
+  const { projects, siteContent } = useProjects();
+  const [showOfficeModal, setShowOfficeModal] = useState(false);
   
   const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 30 },
@@ -21,6 +24,16 @@ export const Home: React.FC = () => {
       }
     }
   };
+
+  // Lock body scroll when Full Screen Modal is open
+  useEffect(() => {
+    if (showOfficeModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [showOfficeModal]);
   
   return (
     <div className="overflow-hidden">
@@ -149,6 +162,242 @@ export const Home: React.FC = () => {
           </motion.div>
         </div>
       </section>
+
+      {/* Visit Us Section - NEW */}
+      <section className="py-20 bg-white border-t border-gray-100">
+        <div className="container mx-auto px-6">
+           <div className="flex flex-col lg:flex-row gap-0 shadow-2xl rounded-2xl overflow-hidden">
+              
+              {/* Info Column */}
+              <div className="w-full lg:w-1/3 bg-[#111] text-white p-12 flex flex-col justify-center">
+                 <span className="text-accent uppercase tracking-widest text-xs font-bold mb-6 block">Visite-nos</span>
+                 <h2 className="text-3xl md:text-4xl font-serif mb-8 leading-tight">Nosso Ateliê <br/> Criativo</h2>
+                 
+                 <div className="space-y-6 mb-10">
+                    <div className="flex items-start gap-4">
+                       <MapPin className="w-6 h-6 text-accent shrink-0 mt-1" />
+                       <div>
+                          <p className="font-bold text-lg mb-1">Endereço</p>
+                          <p className="text-gray-400 font-light text-sm leading-relaxed">{siteContent.office.address}</p>
+                       </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                       <Clock className="w-6 h-6 text-accent shrink-0 mt-1" />
+                       <div>
+                          <p className="font-bold text-lg mb-1">Horário</p>
+                          <p className="text-gray-400 font-light text-sm leading-relaxed">{siteContent.office.hoursDescription}</p>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="space-y-4">
+                    <a 
+                      href={siteContent.office.mapsLink} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="block w-full bg-white text-black text-center py-4 rounded-full font-bold uppercase text-xs tracking-wider hover:bg-accent transition"
+                    >
+                      Traçar Rota
+                    </a>
+                    <button 
+                      onClick={() => setShowOfficeModal(true)}
+                      className="block w-full border border-gray-700 text-white text-center py-4 rounded-full font-bold uppercase text-xs tracking-wider hover:border-white transition"
+                    >
+                      Conheça o Escritório
+                    </button>
+                 </div>
+              </div>
+
+              {/* Map Column */}
+              <div className="w-full lg:w-2/3 h-[400px] lg:h-auto relative bg-gray-200">
+                 {/* Google Maps Embed using Address Query */}
+                 <iframe 
+                   width="100%" 
+                   height="100%" 
+                   style={{ border: 0 }} 
+                   loading="lazy" 
+                   allowFullScreen 
+                   referrerPolicy="no-referrer-when-downgrade"
+                   src={`https://maps.google.com/maps?q=${encodeURIComponent(siteContent.office.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                   className="filter grayscale hover:grayscale-0 transition duration-700"
+                 ></iframe>
+              </div>
+           </div>
+        </div>
+      </section>
+
+      {/* FULL SCREEN OFFICE MODAL - DYNAMIC CMS */}
+      <AnimatePresence>
+        {showOfficeModal && (
+           <motion.div 
+             initial={{ opacity: 0, y: '100%' }}
+             animate={{ opacity: 1, y: 0 }}
+             exit={{ opacity: 0, y: '100%' }}
+             transition={{ duration: 0.5, ease: "easeInOut" }}
+             className="fixed inset-0 z-[100] bg-white overflow-y-auto"
+           >
+              {/* Close Button - Sticky */}
+              <div className="fixed top-6 right-6 z-[110]">
+                <button 
+                  onClick={() => setShowOfficeModal(false)} 
+                  className="bg-black text-white p-3 rounded-full hover:bg-accent hover:text-black transition shadow-lg group"
+                >
+                  <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+                </button>
+              </div>
+
+              {/* Dynamic Content Rendering */}
+              <div className="min-h-screen pb-20">
+                 
+                 {(!siteContent.office.blocks || siteContent.office.blocks.length === 0) ? (
+                    <div className="h-screen flex items-center justify-center">
+                       <p className="text-gray-400">Conteúdo do escritório em construção.</p>
+                    </div>
+                 ) : (
+                    siteContent.office.blocks.map((block) => {
+                       
+                       // 1. HERO IMAGE (Image Full)
+                       if (block.type === 'image-full') {
+                          return (
+                             <div key={block.id} className="w-full h-[60vh] md:h-[80vh] relative">
+                                <img src={block.content} className="w-full h-full object-cover" />
+                                {block.caption && (
+                                   <div className="absolute bottom-0 left-0 bg-white/90 px-6 py-3 text-sm font-bold tracking-wider uppercase">
+                                      {block.caption}
+                                   </div>
+                                )}
+                             </div>
+                          );
+                       }
+
+                       // 2. HEADING
+                       if (block.type === 'heading') {
+                          return (
+                             <div key={block.id} className="container mx-auto px-6 py-12 md:py-20">
+                                <motion.h2 
+                                  initial={{ opacity: 0, y: 30 }}
+                                  whileInView={{ opacity: 1, y: 0 }}
+                                  viewport={{ once: true }}
+                                  className="text-4xl md:text-6xl font-serif leading-tight max-w-4xl"
+                                >
+                                   {block.content}
+                                </motion.h2>
+                             </div>
+                          );
+                       }
+
+                       // 3. TEXT
+                       if (block.type === 'text') {
+                          return (
+                             <div key={block.id} className="container mx-auto px-6 pb-12">
+                                <motion.div 
+                                  initial={{ opacity: 0 }}
+                                  whileInView={{ opacity: 1 }}
+                                  viewport={{ once: true }}
+                                  className="prose prose-lg md:prose-xl text-gray-600 leading-relaxed max-w-3xl"
+                                >
+                                   <p>{block.content}</p>
+                                </motion.div>
+                             </div>
+                          );
+                       }
+
+                       // 4. IMAGE GRID
+                       if (block.type === 'image-grid') {
+                          return (
+                             <div key={block.id} className="container mx-auto px-6 py-12">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                                   {block.items?.map((img, idx) => (
+                                      <motion.div 
+                                        key={idx}
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        whileInView={{ opacity: 1, scale: 1 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: idx * 0.1 }}
+                                        className="h-[400px] bg-gray-100 overflow-hidden"
+                                      >
+                                         <img src={img} className="w-full h-full object-cover hover:scale-105 transition duration-700" />
+                                      </motion.div>
+                                   ))}
+                                </div>
+                             </div>
+                          );
+                       }
+
+                       // 5. QUOTE
+                       if (block.type === 'quote') {
+                          return (
+                             <div key={block.id} className="bg-gray-50 py-20 my-12">
+                                <div className="container mx-auto px-6 text-center">
+                                   <h3 className="text-3xl md:text-5xl font-serif italic text-gray-800">"{block.content}"</h3>
+                                </div>
+                             </div>
+                          );
+                       }
+
+                       // 6. DETAILS (Contact Info)
+                       if (block.type === 'details') {
+                          return (
+                             <div key={block.id} className="container mx-auto px-6 py-12 bg-black text-white rounded-xl my-12">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-6 md:p-12">
+                                   <div>
+                                      <MapPin className="w-8 h-8 text-accent mb-4" />
+                                      <h4 className="text-xl font-bold mb-2">Endereço</h4>
+                                      <p className="text-gray-400">{siteContent.office.address}</p>
+                                   </div>
+                                   <div>
+                                      <Clock className="w-8 h-8 text-accent mb-4" />
+                                      <h4 className="text-xl font-bold mb-2">Horário</h4>
+                                      <p className="text-gray-400">{siteContent.office.hoursDescription}</p>
+                                   </div>
+                                   <div>
+                                      <Phone className="w-8 h-8 text-accent mb-4" />
+                                      <h4 className="text-xl font-bold mb-2">Contato</h4>
+                                      <p className="text-gray-400 text-sm mb-1">(27) 99667-0426</p>
+                                      <p className="text-gray-400 text-sm">contato@fransiller.com.br</p>
+                                   </div>
+                                </div>
+                             </div>
+                          );
+                       }
+
+                       // 7. MAP
+                       if (block.type === 'map') {
+                          return (
+                             <div key={block.id} className="w-full h-[500px] bg-gray-200">
+                                <iframe 
+                                   width="100%" 
+                                   height="100%" 
+                                   style={{ border: 0 }} 
+                                   loading="lazy" 
+                                   allowFullScreen 
+                                   referrerPolicy="no-referrer-when-downgrade"
+                                   src={`https://maps.google.com/maps?q=${encodeURIComponent(siteContent.office.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                                   className="filter grayscale hover:grayscale-0 transition duration-700"
+                                ></iframe>
+                             </div>
+                          );
+                       }
+
+                       return null;
+                    })
+                 )}
+
+                 {/* Sticky Footer in Modal for CTA */}
+                 <div className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-100 p-4 md:p-6 z-50 flex justify-between items-center">
+                    <div>
+                       <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Gostou do que viu?</p>
+                       <p className="font-serif text-lg">Vamos conversar sobre seu projeto.</p>
+                    </div>
+                    <Link to="/contact" onClick={() => setShowOfficeModal(false)} className="bg-black text-white px-6 py-3 rounded-full font-bold hover:bg-accent hover:text-black transition">
+                       Agendar Visita
+                    </Link>
+                 </div>
+              </div>
+           </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

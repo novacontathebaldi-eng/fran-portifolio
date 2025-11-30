@@ -1,6 +1,7 @@
 
+
 import { GoogleGenAI, Type } from "@google/genai";
-import { User, ClientMemory, ChatMessage } from '../types';
+import { User, ClientMemory, ChatMessage, OfficeDetails } from '../types';
 
 // Define tools for GenUI & Actions
 const tools = [
@@ -85,12 +86,11 @@ DADOS CRÍTICOS:
 - WhatsApp Oficial: +5527996670426
 - Instagram: instagram.com/othebaldi
 - Facebook: fb.com/othebaldi
-- Localização: Atuamos em todo o Brasil.
 
 REGRAS DE COMPORTAMENTO:
 1. AGENDAMENTOS: Se o usuário quiser marcar horário/visita, chame a tool 'scheduleMeeting'. 
-   - IMPORTANTE: Se o usuário pedir uma "Visita Técnica", você DEVE perguntar o endereço da obra antes de chamar a tool.
-   - Se for apenas uma "Reunião" ou "Conversa", não precisa de endereço (será Online ou no Escritório).
+   - IMPORTANTE: Se o usuário pedir uma "Visita Técnica", você DEVE obter o endereço da obra.
+   - Se for "Reunião", pode ser Online ou PRESENCIAL (no escritório).
    - O widget de calendário aparecerá automaticamente após você chamar a tool.
 2. RECADO: Se o usuário quiser apenas que entrem em contato depois, use 'saveClientNote'.
 3. Se perguntarem "Como falo com a Fran?", use 'getSocialLinks'.
@@ -100,7 +100,7 @@ REGRAS DE COMPORTAMENTO:
 
 export async function chatWithConcierge(
   message: ChatMessage[] | string, 
-  context: { user: User | null; memories: ClientMemory[] }, 
+  context: { user: User | null; memories: ClientMemory[]; office?: OfficeDetails }, 
   aiConfig: any
 ) {
   const apiKey = process.env.API_KEY;
@@ -118,12 +118,32 @@ export async function chatWithConcierge(
   let systemInstruction = aiConfig.useCustomSystemInstruction 
     ? aiConfig.systemInstruction 
     : DEFAULT_SYSTEM_INSTRUCTION;
+
+  // Inject Office Address and Hours dynamically from Admin Context
+  if (context.office) {
+    systemInstruction += `\n\nINFORMAÇÕES DO ESCRITÓRIO (OFICIAIS):
+    - Endereço Completo: ${context.office.address}
+    - Cidade/Estado: ${context.office.city} - ${context.office.state}
+    - Horário de Atendimento: ${context.office.hoursDescription}
+    - Use essas informações para responder perguntas sobre "onde fica o escritório" ou "qual o horário".
+    `;
+  }
   
   if (context?.user) {
     systemInstruction += `\n\nCONTEXTO DO USUÁRIO LOGADO:
     - Nome: ${context.user.name}
     - Role: ${context.user.role}
+    - Telefone: ${context.user.phone || 'Não informado'}
     `;
+
+    if (context.user.addresses && context.user.addresses.length > 0) {
+      systemInstruction += `\n- Endereços Cadastrados:`;
+      context.user.addresses.forEach(addr => {
+        systemInstruction += `\n  * [${addr.label}]: ${addr.street}, ${addr.number}, ${addr.district} - ${addr.city}/${addr.state}`;
+      });
+    } else {
+      systemInstruction += `\n- Endereços: Nenhum cadastrado.`;
+    }
     
     // Inject Client Memories securely
     if (context.memories && context.memories.length > 0) {

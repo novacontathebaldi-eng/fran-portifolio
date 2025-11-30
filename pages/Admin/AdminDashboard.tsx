@@ -1,9 +1,11 @@
 
+
 import React, { useState } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, XCircle } from 'lucide-react';
-import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment } from '../../types';
+import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info } from 'lucide-react';
+import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock } from '../../types';
+import { motion, Reorder } from 'framer-motion';
 
 // Mock Supabase Upload Simulation
 const uploadToSupabase = async (file: File): Promise<string> => {
@@ -15,9 +17,9 @@ const uploadToSupabase = async (file: File): Promise<string> => {
 };
 
 export const AdminDashboard: React.FC = () => {
-  const { projects, deleteProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, adminNotes, markNoteAsRead, deleteAdminNote, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, toggleBlockDate, editAppointment } = useProjects();
+  const { projects, deleteProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, adminNotes, markNoteAsRead, deleteAdminNote, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus } = useProjects();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'content' | 'settings' | 'messages' | 'clients' | 'agenda'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'content' | 'settings' | 'messages' | 'clients' | 'agenda' | 'office'>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   
@@ -36,10 +38,6 @@ export const AdminDashboard: React.FC = () => {
   // Rename State
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editFolderName, setEditFolderName] = useState('');
-
-  // Agenda Edit State
-  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
-  const [blockDateInput, setBlockDateInput] = useState('');
 
   const handleDelete = (id: string) => {
     if (confirm('Tem certeza que deseja excluir este projeto?')) {
@@ -65,7 +63,8 @@ export const AdminDashboard: React.FC = () => {
     }));
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'heroImage' | 'profileImage') => {
+  // Generic Image Upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, section: 'about' | 'office', fieldName: string) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
     setUploading(true);
@@ -73,8 +72,8 @@ export const AdminDashboard: React.FC = () => {
       const url = await uploadToSupabase(file);
       setContentForm(prev => ({
         ...prev,
-        about: {
-          ...prev.about,
+        [section]: {
+          ...(prev as any)[section],
           [fieldName]: url
         }
       }));
@@ -161,6 +160,17 @@ export const AdminDashboard: React.FC = () => {
     showToast('Configurações salvas.', 'success');
   };
 
+  const handleAdminDeleteMemory = (memoryId: string) => {
+    if (!selectedClient) return;
+    if (confirm('Tem certeza que deseja apagar esta memória do cliente?')) {
+        const updatedMemories = (selectedClient.memories || []).filter(m => m.id !== memoryId);
+        const updatedClient = { ...selectedClient, memories: updatedMemories };
+        updateUser(updatedClient);
+        setSelectedClient(updatedClient);
+        showToast('Memória removida.', 'success');
+    }
+  }
+
   const handleCreateFolder = () => {
     if (newFolderName.trim() && selectedClient) {
       createClientFolder(selectedClient.id, newFolderName);
@@ -220,23 +230,6 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  // Agenda Helpers
-  const handleSaveAppointment = () => {
-    if (editingAppointment) {
-      editAppointment(editingAppointment.id, editingAppointment);
-      setEditingAppointment(null);
-      showToast('Agendamento atualizado.', 'success');
-    }
-  };
-
-  const handleAddBlockDate = () => {
-    if (blockDateInput) {
-        toggleBlockDate(blockDateInput);
-        setBlockDateInput('');
-        showToast('Data bloqueada.', 'info');
-    }
-  };
-
   const NavItem = ({ id, icon: Icon, label, count }: { id: typeof activeTab, icon: any, label: string, count?: number }) => (
     <button 
       onClick={() => { setActiveTab(id); setMobileMenuOpen(false); setSelectedClient(null); setCurrentAdminFolderId(null); }} 
@@ -253,7 +246,84 @@ export const AdminDashboard: React.FC = () => {
 
   const unreadNotesCount = adminNotes.filter(n => n.status === 'new').length;
   const pendingAppointmentsCount = appointments.filter(a => a.status === 'pending').length;
+
+  // Sorting appointments
   const sortedAppointments = [...appointments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Handle Office Change
+  const handleOfficeChange = (field: keyof OfficeDetails, value: any) => {
+    setContentForm(prev => ({
+      ...prev,
+      office: {
+        ...prev.office,
+        [field]: value
+      }
+    }));
+  };
+
+  // --- Office Block Logic ---
+  const addOfficeBlock = (type: ContentBlock['type']) => {
+    const newBlock: ContentBlock = {
+      id: Math.random().toString(36).substr(2, 9),
+      type,
+      content: '',
+      items: type === 'image-grid' ? ['', ''] : undefined,
+    };
+    const currentBlocks = contentForm.office.blocks || [];
+    handleOfficeChange('blocks', [...currentBlocks, newBlock]);
+  };
+
+  const updateOfficeBlock = (id: string, field: keyof ContentBlock, value: any) => {
+    const currentBlocks = contentForm.office.blocks || [];
+    const updated = currentBlocks.map(b => b.id === id ? { ...b, [field]: value } : b);
+    handleOfficeChange('blocks', updated);
+  };
+
+  const updateOfficeGridItem = (blockId: string, index: number, value: string) => {
+    const currentBlocks = contentForm.office.blocks || [];
+    const updated = currentBlocks.map(b => {
+       if (b.id !== blockId) return b;
+       const newItems = [...(b.items || [])];
+       newItems[index] = value;
+       return { ...b, items: newItems };
+    });
+    handleOfficeChange('blocks', updated);
+  };
+
+  const removeOfficeBlock = (id: string) => {
+    const currentBlocks = contentForm.office.blocks || [];
+    handleOfficeChange('blocks', currentBlocks.filter(b => b.id !== id));
+  };
+
+  const moveOfficeBlock = (index: number, direction: 'up' | 'down') => {
+    const blocks = [...(contentForm.office.blocks || [])];
+    if (direction === 'up' && index > 0) {
+      [blocks[index], blocks[index - 1]] = [blocks[index - 1], blocks[index]];
+    } else if (direction === 'down' && index < blocks.length - 1) {
+      [blocks[index], blocks[index + 1]] = [blocks[index + 1], blocks[index]];
+    }
+    handleOfficeChange('blocks', blocks);
+  };
+
+  const handleBlockImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockId: string) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    try {
+        const url = await uploadToSupabase(e.target.files[0]);
+        updateOfficeBlock(blockId, 'content', url);
+    } catch(err) {
+        showToast('Erro ao enviar imagem', 'error');
+    }
+  };
+
+  const handleGridImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockId: string, index: number) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    try {
+        const url = await uploadToSupabase(e.target.files[0]);
+        updateOfficeGridItem(blockId, index, url);
+    } catch(err) {
+        showToast('Erro ao enviar imagem', 'error');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#111] flex font-sans text-gray-100">
@@ -279,6 +349,7 @@ export const AdminDashboard: React.FC = () => {
           <NavItem id="projects" icon={FolderOpen} label="Projetos" />
           <NavItem id="clients" icon={Users} label="Clientes & Arquivos" />
           <NavItem id="messages" icon={MessageSquare} label="Recados & IA" count={unreadNotesCount} />
+          <NavItem id="office" icon={MapPin} label="Escritório" />
           <NavItem id="content" icon={FileText} label="Conteúdo Site" />
           <NavItem id="settings" icon={Settings} label="Configurações" />
         </nav>
@@ -332,6 +403,148 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Office View (UPDATED CMS) */}
+          {activeTab === 'office' && (
+             <div className="animate-fadeIn max-w-5xl">
+               <div className="flex justify-between items-center mb-8">
+                 <h2 className="text-3xl font-serif font-bold text-black">Página do Escritório</h2>
+                 <button onClick={saveContent} className="bg-black text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2">
+                    <Save className="w-5 h-5" /> Salvar Página
+                 </button>
+               </div>
+               
+               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8 space-y-12">
+                  
+                  {/* Metadata Section */}
+                  <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 border-b border-gray-200 pb-2"><Settings className="w-5 h-5"/> Metadados (Rodapé e Contato)</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="col-span-2">
+                        <label className="text-xs font-bold uppercase text-gray-500">Endereço Completo (Texto)</label>
+                        <input value={contentForm.office.address} onChange={e => handleOfficeChange('address', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Rua..." />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold uppercase text-gray-500">Horário (Texto)</label>
+                        <input value={contentForm.office.hoursDescription} onChange={e => handleOfficeChange('hoursDescription', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" />
+                      </div>
+                      <div>
+                         <label className="text-xs font-bold uppercase text-gray-500">Link Google Maps</label>
+                        <input value={contentForm.office.mapsLink} onChange={e => handleOfficeChange('mapsLink', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visual Content Builder */}
+                  <div>
+                    <div className="flex justify-between items-center mb-6">
+                       <h3 className="font-bold text-xl flex items-center gap-2"><LayoutDashboard className="w-5 h-5"/> Conteúdo Visual (Full Page)</h3>
+                       <div className="flex flex-wrap gap-2">
+                          <button onClick={() => addOfficeBlock('heading')} className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-black hover:text-white rounded-lg transition text-xs font-bold" title="Título"><Heading className="w-4 h-4" /> Título</button>
+                          <button onClick={() => addOfficeBlock('text')} className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-black hover:text-white rounded-lg transition text-xs font-bold" title="Texto"><Type className="w-4 h-4" /> Texto</button>
+                          <button onClick={() => addOfficeBlock('image-full')} className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-black hover:text-white rounded-lg transition text-xs font-bold" title="Imagem"><ImageIcon className="w-4 h-4" /> Imagem</button>
+                          <button onClick={() => addOfficeBlock('image-grid')} className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-black hover:text-white rounded-lg transition text-xs font-bold" title="Grid"><LayoutGrid className="w-4 h-4" /> Grid</button>
+                          <button onClick={() => addOfficeBlock('quote')} className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-black hover:text-white rounded-lg transition text-xs font-bold" title="Citação"><Quote className="w-4 h-4" /> Citação</button>
+                          <button onClick={() => addOfficeBlock('details')} className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-black hover:text-white rounded-lg transition text-xs font-bold" title="Infos"><Info className="w-4 h-4" /> Infos</button>
+                          <button onClick={() => addOfficeBlock('map')} className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-black hover:text-white rounded-lg transition text-xs font-bold" title="Mapa"><Map className="w-4 h-4" /> Mapa</button>
+                       </div>
+                    </div>
+
+                    <div className="space-y-6">
+                       {(!contentForm.office.blocks || contentForm.office.blocks.length === 0) && (
+                          <div className="p-12 text-center border-2 border-dashed border-gray-200 rounded-xl text-gray-400">
+                             Nenhum bloco de conteúdo. Adicione acima.
+                          </div>
+                       )}
+
+                       {contentForm.office.blocks?.map((block, idx) => (
+                          <motion.div layout key={block.id} className="border border-gray-200 rounded-xl p-4 bg-white hover:shadow-md transition relative group">
+                             <div className="flex justify-between items-center mb-4 bg-gray-50 -m-4 mb-4 p-3 rounded-t-xl border-b border-gray-100">
+                                <div className="flex items-center gap-2 text-gray-500">
+                                   <GripVertical className="w-4 h-4" />
+                                   <span className="text-xs font-bold uppercase">{block.type}</span>
+                                </div>
+                                <div className="flex gap-1">
+                                   <button onClick={() => moveOfficeBlock(idx, 'up')} disabled={idx === 0} className="p-1 hover:bg-white rounded disabled:opacity-30"><ArrowUp className="w-4 h-4"/></button>
+                                   <button onClick={() => moveOfficeBlock(idx, 'down')} disabled={idx === (contentForm.office.blocks?.length || 0) - 1} className="p-1 hover:bg-white rounded disabled:opacity-30"><ArrowDown className="w-4 h-4"/></button>
+                                   <button onClick={() => removeOfficeBlock(block.id)} className="p-1 hover:bg-red-50 text-red-400 rounded"><Trash2 className="w-4 h-4"/></button>
+                                </div>
+                             </div>
+
+                             {/* Block Editors */}
+                             {block.type === 'heading' && (
+                                <input value={block.content} onChange={e => updateOfficeBlock(block.id, 'content', e.target.value)} className="w-full text-xl font-bold border-b border-gray-200 pb-2 focus:outline-none focus:border-black" placeholder="Título da Seção" />
+                             )}
+
+                             {block.type === 'text' && (
+                                <textarea value={block.content} onChange={e => updateOfficeBlock(block.id, 'content', e.target.value)} className="w-full h-24 p-2 border border-gray-200 rounded text-sm focus:outline-none focus:border-black" placeholder="Texto descritivo..." />
+                             )}
+
+                             {block.type === 'quote' && (
+                                <div className="flex gap-2">
+                                  <div className="w-1 bg-accent"></div>
+                                  <input value={block.content} onChange={e => updateOfficeBlock(block.id, 'content', e.target.value)} className="w-full text-lg italic bg-gray-50 p-2 focus:outline-none" placeholder="Frase de destaque" />
+                                </div>
+                             )}
+
+                             {block.type === 'details' && (
+                                <div className="p-4 bg-black text-white rounded text-center text-sm">
+                                   Bloco de Informações (Endereço, Horário, Contato). <br/>
+                                   <span className="text-xs opacity-50">Os dados são puxados dos metadados acima.</span>
+                                </div>
+                             )}
+
+                             {block.type === 'map' && (
+                                <div className="h-24 bg-gray-200 rounded flex items-center justify-center text-gray-500 text-sm">
+                                   Mapa do Google (Endereço Principal)
+                                </div>
+                             )}
+
+                             {block.type === 'image-full' && (
+                               <div className="space-y-3">
+                                 <div className="relative w-full h-40 bg-gray-100 rounded overflow-hidden group/img">
+                                    {block.content ? (
+                                        <img src={block.content} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full text-gray-400"><ImageIcon className="w-6 h-6"/></div>
+                                    )}
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition">
+                                        <label className="cursor-pointer bg-white text-black px-3 py-1 rounded text-xs font-bold">
+                                            Upload
+                                            <input type="file" className="hidden" onChange={(e) => handleBlockImageUpload(e, block.id)} accept="image/*" />
+                                        </label>
+                                    </div>
+                                 </div>
+                                 <input value={block.caption || ''} onChange={(e) => updateOfficeBlock(block.id, 'caption', e.target.value)} className="w-full text-xs text-center border-b border-gray-200 focus:outline-none" placeholder="Legenda (Opcional)" />
+                               </div>
+                             )}
+
+                             {block.type === 'image-grid' && (
+                               <div className="grid grid-cols-2 gap-2">
+                                   {block.items?.map((item, i) => (
+                                     <div key={i} className="relative h-24 bg-gray-100 rounded overflow-hidden group/img">
+                                        {item ? (
+                                            <img src={item} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="flex items-center justify-center h-full text-gray-400"><Plus className="w-4 h-4"/></div>
+                                        )}
+                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition">
+                                            <label className="cursor-pointer bg-white text-black px-2 py-1 rounded text-[10px] font-bold">
+                                                Img {i+1}
+                                                <input type="file" className="hidden" onChange={(e) => handleGridImageUpload(e, block.id, i)} accept="image/*" />
+                                            </label>
+                                        </div>
+                                     </div>
+                                   ))}
+                               </div>
+                             )}
+                          </motion.div>
+                       ))}
+                    </div>
+                  </div>
+               </div>
+             </div>
           )}
 
           {/* Agenda View */}
@@ -398,14 +611,9 @@ export const AdminDashboard: React.FC = () => {
                                          </div>
                                       </div>
                                    </div>
-                                   <div className="flex gap-2">
-                                       <button onClick={() => setEditingAppointment(appt)} className="p-2 text-gray-300 hover:text-blue-500 transition">
-                                          <Edit2 className="w-5 h-5" />
-                                       </button>
-                                       <button onClick={() => { if(confirm('Cancelar este agendamento?')) updateAppointmentStatus(appt.id, 'cancelled') }} className="p-2 text-gray-300 hover:text-red-500 transition">
-                                          <Ban className="w-5 h-5" />
-                                       </button>
-                                   </div>
+                                   <button onClick={() => { if(confirm('Cancelar este agendamento?')) updateAppointmentStatus(appt.id, 'cancelled') }} className="p-2 text-gray-300 hover:text-red-500 transition">
+                                      <Ban className="w-5 h-5" />
+                                   </button>
                                 </div>
                              ))
                           )}
@@ -413,31 +621,8 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                  </div>
 
-                 {/* Right: Settings & Blocks */}
+                 {/* Right: Settings */}
                  <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                       <h3 className="font-bold mb-4">Dias Bloqueados</h3>
-                       <div className="flex gap-2 mb-4">
-                           <input 
-                              type="date" 
-                              value={blockDateInput} 
-                              onChange={e => setBlockDateInput(e.target.value)} 
-                              className="border p-2 rounded text-sm w-full" 
-                           />
-                           <button onClick={handleAddBlockDate} className="bg-red-50 text-red-500 p-2 rounded hover:bg-red-100 font-bold text-xs uppercase tracking-wider whitespace-nowrap">Bloquear</button>
-                       </div>
-                       
-                       <div className="space-y-2 max-h-40 overflow-y-auto">
-                           {scheduleSettings.blockedDates.length === 0 && <p className="text-xs text-gray-400">Nenhum dia bloqueado.</p>}
-                           {scheduleSettings.blockedDates.map(date => (
-                               <div key={date} className="flex justify-between items-center bg-gray-50 p-2 rounded text-sm">
-                                   <span>{new Date(date).toLocaleDateString('pt-BR')}</span>
-                                   <button onClick={() => toggleBlockDate(date)} className="text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
-                               </div>
-                           ))}
-                       </div>
-                    </div>
-
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                        <h3 className="font-bold mb-4">Configuração de Horários</h3>
                        <div className="space-y-4">
@@ -479,62 +664,8 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Edit Appointment Modal */}
-          {editingAppointment && (
-              <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
-                  <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl animate-fadeIn">
-                      <h3 className="text-xl font-bold font-serif mb-4">Editar Agendamento</h3>
-                      <div className="space-y-4">
-                          <div>
-                              <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Data</label>
-                              <input 
-                                type="date" 
-                                value={editingAppointment.date} 
-                                onChange={e => setEditingAppointment({...editingAppointment, date: e.target.value})}
-                                className="w-full border p-2 rounded bg-white text-black"
-                              />
-                          </div>
-                          <div>
-                              <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Hora</label>
-                              <input 
-                                type="time" 
-                                value={editingAppointment.time} 
-                                onChange={e => setEditingAppointment({...editingAppointment, time: e.target.value})}
-                                className="w-full border p-2 rounded bg-white text-black"
-                              />
-                          </div>
-                          <div>
-                              <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Status</label>
-                              <select 
-                                value={editingAppointment.status} 
-                                onChange={e => setEditingAppointment({...editingAppointment, status: e.target.value as any})}
-                                className="w-full border p-2 rounded bg-white text-black"
-                              >
-                                  <option value="confirmed">Confirmado</option>
-                                  <option value="pending">Pendente</option>
-                                  <option value="cancelled">Cancelado</option>
-                                  <option value="rescheduling">Reagendando</option>
-                              </select>
-                          </div>
-                          <div>
-                              <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Local</label>
-                              <input 
-                                type="text" 
-                                value={editingAppointment.location} 
-                                onChange={e => setEditingAppointment({...editingAppointment, location: e.target.value})}
-                                className="w-full border p-2 rounded bg-white text-black"
-                              />
-                          </div>
-                      </div>
-                      <div className="flex justify-end gap-2 mt-8">
-                          <button onClick={() => setEditingAppointment(null)} className="px-4 py-2 text-gray-500 hover:text-black">Cancelar</button>
-                          <button onClick={handleSaveAppointment} className="px-6 py-2 bg-black text-white rounded-lg font-bold hover:bg-accent hover:text-black transition">Salvar</button>
-                      </div>
-                  </div>
-              </div>
-          )}
-
-          {/* ... Rest of existing dashboard tabs (projects, clients, messages, etc) ... */}
+          {/* ... Rest of tabs (projects, clients, messages, content, settings) remains identical to original ... */}
+          {/* Projects View */}
           {activeTab === 'projects' && (
             <div className="animate-fadeIn">
               <div className="flex justify-between items-center mb-8">
