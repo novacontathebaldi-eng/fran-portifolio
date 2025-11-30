@@ -18,7 +18,7 @@ import { ProjectProvider, useProjects } from './context/ProjectContext';
 
 // --- Error Boundary Component ---
 interface ErrorBoundaryProps {
-  children?: ReactNode;
+  children: ReactNode;
 }
 
 interface ErrorBoundaryState {
@@ -31,11 +31,11 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: any): ErrorBoundaryState {
+  static getDerivedStateFromError(_: Error): ErrorBoundaryState {
     return { hasError: true };
   }
 
-  componentDidCatch(error: any, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("ErrorBoundary caught an error", error, errorInfo);
   }
 
@@ -107,8 +107,8 @@ const GlobalToast = () => {
           exit={{ opacity: 0, y: -50, x: '-50%' }}
           className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[200] flex items-center gap-3 px-6 py-4 rounded-full shadow-2xl backdrop-blur-md border border-white/20 min-w-[300px]"
           style={{
-            backgroundColor: toast.type === 'success' ? 'rgba(20, 20, 20, 0.9)' : 
-                            toast.type === 'error' ? 'rgba(153, 27, 27, 0.9)' : 'rgba(20, 20, 20, 0.9)'
+            backgroundColor: toast.type === 'success' ? 'rgba(20, 20, 20, 0.95)' : 
+                            toast.type === 'error' ? 'rgba(153, 27, 27, 0.95)' : 'rgba(20, 20, 20, 0.95)'
           }}
         >
           {toast.type === 'success' && <CheckCircle className="w-5 h-5 text-green-400" />}
@@ -117,93 +117,70 @@ const GlobalToast = () => {
           
           <span className="text-white text-sm font-medium flex-grow">{toast.message}</span>
           
-          <button onClick={hideToast} className="text-gray-400 hover:text-white">
+          <button onClick={hideToast} className="text-white/50 hover:text-white transition">
             <X className="w-4 h-4" />
           </button>
         </motion.div>
       )}
     </AnimatePresence>
   );
-}
+};
 
-// Wrapper to handle AnimatePresence Logic
-const AnimatedRoutes = () => {
+// Wrapper for Routes to allow useLocation hook
+const AnimatedRoutes: React.FC = () => {
   const location = useLocation();
-  const { settings } = useProjects();
-  
+  const { currentUser, settings } = useProjects();
+
   return (
-    <ErrorBoundary>
-      <Routes location={location}>
-        {/* Auth Routes (Standalone) */}
-        <Route path="/auth/*" element={
-          <AnimatePresence mode="wait">
-             <PageTransition key="auth"><Auth /></PageTransition>
-          </AnimatePresence>
-        } />
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        {/* Public Routes */}
+        <Route path="/" element={<Layout><Home /></Layout>} />
+        <Route path="/portfolio" element={<Layout><Portfolio /></Layout>} />
+        <Route path="/project/:id" element={<Layout><ProjectDetails /></Layout>} />
+        <Route path="/about" element={<Layout><About /></Layout>} />
+        <Route path="/office" element={<Layout><Office /></Layout>} />
+        <Route path="/contact" element={<Layout><Contact /></Layout>} />
         
-        {/* Admin Routes (Standalone Layout) */}
-        <Route path="/admin/*" element={
-          <AnimatePresence mode="wait">
-            <PageTransition key="admin"><AdminDashboard /></PageTransition>
-          </AnimatePresence>
-        } />
-        <Route path="/admin/project/new" element={<ProjectForm />} />
-        <Route path="/admin/project/edit/:id" element={<ProjectForm />} />
+        {/* Auth Routes */}
+        <Route path="/auth/*" element={<Layout><Auth /></Layout>} />
 
-        {/* Public Routes (Shared Persistent Layout) */}
-        <Route path="*" element={
-          <Layout>
-            <AnimatePresence mode="wait">
-              <Routes location={location} key={location.pathname}>
-                <Route path="/" element={<PageTransition><Home /></PageTransition>} />
-                <Route path="/about" element={<PageTransition><About /></PageTransition>} />
-                <Route path="/office" element={<PageTransition><Office /></PageTransition>} />
-                <Route path="/portfolio" element={<PageTransition><Portfolio /></PageTransition>} />
-                <Route path="/project/:id" element={<PageTransition><ProjectDetails /></PageTransition>} />
-                
-                {/* Conditional Shop Routes */}
-                {settings.enableShop ? (
-                  <>
-                    <Route path="/services" element={<PageTransition><BudgetFlow /></PageTransition>} /> 
-                    <Route path="/budget" element={<PageTransition><BudgetFlow /></PageTransition>} />
-                  </>
-                ) : (
-                  <>
-                     <Route path="/services" element={<Navigate to="/" replace />} />
-                     <Route path="/budget" element={<Navigate to="/" replace />} />
-                  </>
-                )}
-                
-                <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
-                <Route path="/profile" element={<PageTransition><ClientArea /></PageTransition>} />
-                
-                {/* Fallback 404 redirects to Home */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </AnimatePresence>
-          </Layout>
-        } />
+        {/* Client Protected Routes */}
+        <Route 
+          path="/profile/*" 
+          element={currentUser ? <Layout><ClientArea /></Layout> : <Navigate to="/auth" />} 
+        />
+
+        {/* Shop/Budget Routes (Conditional) */}
+        {settings.enableShop && (
+          <>
+            <Route path="/services" element={<Layout><BudgetFlow /></Layout>} />
+            <Route path="/budget" element={<Layout><BudgetFlow /></Layout>} />
+          </>
+        )}
+
+        {/* Admin Routes */}
+        <Route 
+          path="/admin" 
+          element={currentUser?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/auth" />} 
+        />
+        <Route 
+          path="/admin/project/new" 
+          element={currentUser?.role === 'admin' ? <ProjectForm /> : <Navigate to="/auth" />} 
+        />
+        <Route 
+          path="/admin/project/edit/:id" 
+          element={currentUser?.role === 'admin' ? <ProjectForm /> : <Navigate to="/auth" />} 
+        />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
-    </ErrorBoundary>
+    </AnimatePresence>
   );
 };
 
-// Reusable Page Transition Wrapper
-const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 15, filter: 'blur(5px)' }}
-      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-      exit={{ opacity: 0, y: -15, filter: 'blur(5px)' }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="w-full h-full"
-    >
-      {children}
-    </motion.div>
-  );
-};
-
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   if (loading) {
@@ -211,12 +188,20 @@ const App: React.FC = () => {
   }
 
   return (
-    <ProjectProvider>
-      <Router>
-        <ScrollToTop />
+    <Router>
+      <ScrollToTop />
+      <ErrorBoundary>
         <GlobalToast />
         <AnimatedRoutes />
-      </Router>
+      </ErrorBoundary>
+    </Router>
+  );
+}
+
+const App: React.FC = () => {
+  return (
+    <ProjectProvider>
+      <AppContent />
     </ProjectProvider>
   );
 };
