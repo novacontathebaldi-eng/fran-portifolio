@@ -57,6 +57,27 @@ export interface ClientFolder {
   files: ClientFile[];
 }
 
+export interface Appointment {
+  id: string;
+  clientId: string; // 'guest' or user ID
+  clientName: string;
+  type: 'meeting' | 'visit';
+  date: string; // YYYY-MM-DD
+  time: string; // HH:mm
+  location: string; // Address or 'Escritório Fran Siller / Online'
+  status: 'pending' | 'confirmed' | 'cancelled' | 'rescheduling';
+  createdAt: string;
+  notes?: string;
+}
+
+export interface ScheduleSettings {
+  enabled: boolean;
+  workDays: number[]; // 0 = Sunday, 1 = Monday...
+  startHour: string; // "09:00"
+  endHour: string; // "18:00"
+  blockedDates: string[]; // ISO dates YYYY-MM-DD
+}
+
 export interface User {
   id: string;
   name: string;
@@ -70,6 +91,7 @@ export interface User {
   folders?: ClientFolder[]; // New Folder Structure
   memories?: ClientMemory[]; // New: Long-term memory
   chats?: ChatSession[]; // New: Chat history
+  appointments?: Appointment[]; // New: Scheduling
 }
 
 export interface ServicePackage {
@@ -141,11 +163,11 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text?: string;
   uiComponent?: {
-    type: 'ProjectCarousel' | 'ContactCard' | 'LeadForm' | 'SocialLinks';
+    type: 'ProjectCarousel' | 'ContactCard' | 'LeadForm' | 'SocialLinks' | 'CalendarWidget';
     data: any;
   };
   actions?: {
-    type: 'navigate' | 'saveNote';
+    type: 'navigate' | 'saveNote' | 'scheduleMeeting';
     payload: any;
   }[];
   feedback?: 'like' | 'dislike'; // UI State

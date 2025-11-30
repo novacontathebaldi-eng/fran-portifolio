@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check } from 'lucide-react';
+import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../context/ProjectContext';
 import { ChatMessage, Project } from '../types';
@@ -15,33 +15,26 @@ interface ChatbotProps {
 export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onToggle, hideButton = false }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   
-  // Determine if the component is controlled by props or manages its own state
   const isControlled = externalIsOpen !== undefined && onToggle !== undefined;
   const isOpen = isControlled ? externalIsOpen : internalIsOpen;
   const setIsOpen = isControlled ? onToggle : setInternalIsOpen;
 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Local state for copy feedback
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Use messages from Context to ensure persistence/sync across components
-  const { sendMessageToAI, currentUser, projects, addAdminNote, showToast, currentChatMessages, createNewChat, logAiFeedback, settings } = useProjects();
+  const { sendMessageToAI, currentUser, projects, addAdminNote, showToast, currentChatMessages, createNewChat, logAiFeedback, settings, checkAvailability, addAppointment } = useProjects();
   
-  // Ref for the last message element to control scrolling
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Initial greeting - Dynamic based on Settings & User
+  // Initial greeting
   const defaultMessages = useMemo<ChatMessage[]>(() => {
     const rawGreeting = settings.aiConfig.defaultGreeting || "Olá. Como posso ajudar?";
-    
     let processedGreeting = rawGreeting;
     if (currentUser) {
         processedGreeting = rawGreeting.replace('{name}', currentUser.name.split(' ')[0]);
     } else {
-        // Clean up placeholder for guests
         processedGreeting = rawGreeting.replace(' {name}', '').replace('{name}', '');
     }
 
@@ -54,11 +47,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
 
   const displayMessages = currentChatMessages.length > 0 ? currentChatMessages : defaultMessages;
 
-  // Scroll logic: Go to the top of the last message (block: 'start')
-  // Triggered when messages change or chat is opened.
   useEffect(() => {
     if (isOpen) {
-      // Small timeout to ensure the modal animation has finished or DOM is ready
       setTimeout(() => {
         lastMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 300);
@@ -76,23 +66,16 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     try {
       const response = await sendMessageToAI(userText);
       
-      // Handle Actions returned by the API
       if (response.actions && response.actions.length > 0) {
         response.actions.forEach((action: any) => {
-          
           if (action.type === 'saveNote') {
             addAdminNote(action.payload);
             showToast("Recado enviado para a equipe.", "success");
-          } 
-          
-          else if (action.type === 'navigate') {
-            // Small delay for user to read message before redirect
+          } else if (action.type === 'navigate') {
             setTimeout(() => {
               navigate(action.payload.path);
-              // Optional: close chat on navigate depending on UX preference, keep open for now
             }, 1500); 
           }
-
         });
       }
 
@@ -110,11 +93,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleFeedback = (msg: ChatMessage, type: 'like' | 'dislike', userMsgText?: string) => {
-    if (msg.feedback === type) return; // Prevent double click
-
-    // Find the user message that triggered this response (simple assumption: previous message)
-    // In a robust system, we would link IDs properly.
+  const handleFeedback = (msg: ChatMessage, type: 'like' | 'dislike') => {
+    if (msg.feedback === type) return; 
     const msgIndex = currentChatMessages.findIndex(m => m.id === msg.id);
     const userMessage = msgIndex > 0 ? currentChatMessages[msgIndex - 1].text : "Contexto desconhecido";
 
@@ -136,7 +116,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
       ? projects.filter(p => p.category.toLowerCase().includes(category.toLowerCase())).slice(0, 3)
       : projects.slice(0, 3);
 
-    if (filtered.length === 0) return <div className="text-xs text-gray-500 mt-2">Nenhum projeto encontrado nesta categoria.</div>;
+    if (filtered.length === 0) return <div className="text-xs text-gray-500 mt-2">Nenhum projeto encontrado.</div>;
 
     return (
       <div className="mt-4 flex gap-4 overflow-x-auto pb-2 no-scrollbar pl-1">
@@ -159,10 +139,10 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const SocialLinks = () => (
     <div className="mt-4 space-y-3">
       <a 
-        href="https://wa.me/5527996670426?text=Ol%C3%A1%2C%20visitei%20o%20site%20da%20Fran%20Siller%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es." 
+        href="https://wa.me/5527996670426" 
         target="_blank" 
         rel="noreferrer"
-        className="flex items-center justify-between bg-[#25D366] text-white p-3 rounded-lg hover:brightness-105 transition shadow-sm w-full group"
+        className="flex items-center justify-between bg-[#25D366] text-white p-3 rounded-lg hover:brightness-105 transition shadow-sm w-full"
       >
         <div className="flex items-center gap-3">
           <Phone className="w-5 h-5 fill-current" />
@@ -171,9 +151,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
             <span className="text-[10px] opacity-90 block">Resposta rápida</span>
           </div>
         </div>
-        <ExternalLink className="w-4 h-4 opacity-50 group-hover:opacity-100 transition" />
+        <ExternalLink className="w-4 h-4 opacity-50" />
       </a>
-      
       <div className="flex gap-2">
         <a 
           href="https://instagram.com/othebaldi" 
@@ -184,18 +163,113 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
           <Instagram className="w-5 h-5" />
           <span className="text-xs font-bold">@othebaldi</span>
         </a>
-        <a 
-          href="https://fb.com/othebaldi" 
-          target="_blank" 
-          rel="noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 bg-[#1877F2] text-white p-3 rounded-lg hover:opacity-90 transition shadow-sm"
-        >
-          <Facebook className="w-5 h-5 fill-current" />
-          <span className="text-xs font-bold">Facebook</span>
-        </a>
       </div>
     </div>
   );
+
+  const CalendarWidget = ({ data }: { data: any }) => {
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [viewDate, setViewDate] = useState(new Date());
+    const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+    const [booked, setBooked] = useState(false);
+
+    // Helper to generate next 7 days from viewDate
+    const dates = useMemo(() => {
+        const arr = [];
+        for (let i = 0; i < 5; i++) { // Show 5 days
+            const d = new Date(viewDate);
+            d.setDate(viewDate.getDate() + i);
+            arr.push(d);
+        }
+        return arr;
+    }, [viewDate]);
+
+    const handleDateClick = (dateStr: string) => {
+        setSelectedDate(dateStr);
+        setAvailableSlots(checkAvailability(dateStr));
+    };
+
+    const confirmBooking = (time: string) => {
+        if (!selectedDate) return;
+        
+        addAppointment({
+            clientId: currentUser?.id || 'guest',
+            clientName: currentUser?.name || 'Visitante (Via Chat)',
+            date: selectedDate,
+            time: time,
+            type: data?.type || 'meeting',
+            location: data?.type === 'visit' ? (data?.address || 'A definir') : 'Online / Escritório',
+        });
+        
+        setBooked(true);
+        showToast("Solicitação de agendamento enviada!", "success");
+    };
+
+    if (booked) {
+        return (
+            <div className="mt-4 p-4 bg-green-50 text-green-800 rounded-lg flex items-center gap-3 border border-green-100">
+                <CheckCircle className="w-5 h-5" />
+                <div>
+                    <p className="font-bold text-sm">Solicitação Recebida</p>
+                    <p className="text-xs">Aguarde a confirmação da equipe.</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-4 bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+            <div className="flex justify-between items-center mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    {data?.type === 'visit' ? 'Agendar Visita' : 'Agendar Reunião'}
+                </span>
+                <div className="flex gap-1">
+                   <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate()-5); setViewDate(d); }} className="p-1 hover:bg-gray-100 rounded"><ChevronLeft className="w-4 h-4" /></button>
+                   <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate()+5); setViewDate(d); }} className="p-1 hover:bg-gray-100 rounded"><ChevronRight className="w-4 h-4" /></button>
+                </div>
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-4">
+                {dates.map((d) => {
+                   const dStr = d.toISOString().split('T')[0];
+                   const isSelected = selectedDate === dStr;
+                   return (
+                       <button 
+                         key={dStr} 
+                         onClick={() => handleDateClick(dStr)}
+                         className={`flex flex-col items-center justify-center min-w-[50px] p-2 rounded-lg border transition ${isSelected ? 'bg-black text-white border-black' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}
+                       >
+                           <span className="text-[10px] uppercase font-bold">{d.toLocaleDateString('pt-BR', { weekday: 'short' })}</span>
+                           <span className="text-sm font-bold">{d.getDate()}</span>
+                       </button>
+                   );
+                })}
+            </div>
+
+            {selectedDate && (
+                <div className="animate-fadeIn">
+                    <p className="text-xs text-gray-400 mb-2">Horários disponíveis para {new Date(selectedDate).toLocaleDateString()}:</p>
+                    {availableSlots.length > 0 ? (
+                        <div className="grid grid-cols-3 gap-2">
+                           {availableSlots.map(slot => (
+                               <button 
+                                 key={slot} 
+                                 onClick={() => confirmBooking(slot)}
+                                 className="py-1 px-2 bg-white border border-gray-200 rounded text-xs hover:border-accent hover:text-accent transition flex items-center justify-center gap-1"
+                               >
+                                   <Clock className="w-3 h-3" /> {slot}
+                               </button>
+                           ))}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-red-400 bg-red-50 p-2 rounded text-center">Nenhum horário disponível neste dia.</p>
+                    )}
+                </div>
+            )}
+            {!selectedDate && <p className="text-center text-xs text-gray-400 py-4">Selecione um dia acima.</p>}
+        </div>
+    );
+  };
 
   return (
     <>
@@ -245,33 +319,16 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                     {/* GenUI Rendering */}
                     {msg.uiComponent?.type === 'ProjectCarousel' && <ProjectCarousel data={msg.uiComponent.data} />}
                     {msg.uiComponent?.type === 'SocialLinks' && <SocialLinks />}
+                    {msg.uiComponent?.type === 'CalendarWidget' && <CalendarWidget data={msg.uiComponent.data} />}
                   </div>
                   
                   {/* Bot Action Bar */}
                   {msg.role === 'model' && (
                     <div className="flex items-center gap-2 mt-1 ml-2 opacity-100 transition-opacity">
-                      <button 
-                        onClick={() => handleCopy(msg.text || '', msg.id)}
-                        className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-black transition"
-                        title="Copiar"
-                      >
-                        {copiedId === msg.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                      </button>
+                      <button onClick={() => handleCopy(msg.text || '', msg.id)} className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-black transition">{copiedId === msg.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}</button>
                       <div className="h-3 w-[1px] bg-gray-200"></div>
-                      <button 
-                        onClick={() => handleFeedback(msg, 'like')}
-                        className={`p-1 hover:bg-gray-200 rounded transition ${msg.feedback === 'like' ? 'text-green-500' : 'text-gray-400 hover:text-black'}`}
-                        title="Gostei"
-                      >
-                         <ThumbsUp className="w-3 h-3" />
-                      </button>
-                      <button 
-                        onClick={() => handleFeedback(msg, 'dislike')}
-                        className={`p-1 hover:bg-gray-200 rounded transition ${msg.feedback === 'dislike' ? 'text-red-500' : 'text-gray-400 hover:text-black'}`}
-                        title="Não gostei"
-                      >
-                         <ThumbsDown className="w-3 h-3" />
-                      </button>
+                      <button onClick={() => handleFeedback(msg, 'like')} className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-black"><ThumbsUp className="w-3 h-3" /></button>
+                      <button onClick={() => handleFeedback(msg, 'dislike')} className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-black"><ThumbsDown className="w-3 h-3" /></button>
                     </div>
                   )}
                 </div>

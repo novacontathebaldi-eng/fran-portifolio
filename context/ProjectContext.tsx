@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ChatSession, ClientFolder, ClientFile, AiFeedbackItem } from '../types';
+import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ChatSession, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings } from '../types';
 import { MOCK_PROJECTS, MOCK_USER_CLIENT, MOCK_USER_ADMIN } from '../data';
 import { chatWithConcierge } from '../api/chat';
 
@@ -55,6 +55,14 @@ interface ProjectContextType {
   markNoteAsRead: (id: string) => void;
   deleteAdminNote: (id: string) => void;
 
+  // Appointment Logic
+  appointments: Appointment[];
+  scheduleSettings: ScheduleSettings;
+  updateScheduleSettings: (settings: ScheduleSettings) => void;
+  addAppointment: (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => void;
+  updateAppointmentStatus: (id: string, status: Appointment['status']) => void;
+  checkAvailability: (date: string) => string[]; // Returns available hours
+
   // Toast Logic
   toast: ToastState;
   showToast: (message: string, type?: ToastType) => void;
@@ -73,23 +81,31 @@ const DEFAULT_SETTINGS: GlobalSettings = {
 SUA IDENTIDADE:
 - Sofisticado, minimalista, atencioso e altamente eficiente.
 - Você não é apenas um bot, é uma extensão da experiência de luxo do escritório.
-- Seu objetivo nº 1 é CONVERTER VISITANTES EM CLIENTES (Capturar Leads).
+- Seu objetivo nº 1 é CONVERTER VISITANTES EM CLIENTES (Capturar Leads) e AGENDAR VISITAS/REUNIÕES.
 
-DADOS CRÍTICOS (USE SEMPRE QUE SOLICITADO):
-- WhatsApp Oficial: +5527996670426
+DADOS CRÍTICOS:
+- WhatsApp: +5527996670426
 - Instagram: instagram.com/othebaldi
-- Facebook: fb.com/othebaldi
-- Localização: Atuamos em todo o Brasil.
+- Localização: Brasil (Global).
 
-REGRAS DE COMPORTAMENTO:
-1. Se o usuário demonstrar interesse em projeto, peça gentilmente o nome e contato para salvar um recado (Use a tool 'saveClientNote') OU ofereça o botão do WhatsApp (Use a tool 'getSocialLinks').
-2. Se perguntarem "Como falo com a Fran?", use a tool 'getSocialLinks'.
-3. Se perguntarem "Onde vejo projetos?", use a tool 'showProjects' ou 'navigateSite' para /portfolio.
-4. Seja breve e elegante. Evite textos longos. Use formatação limpa.
-5. Fale Português do Brasil de forma culta.`,
+REGRAS:
+1. Se o usuário quiser agendar, chame a tool 'scheduleMeeting'.
+   - Se for visita técnica, PERGUNTE o endereço da obra/local.
+   - Se for reunião, pode ser Online ou no escritório.
+2. Se quiser deixar recado, use 'saveClientNote'.
+3. Para contatos, use 'getSocialLinks'.
+4. Seja breve.`,
     defaultGreeting: "Olá {name}. Sou o Concierge Digital Fran Siller. Como posso tornar seu dia melhor?",
     temperature: 0.7
   }
+};
+
+const DEFAULT_SCHEDULE_SETTINGS: ScheduleSettings = {
+  enabled: true,
+  workDays: [1, 2, 3, 4, 5], // Mon-Fri
+  startHour: "09:00",
+  endHour: "18:00",
+  blockedDates: []
 };
 
 const MOCK_NOTES: AdminNote[] = [
@@ -104,13 +120,25 @@ const MOCK_NOTES: AdminNote[] = [
   }
 ];
 
+const MOCK_APPOINTMENTS: Appointment[] = [
+  {
+    id: 'apt1',
+    clientId: 'u1',
+    clientName: 'Cliente Exemplo',
+    type: 'meeting',
+    date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
+    time: '14:00',
+    location: 'Online (Google Meet)',
+    status: 'confirmed',
+    createdAt: new Date().toISOString()
+  }
+];
+
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Global Data
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
   
   // Users Database Simulation
-  // In a real app, this would be in Supabase/Firebase. 
-  // We initialize with our mock users.
   const [users, setUsers] = useState<User[]>([MOCK_USER_ADMIN, MOCK_USER_CLIENT]);
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -122,12 +150,15 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [aiFeedbacks, setAiFeedbacks] = useState<AiFeedbackItem[]>([]);
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'info', isVisible: false });
   
+  // Schedule State
+  const [appointments, setAppointments] = useState<Appointment[]>(MOCK_APPOINTMENTS);
+  const [scheduleSettings, setScheduleSettings] = useState<ScheduleSettings>(DEFAULT_SCHEDULE_SETTINGS);
+
   // Settings with LocalStorage Persistence
   const [settings, setSettings] = useState<GlobalSettings>(() => {
     const saved = localStorage.getItem('fran_settings');
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Ensure new properties exist if loading old settings
       if (parsed.aiConfig && typeof parsed.aiConfig.useCustomSystemInstruction === 'undefined') {
         parsed.aiConfig.useCustomSystemInstruction = false;
       }
@@ -151,7 +182,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, []);
 
-  // Save guest chat to local storage whenever it changes (if not logged in)
+  // Save guest chat to local storage
   useEffect(() => {
     if (!currentUser && currentChatMessages.length > 0) {
       localStorage.setItem('guest_chat_history', JSON.stringify(currentChatMessages));
@@ -206,17 +237,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     const foundUser = users.find(u => u.email === email);
     
     if (foundUser) {
-      // SYNC LOGIC: Check for guest history in localStorage
       const guestHistory = localStorage.getItem('guest_chat_history');
       let updatedUser = { ...foundUser };
-      
-      // Determine what to show in the chat window
       let activeMessages = [];
 
       if (guestHistory) {
         const parsedHistory: ChatMessage[] = JSON.parse(guestHistory);
-        
-        // 1. Create a persistent session record for this guest history
         const newSession: ChatSession = {
           id: Date.now().toString(),
           title: `Sincronizado em ${new Date().toLocaleDateString()}`,
@@ -224,28 +250,17 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
         };
-
-        // 2. Attach to user history
         updatedUser = {
           ...updatedUser,
           chats: [newSession, ...(updatedUser.chats || [])]
         };
-
-        // 3. Keep the conversation ALIVE in the UI (User Experience)
-        // Instead of clearing currentChatMessages, we maintain it so the user feels continuity.
         activeMessages = parsedHistory;
-
-        // Clear LocalStorage now that it's safe in "DB"
         localStorage.removeItem('guest_chat_history');
       } else {
-        // If no guest history, we could optionally load the last active chat, 
-        // but for now we start fresh or keep existing UI state empty
         activeMessages = [];
       }
 
-      // Update DB (Mock)
       setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-      
       setCurrentUser(updatedUser);
       setCurrentChatMessages(activeMessages);
       return updatedUser;
@@ -255,8 +270,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const logout = () => {
     setCurrentUser(null);
-    setCurrentChatMessages([]); // Reset chat view
-    // Do NOT clear localStorage here, as the new guest session starts blank.
+    setCurrentChatMessages([]); 
   };
 
   // --- CRUD Project ---
@@ -264,7 +278,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateProject = (project: Project) => setProjects(prev => prev.map(p => p.id === project.id ? project : p));
   const deleteProject = (id: string) => setProjects(prev => prev.filter(p => p.id !== id));
   
-  // --- Admin User Management ---
   const updateUser = (updatedUser: User) => {
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
     if (currentUser?.id === updatedUser.id) {
@@ -272,11 +285,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  // --- Client Memory Logic (Secured by currentUser check) ---
+  // --- Client Memory Logic ---
   const syncUserMemoriesToDB = (userId: string, newMemories: ClientMemory[]) => {
-    setUsers(prev => prev.map(u => 
-      u.id === userId ? { ...u, memories: newMemories } : u
-    ));
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, memories: newMemories } : u));
     if (currentUser?.id === userId) {
       setCurrentUser(prev => prev ? { ...prev, memories: newMemories } : null);
     }
@@ -295,9 +306,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const updateClientMemory = (id: string, content: string) => {
     if (!currentUser) return;
-    const updatedMemories = (currentUser.memories || []).map(m => 
-      m.id === id ? { ...m, content } : m
-    );
+    const updatedMemories = (currentUser.memories || []).map(m => m.id === id ? { ...m, content } : m);
     syncUserMemoriesToDB(currentUser.id, updatedMemories);
   };
 
@@ -308,8 +317,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   // --- Folder & File Management Logic ---
-  
-  // Helper to sync folders to DB and Current User
   const syncUserFoldersToDB = (userId: string, newFolders: ClientFolder[]) => {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, folders: newFolders } : u));
     if (currentUser?.id === userId) {
@@ -320,14 +327,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const createClientFolder = (userId: string, folderName: string) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
-    
     const newFolder: ClientFolder = {
       id: Math.random().toString(36).substr(2, 9),
       name: folderName,
       createdAt: new Date().toISOString(),
       files: []
     };
-    
     const updatedFolders = [...(user.folders || []), newFolder];
     syncUserFoldersToDB(userId, updatedFolders);
   };
@@ -335,17 +340,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const renameClientFolder = (userId: string, folderId: string, newName: string) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
-
-    const updatedFolders = (user.folders || []).map(f => 
-      f.id === folderId ? { ...f, name: newName } : f
-    );
+    const updatedFolders = (user.folders || []).map(f => f.id === folderId ? { ...f, name: newName } : f);
     syncUserFoldersToDB(userId, updatedFolders);
   };
 
   const deleteClientFolder = (userId: string, folderId: string) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
-    
     const updatedFolders = (user.folders || []).filter(f => f.id !== folderId);
     syncUserFoldersToDB(userId, updatedFolders);
   };
@@ -353,12 +354,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const uploadFileToFolder = async (userId: string, folderId: string, file: File) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
-
-    // Simulate upload delay and URL generation
     const mockUrl = URL.createObjectURL(file); 
     const fileType = file.type.includes('image') ? 'image' : file.type.includes('pdf') ? 'pdf' : file.type.includes('video') ? 'video' : 'other';
     const fileSize = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
-
     const newFile: ClientFile = {
       id: Math.random().toString(36).substr(2, 9),
       name: file.name,
@@ -367,33 +365,77 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       size: fileSize,
       createdAt: new Date().toISOString()
     };
-
     const updatedFolders = (user.folders || []).map(f => {
       if (f.id === folderId) {
         return { ...f, files: [...f.files, newFile] };
       }
       return f;
     });
-
     syncUserFoldersToDB(userId, updatedFolders);
   };
 
   const deleteClientFile = (userId: string, folderId: string, fileId: string) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
-
     const updatedFolders = (user.folders || []).map(f => {
       if (f.id === folderId) {
         return { ...f, files: f.files.filter(file => file.id !== fileId) };
       }
       return f;
     });
-    
     syncUserFoldersToDB(userId, updatedFolders);
   };
 
-  // --- Chat Logic ---
+  // --- Schedule & Appointment Logic ---
+  
+  const updateScheduleSettings = (newSettings: ScheduleSettings) => setScheduleSettings(newSettings);
 
+  const addAppointment = (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => {
+    const newAppt: Appointment = {
+      ...appt,
+      id: Math.random().toString(36).substr(2, 9),
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+    setAppointments(prev => [...prev, newAppt]);
+  };
+
+  const updateAppointmentStatus = (id: string, status: Appointment['status']) => {
+    setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+  };
+
+  const checkAvailability = (dateStr: string): string[] => {
+    // 1. Check if blocked
+    if (scheduleSettings.blockedDates.includes(dateStr)) return [];
+
+    // 2. Check if workday
+    const dateObj = new Date(dateStr + 'T12:00:00'); // noon to avoid timezone edge cases
+    const dayOfWeek = dateObj.getDay(); // 0-6
+    if (!scheduleSettings.workDays.includes(dayOfWeek)) return [];
+
+    // 3. Generate slots (hourly)
+    const slots: string[] = [];
+    let startH = parseInt(scheduleSettings.startHour.split(':')[0]);
+    let endH = parseInt(scheduleSettings.endHour.split(':')[0]);
+
+    for (let h = startH; h < endH; h++) {
+      const timeSlot = `${h.toString().padStart(2, '0')}:00`;
+      
+      // 4. Check conflicts
+      const isTaken = appointments.some(a => 
+        a.date === dateStr && 
+        a.time === timeSlot && 
+        a.status !== 'cancelled'
+      );
+
+      if (!isTaken) {
+        slots.push(timeSlot);
+      }
+    }
+    return slots;
+  };
+
+  // --- Chat Logic ---
   const createNewChat = () => {
     if (currentUser && currentChatMessages.length > 0) {
       const newSession: ChatSession = {
@@ -403,7 +445,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         createdAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString()
       };
-      
       const updatedChats = [newSession, ...(currentUser.chats || [])];
       setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, chats: updatedChats } : u));
       setCurrentUser(prev => prev ? { ...prev, chats: updatedChats } : null);
@@ -421,29 +462,17 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       createdAt: new Date().toISOString()
     };
     setAiFeedbacks(prev => [newItem, ...prev]);
-    
-    // Also update current messages to reflect feedback in UI state
-    setCurrentChatMessages(prev => {
-      // Find the last message from model or specific logic to match
-      // For simplicity in this mock, we assume the UI handles the 'liked/disliked' state locally
-      // but we can update it here if needed.
-      return prev;
-    });
   };
 
   const sendMessageToAI = async (message: string) => {
     let updatedMessages = [...currentChatMessages];
 
-    // FIX: If this is the FIRST message, inject the default greeting into the history stack so it persists
     if (updatedMessages.length === 0) {
         const greetingRaw = settings.aiConfig.defaultGreeting || "Olá. Como posso ajudar?";
-        
-        // Simple placeholder replacement logic for {name}
         let personalizedGreeting = greetingRaw;
         if (currentUser) {
             personalizedGreeting = greetingRaw.replace('{name}', currentUser.name.split(' ')[0]);
         } else {
-            // Remove {name} and preceding space or comma if exists, or just replace with blank
             personalizedGreeting = greetingRaw.replace(' {name}', '').replace('{name}', '');
         }
 
@@ -456,10 +485,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: message };
     updatedMessages.push(userMsg);
-    setCurrentChatMessages(updatedMessages); // Update UI immediately to show user message + persistent greeting
+    setCurrentChatMessages(updatedMessages);
 
     try {
-      // Direct client-side call to the AI logic
       const responseData = await chatWithConcierge(updatedMessages, { 
         user: currentUser,
         memories: currentUser?.memories || []
@@ -469,7 +497,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         id: (Date.now() + 1).toString(),
         role: 'model',
         text: responseData.text,
-        uiComponent: responseData.uiComponent
+        uiComponent: responseData.uiComponent,
+        actions: responseData.actions
       };
       
       setCurrentChatMessages(prev => [...prev, botMsg]);
@@ -533,6 +562,14 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       addAdminNote,
       markNoteAsRead,
       deleteAdminNote,
+      // Scheduling
+      appointments,
+      scheduleSettings,
+      updateScheduleSettings,
+      addAppointment,
+      updateAppointmentStatus,
+      checkAvailability,
+      // Toast
       toast,
       showToast,
       hideToast

@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { User, ClientMemory, ChatMessage } from '../types';
 
@@ -17,20 +18,20 @@ const tools = [
       },
       {
         name: 'saveClientNote',
-        description: 'MANDATORY: Use this tool whenever the user explicitly asks to leave a message, request a quote, schedule a meeting, or be contacted. This tool saves their data to the admin dashboard.',
+        description: 'Use this tool whenever the user explicitly asks to leave a message, request a quote, or be contacted but DOES NOT want to schedule a specific meeting time.',
         parameters: {
           type: Type.OBJECT,
           properties: {
             name: { type: Type.STRING, description: 'The client name. Ask if not provided.' },
             contact: { type: Type.STRING, description: 'The client phone or email. Ask if not provided.' },
-            message: { type: Type.STRING, description: 'A summary of what the client wants (e.g., "Quote for apartment renovation").' }
+            message: { type: Type.STRING, description: 'A summary of what the client wants.' }
           },
           required: ['name', 'contact', 'message']
         }
       },
       {
         name: 'getSocialLinks',
-        description: 'MANDATORY: Use this tool when the user asks for WhatsApp, Instagram, Facebook, or asks "How to contact you directly?". It returns clickable buttons.',
+        description: 'Use this tool when the user asks for WhatsApp, Instagram, Facebook, or asks "How to contact you directly?".',
         parameters: {
           type: Type.OBJECT,
           properties: {},
@@ -49,6 +50,24 @@ const tools = [
           },
           required: ['path']
         }
+      },
+      {
+        name: 'scheduleMeeting',
+        description: 'Use this tool when the user wants to schedule a meeting ("reunião") or a site visit ("visita técnica").',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            type: { 
+              type: Type.STRING, 
+              description: 'The type of appointment. Either "meeting" (for general discussion, online or office) or "visit" (for site/construction visit).' 
+            },
+            address: {
+              type: Type.STRING,
+              description: 'MANDATORY only if type is "visit". The address of the construction site or property.'
+            }
+          },
+          required: ['type']
+        }
       }
     ]
   }
@@ -60,19 +79,22 @@ VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA.
 SUA IDENTIDADE:
 - Sofisticado, minimalista, atencioso e altamente eficiente.
 - Você não é apenas um bot, é uma extensão da experiência de luxo do escritório.
-- Seu objetivo nº 1 é CONVERTER VISITANTES EM CLIENTES (Capturar Leads).
+- Seu objetivo nº 1 é CONVERTER VISITANTES EM CLIENTES.
 
-DADOS CRÍTICOS (USE SEMPRE QUE SOLICITADO):
+DADOS CRÍTICOS:
 - WhatsApp Oficial: +5527996670426
 - Instagram: instagram.com/othebaldi
 - Facebook: fb.com/othebaldi
 - Localização: Atuamos em todo o Brasil.
 
 REGRAS DE COMPORTAMENTO:
-1. Se o usuário demonstrar interesse em projeto, peça gentilmente o nome e contato para salvar um recado (Use a tool 'saveClientNote') OU ofereça o botão do WhatsApp (Use a tool 'getSocialLinks').
-2. Se perguntarem "Como falo com a Fran?", use a tool 'getSocialLinks'.
-3. Se perguntarem "Onde vejo projetos?", use a tool 'showProjects' ou 'navigateSite' para /portfolio.
-4. Seja breve e elegante. Evite textos longos. Use formatação limpa.
+1. AGENDAMENTOS: Se o usuário quiser marcar horário/visita, chame a tool 'scheduleMeeting'. 
+   - IMPORTANTE: Se o usuário pedir uma "Visita Técnica", você DEVE perguntar o endereço da obra antes de chamar a tool.
+   - Se for apenas uma "Reunião" ou "Conversa", não precisa de endereço (será Online ou no Escritório).
+   - O widget de calendário aparecerá automaticamente após você chamar a tool.
+2. RECADO: Se o usuário quiser apenas que entrem em contato depois, use 'saveClientNote'.
+3. Se perguntarem "Como falo com a Fran?", use 'getSocialLinks'.
+4. Seja breve e elegante.
 5. Fale Português do Brasil de forma culta.
 `;
 
@@ -105,18 +127,17 @@ export async function chatWithConcierge(
     
     // Inject Client Memories securely
     if (context.memories && context.memories.length > 0) {
-      systemInstruction += `\n\nO QUE JÁ SABEMOS SOBRE ESTE CLIENTE (USE PARA PERSONALIZAR, MAS NÃO LISTE EXPLICITAMENTE):`;
+      systemInstruction += `\n\nO QUE JÁ SABEMOS SOBRE ESTE CLIENTE (USE PARA PERSONALIZAR):`;
       context.memories.forEach((mem: any) => {
          systemInstruction += `\n- [${mem.topic}]: ${mem.content}`;
       });
     }
   } else {
-    systemInstruction += `\n\nESTADO: O usuário é um VISITANTE (Guest). Tente descobrir o nome dele sutilmente durante a conversa.`;
+    systemInstruction += `\n\nESTADO: O usuário é um VISITANTE (Guest). Tente descobrir o nome dele sutilmente.`;
   }
 
   const modelName = aiConfig?.model || 'gemini-2.5-flash';
 
-  // Format history for Gemini
   let contents = [];
   if (Array.isArray(message)) {
     contents = message.map((msg: any) => ({
@@ -141,7 +162,6 @@ export async function chatWithConcierge(
         },
       });
 
-      // Use the direct properties from the SDK response for better reliability
       const modelText = response.text;
       const functionCalls = response.functionCalls;
 
@@ -151,12 +171,11 @@ export async function chatWithConcierge(
         actions: []
       };
 
-      // Process all function calls
       if (functionCalls && functionCalls.length > 0) {
         for (const call of functionCalls) {
           if (call.name === 'showProjects') {
             responseData.uiComponent = { type: 'ProjectCarousel', data: call.args };
-            if (!responseData.text) responseData.text = "Com prazer. Aqui estão alguns projetos selecionados do nosso portfólio.";
+            if (!responseData.text) responseData.text = "Aqui estão alguns projetos selecionados.";
           } 
           else if (call.name === 'saveClientNote') {
             responseData.actions.push({
@@ -168,23 +187,26 @@ export async function chatWithConcierge(
                 source: 'chatbot'
               }
             });
-            if (!responseData.text) responseData.text = "Anotei seus dados e encaminhei para nossa equipe prioritária. Entraremos em contato em breve.";
+            if (!responseData.text) responseData.text = "Anotei seus dados e encaminhei para a equipe.";
           }
           else if (call.name === 'getSocialLinks') {
             responseData.uiComponent = { type: 'SocialLinks', data: {} };
-            if (!responseData.text) responseData.text = "Aqui estão nossos canais diretos para um atendimento mais ágil.";
+            if (!responseData.text) responseData.text = "Aqui estão nossos canais diretos.";
           }
           else if (call.name === 'navigateSite') {
             responseData.actions.push({
               type: 'navigate',
               payload: { path: call.args['path'] }
             });
-            if (!responseData.text) responseData.text = "Redirecionando você agora.";
+            if (!responseData.text) responseData.text = "Redirecionando você.";
+          }
+          else if (call.name === 'scheduleMeeting') {
+            responseData.uiComponent = { type: 'CalendarWidget', data: call.args };
+            if (!responseData.text) responseData.text = "Por favor, selecione a data e hora de sua preferência no calendário abaixo.";
           }
         }
       }
 
-      // Default fallback text if empty
       if (!responseData.text && !responseData.uiComponent) {
         responseData.text = "Como posso ajudar com algo mais específico?";
       }
