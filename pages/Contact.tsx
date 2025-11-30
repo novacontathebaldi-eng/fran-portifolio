@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Instagram, Linkedin, Send } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
@@ -6,8 +7,8 @@ import { motion } from 'framer-motion';
 
 export const Contact: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
-  const { showToast, settings } = useProjects();
-  const contact = settings.contact;
+  const { showToast, siteContent } = useProjects();
+  const { office } = siteContent;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +48,7 @@ export const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm uppercase tracking-wide mb-1">Email</h3>
-                  <p className="text-secondary break-all">{contact.email}</p>
+                  <p className="text-secondary break-all">{office.email}</p>
                 </div>
               </div>
 
@@ -57,8 +58,8 @@ export const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm uppercase tracking-wide mb-1">Telefone / WhatsApp</h3>
-                  <p className="text-secondary">{contact.phone}</p>
-                  <p className="text-secondary text-sm text-gray-400">{contact.hours}</p>
+                  <p className="text-secondary">{office.phone}</p>
+                  <p className="text-secondary text-sm text-gray-400">{office.hoursDescription}</p>
                 </div>
               </div>
 
@@ -68,7 +69,7 @@ export const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm uppercase tracking-wide mb-1">Ateliê</h3>
-                  <p className="text-secondary">{contact.address}</p>
+                  <p className="text-secondary">{office.address}</p>
                 </div>
               </div>
             </div>
@@ -76,8 +77,8 @@ export const Contact: React.FC = () => {
             <div className="pt-8 border-t border-gray-100">
                <h3 className="font-bold text-sm uppercase tracking-wide mb-4">Siga-nos</h3>
                <div className="flex space-x-4">
-                 <a href={`https://instagram.com/${contact.instagram.replace('@','')}`} target="_blank" rel="noreferrer" className="p-2 border border-gray-200 rounded-full hover:bg-black hover:text-white transition active:scale-95"><Instagram className="w-5 h-5" /></a>
-                 <a href="#" className="p-2 border border-gray-200 rounded-full hover:bg-black hover:text-white transition active:scale-95"><Linkedin className="w-5 h-5" /></a>
+                 <button className="p-2 border border-gray-200 rounded-full hover:bg-black hover:text-white transition active:scale-95"><Instagram className="w-5 h-5" /></button>
+                 <button className="p-2 border border-gray-200 rounded-full hover:bg-black hover:text-white transition active:scale-95"><Linkedin className="w-5 h-5" /></button>
                </div>
             </div>
           </motion.div>

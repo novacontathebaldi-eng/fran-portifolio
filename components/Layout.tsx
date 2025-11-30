@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, LayoutDashboard } from 'lucide-react';
@@ -23,7 +22,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, settings, siteContent } = useProjects();
-  const contact = settings.contact;
 
   useEffect(() => {
     // Increased threshold to 50px for a more deliberate transition
@@ -276,11 +274,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
                 Criando espaços que inspiram, funcionam e perduram. Baseada no Brasil, atuando globalmente.
               </p>
-              <div className="mt-6 text-sm text-gray-400">
-                <p>{contact.address}</p>
-                <p>{contact.phone}</p>
-                <p>{contact.email}</p>
-              </div>
             </div>
             <div className="md:col-start-3">
               <h4 className="text-xs font-bold uppercase tracking-widest mb-8 text-accent">Navegação</h4>
@@ -305,7 +298,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
             <p>&copy; 2024 Fran Siller Arquitetura. Todos os direitos reservados.</p>
             <div className="flex space-x-6">
-              <a href={`https://instagram.com/${contact.instagram.replace('@','')}`} target="_blank" rel="noreferrer" className="hover:text-white cursor-pointer transition">Instagram</a>
+              <span className="hover:text-white cursor-pointer transition">Instagram</span>
               <span className="hover:text-white cursor-pointer transition">LinkedIn</span>
               <span className="hover:text-white cursor-pointer transition">Pinterest</span>
             </div>

@@ -1,9 +1,10 @@
 
-import React, { useState, useRef, useMemo } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { useProjects } from '../context/ProjectContext';
-import { User, Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { User, Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Project, ClientMemory, ClientFolder, Address, Appointment } from '../types';
+import { Project, ClientMemory, ClientFolder, Address } from '../types';
 import { Navigate } from 'react-router-dom';
 
 // Mock Upload
@@ -16,7 +17,7 @@ const uploadToStorage = async (file: File): Promise<string> => {
 };
 
 export const ClientArea: React.FC = () => {
-  const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory, appointments, updateAppointmentStatus, updateUser, showToast, checkAvailability, addAppointment, updateSettings } = useProjects();
+  const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory, appointments, updateAppointmentStatus, updateUser, showToast, siteContent } = useProjects();
   const [activeTab, setActiveTab] = useState<'profile' | 'projects' | 'docs' | 'settings' | 'favs' | 'memories' | 'schedule'>('projects');
   
   // Profile & Address State
@@ -32,12 +33,6 @@ export const ClientArea: React.FC = () => {
 
   // File Navigation State
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-
-  // Reschedule State
-  const [reschedulingAppt, setReschedulingAppt] = useState<Appointment | null>(null);
-  const [viewDate, setViewDate] = useState(new Date());
-  const [selectedRescheduleDate, setSelectedRescheduleDate] = useState<string | null>(null);
-  const [rescheduleSlots, setRescheduleSlots] = useState<string[]>([]);
 
   if (!currentUser) {
     return <Navigate to="/auth" replace />;
@@ -119,49 +114,6 @@ export const ClientArea: React.FC = () => {
       setShowAddMemory(false);
     }
   };
-
-  // Reschedule Handlers
-  const openReschedule = (appt: Appointment) => {
-     setReschedulingAppt(appt);
-     setViewDate(new Date());
-     setSelectedRescheduleDate(null);
-     setRescheduleSlots([]);
-  };
-
-  const handleRescheduleDateClick = (dateStr: string) => {
-      setSelectedRescheduleDate(dateStr);
-      setRescheduleSlots(checkAvailability(dateStr));
-  };
-
-  const confirmReschedule = (time: string) => {
-      if (!reschedulingAppt || !selectedRescheduleDate) return;
-      
-      // Cancel old
-      updateAppointmentStatus(reschedulingAppt.id, 'cancelled');
-      
-      // Create new (Pending)
-      addAppointment({
-          clientId: reschedulingAppt.clientId,
-          clientName: reschedulingAppt.clientName,
-          type: reschedulingAppt.type,
-          location: reschedulingAppt.location,
-          date: selectedRescheduleDate,
-          time: time
-      });
-
-      setReschedulingAppt(null);
-      showToast('Solicitação de reagendamento enviada.', 'success');
-  };
-
-  const calendarDates = useMemo(() => {
-    const arr = [];
-    for (let i = 0; i < 7; i++) {
-        const d = new Date(viewDate);
-        d.setDate(viewDate.getDate() + i);
-        arr.push(d);
-    }
-    return arr;
-  }, [viewDate]);
 
   return (
     <div className="min-h-screen pt-44 pb-24 bg-gray-50">
@@ -263,7 +215,22 @@ export const ClientArea: React.FC = () => {
 
                  {myAppointments.length > 0 ? (
                     <div className="space-y-6">
-                       {myAppointments.map(appt => (
+                       {myAppointments.map(appt => {
+                          // Logic to determine if it is Online or Physical for rendering
+                          const isOnline = appt.type === 'meeting' && (appt.location.toLowerCase().includes('online') || !!appt.meetingLink);
+                          
+                          // Determine Map Query
+                          let mapQuery = "";
+                          if (!isOnline) {
+                             if (appt.type === 'visit') {
+                                mapQuery = appt.location;
+                             } else {
+                                // In-person meeting -> Office Address
+                                mapQuery = siteContent.office.address;
+                             }
+                          }
+
+                          return (
                           <div key={appt.id} className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
                              <div className={`p-4 flex justify-between items-center ${appt.status === 'confirmed' ? 'bg-green-50 text-green-800' : appt.status === 'pending' ? 'bg-yellow-50 text-yellow-800' : 'bg-gray-100 text-gray-500'}`}>
                                 <div className="flex items-center gap-2">
@@ -282,44 +249,37 @@ export const ClientArea: React.FC = () => {
                                    <div className="flex-grow space-y-3">
                                       <h3 className="font-serif text-xl">{appt.type === 'visit' ? 'Visita Técnica' : 'Reunião de Alinhamento'}</h3>
                                       <div className="flex items-start gap-2 text-gray-600">
-                                         <MapPin className="w-5 h-5 shrink-0 mt-0.5" />
+                                         {isOnline ? <VideoIcon className="w-5 h-5 shrink-0 mt-0.5" /> : <MapPin className="w-5 h-5 shrink-0 mt-0.5" />}
                                          <p className="text-sm">{appt.location}</p>
                                       </div>
                                       
-                                      {/* Meeting Link for Confirmed Online Meetings */}
-                                      {appt.status === 'confirmed' && appt.meetingLink && (
-                                          <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg flex items-center gap-3">
-                                              <div className="p-2 bg-blue-100 rounded-full text-blue-600"><VideoIcon className="w-4 h-4"/></div>
-                                              <div>
-                                                  <p className="text-xs text-blue-600 font-bold uppercase">Link da Reunião</p>
-                                                  <a href={appt.meetingLink} target="_blank" rel="noreferrer" className="text-sm font-bold text-blue-800 hover:underline break-all">{appt.meetingLink}</a>
-                                              </div>
-                                          </div>
-                                      )}
-
-                                      {/* Map Embed if it has an address */}
-                                      {appt.status !== 'cancelled' && appt.location && !appt.location.includes('Online') && (
-                                         <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden mt-2">
-                                            <iframe 
-                                              width="100%" 
-                                              height="100%" 
-                                              frameBorder="0" 
-                                              scrolling="no" 
-                                              marginHeight={0} 
-                                              marginWidth={0} 
-                                              src={`https://maps.google.com/maps?q=${encodeURIComponent(appt.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                                            ></iframe>
-                                         </div>
-                                      )}
-
+                                      {/* ACTION BUTTONS */}
                                       {appt.status !== 'cancelled' && (
-                                         <div className="flex gap-4 mt-6">
-                                            <button 
-                                                onClick={() => openReschedule(appt)}
-                                                className="flex items-center gap-2 text-xs font-bold text-gray-600 hover:bg-gray-100 px-3 py-2 rounded-lg border border-gray-200"
-                                            >
-                                                <Calendar className="w-4 h-4" /> Reagendar
-                                            </button>
+                                         <div className="flex flex-wrap gap-4 mt-6">
+                                            {/* Show Link Button if Online */}
+                                            {isOnline && appt.meetingLink && (
+                                               <a 
+                                                 href={appt.meetingLink}
+                                                 target="_blank"
+                                                 rel="noreferrer"
+                                                 className="flex items-center gap-2 text-xs font-bold text-white bg-black hover:bg-accent hover:text-black px-4 py-2 rounded-lg transition"
+                                               >
+                                                  <VideoIcon className="w-4 h-4" /> Entrar na Reunião
+                                               </a>
+                                            )}
+
+                                            {/* Show Map Button if Physical */}
+                                            {!isOnline && (
+                                                <a 
+                                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
+                                                  target="_blank"
+                                                  rel="noreferrer"
+                                                  className="flex items-center gap-2 text-xs font-bold text-blue-600 hover:underline bg-blue-50 px-3 py-2 rounded-lg"
+                                                >
+                                                   <ExternalLink className="w-4 h-4" /> Abrir no Maps
+                                                </a>
+                                            )}
+
                                             <button 
                                                onClick={() => { if(confirm('Deseja cancelar este agendamento?')) updateAppointmentStatus(appt.id, 'cancelled'); }}
                                                className="flex items-center gap-2 text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg transition"
@@ -329,10 +289,24 @@ export const ClientArea: React.FC = () => {
                                          </div>
                                       )}
                                    </div>
+
+                                   {/* EMBEDDED MAP FOR PHYSICAL MEETINGS/VISITS */}
+                                   {!isOnline && appt.status !== 'cancelled' && (
+                                      <div className="w-full md:w-48 h-32 bg-gray-200 rounded-lg overflow-hidden shrink-0 hidden md:block">
+                                          <iframe 
+                                            width="100%" 
+                                            height="100%" 
+                                            style={{ border: 0 }} 
+                                            loading="lazy" 
+                                            src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                                            className="w-full h-full opacity-80 hover:opacity-100 transition"
+                                          ></iframe>
+                                      </div>
+                                   )}
                                 </div>
                              </div>
                           </div>
-                       ))}
+                       )})}
                     </div>
                  ) : (
                     <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-lg">
@@ -343,70 +317,6 @@ export const ClientArea: React.FC = () => {
                  )}
                </div>
             )}
-            
-            {/* Reschedule Modal */}
-            <AnimatePresence>
-                {reschedulingAppt && (
-                   <motion.div 
-                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                     className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-                   >
-                       <div className="bg-white rounded-xl p-6 w-full max-w-md">
-                           <div className="flex justify-between items-center mb-4">
-                               <h3 className="font-serif font-bold text-xl">Reagendar Compromisso</h3>
-                               <button onClick={() => setReschedulingAppt(null)}><X className="w-5 h-5"/></button>
-                           </div>
-                           
-                           <div className="mb-4">
-                               <div className="flex justify-between items-center mb-2">
-                                    <h4 className="text-xs font-bold uppercase text-gray-500">Selecione uma Data</h4>
-                                    <div className="flex gap-1">
-                                        <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate()-7); setViewDate(d); }} className="p-1 hover:bg-gray-100 rounded"><ChevronLeft className="w-4 h-4" /></button>
-                                        <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate()+7); setViewDate(d); }} className="p-1 hover:bg-gray-100 rounded"><ChevronRight className="w-4 h-4" /></button>
-                                    </div>
-                               </div>
-                               <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                                    {calendarDates.map((d) => {
-                                        const dStr = d.toISOString().split('T')[0];
-                                        const isSelected = selectedRescheduleDate === dStr;
-                                        return (
-                                            <button 
-                                                key={dStr} 
-                                                onClick={() => handleRescheduleDateClick(dStr)}
-                                                className={`flex flex-col items-center justify-center min-w-[50px] p-2 rounded-lg border transition ${isSelected ? 'bg-black text-white border-black' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}
-                                            >
-                                                <span className="text-[10px] uppercase font-bold">{d.toLocaleDateString('pt-BR', { weekday: 'short' })}</span>
-                                                <span className="text-sm font-bold">{d.getDate()}</span>
-                                            </button>
-                                        );
-                                    })}
-                               </div>
-                           </div>
-                           
-                           {selectedRescheduleDate && (
-                                <div className="mb-6">
-                                    <h4 className="text-xs font-bold uppercase text-gray-500 mb-2">Horários Disponíveis</h4>
-                                    {rescheduleSlots.length > 0 ? (
-                                        <div className="grid grid-cols-4 gap-2">
-                                            {rescheduleSlots.map(slot => (
-                                                <button key={slot} onClick={() => confirmReschedule(slot)} className="py-2 px-1 text-xs border border-gray-200 rounded hover:border-black hover:bg-gray-50 transition">
-                                                    {slot}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-xs text-red-400 bg-red-50 p-2 rounded text-center">Nenhum horário disponível.</p>
-                                    )}
-                                </div>
-                           )}
-
-                           <div className="text-xs text-gray-400 text-center">
-                               Ao reagendar, o horário anterior será liberado e o novo entrará como pendente.
-                           </div>
-                       </div>
-                   </motion.div>
-                )}
-            </AnimatePresence>
 
             {activeTab === 'docs' && (
                <div className="animate-fadeIn">
@@ -458,9 +368,7 @@ export const ClientArea: React.FC = () => {
                </div>
             )}
 
-            {/* ... Other tabs remain same ... */}
-            {/* Keeping Memories and Profile tabs same as previous version for brevity */}
-             {activeTab === 'memories' && (
+            {activeTab === 'memories' && (
               <div className="animate-fadeIn space-y-8">
                  <div>
                    <h2 className="text-2xl font-serif mb-2">Memórias do Assistente</h2>
@@ -490,6 +398,7 @@ export const ClientArea: React.FC = () => {
               </div>
             )}
 
+            {/* NEW PROFILE TAB */}
             {activeTab === 'profile' && (
               <div className="animate-fadeIn">
                 <div className="flex justify-between items-center mb-6">

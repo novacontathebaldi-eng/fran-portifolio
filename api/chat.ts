@@ -1,5 +1,3 @@
-
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { User, ClientMemory, ChatMessage, OfficeDetails } from '../types';
 
@@ -54,17 +52,17 @@ const tools = [
       },
       {
         name: 'scheduleMeeting',
-        description: 'Use this tool when the user wants to schedule a meeting ("reunião") or a site visit ("visita técnica").',
+        description: 'Use this tool ONLY when the user CONFIRMS they want to schedule a meeting ("reunião") or a site visit ("visita técnica"). Do not call this prematurely.',
         parameters: {
           type: Type.OBJECT,
           properties: {
             type: { 
               type: Type.STRING, 
-              description: 'The type of appointment. Either "meeting" (for general discussion, online or office) or "visit" (for site/construction visit).' 
+              description: 'The type of appointment. "meeting" (Online or Office) or "visit" (Client construction site).' 
             },
             address: {
               type: Type.STRING,
-              description: 'MANDATORY only if type is "visit". The address of the construction site or property.'
+              description: 'MANDATORY only if type is "visit". The address of the construction site. IF type is "meeting", DO NOT ASK for address.'
             }
           },
           required: ['type']
@@ -79,23 +77,31 @@ VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA.
 
 SUA IDENTIDADE:
 - Sofisticado, minimalista, atencioso e altamente eficiente.
-- Você não é apenas um bot, é uma extensão da experiência de luxo do escritório.
+- Você é uma extensão da experiência de luxo do escritório.
 - Seu objetivo nº 1 é CONVERTER VISITANTES EM CLIENTES.
 
-DADOS CRÍTICOS:
-- WhatsApp Oficial: +5527996670426
-- Instagram: instagram.com/othebaldi
-- Facebook: fb.com/othebaldi
+REGRAS RÍGIDAS DE CONTEXTO (CRÍTICO):
+1. SE O USUÁRIO ESTIVER LOGADO (Contexto User fornecido):
+   - NUNCA pergunte o nome ou email dele. Você JÁ TEM esses dados.
+   - Use o nome dele para ser cordial (ex: "Claro, [Nome]...").
+   - Apenas peça confirmação se necessário, mas não peça para digitar novamente.
 
-REGRAS DE COMPORTAMENTO:
-1. AGENDAMENTOS: Se o usuário quiser marcar horário/visita, chame a tool 'scheduleMeeting'. 
-   - IMPORTANTE: Se o usuário pedir uma "Visita Técnica", você DEVE obter o endereço da obra.
-   - Se for "Reunião", pode ser Online ou PRESENCIAL (no escritório).
-   - O widget de calendário aparecerá automaticamente após você chamar a tool.
-2. RECADO: Se o usuário quiser apenas que entrem em contato depois, use 'saveClientNote'.
-3. Se perguntarem "Como falo com a Fran?", use 'getSocialLinks'.
-4. Seja breve e elegante.
-5. Fale Português do Brasil de forma culta.
+2. LÓGICA DE LOCALIZAÇÃO E TIPO DE AGENDAMENTO:
+   - "Visita Técnica" (Presencial na Obra):
+     * Você DEVE perguntar o endereço da obra/terreno antes de chamar 'scheduleMeeting'.
+   - "Reunião de Alinhamento":
+     * Se for Presencial: Informe que será no nosso escritório (Use o endereço do escritório fornecido no contexto).
+     * Se for Online: Informe que o link do Google Meet será enviado após a aprovação.
+     * NÃO pergunte o endereço do cliente para reuniões, apenas para visitas.
+
+3. FLUXO DE AGENDAMENTO (UX):
+   - Quando o usuário quiser agendar, chame a tool 'scheduleMeeting'.
+   - NÃO pergunte datas ou horários no texto. Diga: "Por favor, selecione o melhor horário no calendário abaixo."
+   - Após o agendamento, o sistema cuidará da confirmação visual.
+
+4. TOM DE VOZ:
+   - Breve, elegante e resolutivo.
+   - Fale Português do Brasil culto.
 `;
 
 export async function chatWithConcierge(
@@ -121,39 +127,39 @@ export async function chatWithConcierge(
 
   // Inject Office Address and Hours dynamically from Admin Context
   if (context.office) {
-    systemInstruction += `\n\nINFORMAÇÕES DO ESCRITÓRIO (OFICIAIS):
-    - Endereço Completo: ${context.office.address}
+    systemInstruction += `\n\n[DADOS DO ESCRITÓRIO - FONTE DE VERDADE]:
+    - Endereço Oficial (Para Reuniões Presenciais): ${context.office.address}
     - Cidade/Estado: ${context.office.city} - ${context.office.state}
-    - Horário de Atendimento: ${context.office.hoursDescription}
-    - Use essas informações para responder perguntas sobre "onde fica o escritório" ou "qual o horário".
+    - Horário de Funcionamento: ${context.office.hoursDescription}
     `;
   }
   
   if (context?.user) {
-    systemInstruction += `\n\nCONTEXTO DO USUÁRIO LOGADO:
+    systemInstruction += `\n\n[USUÁRIO LOGADO - DADOS JÁ EXISTENTES]:
     - Nome: ${context.user.name}
+    - Email: ${context.user.email} (NÃO PERGUNTAR)
+    - Telefone: ${context.user.phone || 'Cadastrado'} (NÃO PERGUNTAR)
     - Role: ${context.user.role}
-    - Telefone: ${context.user.phone || 'Não informado'}
     `;
 
     if (context.user.addresses && context.user.addresses.length > 0) {
-      systemInstruction += `\n- Endereços Cadastrados:`;
+      systemInstruction += `\n- Endereços Salvos do Usuário (Pode sugerir para Visitas):`;
       context.user.addresses.forEach(addr => {
-        systemInstruction += `\n  * [${addr.label}]: ${addr.street}, ${addr.number}, ${addr.district} - ${addr.city}/${addr.state}`;
+        systemInstruction += `\n  * [${addr.label}]: ${addr.street}, ${addr.number} (${addr.city})`;
       });
-    } else {
-      systemInstruction += `\n- Endereços: Nenhum cadastrado.`;
     }
     
-    // Inject Client Memories securely
     if (context.memories && context.memories.length > 0) {
-      systemInstruction += `\n\nO QUE JÁ SABEMOS SOBRE ESTE CLIENTE (USE PARA PERSONALIZAR):`;
+      systemInstruction += `\n\n[MEMÓRIAS DO CLIENTE]:`;
       context.memories.forEach((mem: any) => {
          systemInstruction += `\n- [${mem.topic}]: ${mem.content}`;
       });
     }
   } else {
-    systemInstruction += `\n\nESTADO: O usuário é um VISITANTE (Guest). Tente descobrir o nome dele sutilmente.`;
+    systemInstruction += `\n\n[USUÁRIO VISITANTE]:
+    - Tente obter o nome dele sutilmente no início, mas priorize o atendimento.
+    - Se ele tentar agendar, avise que ele precisará fazer um breve login no widget que vai aparecer.
+    `;
   }
 
   const modelName = aiConfig?.model || 'gemini-2.5-flash';
@@ -195,40 +201,41 @@ export async function chatWithConcierge(
         for (const call of functionCalls) {
           if (call.name === 'showProjects') {
             responseData.uiComponent = { type: 'ProjectCarousel', data: call.args };
-            if (!responseData.text) responseData.text = "Aqui estão alguns projetos selecionados.";
+            if (!responseData.text) responseData.text = "Selecionei estes projetos do portfólio que combinam com o que você procura.";
           } 
           else if (call.name === 'saveClientNote') {
             responseData.actions.push({
               type: 'saveNote',
               payload: {
-                userName: call.args['name'],
-                userContact: call.args['contact'] || 'Não informado',
+                userName: call.args['name'] || (context.user ? context.user.name : 'Anônimo'),
+                userContact: call.args['contact'] || (context.user ? context.user.email : 'Não informado'),
                 message: call.args['message'],
                 source: 'chatbot'
               }
             });
-            if (!responseData.text) responseData.text = "Anotei seus dados e encaminhei para a equipe.";
+            if (!responseData.text) responseData.text = "Perfeito. Já anotei seus dados e encaminhei a mensagem com prioridade para nossa equipe.";
           }
           else if (call.name === 'getSocialLinks') {
             responseData.uiComponent = { type: 'SocialLinks', data: {} };
-            if (!responseData.text) responseData.text = "Aqui estão nossos canais diretos.";
+            if (!responseData.text) responseData.text = "Aqui estão nossos canais de contato direto.";
           }
           else if (call.name === 'navigateSite') {
             responseData.actions.push({
               type: 'navigate',
               payload: { path: call.args['path'] }
             });
-            if (!responseData.text) responseData.text = "Redirecionando você.";
+            if (!responseData.text) responseData.text = "Estou te redirecionando agora mesmo.";
           }
           else if (call.name === 'scheduleMeeting') {
             responseData.uiComponent = { type: 'CalendarWidget', data: call.args };
-            if (!responseData.text) responseData.text = "Por favor, selecione a data e hora de sua preferência no calendário abaixo.";
+            // Ensure specific text prompt for the widget
+            if (!responseData.text) responseData.text = "Verifiquei nossa disponibilidade. Por favor, selecione o melhor dia e horário no calendário abaixo.";
           }
         }
       }
 
       if (!responseData.text && !responseData.uiComponent) {
-        responseData.text = "Como posso ajudar com algo mais específico?";
+        responseData.text = "Posso ajudar com algo mais?";
       }
 
       return responseData;
@@ -237,7 +244,7 @@ export async function chatWithConcierge(
     console.error("AI Error:", error);
     return {
       role: 'model',
-      text: "Perdão, encontrei uma instabilidade momentânea. Poderia repetir?"
+      text: "Desculpe, tive uma breve desconexão. Poderia repetir, por favor?"
     };
   }
 }

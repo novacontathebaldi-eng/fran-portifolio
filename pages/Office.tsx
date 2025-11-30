@@ -10,7 +10,7 @@ export const Office: React.FC = () => {
   
   // Safe access to office content
   const officeData = siteContent?.office || {};
-  const { blocks, address, hoursDescription, mapsLink, mapQuery } = officeData;
+  const { blocks, address, hoursDescription, mapsLink, mapQuery, phone, email } = officeData;
 
   // Animation Variants
   const fadeInUp = {
@@ -174,8 +174,8 @@ export const Office: React.FC = () => {
                         </div>
                         <h4 className="text-xl font-serif">Contato</h4>
                         <div className="space-y-1">
-                          <p className="text-gray-400 font-light">+55 (27) 99667-0426</p>
-                          <p className="text-gray-400 font-light">contato@fransiller.com.br</p>
+                          <p className="text-gray-400 font-light">{phone}</p>
+                          <p className="text-gray-400 font-light">{email}</p>
                         </div>
                      </div>
                   </div>

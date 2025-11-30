@@ -66,18 +66,10 @@ export interface Appointment {
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
   location: string; // Address or 'Escritório Fran Siller / Online'
+  meetingLink?: string; // New: For Google Meet/Zoom links
   status: 'pending' | 'confirmed' | 'cancelled' | 'rescheduling';
-  meetingLink?: string; // New: For online meetings
   createdAt: string;
   notes?: string;
-}
-
-export interface BlockRule {
-  id: string;
-  date: string; // YYYY-MM-DD
-  start: string; // HH:mm
-  end: string; // HH:mm
-  reason?: string;
 }
 
 export interface ScheduleSettings {
@@ -85,7 +77,8 @@ export interface ScheduleSettings {
   workDays: number[]; // 0 = Sunday, 1 = Monday...
   startHour: string; // "09:00"
   endHour: string; // "18:00"
-  blockedRules: BlockRule[]; // New flexible blocking system
+  blockedDates: string[]; // ISO dates YYYY-MM-DD (Full Day Block)
+  blockedSlots: { date: string; time: string }[]; // New: Specific Time Block
 }
 
 export interface Address {
@@ -145,6 +138,7 @@ export interface PillarItem {
 }
 
 export interface OfficeDetails {
+  // Address Info
   address: string; // Full string for display
   street: string;
   number: string;
@@ -155,7 +149,12 @@ export interface OfficeDetails {
   mapsLink: string; // Google Maps URL
   mapQuery?: string; // Exact query for the embedded map iframe
   
+  // Hours
   hoursDescription: string; // e.g., "Segunda a Sexta, 09h às 18h"
+
+  // Contact Info (New Global Settings)
+  email: string;
+  phone: string;
   
   // New Block System for Office Page
   blocks: ContentBlock[];
@@ -177,23 +176,11 @@ export interface SiteContent {
     pillars: PillarItem[]; // New
     recognition: string[]; // New
   };
-  office: OfficeDetails; // Centralized Office Data
-}
-
-export interface ContactSettings {
-  email: string;
-  phone: string;
-  whatsapp: string;
-  address: string; // Main Display Address
-  mapsQuery: string; // For Google Maps Embed
-  instagram: string;
-  linkedin: string;
-  hours: string;
+  office: OfficeDetails; // Centralized Office Data (Source of Truth)
 }
 
 export interface GlobalSettings {
   enableShop: boolean;
-  contact: ContactSettings; // Single Source of Truth
   aiConfig: {
     model: string;
     useCustomSystemInstruction: boolean; // New Toggle

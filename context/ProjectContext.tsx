@@ -1,6 +1,7 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ChatSession, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address, BlockRule } from '../types';
+import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ChatSession, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address } from '../types';
 import { MOCK_PROJECTS, MOCK_USER_CLIENT, MOCK_USER_ADMIN } from '../data';
 import { chatWithConcierge } from '../api/chat';
 
@@ -61,11 +62,10 @@ interface ProjectContextType {
   scheduleSettings: ScheduleSettings;
   updateScheduleSettings: (settings: ScheduleSettings) => void;
   addAppointment: (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => void;
-  editAppointment: (appt: Appointment) => void; // For Admin
+  updateAppointment: (appt: Appointment) => void;
   updateAppointmentStatus: (id: string, status: Appointment['status']) => void;
+  deleteAppointmentPermanently: (id: string) => void;
   checkAvailability: (date: string) => string[]; // Returns available hours
-  addBlockRule: (rule: Omit<BlockRule, 'id'>) => void;
-  removeBlockRule: (id: string) => void;
 
   // Toast Logic
   toast: ToastState;
@@ -77,16 +77,6 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 const DEFAULT_SETTINGS: GlobalSettings = {
   enableShop: true,
-  contact: {
-    email: 'contato@fransiller.com.br',
-    phone: '+55 (11) 99999-9999',
-    whatsapp: '5511999999999',
-    address: 'Av. Paulista, 1234 - Jardins, São Paulo - SP',
-    mapsQuery: 'Av. Paulista, 1234, São Paulo',
-    instagram: '@fransiller_arq',
-    linkedin: 'Fran Siller Arquitetura',
-    hours: 'Segunda a Sexta, 09h às 18h'
-  },
   aiConfig: {
     model: 'gemini-2.5-flash',
     useCustomSystemInstruction: false,
@@ -98,7 +88,9 @@ SUA IDENTIDADE:
 - Seu objetivo nº 1 é CONVERTER VISITANTES EM CLIENTES (Capturar Leads) e AGENDAR VISITAS/REUNIÕES.
 
 DADOS CRÍTICOS:
-- Use as informações globais de contato fornecidas no contexto.
+- WhatsApp: +5527996670426
+- Instagram: instagram.com/othebaldi
+- Localização: Brasil (Global).
 
 REGRAS:
 1. Se o usuário quiser agendar, chame a tool 'scheduleMeeting'.
@@ -117,7 +109,8 @@ const DEFAULT_SCHEDULE_SETTINGS: ScheduleSettings = {
   workDays: [1, 2, 3, 4, 5], // Mon-Fri
   startHour: "09:00",
   endHour: "18:00",
-  blockedRules: [] // New block system
+  blockedDates: [],
+  blockedSlots: []
 };
 
 const MOCK_NOTES: AdminNote[] = [
@@ -141,6 +134,7 @@ const MOCK_APPOINTMENTS: Appointment[] = [
     date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
     time: '14:00',
     location: 'Online (Google Meet)',
+    meetingLink: 'https://meet.google.com/abc-defg-hij',
     status: 'confirmed',
     createdAt: new Date().toISOString()
   }
@@ -194,7 +188,10 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     state: 'ES',
     zipCode: '29640-000',
     mapsLink: 'https://www.google.com/maps/search/?api=1&query=Rua+José+de+Anchieta+Fontana+177+Centro+Santa+Leopoldina',
+    mapQuery: '',
     hoursDescription: 'Segunda a Sexta, 09h às 18h',
+    email: 'contato@fransiller.com.br',
+    phone: '+55 (27) 99667-0426',
     blocks: [
       { 
         id: 'hero', 
@@ -258,10 +255,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Robust Merge for new fields
-        const merged = { ...DEFAULT_SETTINGS, ...parsed };
-        if (!merged.contact) merged.contact = DEFAULT_SETTINGS.contact;
-        return merged;
+        if (parsed.aiConfig && typeof parsed.aiConfig.useCustomSystemInstruction === 'undefined') {
+          parsed.aiConfig.useCustomSystemInstruction = false;
+        }
+        if (parsed.aiConfig && typeof parsed.aiConfig.defaultGreeting === 'undefined') {
+          parsed.aiConfig.defaultGreeting = DEFAULT_SETTINGS.aiConfig.defaultGreeting;
+        }
+        return parsed;
       } catch (e) {
         return DEFAULT_SETTINGS;
       }
@@ -306,14 +306,14 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (savedContent) {
       try {
         const parsed = JSON.parse(savedContent);
-        
-        // Robust merge: Start with DEFAULT, override with parsed, then check deep keys
         const merged = { ...DEFAULT_SITE_CONTENT, ...parsed };
 
-        // Ensure critical sections exist
         if (!merged.office) merged.office = DEFAULT_SITE_CONTENT.office;
         if (!merged.office.blocks) merged.office.blocks = DEFAULT_SITE_CONTENT.office.blocks;
         
+        if (!merged.office.email) merged.office.email = DEFAULT_SITE_CONTENT.office.email;
+        if (!merged.office.phone) merged.office.phone = DEFAULT_SITE_CONTENT.office.phone;
+
         if (!merged.about) merged.about = DEFAULT_SITE_CONTENT.about;
         if (!merged.about.stats) merged.about.stats = DEFAULT_SITE_CONTENT.about.stats;
         if (!merged.about.pillars) merged.about.pillars = DEFAULT_SITE_CONTENT.about.pillars;
@@ -327,22 +327,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
     return DEFAULT_SITE_CONTENT;
   });
-
-  // Sync Global Settings Contact Info with Site Content Office Info (One way sync for legacy display)
-  useEffect(() => {
-    if (settings.contact) {
-      setSiteContent(prev => ({
-        ...prev,
-        office: {
-          ...prev.office,
-          address: settings.contact.address,
-          hoursDescription: settings.contact.hours,
-          mapQuery: settings.contact.mapsQuery,
-          // mapsLink handled dynamically in components based on mapQuery
-        }
-      }));
-    }
-  }, [settings.contact]);
 
   useEffect(() => {
     localStorage.setItem('fran_site_content', JSON.stringify(siteContent));
@@ -526,24 +510,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   
   const updateScheduleSettings = (newSettings: ScheduleSettings) => setScheduleSettings(newSettings);
 
-  const addBlockRule = (rule: Omit<BlockRule, 'id'>) => {
-    const newRule: BlockRule = {
-      ...rule,
-      id: Math.random().toString(36).substr(2, 9)
-    };
-    setScheduleSettings(prev => ({
-      ...prev,
-      blockedRules: [...prev.blockedRules, newRule]
-    }));
-  };
-
-  const removeBlockRule = (id: string) => {
-    setScheduleSettings(prev => ({
-      ...prev,
-      blockedRules: prev.blockedRules.filter(r => r.id !== id)
-    }));
-  };
-
   const addAppointment = (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => {
     const newAppt: Appointment = {
       ...appt,
@@ -554,7 +520,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setAppointments(prev => [...prev, newAppt]);
   };
 
-  const editAppointment = (appt: Appointment) => {
+  const updateAppointment = (appt: Appointment) => {
     setAppointments(prev => prev.map(a => a.id === appt.id ? appt : a));
   };
 
@@ -562,13 +528,20 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
   };
 
+  const deleteAppointmentPermanently = (id: string) => {
+    setAppointments(prev => prev.filter(a => a.id !== id));
+  };
+
   const checkAvailability = (dateStr: string): string[] => {
-    // 1. Check if workday
+    // 1. Check if blocked full day
+    if (scheduleSettings.blockedDates.includes(dateStr)) return [];
+
+    // 2. Check if workday
     const dateObj = new Date(dateStr + 'T12:00:00'); // noon to avoid timezone edge cases
     const dayOfWeek = dateObj.getDay(); // 0-6
     if (!scheduleSettings.workDays.includes(dayOfWeek)) return [];
 
-    // 2. Generate slots (hourly)
+    // 3. Generate slots (hourly)
     const slots: string[] = [];
     let startH = parseInt(scheduleSettings.startHour.split(':')[0]);
     let endH = parseInt(scheduleSettings.endHour.split(':')[0]);
@@ -576,26 +549,20 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     for (let h = startH; h < endH; h++) {
       const timeSlot = `${h.toString().padStart(2, '0')}:00`;
       
-      // 3. Check conflicts with Appointments
+      // 4. Check specific blocked slots
+      const isBlockedSlot = scheduleSettings.blockedSlots?.some(
+          b => b.date === dateStr && b.time === timeSlot
+      );
+      if (isBlockedSlot) continue;
+
+      // 5. Check conflicts with existing appointments
       const isTaken = appointments.some(a => 
         a.date === dateStr && 
         a.time === timeSlot && 
         a.status !== 'cancelled'
       );
 
-      // 4. Check conflicts with BlockRules
-      const isBlocked = scheduleSettings.blockedRules.some(rule => {
-        if (rule.date !== dateStr) return false;
-        
-        // Full Day Block
-        if (rule.start === '00:00' && rule.end === '23:59') return true;
-
-        // Time Range Block
-        // Simple string comparison works for HH:mm format (e.g. "09:00" >= "08:00")
-        return timeSlot >= rule.start && timeSlot < rule.end;
-      });
-
-      if (!isTaken && !isBlocked) {
+      if (!isTaken) {
         slots.push(timeSlot);
       }
     }
@@ -737,11 +704,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       scheduleSettings,
       updateScheduleSettings,
       addAppointment,
-      editAppointment,
+      updateAppointment,
       updateAppointmentStatus,
+      deleteAppointmentPermanently,
       checkAvailability,
-      addBlockRule,
-      removeBlockRule,
       // Toast
       toast,
       showToast,

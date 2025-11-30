@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, Link as LinkIcon, RotateCcw } from 'lucide-react';
-import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, BlockRule } from '../../types';
+import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon } from 'lucide-react';
+import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock } from '../../types';
 import { motion, Reorder } from 'framer-motion';
 
 // Mock Supabase Upload Simulation
@@ -17,7 +17,7 @@ const uploadToSupabase = async (file: File): Promise<string> => {
 };
 
 export const AdminDashboard: React.FC = () => {
-  const { projects, deleteProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, adminNotes, markNoteAsRead, deleteAdminNote, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, editAppointment, addBlockRule, removeBlockRule } = useProjects();
+  const { projects, deleteProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, adminNotes, markNoteAsRead, deleteAdminNote, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, updateAppointment, deleteAppointmentPermanently } = useProjects();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'content' | 'settings' | 'messages' | 'clients' | 'agenda' | 'office'>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,12 +26,6 @@ export const AdminDashboard: React.FC = () => {
   // Local forms
   const [contentForm, setContentForm] = useState<SiteContent>(siteContent);
   const [settingsForm, setSettingsForm] = useState<GlobalSettings>(settings);
-
-  // Agenda State
-  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
-  const [showBlockModal, setShowBlockModal] = useState(false);
-  const [blockForm, setBlockForm] = useState<Partial<BlockRule>>({ date: '', start: '00:00', end: '23:59', reason: '' });
-  const [viewHistory, setViewHistory] = useState(false);
 
   // Client Details View
   const [selectedClient, setSelectedClient] = useState<User | null>(null);
@@ -44,6 +38,12 @@ export const AdminDashboard: React.FC = () => {
   // Rename State
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editFolderName, setEditFolderName] = useState('');
+
+  // AGENDA STATES
+  const [showHistory, setShowHistory] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [blockForm, setBlockForm] = useState({ date: '', time: '' });
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
 
   const handleDelete = (id: string) => {
     if (confirm('Tem certeza que deseja excluir este projeto?')) {
@@ -69,6 +69,103 @@ export const AdminDashboard: React.FC = () => {
     }));
   };
 
+  // Generic Image Upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, section: 'about' | 'office', fieldName: string) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    setUploading(true);
+    try {
+      const url = await uploadToSupabase(file);
+      setContentForm(prev => ({
+        ...prev,
+        [section]: {
+          ...(prev as any)[section],
+          [fieldName]: url
+        }
+      }));
+      showToast('Imagem carregada com sucesso!', 'success');
+    } catch (error) {
+      showToast('Erro ao carregar imagem', 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const updateStat = (id: string, field: keyof StatItem, value: string) => {
+    setContentForm(prev => ({
+      ...prev,
+      about: {
+        ...prev.about,
+        stats: prev.about.stats.map(s => s.id === id ? { ...s, [field]: value } : s)
+      }
+    }));
+  };
+
+  const addStat = () => {
+    const newStat: StatItem = { id: Date.now().toString(), value: '0', label: 'Novo Dado' };
+    setContentForm(prev => ({
+      ...prev,
+      about: { ...prev.about, stats: [...prev.about.stats, newStat] }
+    }));
+  };
+
+  const removeStat = (id: string) => {
+    setContentForm(prev => ({
+      ...prev,
+      about: { ...prev.about, stats: prev.about.stats.filter(s => s.id !== id) }
+    }));
+  };
+
+  const updatePillar = (id: string, field: keyof PillarItem, value: string) => {
+    setContentForm(prev => ({
+      ...prev,
+      about: {
+        ...prev.about,
+        pillars: prev.about.pillars.map(p => p.id === id ? { ...p, [field]: value } : p)
+      }
+    }));
+  };
+
+  const addPillar = () => {
+    const newPillar: PillarItem = { id: Date.now().toString(), title: 'Novo Pilar', description: 'Descrição...' };
+    setContentForm(prev => ({
+      ...prev,
+      about: { ...prev.about, pillars: [...prev.about.pillars, newPillar] }
+    }));
+  };
+
+  const removePillar = (id: string) => {
+    setContentForm(prev => ({
+      ...prev,
+      about: { ...prev.about, pillars: prev.about.pillars.filter(p => p.id !== id) }
+    }));
+  };
+  
+  // Recognition
+  const addRecognition = () => {
+     setContentForm(prev => ({
+        ...prev,
+        about: { ...prev.about, recognition: [...prev.about.recognition, 'Nova Mídia'] }
+     }));
+  }
+
+  const updateRecognition = (index: number, value: string) => {
+     const newRec = [...contentForm.about.recognition];
+     newRec[index] = value;
+     setContentForm(prev => ({
+        ...prev,
+        about: { ...prev.about, recognition: newRec }
+     }));
+  }
+
+  const removeRecognition = (index: number) => {
+     const newRec = contentForm.about.recognition.filter((_, i) => i !== index);
+     setContentForm(prev => ({
+        ...prev,
+        about: { ...prev.about, recognition: newRec }
+     }));
+  }
+
   const handleSettingsChange = (field: string, value: any) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
@@ -91,33 +188,80 @@ export const AdminDashboard: React.FC = () => {
 
   const saveSettings = () => {
     updateSettings(settingsForm);
+    updateSiteContent(contentForm); // Save office details too as they are in content form
     showToast('Configurações salvas.', 'success');
   };
 
-  // Agenda Handlers
-  const handleSaveAppointment = () => {
-    if (editingAppointment) {
-      editAppointment(editingAppointment);
-      setEditingAppointment(null);
-      showToast('Agendamento atualizado.', 'success');
+  // ... (Other handlers unchanged) ...
+  const handleAdminDeleteMemory = (memoryId: string) => {
+    if (!selectedClient) return;
+    if (confirm('Tem certeza que deseja apagar esta memória do cliente?')) {
+        const updatedMemories = (selectedClient.memories || []).filter(m => m.id !== memoryId);
+        const updatedClient = { ...selectedClient, memories: updatedMemories };
+        updateUser(updatedClient);
+        setSelectedClient(updatedClient);
+        showToast('Memória removida.', 'success');
+    }
+  }
+
+  const handleCreateFolder = () => {
+    if (newFolderName.trim() && selectedClient) {
+      createClientFolder(selectedClient.id, newFolderName);
+      setNewFolderName('');
+      setShowNewFolderInput(false);
+      showToast('Pasta criada.', 'success');
+      const updatedUser = users.find(u => u.id === selectedClient.id);
+      if (updatedUser) setSelectedClient(updatedUser);
     }
   };
 
-  const handleAddBlock = () => {
-    if (blockForm.date) {
-      addBlockRule({
-        date: blockForm.date!,
-        start: blockForm.start || '00:00',
-        end: blockForm.end || '23:59',
-        reason: blockForm.reason
-      });
-      setShowBlockModal(false);
-      setBlockForm({ date: '', start: '00:00', end: '23:59', reason: '' });
-      showToast('Bloqueio adicionado.', 'success');
+  const startRenaming = (folder: ClientFolder) => {
+    setEditingFolderId(folder.id);
+    setEditFolderName(folder.name);
+  };
+
+  const handleRenameFolder = () => {
+    if (editingFolderId && editFolderName.trim() && selectedClient) {
+      renameClientFolder(selectedClient.id, editingFolderId, editFolderName);
+      setEditingFolderId(null);
+      showToast('Pasta renomeada.', 'success');
+      const updatedUser = users.find(u => u.id === selectedClient.id);
+      if (updatedUser) setSelectedClient(updatedUser);
     }
   };
 
-  // ... (Other handlers kept mostly same, ensuring sync) ...
+  const handleDeleteFolder = (folderId: string) => {
+    if (selectedClient && confirm('Excluir esta pasta e todos os arquivos?')) {
+      deleteClientFolder(selectedClient.id, folderId);
+      const updatedUser = users.find(u => u.id === selectedClient.id);
+      if (updatedUser) setSelectedClient(updatedUser);
+      if (currentAdminFolderId === folderId) setCurrentAdminFolderId(null);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !selectedClient || !currentAdminFolderId) return;
+    const file = e.target.files[0];
+    setUploading(true);
+    try {
+      await uploadFileToFolder(selectedClient.id, currentAdminFolderId, file);
+      showToast('Arquivo enviado!', 'success');
+      const updatedUser = users.find(u => u.id === selectedClient.id);
+      if (updatedUser) setSelectedClient(updatedUser);
+    } catch (err) {
+      showToast('Erro no envio.', 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteFile = (fileId: string) => {
+    if (selectedClient && currentAdminFolderId && confirm('Excluir arquivo?')) {
+      deleteClientFile(selectedClient.id, currentAdminFolderId, fileId);
+      const updatedUser = users.find(u => u.id === selectedClient.id);
+      if (updatedUser) setSelectedClient(updatedUser);
+    }
+  };
 
   const NavItem = ({ id, icon: Icon, label, count }: { id: typeof activeTab, icon: any, label: string, count?: number }) => (
     <button 
@@ -150,7 +294,7 @@ export const AdminDashboard: React.FC = () => {
     }));
   };
 
-  // --- Office Block Logic (Existing) ---
+  // --- Office Block Logic ---
   const addOfficeBlock = (type: ContentBlock['type']) => {
     const newBlock: ContentBlock = {
       id: Math.random().toString(36).substr(2, 9),
@@ -193,7 +337,7 @@ export const AdminDashboard: React.FC = () => {
     }
     handleOfficeChange('blocks', blocks);
   };
-  
+
   const handleBlockImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockId: string) => {
     if (!e.target.files || e.target.files.length === 0) return;
     try {
@@ -213,27 +357,51 @@ export const AdminDashboard: React.FC = () => {
         showToast('Erro ao enviar imagem', 'error');
     }
   };
-  // ------------------------------------
 
-  // ... (Keeping generic Stat/Pillar/Recognition handlers for brevity, assume they exist as in previous version) ...
-  const updateStat = (id: string, field: keyof StatItem, value: string) => {
-    setContentForm(prev => ({ ...prev, about: { ...prev.about, stats: prev.about.stats.map(s => s.id === id ? { ...s, [field]: value } : s) } }));
-  };
-  const addStat = () => {
-    setContentForm(prev => ({ ...prev, about: { ...prev.about, stats: [...prev.about.stats, { id: Date.now().toString(), value: '0', label: 'Novo' }] } }));
-  };
-  const removeStat = (id: string) => setContentForm(prev => ({ ...prev, about: { ...prev.about, stats: prev.about.stats.filter(s => s.id !== id) } }));
-  const updatePillar = (id: string, field: keyof PillarItem, value: string) => {
-    setContentForm(prev => ({ ...prev, about: { ...prev.about, pillars: prev.about.pillars.map(p => p.id === id ? { ...p, [field]: value } : p) } }));
-  };
-  const addPillar = () => {
-    setContentForm(prev => ({ ...prev, about: { ...prev.about, pillars: [...prev.about.pillars, { id: Date.now().toString(), title: 'Novo', description: '' }] } }));
-  };
-  const removePillar = (id: string) => setContentForm(prev => ({ ...prev, about: { ...prev.about, pillars: prev.about.pillars.filter(p => p.id !== id) } }));
-  const addRecognition = () => setContentForm(prev => ({ ...prev, about: { ...prev.about, recognition: [...prev.about.recognition, 'Nova Mídia'] } }));
-  const updateRecognition = (index: number, value: string) => { const newRec = [...contentForm.about.recognition]; newRec[index] = value; setContentForm(prev => ({ ...prev, about: { ...prev.about, recognition: newRec } })); };
-  const removeRecognition = (index: number) => { setContentForm(prev => ({ ...prev, about: { ...prev.about, recognition: contentForm.about.recognition.filter((_, i) => i !== index) } })); };
+  // --- Blocking Logic ---
+  const handleAddBlock = () => {
+    if(!blockForm.date) return;
+    if(blockForm.time) {
+        // Block specific slot
+        updateScheduleSettings({
+            ...scheduleSettings,
+            blockedSlots: [...(scheduleSettings.blockedSlots || []), { date: blockForm.date, time: blockForm.time }]
+        });
+        showToast(`Horário ${blockForm.time} bloqueado.`, 'success');
+    } else {
+        // Block full day
+        updateScheduleSettings({
+            ...scheduleSettings,
+            blockedDates: [...scheduleSettings.blockedDates, blockForm.date]
+        });
+        showToast(`Dia ${blockForm.date} bloqueado.`, 'success');
+    }
+    setBlockForm({ date: '', time: '' });
+    setShowBlockModal(false);
+  }
 
+  const handleRemoveBlockDate = (date: string) => {
+    updateScheduleSettings({
+        ...scheduleSettings,
+        blockedDates: scheduleSettings.blockedDates.filter(d => d !== date)
+    });
+  }
+
+  const handleRemoveBlockSlot = (date: string, time: string) => {
+    updateScheduleSettings({
+        ...scheduleSettings,
+        blockedSlots: (scheduleSettings.blockedSlots || []).filter(s => !(s.date === date && s.time === time))
+    });
+  }
+
+  // --- Appointment Editing ---
+  const handleSaveAppointment = () => {
+    if(editingAppointment) {
+        updateAppointment(editingAppointment);
+        setEditingAppointment(null);
+        showToast('Agendamento atualizado.', 'success');
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#111] flex font-sans text-gray-100">
@@ -259,7 +427,7 @@ export const AdminDashboard: React.FC = () => {
           <NavItem id="projects" icon={FolderOpen} label="Projetos" />
           <NavItem id="clients" icon={Users} label="Clientes & Arquivos" />
           <NavItem id="messages" icon={MessageSquare} label="Recados & IA" count={unreadNotesCount} />
-          <NavItem id="office" icon={MapPin} label="Escritório" />
+          <NavItem id="office" icon={MapPin} label="Escritório (Site)" />
           <NavItem id="content" icon={FileText} label="Conteúdo Site" />
           <NavItem id="settings" icon={Settings} label="Configurações" />
         </nav>
@@ -284,6 +452,7 @@ export const AdminDashboard: React.FC = () => {
           {activeTab === 'dashboard' && (
             <div className="animate-fadeIn">
               <h2 className="text-3xl font-serif font-bold mb-8 text-black">Bem-vinda, Fran.</h2>
+              
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                   <div className="flex justify-between items-start mb-4">
@@ -314,18 +483,18 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-           {/* Agenda View */}
-           {activeTab === 'agenda' && (
+          {/* Agenda View */}
+          {activeTab === 'agenda' && (
             <div className="animate-fadeIn">
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-3xl font-serif font-bold text-black">Agenda & Agendamentos</h2>
                 <div className="flex gap-2">
-                   <button onClick={() => setShowBlockModal(true)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-full font-bold hover:bg-gray-300 transition text-sm flex items-center gap-2">
-                      <Ban className="w-4 h-4"/> Bloquear Horário
-                   </button>
-                   <button onClick={() => setViewHistory(!viewHistory)} className="text-gray-500 underline text-sm px-4">
-                      {viewHistory ? 'Ocultar Histórico' : 'Ver Cancelados'}
-                   </button>
+                    <button onClick={() => setShowHistory(!showHistory)} className={`px-4 py-2 rounded-full font-bold text-sm border ${showHistory ? 'bg-black text-white border-black' : 'bg-white text-gray-500 border-gray-200'}`}>
+                        {showHistory ? 'Ocultar Histórico' : 'Ver Histórico'}
+                    </button>
+                    <button onClick={() => setShowBlockModal(true)} className="px-4 py-2 rounded-full font-bold text-sm bg-red-100 text-red-600 hover:bg-red-200 transition flex items-center gap-2">
+                        <Ban className="w-4 h-4" /> Bloqueios
+                    </button>
                 </div>
               </div>
               
@@ -333,7 +502,7 @@ export const AdminDashboard: React.FC = () => {
                  {/* Left: Appointments List */}
                  <div className="lg:col-span-2 space-y-6">
                     {/* Pending Requests */}
-                    {pendingAppointmentsCount > 0 && (
+                    {!showHistory && pendingAppointmentsCount > 0 && (
                       <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
                          <h3 className="font-bold text-yellow-800 mb-4 flex items-center gap-2"><Clock className="w-5 h-5"/> Solicitações Pendentes</h3>
                          <div className="space-y-4">
@@ -348,14 +517,12 @@ export const AdminDashboard: React.FC = () => {
                                      <p className="text-sm text-gray-500">{appt.location}</p>
                                   </div>
                                   <div className="flex gap-2">
+                                     <button onClick={() => setEditingAppointment(appt)} className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200"><Edit2 className="w-4 h-4"/></button>
                                      <button onClick={() => updateAppointmentStatus(appt.id, 'confirmed')} className="flex items-center gap-1 bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-green-600 transition shadow-sm">
                                         <Check className="w-4 h-4" /> Aprovar
                                      </button>
-                                     <button onClick={() => setEditingAppointment(appt)} className="flex items-center gap-1 bg-gray-100 text-gray-600 px-3 py-2 rounded-lg font-bold text-sm hover:bg-gray-200 transition">
-                                        <Edit2 className="w-4 h-4" />
-                                     </button>
                                      <button onClick={() => updateAppointmentStatus(appt.id, 'cancelled')} className="flex items-center gap-1 bg-white border border-gray-200 text-gray-500 px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition">
-                                        <X className="w-4 h-4" />
+                                        <X className="w-4 h-4" /> Rejeitar
                                      </button>
                                   </div>
                                </div>
@@ -364,71 +531,77 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                     )}
 
-                    {/* All Appointments */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                       <div className="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                          <h3 className="font-bold">Próximos Compromissos</h3>
-                          <span className="text-xs bg-white px-2 py-1 rounded text-gray-400 border border-gray-200">{sortedAppointments.filter(a => a.status === 'confirmed').length} confirmados</span>
-                       </div>
-                       <div className="divide-y divide-gray-100">
-                          {sortedAppointments.filter(a => a.status === 'confirmed').length === 0 ? (
-                             <div className="p-8 text-center text-gray-400">Agenda livre. Nenhum compromisso confirmado.</div>
-                          ) : (
-                             sortedAppointments.filter(a => a.status === 'confirmed').map(appt => (
-                                <div key={appt.id} className="p-6 hover:bg-gray-50 transition flex items-center justify-between group">
-                                   <div className="flex gap-4">
-                                      <div className="flex flex-col items-center justify-center bg-gray-100 rounded-lg p-3 min-w-[60px]">
-                                         <span className="text-xs uppercase font-bold text-gray-500">{new Date(appt.date).toLocaleDateString('pt-BR', { weekday: 'short' })}</span>
-                                         <span className="text-xl font-bold font-serif">{new Date(appt.date).getDate()}</span>
-                                      </div>
-                                      <div>
-                                         <h4 className="font-bold text-lg">{appt.clientName}</h4>
-                                         <div className="flex flex-wrap gap-4 text-sm text-gray-500 mt-1">
-                                            <span className="flex items-center gap-1"><Clock className="w-3 h-3"/> {appt.time}</span>
-                                            <span className="flex items-center gap-1"><MapPin className="w-3 h-3"/> {appt.location}</span>
-                                            <span className="text-xs bg-gray-100 px-2 py-0.5 rounded uppercase">{appt.type === 'visit' ? 'Visita Técnica' : 'Reunião'}</span>
-                                            {appt.meetingLink && <span className="flex items-center gap-1 text-blue-500"><LinkIcon className="w-3 h-3"/> Link Online</span>}
-                                         </div>
-                                      </div>
-                                   </div>
-                                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                                     <button onClick={() => setEditingAppointment(appt)} className="p-2 text-gray-300 hover:text-blue-500 transition">
-                                        <Edit2 className="w-5 h-5" />
-                                     </button>
-                                     <button onClick={() => { if(confirm('Cancelar este agendamento?')) updateAppointmentStatus(appt.id, 'cancelled') }} className="p-2 text-gray-300 hover:text-red-500 transition">
-                                        <Ban className="w-5 h-5" />
-                                     </button>
-                                   </div>
-                                </div>
-                             ))
-                          )}
-                       </div>
-                    </div>
+                    {/* Confirmed Appointments */}
+                    {!showHistory && (
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-6 border-b border-gray-100 bg-gray-50">
+                            <h3 className="font-bold">Próximos Compromissos</h3>
+                        </div>
+                        <div className="divide-y divide-gray-100">
+                            {sortedAppointments.filter(a => a.status === 'confirmed').length === 0 ? (
+                                <div className="p-8 text-center text-gray-400">Agenda livre. Nenhum compromisso confirmado.</div>
+                            ) : (
+                                sortedAppointments.filter(a => a.status === 'confirmed').map(appt => (
+                                    <div key={appt.id} className="p-6 hover:bg-gray-50 transition flex items-center justify-between">
+                                    <div className="flex gap-4">
+                                        <div className="flex flex-col items-center justify-center bg-gray-100 rounded-lg p-3 min-w-[60px]">
+                                            <span className="text-xs uppercase font-bold text-gray-500">{new Date(appt.date).toLocaleDateString('pt-BR', { weekday: 'short' })}</span>
+                                            <span className="text-xl font-bold font-serif">{new Date(appt.date).getDate()}</span>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-lg">{appt.clientName}</h4>
+                                            <div className="flex flex-wrap gap-4 text-sm text-gray-500 mt-1">
+                                                <span className="flex items-center gap-1"><Clock className="w-3 h-3"/> {appt.time}</span>
+                                                <span className="flex items-center gap-1"><MapPin className="w-3 h-3"/> {appt.location}</span>
+                                                <span className="text-xs bg-gray-100 px-2 py-0.5 rounded uppercase">{appt.type === 'visit' ? 'Visita Técnica' : 'Reunião'}</span>
+                                                {appt.meetingLink && <span className="flex items-center gap-1 text-blue-500"><LinkIcon className="w-3 h-3"/> Link</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setEditingAppointment(appt)} className="p-2 text-gray-400 hover:text-blue-500 transition border rounded-lg hover:bg-blue-50">
+                                            <Edit2 className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => { if(confirm('Cancelar este agendamento?')) updateAppointmentStatus(appt.id, 'cancelled') }} className="p-2 text-gray-400 hover:text-red-500 transition border rounded-lg hover:bg-red-50">
+                                            <Ban className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                        </div>
+                    )}
 
-                     {/* History / Cancelled */}
-                    {viewHistory && (
-                      <div className="bg-gray-100 rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-8 opacity-70 hover:opacity-100 transition">
-                         <div className="p-4 border-b border-gray-200 bg-gray-200">
-                            <h3 className="font-bold text-gray-600">Histórico / Cancelados</h3>
-                         </div>
-                         <div className="divide-y divide-gray-200">
-                             {sortedAppointments.filter(a => a.status === 'cancelled').map(appt => (
-                                <div key={appt.id} className="p-4 flex items-center justify-between">
-                                   <div className="text-sm text-gray-500">
-                                      <span className="font-bold">{new Date(appt.date).toLocaleDateString()}</span> - {appt.clientName}
-                                   </div>
-                                   <button onClick={() => updateAppointmentStatus(appt.id, 'pending')} className="text-xs bg-white px-2 py-1 rounded border border-gray-300 hover:text-black flex items-center gap-1">
-                                      <RotateCcw className="w-3 h-3"/> Reativar
-                                   </button>
-                                </div>
-                             ))}
-                             {sortedAppointments.filter(a => a.status === 'cancelled').length === 0 && <div className="p-4 text-sm text-gray-400">Histórico vazio.</div>}
-                         </div>
-                      </div>
+                    {/* History / Cancelled */}
+                    {showHistory && (
+                        <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 overflow-hidden opacity-80">
+                           <div className="p-6 border-b border-gray-200 bg-gray-100">
+                               <h3 className="font-bold text-gray-500">Histórico / Cancelados</h3>
+                           </div>
+                           <div className="divide-y divide-gray-200">
+                                {appointments.filter(a => a.status === 'cancelled').length === 0 ? (
+                                    <div className="p-8 text-center text-gray-400">Nenhum item no histórico.</div>
+                                ) : (
+                                    appointments.filter(a => a.status === 'cancelled').map(appt => (
+                                        <div key={appt.id} className="p-6 flex items-center justify-between">
+                                            <div className="opacity-50">
+                                                <h4 className="font-bold text-lg strike-through">{appt.clientName}</h4>
+                                                <p className="text-sm">{new Date(appt.date).toLocaleDateString()} - {appt.type}</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => updateAppointmentStatus(appt.id, 'confirmed')} className="p-2 bg-white border rounded hover:text-green-600 text-xs font-bold">Restaurar</button>
+                                                <button onClick={() => { if(confirm('Excluir permanentemente?')) deleteAppointmentPermanently(appt.id)}} className="p-2 bg-white border rounded hover:text-red-600 text-xs font-bold">Apagar</button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                           </div>
+                        </div>
                     )}
                  </div>
 
-                 {/* Right: Settings & Rules */}
+                 {/* Right: Settings & Blocks */}
                  <div className="space-y-6">
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                        <h3 className="font-bold mb-4">Configuração de Horários</h3>
@@ -445,208 +618,223 @@ export const AdminDashboard: React.FC = () => {
                              <label className="text-xs font-bold uppercase text-gray-500">Fim do Expediente</label>
                              <input type="time" value={scheduleSettings.endHour} onChange={e => updateScheduleSettings({...scheduleSettings, endHour: e.target.value})} className="w-full border p-2 rounded mt-1 text-sm bg-white" />
                           </div>
-                       </div>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                       <h3 className="font-bold mb-4 text-red-500 flex items-center gap-2"><Ban className="w-4 h-4"/> Bloqueios Ativos</h3>
-                       <div className="space-y-2">
-                          {scheduleSettings.blockedRules.map(rule => (
-                             <div key={rule.id} className="text-xs bg-gray-50 p-2 rounded border border-gray-100 flex justify-between items-center">
-                                <div>
-                                   <span className="font-bold">{new Date(rule.date).toLocaleDateString()}</span>
-                                   <span className="text-gray-500 ml-2">{rule.start} - {rule.end}</span>
-                                   {rule.reason && <p className="text-gray-400 italic">{rule.reason}</p>}
-                                </div>
-                                <button onClick={() => removeBlockRule(rule.id)} className="text-gray-300 hover:text-red-500"><X className="w-3 h-3"/></button>
+                          <div>
+                             <label className="text-xs font-bold uppercase text-gray-500 block mb-2">Dias de Trabalho</label>
+                             <div className="flex gap-2">
+                                {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
+                                   <button 
+                                      key={i}
+                                      onClick={() => {
+                                         const newDays = scheduleSettings.workDays.includes(i) 
+                                            ? scheduleSettings.workDays.filter(day => day !== i)
+                                            : [...scheduleSettings.workDays, i];
+                                         updateScheduleSettings({...scheduleSettings, workDays: newDays});
+                                      }}
+                                      className={`w-8 h-8 rounded-full text-xs font-bold transition ${scheduleSettings.workDays.includes(i) ? 'bg-black text-white' : 'bg-gray-100 text-gray-400'}`}
+                                   >
+                                      {d}
+                                   </button>
+                                ))}
                              </div>
-                          ))}
-                          {scheduleSettings.blockedRules.length === 0 && <p className="text-xs text-gray-400">Nenhum bloqueio cadastrado.</p>}
+                          </div>
                        </div>
                     </div>
+                    
+                    {/* Active Blocks List */}
+                    {(scheduleSettings.blockedDates.length > 0 || (scheduleSettings.blockedSlots && scheduleSettings.blockedSlots.length > 0)) && (
+                        <div className="bg-red-50 p-6 rounded-2xl border border-red-100">
+                            <h3 className="font-bold text-red-800 mb-2 text-sm uppercase">Bloqueios Ativos</h3>
+                            <div className="space-y-2">
+                                {scheduleSettings.blockedDates.map(d => (
+                                    <div key={d} className="flex justify-between items-center text-sm bg-white p-2 rounded border border-red-100">
+                                        <span>{new Date(d).toLocaleDateString()} (Dia Todo)</span>
+                                        <button onClick={() => handleRemoveBlockDate(d)}><X className="w-4 h-4 text-red-400"/></button>
+                                    </div>
+                                ))}
+                                {scheduleSettings.blockedSlots?.map((s, i) => (
+                                    <div key={i} className="flex justify-between items-center text-sm bg-white p-2 rounded border border-red-100">
+                                        <span>{new Date(s.date).toLocaleDateString()} - {s.time}</span>
+                                        <button onClick={() => handleRemoveBlockSlot(s.date, s.time)}><X className="w-4 h-4 text-red-400"/></button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                  </div>
               </div>
 
-              {/* Edit Modal */}
-              {editingAppointment && (
-                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-                       <h3 className="font-bold text-xl mb-4">Editar Agendamento</h3>
-                       <div className="space-y-4">
-                          <div>
-                             <label className="text-xs font-bold uppercase text-gray-500">Data</label>
-                             <input type="date" value={editingAppointment.date} onChange={e => setEditingAppointment({...editingAppointment, date: e.target.value})} className="w-full border p-2 rounded bg-white"/>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                             <div>
-                                <label className="text-xs font-bold uppercase text-gray-500">Hora</label>
-                                <input type="time" value={editingAppointment.time} onChange={e => setEditingAppointment({...editingAppointment, time: e.target.value})} className="w-full border p-2 rounded bg-white"/>
-                             </div>
-                             <div>
-                                <label className="text-xs font-bold uppercase text-gray-500">Status</label>
-                                <select value={editingAppointment.status} onChange={e => setEditingAppointment({...editingAppointment, status: e.target.value as any})} className="w-full border p-2 rounded bg-white">
-                                   <option value="pending">Pendente</option>
-                                   <option value="confirmed">Confirmado</option>
-                                   <option value="cancelled">Cancelado</option>
-                                </select>
-                             </div>
-                          </div>
-                          <div>
-                             <label className="text-xs font-bold uppercase text-gray-500">Localização</label>
-                             <input type="text" value={editingAppointment.location} onChange={e => setEditingAppointment({...editingAppointment, location: e.target.value})} className="w-full border p-2 rounded bg-white"/>
-                          </div>
-                          <div>
-                             <label className="text-xs font-bold uppercase text-gray-500">Link da Reunião (Online)</label>
-                             <input type="text" value={editingAppointment.meetingLink || ''} onChange={e => setEditingAppointment({...editingAppointment, meetingLink: e.target.value})} className="w-full border p-2 rounded bg-white" placeholder="https://meet.google.com/..."/>
-                          </div>
-                       </div>
-                       <div className="flex gap-2 mt-6">
-                          <button onClick={() => setEditingAppointment(null)} className="flex-1 border p-3 rounded-lg hover:bg-gray-50">Cancelar</button>
-                          <button onClick={handleSaveAppointment} className="flex-1 bg-black text-white p-3 rounded-lg font-bold">Salvar</button>
-                       </div>
-                    </div>
-                 </div>
-              )}
-
               {/* Block Modal */}
               {showBlockModal && (
-                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
-                       <h3 className="font-bold text-xl mb-4">Bloquear Horário</h3>
-                       <div className="space-y-4">
-                          <div>
-                             <label className="text-xs font-bold uppercase text-gray-500">Data</label>
-                             <input type="date" value={blockForm.date} onChange={e => setBlockForm({...blockForm, date: e.target.value})} className="w-full border p-2 rounded bg-white"/>
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                      <div className="bg-white rounded-xl p-6 w-full max-w-sm">
+                          <h3 className="font-bold text-lg mb-4">Novo Bloqueio</h3>
+                          <div className="space-y-4">
+                              <div>
+                                  <label className="block text-xs font-bold text-gray-500 uppercase">Data</label>
+                                  <input type="date" value={blockForm.date} onChange={e => setBlockForm({...blockForm, date: e.target.value})} className="w-full border p-2 rounded mt-1"/>
+                              </div>
+                              <div>
+                                  <label className="block text-xs font-bold text-gray-500 uppercase">Horário (Opcional)</label>
+                                  <input type="time" value={blockForm.time} onChange={e => setBlockForm({...blockForm, time: e.target.value})} className="w-full border p-2 rounded mt-1"/>
+                                  <p className="text-xs text-gray-400 mt-1">Deixe em branco para bloquear o dia todo.</p>
+                              </div>
+                              <div className="flex gap-2 pt-4">
+                                  <button onClick={() => setShowBlockModal(false)} className="flex-1 p-2 border rounded">Cancelar</button>
+                                  <button onClick={handleAddBlock} className="flex-1 p-2 bg-red-500 text-white rounded font-bold">Bloquear</button>
+                              </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
-                             <div>
-                                <label className="text-xs font-bold uppercase text-gray-500">Início</label>
-                                <input type="time" value={blockForm.start} onChange={e => setBlockForm({...blockForm, start: e.target.value})} className="w-full border p-2 rounded bg-white"/>
-                             </div>
-                             <div>
-                                <label className="text-xs font-bold uppercase text-gray-500">Fim</label>
-                                <input type="time" value={blockForm.end} onChange={e => setBlockForm({...blockForm, end: e.target.value})} className="w-full border p-2 rounded bg-white"/>
-                             </div>
-                          </div>
-                          <div>
-                             <label className="text-xs font-bold uppercase text-gray-500">Motivo (Opcional)</label>
-                             <input type="text" value={blockForm.reason} onChange={e => setBlockForm({...blockForm, reason: e.target.value})} className="w-full border p-2 rounded bg-white" placeholder="Feriado, Reunião Externa..."/>
-                          </div>
-                       </div>
-                       <div className="flex gap-2 mt-6">
-                          <button onClick={() => setShowBlockModal(false)} className="flex-1 border p-3 rounded-lg hover:bg-gray-50">Cancelar</button>
-                          <button onClick={handleAddBlock} className="flex-1 bg-red-500 text-white p-3 rounded-lg font-bold hover:bg-red-600">Bloquear</button>
-                       </div>
-                    </div>
-                 </div>
+                      </div>
+                  </div>
               )}
 
+              {/* Edit Appointment Modal */}
+              {editingAppointment && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                      <div className="bg-white rounded-xl p-6 w-full max-w-md">
+                          <h3 className="font-bold text-lg mb-4">Editar Agendamento</h3>
+                          <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase">Data</label>
+                                    <input type="date" value={editingAppointment.date} onChange={e => setEditingAppointment({...editingAppointment, date: e.target.value})} className="w-full border p-2 rounded mt-1"/>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase">Hora</label>
+                                    <input type="time" value={editingAppointment.time} onChange={e => setEditingAppointment({...editingAppointment, time: e.target.value})} className="w-full border p-2 rounded mt-1"/>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                  <label className="block text-xs font-bold text-gray-500 uppercase">Tipo</label>
+                                  <select value={editingAppointment.type} onChange={e => setEditingAppointment({...editingAppointment, type: e.target.value as any})} className="w-full border p-2 rounded mt-1">
+                                      <option value="meeting">Reunião</option>
+                                      <option value="visit">Visita Técnica</option>
+                                  </select>
+                              </div>
+
+                              <div>
+                                  <label className="block text-xs font-bold text-gray-500 uppercase">Localização</label>
+                                  <input type="text" value={editingAppointment.location} onChange={e => setEditingAppointment({...editingAppointment, location: e.target.value})} className="w-full border p-2 rounded mt-1"/>
+                              </div>
+
+                              {editingAppointment.type === 'meeting' && (
+                                  <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase">Link Online (Meet/Zoom)</label>
+                                    <input type="text" value={editingAppointment.meetingLink || ''} onChange={e => setEditingAppointment({...editingAppointment, meetingLink: e.target.value})} className="w-full border p-2 rounded mt-1" placeholder="https://..."/>
+                                    <p className="text-xs text-gray-400 mt-1">Se preenchido, o mapa será ocultado para o cliente.</p>
+                                  </div>
+                              )}
+                              
+                              <div className="flex gap-2 pt-4">
+                                  <button onClick={() => setEditingAppointment(null)} className="flex-1 p-2 border rounded">Cancelar</button>
+                                  <button onClick={handleSaveAppointment} className="flex-1 p-2 bg-black text-white rounded font-bold">Salvar</button>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              )}
             </div>
           )}
 
            {/* Settings View */}
           {activeTab === 'settings' && (
-            <div className="animate-fadeIn max-w-3xl">
+            <div className="animate-fadeIn max-w-4xl">
               <h2 className="text-3xl font-serif font-bold mb-8 text-black">Configurações Globais</h2>
 
-              <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-8">
-                 
-                 {/* Contact Info (Single Source of Truth) */}
-                 <div>
-                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b border-gray-100 pb-2"><MapPin className="w-5 h-5" /> Informações de Contato (Global)</h3>
-                    <p className="text-xs text-gray-400 mb-4">Estas informações serão refletidas automaticamente no rodapé, página de contato e escritório.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Office Metadata Form */}
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2"><MapPin className="w-5 h-5" /> Dados do Escritório</h3>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="col-span-2">
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Endereço Principal</label>
-                          <input value={settingsForm.contact.address} onChange={e => handleSettingsChange('contact.address', e.target.value)} className="w-full border p-3 rounded bg-white text-black"/>
-                       </div>
-                       <div className="col-span-2">
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Query Mapa (Google Maps)</label>
-                          <input value={settingsForm.contact.mapsQuery} onChange={e => handleSettingsChange('contact.mapsQuery', e.target.value)} className="w-full border p-3 rounded bg-white text-black" placeholder="Endereço exato para o pino do mapa"/>
-                       </div>
-                       <div>
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Telefone</label>
-                          <input value={settingsForm.contact.phone} onChange={e => handleSettingsChange('contact.phone', e.target.value)} className="w-full border p-3 rounded bg-white text-black"/>
-                       </div>
-                       <div>
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">WhatsApp (Apenas números)</label>
-                          <input value={settingsForm.contact.whatsapp} onChange={e => handleSettingsChange('contact.whatsapp', e.target.value)} className="w-full border p-3 rounded bg-white text-black" placeholder="5511999999999"/>
-                       </div>
-                       <div>
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Email</label>
-                          <input value={settingsForm.contact.email} onChange={e => handleSettingsChange('contact.email', e.target.value)} className="w-full border p-3 rounded bg-white text-black"/>
-                       </div>
-                       <div>
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Horário de Funcionamento</label>
-                          <input value={settingsForm.contact.hours} onChange={e => handleSettingsChange('contact.hours', e.target.value)} className="w-full border p-3 rounded bg-white text-black"/>
-                       </div>
-                       <div>
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Instagram (@usuario)</label>
-                          <input value={settingsForm.contact.instagram} onChange={e => handleSettingsChange('contact.instagram', e.target.value)} className="w-full border p-3 rounded bg-white text-black"/>
-                       </div>
-                       <div>
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">LinkedIn</label>
-                          <input value={settingsForm.contact.linkedin} onChange={e => handleSettingsChange('contact.linkedin', e.target.value)} className="w-full border p-3 rounded bg-white text-black"/>
-                       </div>
+                    <div>
+                        <label className="text-xs font-bold uppercase text-gray-500">Endereço Completo</label>
+                        <input value={contentForm.office.address} onChange={e => handleOfficeChange('address', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Rua..." />
                     </div>
-                 </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs font-bold uppercase text-gray-500">Cidade</label>
+                            <input value={contentForm.office.city} onChange={e => handleOfficeChange('city', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold uppercase text-gray-500">Estado</label>
+                            <input value={contentForm.office.state} onChange={e => handleOfficeChange('state', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" />
+                        </div>
+                    </div>
 
-                 {/* AI Configuration */}
-                 <div className="pt-6 border-t border-gray-100">
-                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black"><Bot className="w-5 h-5" /> Inteligência Artificial (Chatbot)</h3>
-                    
-                    <div className="space-y-4">
-                       <div>
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Modelo LLM</label>
-                          <select 
-                            value={settingsForm.aiConfig.model} 
-                            onChange={(e) => handleSettingsChange('aiConfig.model', e.target.value)} 
-                            className="w-full border p-3 rounded bg-white text-black focus:outline-none focus:border-black"
-                          >
-                             <option value="gemini-2.5-flash">Gemini 2.5 Flash (Padrão)</option>
-                             <option value="gemini-1.5-pro">Gemini 1.5 Pro (Avançado)</option>
-                          </select>
-                       </div>
-                       <div>
-                          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Mensagem de Boas-vindas</label>
-                          <input value={settingsForm.aiConfig.defaultGreeting} onChange={e => handleSettingsChange('aiConfig.defaultGreeting', e.target.value)} className="w-full border p-3 rounded bg-white text-black"/>
-                          <p className="text-xs text-gray-400 mt-1">Use {'{name}'} para inserir o nome do cliente.</p>
-                       </div>
+                    <div>
+                        <label className="text-xs font-bold uppercase text-gray-500">Email Oficial</label>
+                        <input value={contentForm.office.email || ''} onChange={e => handleOfficeChange('email', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="contato@fransiller.com.br" />
                     </div>
-                 </div>
-                 <button onClick={saveSettings} className="w-full bg-black text-white px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2">
-                    <Save className="w-5 h-5" /> Salvar Configurações
-                 </button>
+
+                    <div>
+                        <label className="text-xs font-bold uppercase text-gray-500">Telefone / WhatsApp</label>
+                        <input value={contentForm.office.phone || ''} onChange={e => handleOfficeChange('phone', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="+55 (11)..." />
+                    </div>
+
+                    <div>
+                        <label className="text-xs font-bold uppercase text-gray-500">Horário (Texto)</label>
+                        <input value={contentForm.office.hoursDescription} onChange={e => handleOfficeChange('hoursDescription', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" />
+                    </div>
+                </div>
+
+                {/* AI Configuration */}
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2"><Bot className="w-5 h-5" /> Inteligência Artificial</h3>
+                    
+                    <div>
+                        <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Modelo LLM</label>
+                        <select 
+                        value={settingsForm.aiConfig.model} 
+                        onChange={(e) => handleSettingsChange('aiConfig.model', e.target.value)} 
+                        className="w-full border p-3 rounded bg-white text-black focus:outline-none focus:border-black"
+                        >
+                            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Padrão)</option>
+                            <option value="gemini-1.5-pro">Gemini 1.5 Pro (Avançado)</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Mensagem de Boas-vindas</label>
+                        <textarea 
+                            value={settingsForm.aiConfig.defaultGreeting} 
+                            onChange={(e) => handleSettingsChange('aiConfig.defaultGreeting', e.target.value)}
+                            className="w-full border p-3 rounded h-24 bg-white text-black focus:outline-none focus:border-black resize-none"
+                            placeholder="Olá {name}..."
+                        />
+                        <p className="text-xs text-gray-400 mt-1">Use {"{name}"} para inserir o nome do cliente.</p>
+                    </div>
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <button onClick={saveSettings} className="w-full bg-black text-white px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2">
+                    <Save className="w-5 h-5" /> Salvar Todas Configurações
+                </button>
               </div>
             </div>
           )}
 
-           {/* Office View */}
+          {/* Office View (Updated: Removed Metadata fields since they moved to Settings) */}
           {activeTab === 'office' && (
              <div className="animate-fadeIn max-w-5xl">
                <div className="flex justify-between items-center mb-8">
-                 <h2 className="text-3xl font-serif font-bold text-black">Página do Escritório</h2>
+                 <h2 className="text-3xl font-serif font-bold text-black">Página do Escritório (Visual)</h2>
                  <button onClick={saveContent} className="bg-black text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2">
                     <Save className="w-5 h-5" /> Salvar Página
                  </button>
                </div>
                
                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8 space-y-12">
-                  
-                  {/* Metadata Section */}
-                  <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 flex items-start gap-4">
-                     <Info className="w-6 h-6 text-blue-500 shrink-0 mt-1" />
-                     <div>
-                        <h3 className="font-bold text-blue-800">Sincronização Automática</h3>
-                        <p className="text-sm text-blue-600">Endereço, Horário e Mapas agora são gerenciados na aba <strong>Configurações</strong> para garantir consistência em todo o site. Edite o conteúdo visual abaixo.</p>
-                     </div>
+                  <div className="bg-blue-50 text-blue-800 p-4 rounded-lg flex items-center gap-2">
+                     <Info className="w-5 h-5" />
+                     <span className="text-sm">Para editar endereço e contatos, vá para a aba <strong>Configurações</strong>.</span>
                   </div>
 
                   {/* Visual Content Builder */}
                   <div>
                     <div className="flex justify-between items-center mb-6">
-                       <h3 className="font-bold text-xl flex items-center gap-2"><LayoutDashboard className="w-5 h-5"/> Conteúdo Visual (Full Page)</h3>
+                       <h3 className="font-bold text-xl flex items-center gap-2"><LayoutDashboard className="w-5 h-5"/> Blocos de Conteúdo</h3>
                        <div className="flex flex-wrap gap-2">
                           <button onClick={() => addOfficeBlock('heading')} className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-black hover:text-white rounded-lg transition text-xs font-bold" title="Título"><Heading className="w-4 h-4" /> Título</button>
                           <button onClick={() => addOfficeBlock('text')} className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-black hover:text-white rounded-lg transition text-xs font-bold" title="Texto"><Type className="w-4 h-4" /> Texto</button>
@@ -698,7 +886,7 @@ export const AdminDashboard: React.FC = () => {
                              {block.type === 'details' && (
                                 <div className="p-4 bg-black text-white rounded text-center text-sm">
                                    Bloco de Informações (Endereço, Horário, Contato). <br/>
-                                   <span className="text-xs opacity-50">Os dados são puxados das Configurações Globais.</span>
+                                   <span className="text-xs opacity-50">Os dados são puxados da aba Configurações.</span>
                                 </div>
                              )}
 
@@ -754,7 +942,7 @@ export const AdminDashboard: React.FC = () => {
              </div>
           )}
 
-          {/* ... Rest of tabs (projects, clients, messages, content) remains similar ... */}
+          {/* ... Rest of tabs (projects, clients, messages, content) remains identical ... */}
           {/* Projects View */}
           {activeTab === 'projects' && (
             <div className="animate-fadeIn">
