@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, ReactNode, Component } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -18,8 +17,6 @@ import { ProjectForm } from './pages/Admin/ProjectForm';
 import { ProjectProvider, useProjects } from './context/ProjectContext';
 
 // --- Error Boundary Component ---
-// Catches render errors to prevent the entire app from crashing (White Screen of Death)
-
 interface ErrorBoundaryProps {
   children?: ReactNode;
 }
@@ -29,10 +26,7 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
+  public state: ErrorBoundaryState = { hasError: false };
 
   static getDerivedStateFromError(error: any): ErrorBoundaryState {
     return { hasError: true };
@@ -133,11 +127,6 @@ const GlobalToast = () => {
 const AnimatedRoutes = () => {
   const location = useLocation();
   const { settings } = useProjects();
-  
-  // OPTIMIZED STRUCTURE:
-  // We keep Routes strictly separate. The Layout is applied as a PARENT to the public routes.
-  // This ensures the Layout does NOT unmount when switching pages, fixing the "white screen" issue.
-  // AnimatePresence is only applied to the inner content.
   
   return (
     <ErrorBoundary>

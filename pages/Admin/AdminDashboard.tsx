@@ -1,3 +1,5 @@
+
+
 import React, { useState } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -446,15 +448,31 @@ export const AdminDashboard: React.FC = () => {
                     <h3 className="font-bold text-lg mb-4 flex items-center gap-2 border-b border-gray-200 pb-2"><Settings className="w-5 h-5"/> Metadados (Rodapé e Contato)</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="col-span-2">
-                        <label className="text-xs font-bold uppercase text-gray-500">Endereço Completo (Texto)</label>
+                        <label className="text-xs font-bold uppercase text-gray-500">Endereço Completo (Texto de Exibição)</label>
                         <input value={contentForm.office.address} onChange={e => handleOfficeChange('address', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Rua..." />
                       </div>
+                      
+                      {/* ADDED FIELD */}
+                      <div className="col-span-2">
+                        <label className="text-xs font-bold uppercase text-gray-500 flex items-center gap-2">
+                           Localização no Mapa (Busca do Google)
+                           <span className="text-[10px] bg-black text-white px-2 py-0.5 rounded-full font-normal">Controla o Mapa Interativo</span>
+                        </label>
+                        <input 
+                          value={contentForm.office.mapQuery || ''} 
+                          onChange={e => handleOfficeChange('mapQuery', e.target.value)} 
+                          className="w-full border p-2 rounded mt-1 bg-white" 
+                          placeholder="Ex: Rua X, 123, Cidade (Deixe vazio para usar o endereço principal)" 
+                        />
+                        <p className="text-[10px] text-gray-400 mt-1">Use este campo se o mapa não estiver mostrando o local exato com o endereço principal.</p>
+                      </div>
+
                       <div>
                         <label className="text-xs font-bold uppercase text-gray-500">Horário (Texto)</label>
                         <input value={contentForm.office.hoursDescription} onChange={e => handleOfficeChange('hoursDescription', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" />
                       </div>
                       <div>
-                         <label className="text-xs font-bold uppercase text-gray-500">Link Google Maps</label>
+                         <label className="text-xs font-bold uppercase text-gray-500">Link Google Maps (Botão)</label>
                         <input value={contentForm.office.mapsLink} onChange={e => handleOfficeChange('mapsLink', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" />
                       </div>
                     </div>

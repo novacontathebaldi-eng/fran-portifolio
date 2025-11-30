@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, LayoutDashboard } from 'lucide-react';
@@ -22,7 +21,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, settings } = useProjects();
+  const { currentUser, settings, siteContent } = useProjects();
 
   useEffect(() => {
     // Increased threshold to 50px for a more deliberate transition
@@ -79,7 +78,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const showSuggestions = searchQuery.length > 0;
 
   // Determine if the current page has a hero section that requires a transparent header
-  const isTransparentNavPage = location.pathname === '/' || location.pathname === '/about' || location.pathname === '/office' || location.pathname.startsWith('/project/');
+  const isOfficeWithHero = location.pathname === '/office' && siteContent?.office?.blocks?.[0]?.type === 'image-full';
+  
+  const isTransparentNavPage = 
+    location.pathname === '/' || 
+    location.pathname === '/about' || 
+    isOfficeWithHero || 
+    location.pathname.startsWith('/project/');
 
   // Refactored Nav Logic for Smooth Transitions
   // Logic: 

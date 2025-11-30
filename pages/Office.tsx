@@ -1,12 +1,16 @@
 
+
 import React from 'react';
 import { useProjects } from '../context/ProjectContext';
 import { motion } from 'framer-motion';
-import { MapPin, Clock, Phone, Mail } from 'lucide-react';
+import { MapPin, Clock, Phone } from 'lucide-react';
 
 export const Office: React.FC = () => {
   const { siteContent } = useProjects();
-  const { blocks, address, hoursDescription, mapsLink } = siteContent.office;
+  
+  // Safe access to office content
+  const officeData = siteContent?.office || {};
+  const { blocks, address, hoursDescription, mapsLink, mapQuery } = officeData;
 
   // Animation Variants
   const fadeInUp = {
@@ -23,8 +27,11 @@ export const Office: React.FC = () => {
     );
   }
 
+  // Determine if the first block is a Hero Image to adjust padding
+  const hasHero = blocks[0].type === 'image-full';
+
   return (
-    <div className="bg-white min-h-screen">
+    <div className={`bg-white min-h-screen ${hasHero ? '' : 'pt-24'}`}>
       {/* Dynamic Block Renderer */}
       {blocks.map((block, index) => {
         
@@ -52,7 +59,7 @@ export const Office: React.FC = () => {
         // 2. HEADING
         if (block.type === 'heading') {
           return (
-            <div key={block.id} className="container mx-auto px-6 pt-20 pb-8 md:pt-32 md:pb-12">
+            <div key={block.id} className="container mx-auto px-6 pt-12 pb-6 md:pt-20 md:pb-10">
               <motion.h2 
                 variants={fadeInUp}
                 initial="hidden"
@@ -148,7 +155,9 @@ export const Office: React.FC = () => {
                         </div>
                         <h4 className="text-xl font-serif">Localização</h4>
                         <p className="text-gray-400 font-light leading-relaxed">{address}</p>
-                        <a href={mapsLink} target="_blank" rel="noreferrer" className="inline-block text-xs font-bold uppercase tracking-widest border-b border-accent pb-1 hover:text-accent transition mt-2">Ver no Mapa</a>
+                        {mapsLink && (
+                          <a href={mapsLink} target="_blank" rel="noreferrer" className="inline-block text-xs font-bold uppercase tracking-widest border-b border-accent pb-1 hover:text-accent transition mt-2">Ver no Mapa</a>
+                        )}
                      </div>
                      
                      <div className="space-y-4">
@@ -186,7 +195,8 @@ export const Office: React.FC = () => {
                   loading="lazy" 
                   allowFullScreen 
                   referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://maps.google.com/maps?q=${encodeURIComponent(address || '')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                  title="Office Location"
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery || address || 'São Paulo')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                ></iframe>
             </div>
           );

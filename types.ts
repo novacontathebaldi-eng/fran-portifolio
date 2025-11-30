@@ -144,6 +144,7 @@ export interface OfficeDetails {
   state: string;
   zipCode: string;
   mapsLink: string; // Google Maps URL
+  mapQuery?: string; // Exact query for the embedded map iframe
   
   hoursDescription: string; // e.g., "Segunda a Sexta, 09h às 18h"
   

@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Clock } from 'lucide-react';
@@ -206,7 +207,7 @@ export const Home: React.FC = () => {
                    loading="lazy" 
                    allowFullScreen 
                    referrerPolicy="no-referrer-when-downgrade"
-                   src={`https://maps.google.com/maps?q=${encodeURIComponent(siteContent?.office?.address || '')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                   src={`https://maps.google.com/maps?q=${encodeURIComponent(siteContent?.office?.mapQuery || siteContent?.office?.address || '')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                    className="filter grayscale hover:grayscale-0 transition duration-700"
                  ></iframe>
               </div>
