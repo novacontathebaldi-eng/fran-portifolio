@@ -33,6 +33,7 @@ interface ProjectContextType {
   // Chat & AI Logic
   sendMessageToAI: (message: string) => Promise<any>;
   addMessageToChat: (message: ChatMessage) => void; // New: Manual message injection
+  updateMessageUI: (id: string, uiComponent: any) => void; // New: Persist UI changes
   currentChatMessages: ChatMessage[]; // The messages currently displayed in Chatbot
   createNewChat: () => void;
   logAiFeedback: (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => void;
@@ -603,6 +604,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setCurrentChatMessages(prev => [...prev, message]);
   };
 
+  // NEW: Update UI Component of a specific message
+  const updateMessageUI = (id: string, uiComponent: any) => {
+    setCurrentChatMessages(prev => prev.map(msg => 
+      msg.id === id ? { ...msg, uiComponent } : msg
+    ));
+  };
+
   const sendMessageToAI = async (message: string) => {
     let updatedMessages = [...currentChatMessages];
 
@@ -689,6 +697,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       updateSettings,
       sendMessageToAI,
       addMessageToChat,
+      updateMessageUI,
       currentChatMessages,
       createNewChat,
       logAiFeedback,

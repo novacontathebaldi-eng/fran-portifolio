@@ -1,10 +1,8 @@
-
-
 import React, { useState, useRef } from 'react';
 import { useProjects } from '../context/ProjectContext';
-import { User, Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon } from 'lucide-react';
+import { Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Project, ClientMemory, ClientFolder, Address } from '../types';
+import { Project, ClientMemory, ClientFolder, Address, User } from '../types';
 import { Navigate } from 'react-router-dom';
 
 // Mock Upload

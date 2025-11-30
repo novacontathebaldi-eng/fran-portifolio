@@ -1,21 +1,27 @@
-
-
 import React from 'react';
 import { useProjects } from '../context/ProjectContext';
-import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion';
 import { MapPin, Clock, Phone } from 'lucide-react';
+import { OfficeDetails } from '../types';
 
 export const Office: React.FC = () => {
   const { siteContent } = useProjects();
   
   // Safe access to office content
-  const officeData = siteContent?.office || {};
+  const officeData = siteContent?.office || ({} as OfficeDetails);
   const { blocks, address, hoursDescription, mapsLink, mapQuery, phone, email } = officeData;
 
   // Animation Variants
-  const fadeInUp = {
+  const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      transition: { 
+        duration: 0.8, 
+        ease: "easeOut" as any 
+      } 
+    }
   };
 
   if (!blocks || blocks.length === 0) {
@@ -142,10 +148,10 @@ export const Office: React.FC = () => {
           return (
             <div key={block.id} className="container mx-auto px-6 py-12 md:py-24">
                <motion.div 
-                 initial={{ opacity: 0, y: 40 }}
-                 whileInView={{ opacity: 1, y: 0 }}
+                 variants={fadeInUp}
+                 initial="hidden"
+                 whileInView="visible"
                  viewport={{ once: true }}
-                 transition={{ duration: 0.8 }}
                  className="bg-[#1a1a1a] text-white rounded-sm p-8 md:p-16 shadow-2xl"
                >
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">

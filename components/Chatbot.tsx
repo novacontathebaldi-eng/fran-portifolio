@@ -1,3 +1,5 @@
+
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock, LogIn, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -65,17 +67,51 @@ const SocialLinks = () => (
   </div>
 );
 
-const CalendarWidget = ({ data, closeChat }: { data: any, closeChat: () => void }) => {
-  const { currentUser, checkAvailability, addAppointment, siteContent, showToast, addMessageToChat } = useProjects();
+// New Success Component
+const BookingSuccess = ({ data, closeChat }: { data: any, closeChat: () => void }) => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="mt-4 bg-gray-50 border border-gray-100 rounded-xl p-5 animate-slideUp relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+        <div className="flex items-start gap-3 mb-3">
+            <div className="p-1.5 bg-green-100 rounded-full text-green-600 mt-0.5">
+                <CheckCircle className="w-4 h-4" />
+            </div>
+            <div>
+                <h4 className="font-bold text-gray-900 text-sm">Solicitação Enviada</h4>
+                <p className="text-xs text-gray-500 mt-0.5">
+                    {new Date(data.date).toLocaleDateString()} às {data.time}
+                </p>
+                {data.location && (
+                  <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
+                     <MapPin className="w-3 h-3"/> {data.location}
+                  </p>
+                )}
+            </div>
+        </div>
+        
+        <p className="text-xs text-gray-600 leading-relaxed mb-4">
+            <strong>Atenção:</strong> Seu horário está pré-reservado, mas aguarda confirmação da nossa equipe. Você receberá uma notificação assim que aprovarmos.
+        </p>
+
+        <button 
+          onClick={() => { closeChat(); navigate('/profile'); }}
+          className="w-full bg-white border border-gray-200 text-black py-2 rounded-lg text-xs font-bold hover:bg-gray-100 transition flex items-center justify-center gap-2"
+        >
+            Acompanhar em Agendamentos <ArrowRight className="w-3 h-3" />
+        </button>
+    </div>
+  );
+};
+
+const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: () => void, messageId: string }) => {
+  const { currentUser, checkAvailability, addAppointment, siteContent, showToast, addMessageToChat, updateMessageUI } = useProjects();
   const navigate = useNavigate();
   
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [viewDate, setViewDate] = useState(new Date());
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
-  
-  // UI States: 'idle' | 'success'
-  const [bookingState, setBookingState] = useState<'idle' | 'success'>('idle');
-  const [bookedDetails, setBookedDetails] = useState<{date: string, time: string} | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Login Check
@@ -99,13 +135,14 @@ const CalendarWidget = ({ data, closeChat }: { data: any, closeChat: () => void 
     );
   }
 
-  // Determine Location Text based on Type and Site Settings
+  // FIXED: Logic for Location Display
+  // meeting + Presencial (Implied by lack of explicit "online" flag usually, so we default to Office Address)
+  // meeting + Online (If user asks, bot explains, but address card shows office address as HQ)
+  // visit -> Construction site address
   const isVisit = data?.type === 'visit';
-  const isOnline = !isVisit && !data?.address;
-  
   const locationText = isVisit 
       ? (data?.address || "Endereço da Obra") 
-      : "Escritório / Online";
+      : siteContent.office.address; // Use Office Address for meetings
 
   const dates = useMemo(() => {
       const arr = [];
@@ -132,23 +169,28 @@ const CalendarWidget = ({ data, closeChat }: { data: any, closeChat: () => void 
       
       await new Promise(r => setTimeout(r, 600));
 
-      const locationFinal = isVisit ? (data?.address || 'Local a definir') : (isOnline ? 'Online / Escritório' : siteContent.office.address);
-
       addAppointment({
           clientId: currentUser.id,
           clientName: currentUser.name,
           date: selectedDate,
           time: time,
           type: data?.type || 'meeting',
-          location: locationFinal,
+          location: locationText,
       });
       
-      setBookedDetails({ date: selectedDate, time });
-      setBookingState('success');
       showToast('Solicitação enviada com sucesso!', 'success');
-      setIsSubmitting(false);
+      
+      // Update UI PERMANENTLY in Context
+      updateMessageUI(messageId, {
+          type: 'BookingSuccess',
+          data: {
+              date: selectedDate,
+              time,
+              location: locationText
+          }
+      });
 
-      // Add success message to chat history
+      // Add success message text bubble
       if (addMessageToChat) {
         addMessageToChat({
             id: Date.now().toString(),
@@ -156,37 +198,9 @@ const CalendarWidget = ({ data, closeChat }: { data: any, closeChat: () => void 
             text: `Agendamento pré-confirmado para ${new Date(selectedDate).toLocaleDateString()} às ${time}. Você pode acompanhar o status no seu painel.`
         });
       }
+      
+      setIsSubmitting(false);
   };
-
-  if (bookingState === 'success' && bookedDetails) {
-      return (
-          <div className="mt-4 bg-gray-50 border border-gray-100 rounded-xl p-5 animate-slideUp relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
-              <div className="flex items-start gap-3 mb-3">
-                  <div className="p-1.5 bg-green-100 rounded-full text-green-600 mt-0.5">
-                      <CheckCircle className="w-4 h-4" />
-                  </div>
-                  <div>
-                      <h4 className="font-bold text-gray-900 text-sm">Solicitação Enviada</h4>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                         {new Date(bookedDetails.date).toLocaleDateString()} às {bookedDetails.time}
-                      </p>
-                  </div>
-              </div>
-              
-              <p className="text-xs text-gray-600 leading-relaxed mb-4">
-                  <strong>Atenção:</strong> Seu horário está pré-reservado, mas aguarda confirmação da nossa equipe. Você receberá uma notificação assim que aprovarmos.
-              </p>
-
-              <button 
-                onClick={() => { closeChat(); navigate('/profile'); }}
-                className="w-full bg-white border border-gray-200 text-black py-2 rounded-lg text-xs font-bold hover:bg-gray-100 transition flex items-center justify-center gap-2"
-              >
-                 Acompanhar em Agendamentos <ArrowRight className="w-3 h-3" />
-              </button>
-          </div>
-      );
-  }
 
   return (
       <div className="mt-4 bg-white rounded-xl border border-gray-200 p-4 shadow-sm relative">
@@ -197,7 +211,7 @@ const CalendarWidget = ({ data, closeChat }: { data: any, closeChat: () => void 
                 <span className="text-xs font-bold uppercase tracking-wider text-gray-900">
                     {isVisit ? 'Visita Técnica' : 'Reunião'}
                 </span>
-                <span className="text-[10px] text-gray-400 truncate max-w-[150px]" title={locationText}>
+                <span className="text-[10px] text-gray-400 truncate max-w-[200px]" title={locationText}>
                     {locationText}
                 </span>
               </div>
@@ -406,7 +420,10 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                     {/* GenUI Rendering */}
                     {msg.uiComponent?.type === 'ProjectCarousel' && <ProjectCarousel data={msg.uiComponent.data} />}
                     {msg.uiComponent?.type === 'SocialLinks' && <SocialLinks />}
-                    {msg.uiComponent?.type === 'CalendarWidget' && <CalendarWidget data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} />}
+                    {/* Pass messageId to CalendarWidget for UI updates */}
+                    {msg.uiComponent?.type === 'CalendarWidget' && <CalendarWidget data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} messageId={msg.id} />}
+                    {/* Render new Success Component */}
+                    {msg.uiComponent?.type === 'BookingSuccess' && <BookingSuccess data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} />}
                   </div>
                   
                   {/* Bot Action Bar */}
