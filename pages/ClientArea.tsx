@@ -3,16 +3,21 @@ import React, { useState } from 'react';
 import { useProjects } from '../context/ProjectContext';
 import { User, Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Project, ClientMemory, ClientFolder } from '../types';
+import { Project, ClientMemory, ClientFolder, Appointment } from '../types';
 import { Navigate } from 'react-router-dom';
 
 export const ClientArea: React.FC = () => {
-  const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory, appointments, updateAppointmentStatus } = useProjects();
+  const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory, appointments, updateAppointmentStatus, editAppointment, showToast } = useProjects();
   const [activeTab, setActiveTab] = useState<'profile' | 'projects' | 'docs' | 'settings' | 'favs' | 'memories' | 'schedule'>('projects');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showAddMemory, setShowAddMemory] = useState(false);
   const [newMemory, setNewMemory] = useState({ topic: '', content: '' });
   
+  // Reschedule State
+  const [reschedulingId, setReschedulingId] = useState<string | null>(null);
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
+
   // Edit State for Memories
   const [editingMemoryId, setEditingMemoryId] = useState<string | null>(null);
   const [editMemoryContent, setEditMemoryContent] = useState('');
@@ -39,16 +44,18 @@ export const ClientArea: React.FC = () => {
     }
   };
 
-  const startEditingMemory = (mem: ClientMemory) => {
-    setEditingMemoryId(mem.id);
-    setEditMemoryContent(mem.content);
-  };
-
-  const saveEditedMemory = (id: string) => {
-    if (editMemoryContent.trim()) {
-      updateClientMemory(id, editMemoryContent);
-      setEditingMemoryId(null);
-    }
+  const handleReschedule = () => {
+      if (reschedulingId && newDate && newTime) {
+          editAppointment(reschedulingId, {
+              date: newDate,
+              time: newTime,
+              status: 'pending' // Require re-approval
+          });
+          setReschedulingId(null);
+          setNewDate('');
+          setNewTime('');
+          showToast('Solicitação de reagendamento enviada.', 'success');
+      }
   };
 
   return (
@@ -167,14 +174,33 @@ export const ClientArea: React.FC = () => {
                                       
                                       {appt.status !== 'cancelled' && (
                                          <div className="flex gap-4 mt-6">
-                                            <a 
-                                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(appt.location)}`}
-                                              target="_blank"
-                                              rel="noreferrer"
-                                              className="flex items-center gap-2 text-xs font-bold text-blue-600 hover:underline bg-blue-50 px-3 py-2 rounded-lg"
+                                            {appt.location.includes('http') || appt.location.includes('maps') ? (
+                                                <a 
+                                                  href={appt.location.includes('http') ? appt.location : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(appt.location)}`}
+                                                  target="_blank"
+                                                  rel="noreferrer"
+                                                  className="flex items-center gap-2 text-xs font-bold text-blue-600 hover:underline bg-blue-50 px-3 py-2 rounded-lg"
+                                                >
+                                                   <ExternalLink className="w-4 h-4" /> Link/Mapa
+                                                </a>
+                                            ) : (
+                                                 <a 
+                                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(appt.location)}`}
+                                                  target="_blank"
+                                                  rel="noreferrer"
+                                                  className="flex items-center gap-2 text-xs font-bold text-blue-600 hover:underline bg-blue-50 px-3 py-2 rounded-lg"
+                                                >
+                                                   <ExternalLink className="w-4 h-4" /> Abrir no Maps
+                                                </a>
+                                            )}
+                                            
+                                            <button 
+                                                onClick={() => setReschedulingId(appt.id)}
+                                                className="flex items-center gap-2 text-xs font-bold text-black bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition"
                                             >
-                                               <ExternalLink className="w-4 h-4" /> Abrir no Maps
-                                            </a>
+                                                <Calendar className="w-4 h-4" /> Reagendar
+                                            </button>
+
                                             <button 
                                                onClick={() => { if(confirm('Deseja cancelar este agendamento?')) updateAppointmentStatus(appt.id, 'cancelled'); }}
                                                className="flex items-center gap-2 text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg transition"
@@ -183,20 +209,21 @@ export const ClientArea: React.FC = () => {
                                             </button>
                                          </div>
                                       )}
-                                   </div>
-                                   
-                                   {/* Map Embed (Simple iframe hack for no-key viewing) */}
-                                   <div className="w-full md:w-1/3 h-40 bg-gray-100 rounded-lg overflow-hidden relative">
-                                       <iframe 
-                                         width="100%" 
-                                         height="100%" 
-                                         frameBorder="0" 
-                                         scrolling="no" 
-                                         marginHeight={0} 
-                                         marginWidth={0} 
-                                         src={`https://maps.google.com/maps?q=${encodeURIComponent(appt.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                                         className="opacity-80 hover:opacity-100 transition"
-                                       ></iframe>
+                                      
+                                      {/* Reschedule UI (Inline) */}
+                                      {reschedulingId === appt.id && (
+                                          <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg animate-fadeIn">
+                                              <p className="text-xs font-bold mb-2">Escolha nova data e hora:</p>
+                                              <div className="flex gap-2 mb-2">
+                                                  <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="border p-2 rounded text-sm w-full" />
+                                                  <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} className="border p-2 rounded text-sm w-full" />
+                                              </div>
+                                              <div className="flex gap-2 justify-end">
+                                                  <button onClick={() => setReschedulingId(null)} className="text-xs text-gray-500 px-3 py-2">Cancelar</button>
+                                                  <button onClick={handleReschedule} className="text-xs bg-black text-white px-4 py-2 rounded font-bold">Salvar</button>
+                                              </div>
+                                          </div>
+                                      )}
                                    </div>
                                 </div>
                              </div>

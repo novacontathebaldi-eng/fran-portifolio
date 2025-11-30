@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban } from 'lucide-react';
+import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, XCircle } from 'lucide-react';
 import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment } from '../../types';
 
 // Mock Supabase Upload Simulation
@@ -15,7 +15,7 @@ const uploadToSupabase = async (file: File): Promise<string> => {
 };
 
 export const AdminDashboard: React.FC = () => {
-  const { projects, deleteProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, adminNotes, markNoteAsRead, deleteAdminNote, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus } = useProjects();
+  const { projects, deleteProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, adminNotes, markNoteAsRead, deleteAdminNote, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, toggleBlockDate, editAppointment } = useProjects();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'content' | 'settings' | 'messages' | 'clients' | 'agenda'>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -36,6 +36,10 @@ export const AdminDashboard: React.FC = () => {
   // Rename State
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editFolderName, setEditFolderName] = useState('');
+
+  // Agenda Edit State
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [blockDateInput, setBlockDateInput] = useState('');
 
   const handleDelete = (id: string) => {
     if (confirm('Tem certeza que deseja excluir este projeto?')) {
@@ -157,17 +161,6 @@ export const AdminDashboard: React.FC = () => {
     showToast('Configurações salvas.', 'success');
   };
 
-  const handleAdminDeleteMemory = (memoryId: string) => {
-    if (!selectedClient) return;
-    if (confirm('Tem certeza que deseja apagar esta memória do cliente?')) {
-        const updatedMemories = (selectedClient.memories || []).filter(m => m.id !== memoryId);
-        const updatedClient = { ...selectedClient, memories: updatedMemories };
-        updateUser(updatedClient);
-        setSelectedClient(updatedClient);
-        showToast('Memória removida.', 'success');
-    }
-  }
-
   const handleCreateFolder = () => {
     if (newFolderName.trim() && selectedClient) {
       createClientFolder(selectedClient.id, newFolderName);
@@ -227,6 +220,23 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Agenda Helpers
+  const handleSaveAppointment = () => {
+    if (editingAppointment) {
+      editAppointment(editingAppointment.id, editingAppointment);
+      setEditingAppointment(null);
+      showToast('Agendamento atualizado.', 'success');
+    }
+  };
+
+  const handleAddBlockDate = () => {
+    if (blockDateInput) {
+        toggleBlockDate(blockDateInput);
+        setBlockDateInput('');
+        showToast('Data bloqueada.', 'info');
+    }
+  };
+
   const NavItem = ({ id, icon: Icon, label, count }: { id: typeof activeTab, icon: any, label: string, count?: number }) => (
     <button 
       onClick={() => { setActiveTab(id); setMobileMenuOpen(false); setSelectedClient(null); setCurrentAdminFolderId(null); }} 
@@ -243,8 +253,6 @@ export const AdminDashboard: React.FC = () => {
 
   const unreadNotesCount = adminNotes.filter(n => n.status === 'new').length;
   const pendingAppointmentsCount = appointments.filter(a => a.status === 'pending').length;
-
-  // Sorting appointments
   const sortedAppointments = [...appointments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return (
@@ -390,9 +398,14 @@ export const AdminDashboard: React.FC = () => {
                                          </div>
                                       </div>
                                    </div>
-                                   <button onClick={() => { if(confirm('Cancelar este agendamento?')) updateAppointmentStatus(appt.id, 'cancelled') }} className="p-2 text-gray-300 hover:text-red-500 transition">
-                                      <Ban className="w-5 h-5" />
-                                   </button>
+                                   <div className="flex gap-2">
+                                       <button onClick={() => setEditingAppointment(appt)} className="p-2 text-gray-300 hover:text-blue-500 transition">
+                                          <Edit2 className="w-5 h-5" />
+                                       </button>
+                                       <button onClick={() => { if(confirm('Cancelar este agendamento?')) updateAppointmentStatus(appt.id, 'cancelled') }} className="p-2 text-gray-300 hover:text-red-500 transition">
+                                          <Ban className="w-5 h-5" />
+                                       </button>
+                                   </div>
                                 </div>
                              ))
                           )}
@@ -400,8 +413,31 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                  </div>
 
-                 {/* Right: Settings */}
+                 {/* Right: Settings & Blocks */}
                  <div className="space-y-6">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                       <h3 className="font-bold mb-4">Dias Bloqueados</h3>
+                       <div className="flex gap-2 mb-4">
+                           <input 
+                              type="date" 
+                              value={blockDateInput} 
+                              onChange={e => setBlockDateInput(e.target.value)} 
+                              className="border p-2 rounded text-sm w-full" 
+                           />
+                           <button onClick={handleAddBlockDate} className="bg-red-50 text-red-500 p-2 rounded hover:bg-red-100 font-bold text-xs uppercase tracking-wider whitespace-nowrap">Bloquear</button>
+                       </div>
+                       
+                       <div className="space-y-2 max-h-40 overflow-y-auto">
+                           {scheduleSettings.blockedDates.length === 0 && <p className="text-xs text-gray-400">Nenhum dia bloqueado.</p>}
+                           {scheduleSettings.blockedDates.map(date => (
+                               <div key={date} className="flex justify-between items-center bg-gray-50 p-2 rounded text-sm">
+                                   <span>{new Date(date).toLocaleDateString('pt-BR')}</span>
+                                   <button onClick={() => toggleBlockDate(date)} className="text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+                               </div>
+                           ))}
+                       </div>
+                    </div>
+
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                        <h3 className="font-bold mb-4">Configuração de Horários</h3>
                        <div className="space-y-4">
@@ -443,8 +479,62 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* ... Rest of tabs (projects, clients, messages, content, settings) remains identical to original ... */}
-          {/* Projects View */}
+          {/* Edit Appointment Modal */}
+          {editingAppointment && (
+              <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+                  <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl animate-fadeIn">
+                      <h3 className="text-xl font-bold font-serif mb-4">Editar Agendamento</h3>
+                      <div className="space-y-4">
+                          <div>
+                              <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Data</label>
+                              <input 
+                                type="date" 
+                                value={editingAppointment.date} 
+                                onChange={e => setEditingAppointment({...editingAppointment, date: e.target.value})}
+                                className="w-full border p-2 rounded bg-white text-black"
+                              />
+                          </div>
+                          <div>
+                              <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Hora</label>
+                              <input 
+                                type="time" 
+                                value={editingAppointment.time} 
+                                onChange={e => setEditingAppointment({...editingAppointment, time: e.target.value})}
+                                className="w-full border p-2 rounded bg-white text-black"
+                              />
+                          </div>
+                          <div>
+                              <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Status</label>
+                              <select 
+                                value={editingAppointment.status} 
+                                onChange={e => setEditingAppointment({...editingAppointment, status: e.target.value as any})}
+                                className="w-full border p-2 rounded bg-white text-black"
+                              >
+                                  <option value="confirmed">Confirmado</option>
+                                  <option value="pending">Pendente</option>
+                                  <option value="cancelled">Cancelado</option>
+                                  <option value="rescheduling">Reagendando</option>
+                              </select>
+                          </div>
+                          <div>
+                              <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Local</label>
+                              <input 
+                                type="text" 
+                                value={editingAppointment.location} 
+                                onChange={e => setEditingAppointment({...editingAppointment, location: e.target.value})}
+                                className="w-full border p-2 rounded bg-white text-black"
+                              />
+                          </div>
+                      </div>
+                      <div className="flex justify-end gap-2 mt-8">
+                          <button onClick={() => setEditingAppointment(null)} className="px-4 py-2 text-gray-500 hover:text-black">Cancelar</button>
+                          <button onClick={handleSaveAppointment} className="px-6 py-2 bg-black text-white rounded-lg font-bold hover:bg-accent hover:text-black transition">Salvar</button>
+                      </div>
+                  </div>
+              </div>
+          )}
+
+          {/* ... Rest of existing dashboard tabs (projects, clients, messages, etc) ... */}
           {activeTab === 'projects' && (
             <div className="animate-fadeIn">
               <div className="flex justify-between items-center mb-8">
@@ -583,7 +673,7 @@ export const AdminDashboard: React.FC = () => {
              </div>
           )}
 
-          {/* Clients View Placeholder (Reduced for brevity as it was largely existing code, kept structure valid) */}
+          {/* Clients View */}
           {activeTab === 'clients' && !selectedClient && (
              <div className="animate-fadeIn">
                  <h2 className="text-3xl font-serif font-bold mb-8 text-black">Clientes Cadastrados</h2>

@@ -60,7 +60,9 @@ interface ProjectContextType {
   scheduleSettings: ScheduleSettings;
   updateScheduleSettings: (settings: ScheduleSettings) => void;
   addAppointment: (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => void;
+  editAppointment: (id: string, updates: Partial<Appointment>) => void;
   updateAppointmentStatus: (id: string, status: Appointment['status']) => void;
+  toggleBlockDate: (date: string) => void;
   checkAvailability: (date: string) => string[]; // Returns available hours
 
   // Toast Logic
@@ -400,11 +402,27 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setAppointments(prev => [...prev, newAppt]);
   };
 
+  const editAppointment = (id: string, updates: Partial<Appointment>) => {
+    setAppointments(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+  };
+
   const updateAppointmentStatus = (id: string, status: Appointment['status']) => {
     setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
   };
 
+  const toggleBlockDate = (date: string) => {
+    setScheduleSettings(prev => {
+      if (prev.blockedDates.includes(date)) {
+        return { ...prev, blockedDates: prev.blockedDates.filter(d => d !== date) };
+      } else {
+        return { ...prev, blockedDates: [...prev.blockedDates, date] };
+      }
+    });
+  };
+
   const checkAvailability = (dateStr: string): string[] => {
+    if (!scheduleSettings.enabled) return [];
+    
     // 1. Check if blocked
     if (scheduleSettings.blockedDates.includes(dateStr)) return [];
 
@@ -567,7 +585,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       scheduleSettings,
       updateScheduleSettings,
       addAppointment,
+      editAppointment,
       updateAppointmentStatus,
+      toggleBlockDate,
       checkAvailability,
       // Toast
       toast,
