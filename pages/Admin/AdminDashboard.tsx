@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -135,6 +133,31 @@ export const AdminDashboard: React.FC = () => {
     }));
   };
   
+  // Recognition
+  const addRecognition = () => {
+     setContentForm(prev => ({
+        ...prev,
+        about: { ...prev.about, recognition: [...prev.about.recognition, 'Nova Mídia'] }
+     }));
+  }
+
+  const updateRecognition = (index: number, value: string) => {
+     const newRec = [...contentForm.about.recognition];
+     newRec[index] = value;
+     setContentForm(prev => ({
+        ...prev,
+        about: { ...prev.about, recognition: newRec }
+     }));
+  }
+
+  const removeRecognition = (index: number) => {
+     const newRec = contentForm.about.recognition.filter((_, i) => i !== index);
+     setContentForm(prev => ({
+        ...prev,
+        about: { ...prev.about, recognition: newRec }
+     }));
+  }
+
   const handleSettingsChange = (field: string, value: any) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
@@ -160,6 +183,7 @@ export const AdminDashboard: React.FC = () => {
     showToast('Configurações salvas.', 'success');
   };
 
+  // ... (Other handlers unchanged) ...
   const handleAdminDeleteMemory = (memoryId: string) => {
     if (!selectedClient) return;
     if (confirm('Tem certeza que deseja apagar esta memória do cliente?')) {
@@ -405,7 +429,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Office View (UPDATED CMS) */}
+          {/* Office View */}
           {activeTab === 'office' && (
              <div className="animate-fadeIn max-w-5xl">
                <div className="flex justify-between items-center mb-8">
@@ -787,16 +811,69 @@ export const AdminDashboard: React.FC = () => {
           {activeTab === 'content' && (
              <div className="animate-fadeIn max-w-4xl">
                <h2 className="text-3xl font-serif font-bold mb-8 text-black">Conteúdo do Site</h2>
-               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
-                  <h3 className="font-bold text-xl mb-6 text-black">Página Sobre</h3>
-                  <div className="space-y-6">
-                     <div>
+               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8 space-y-12">
+                  
+                  {/* Bio Section */}
+                  <div>
+                    <h3 className="font-bold text-xl mb-4 text-black border-b border-gray-100 pb-2">Página Sobre (Bio)</h3>
+                    <div>
                        <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Bio Principal</label>
                        <textarea name="bio" value={contentForm.about.bio} onChange={handleContentChange} className="w-full border p-3 rounded h-40 bg-white text-black" />
-                     </div>
+                    </div>
                   </div>
-                  <div className="mt-6">
-                     <button onClick={saveContent} className="bg-green-500 text-white px-8 py-4 rounded-full font-bold shadow-2xl hover:bg-green-600 transition flex items-center gap-2">
+                  
+                  {/* Stats Section */}
+                  <div>
+                    <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+                       <h3 className="font-bold text-xl text-black">Estatísticas</h3>
+                       <button onClick={addStat} className="text-xs bg-black text-white px-3 py-1 rounded-full flex items-center gap-1 hover:bg-accent hover:text-black transition"><Plus className="w-3 h-3"/> Adicionar</button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       {contentForm.about.stats.map(stat => (
+                          <div key={stat.id} className="p-4 bg-gray-50 rounded-xl relative group">
+                             <input value={stat.value} onChange={e => updateStat(stat.id, 'value', e.target.value)} className="w-full font-serif text-2xl bg-transparent focus:outline-none mb-1 text-accent font-bold" />
+                             <input value={stat.label} onChange={e => updateStat(stat.id, 'label', e.target.value)} className="w-full text-xs uppercase text-gray-500 bg-transparent focus:outline-none font-bold" />
+                             <button onClick={() => removeStat(stat.id)} className="absolute top-2 right-2 p-1 text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                       ))}
+                    </div>
+                  </div>
+
+                  {/* Pillars Section */}
+                  <div>
+                    <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+                       <h3 className="font-bold text-xl text-black">Nossos Pilares</h3>
+                       <button onClick={addPillar} className="text-xs bg-black text-white px-3 py-1 rounded-full flex items-center gap-1 hover:bg-accent hover:text-black transition"><Plus className="w-3 h-3"/> Adicionar</button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       {contentForm.about.pillars.map(pillar => (
+                          <div key={pillar.id} className="p-4 bg-gray-50 rounded-xl relative group border border-gray-100">
+                             <input value={pillar.title} onChange={e => updatePillar(pillar.id, 'title', e.target.value)} className="w-full font-serif text-lg bg-transparent focus:outline-none mb-2 font-bold" />
+                             <textarea value={pillar.description} onChange={e => updatePillar(pillar.id, 'description', e.target.value)} className="w-full text-sm text-gray-500 bg-transparent focus:outline-none h-20 resize-none" />
+                             <button onClick={() => removePillar(pillar.id)} className="absolute top-2 right-2 p-1 text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                       ))}
+                    </div>
+                  </div>
+
+                  {/* Recognition Section */}
+                  <div>
+                    <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+                       <h3 className="font-bold text-xl text-black">Reconhecimento & Mídia</h3>
+                       <button onClick={addRecognition} className="text-xs bg-black text-white px-3 py-1 rounded-full flex items-center gap-1 hover:bg-accent hover:text-black transition"><Plus className="w-3 h-3"/> Adicionar</button>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                       {contentForm.about.recognition.map((rec, idx) => (
+                          <div key={idx} className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg">
+                             <input value={rec} onChange={e => updateRecognition(idx, e.target.value)} className="bg-transparent text-sm font-bold w-32 focus:outline-none" />
+                             <button onClick={() => removeRecognition(idx)} className="text-gray-400 hover:text-red-500"><X className="w-3 h-3"/></button>
+                          </div>
+                       ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t border-gray-100">
+                     <button onClick={saveContent} className="w-full md:w-auto bg-green-500 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-green-600 transition flex items-center justify-center gap-2">
                         <Save className="w-5 h-5" /> Salvar Alterações
                      </button>
                   </div>

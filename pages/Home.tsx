@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Clock, X, Phone, Mail } from 'lucide-react';
@@ -178,21 +176,21 @@ export const Home: React.FC = () => {
                        <MapPin className="w-6 h-6 text-accent shrink-0 mt-1" />
                        <div>
                           <p className="font-bold text-lg mb-1">Endereço</p>
-                          <p className="text-gray-400 font-light text-sm leading-relaxed">{siteContent.office.address}</p>
+                          <p className="text-gray-400 font-light text-sm leading-relaxed">{siteContent?.office?.address}</p>
                        </div>
                     </div>
                     <div className="flex items-start gap-4">
                        <Clock className="w-6 h-6 text-accent shrink-0 mt-1" />
                        <div>
                           <p className="font-bold text-lg mb-1">Horário</p>
-                          <p className="text-gray-400 font-light text-sm leading-relaxed">{siteContent.office.hoursDescription}</p>
+                          <p className="text-gray-400 font-light text-sm leading-relaxed">{siteContent?.office?.hoursDescription}</p>
                        </div>
                     </div>
                  </div>
 
                  <div className="space-y-4">
                     <a 
-                      href={siteContent.office.mapsLink} 
+                      href={siteContent?.office?.mapsLink} 
                       target="_blank" 
                       rel="noreferrer"
                       className="block w-full bg-white text-black text-center py-4 rounded-full font-bold uppercase text-xs tracking-wider hover:bg-accent transition"
@@ -218,7 +216,7 @@ export const Home: React.FC = () => {
                    loading="lazy" 
                    allowFullScreen 
                    referrerPolicy="no-referrer-when-downgrade"
-                   src={`https://maps.google.com/maps?q=${encodeURIComponent(siteContent.office.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                   src={`https://maps.google.com/maps?q=${encodeURIComponent(siteContent?.office?.address || '')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                    className="filter grayscale hover:grayscale-0 transition duration-700"
                  ></iframe>
               </div>
@@ -249,7 +247,7 @@ export const Home: React.FC = () => {
               {/* Dynamic Content Rendering */}
               <div className="min-h-screen pb-20">
                  
-                 {(!siteContent.office.blocks || siteContent.office.blocks.length === 0) ? (
+                 {(!siteContent?.office?.blocks || siteContent.office.blocks.length === 0) ? (
                     <div className="h-screen flex items-center justify-center">
                        <p className="text-gray-400">Conteúdo do escritório em construção.</p>
                     </div>
@@ -343,12 +341,12 @@ export const Home: React.FC = () => {
                                    <div>
                                       <MapPin className="w-8 h-8 text-accent mb-4" />
                                       <h4 className="text-xl font-bold mb-2">Endereço</h4>
-                                      <p className="text-gray-400">{siteContent.office.address}</p>
+                                      <p className="text-gray-400">{siteContent?.office?.address}</p>
                                    </div>
                                    <div>
                                       <Clock className="w-8 h-8 text-accent mb-4" />
                                       <h4 className="text-xl font-bold mb-2">Horário</h4>
-                                      <p className="text-gray-400">{siteContent.office.hoursDescription}</p>
+                                      <p className="text-gray-400">{siteContent?.office?.hoursDescription}</p>
                                    </div>
                                    <div>
                                       <Phone className="w-8 h-8 text-accent mb-4" />
@@ -372,7 +370,7 @@ export const Home: React.FC = () => {
                                    loading="lazy" 
                                    allowFullScreen 
                                    referrerPolicy="no-referrer-when-downgrade"
-                                   src={`https://maps.google.com/maps?q=${encodeURIComponent(siteContent.office.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                                   src={`https://maps.google.com/maps?q=${encodeURIComponent(siteContent?.office?.address || '')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                                    className="filter grayscale hover:grayscale-0 transition duration-700"
                                 ></iframe>
                              </div>
