@@ -17,12 +17,14 @@ export const Portfolio: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen pt-24 pb-24">
+    <div className="min-h-screen pt-44 pb-24">
+      
+      {/* 1. Page Header (Inside Container) */}
       <div className="container mx-auto px-6">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row justify-between items-end mb-8 md:mb-12"
+          className="flex flex-col md:flex-row justify-between items-end mb-8 md:mb-10"
         >
            <div>
              <h1 className="text-4xl md:text-5xl font-serif mb-4">Portfólio</h1>
@@ -31,16 +33,19 @@ export const Portfolio: React.FC = () => {
              </p>
            </div>
         </motion.div>
+      </div>
 
-        {/* Controls - Sticky Header Fixed */}
-        <div className="sticky top-[68px] md:top-[88px] bg-white/95 backdrop-blur-md z-40 py-3 md:py-4 -mx-6 px-6 md:mx-0 md:px-0 border-y border-gray-100 md:border-0 md:rounded-lg transition-all duration-300 shadow-sm md:shadow-none">
+      {/* 2. Full-Width Sticky Filter Bar (Outside Container) */}
+      {/* Adjusted top values to eliminate gap: Mobile 56px, Desktop 60px (Slightly under-lapping header) */}
+      <div className="sticky top-[56px] md:top-[60px] z-40 w-full bg-white/95 backdrop-blur-md border-y border-gray-100 transition-all duration-300 shadow-sm rounded-none">
+        <div className="container mx-auto px-6 py-3 md:py-4">
           <div className="flex flex-wrap items-center justify-between gap-2 md:gap-4">
             
             {/* Filter & Sort Group */}
             <div className="flex items-center space-x-2 md:space-x-4 flex-grow md:flex-grow-0">
               <button 
                 onClick={() => setFilterOpen(!filterOpen)} 
-                className="flex items-center space-x-2 text-sm font-medium border border-gray-200 px-3 py-2 md:px-4 rounded-full hover:border-black transition active:scale-95 bg-white shrink-0"
+                className={`flex items-center space-x-2 text-sm font-medium border px-3 py-2 md:px-4 rounded-full transition active:scale-95 bg-white shrink-0 ${filterOpen ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-black'}`}
               >
                 <Filter className="w-4 h-4" />
                 <span className="hidden sm:inline">Filtrar</span>
@@ -79,7 +84,11 @@ export const Portfolio: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
 
+      {/* 3. Main Content (Back Inside Container) */}
+      <div className="container mx-auto px-6 mt-8">
+        
         {/* Filter Drawer */}
         <AnimatePresence>
           {filterOpen && (

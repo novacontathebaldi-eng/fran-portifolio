@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useProjects } from '../context/ProjectContext';
 import { User, Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase } from 'lucide-react';
@@ -115,7 +114,7 @@ export const ClientArea: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-24 bg-gray-50">
+    <div className="min-h-screen pt-44 pb-24 bg-gray-50">
       <div className="container mx-auto px-6">
         <h1 className="text-3xl md:text-4xl font-serif mb-8">Portal do Cliente</h1>
         

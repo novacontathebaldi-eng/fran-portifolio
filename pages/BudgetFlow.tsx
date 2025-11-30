@@ -34,7 +34,7 @@ export const BudgetFlow: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-24 bg-gray-50">
+    <div className="min-h-screen pt-44 pb-24 bg-gray-50">
       <div className="container mx-auto px-6 max-w-4xl">
         
         {/* Progress */}
