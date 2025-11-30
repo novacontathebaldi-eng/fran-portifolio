@@ -67,8 +67,17 @@ export interface Appointment {
   time: string; // HH:mm
   location: string; // Address or 'Escritório Fran Siller / Online'
   status: 'pending' | 'confirmed' | 'cancelled' | 'rescheduling';
+  meetingLink?: string; // New: For online meetings
   createdAt: string;
   notes?: string;
+}
+
+export interface BlockRule {
+  id: string;
+  date: string; // YYYY-MM-DD
+  start: string; // HH:mm
+  end: string; // HH:mm
+  reason?: string;
 }
 
 export interface ScheduleSettings {
@@ -76,7 +85,7 @@ export interface ScheduleSettings {
   workDays: number[]; // 0 = Sunday, 1 = Monday...
   startHour: string; // "09:00"
   endHour: string; // "18:00"
-  blockedDates: string[]; // ISO dates YYYY-MM-DD
+  blockedRules: BlockRule[]; // New flexible blocking system
 }
 
 export interface Address {
@@ -171,8 +180,20 @@ export interface SiteContent {
   office: OfficeDetails; // Centralized Office Data
 }
 
+export interface ContactSettings {
+  email: string;
+  phone: string;
+  whatsapp: string;
+  address: string; // Main Display Address
+  mapsQuery: string; // For Google Maps Embed
+  instagram: string;
+  linkedin: string;
+  hours: string;
+}
+
 export interface GlobalSettings {
   enableShop: boolean;
+  contact: ContactSettings; // Single Source of Truth
   aiConfig: {
     model: string;
     useCustomSystemInstruction: boolean; // New Toggle

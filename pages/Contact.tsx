@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Instagram, Linkedin, Send } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
@@ -5,7 +6,8 @@ import { motion } from 'framer-motion';
 
 export const Contact: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
-  const { showToast } = useProjects();
+  const { showToast, settings } = useProjects();
+  const contact = settings.contact;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,8 +47,7 @@ export const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm uppercase tracking-wide mb-1">Email</h3>
-                  <p className="text-secondary break-all">contato@fransiller.com.br</p>
-                  <p className="text-secondary break-all">projetos@fransiller.com.br</p>
+                  <p className="text-secondary break-all">{contact.email}</p>
                 </div>
               </div>
 
@@ -56,8 +57,8 @@ export const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm uppercase tracking-wide mb-1">Telefone / WhatsApp</h3>
-                  <p className="text-secondary">+55 (11) 99999-9999</p>
-                  <p className="text-secondary text-sm text-gray-400">Seg-Sex, 9h às 18h</p>
+                  <p className="text-secondary">{contact.phone}</p>
+                  <p className="text-secondary text-sm text-gray-400">{contact.hours}</p>
                 </div>
               </div>
 
@@ -67,8 +68,7 @@ export const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm uppercase tracking-wide mb-1">Ateliê</h3>
-                  <p className="text-secondary">Av. Paulista, 1234 - Jardins</p>
-                  <p className="text-secondary">São Paulo, SP - Brasil</p>
+                  <p className="text-secondary">{contact.address}</p>
                 </div>
               </div>
             </div>
@@ -76,8 +76,8 @@ export const Contact: React.FC = () => {
             <div className="pt-8 border-t border-gray-100">
                <h3 className="font-bold text-sm uppercase tracking-wide mb-4">Siga-nos</h3>
                <div className="flex space-x-4">
-                 <button className="p-2 border border-gray-200 rounded-full hover:bg-black hover:text-white transition active:scale-95"><Instagram className="w-5 h-5" /></button>
-                 <button className="p-2 border border-gray-200 rounded-full hover:bg-black hover:text-white transition active:scale-95"><Linkedin className="w-5 h-5" /></button>
+                 <a href={`https://instagram.com/${contact.instagram.replace('@','')}`} target="_blank" rel="noreferrer" className="p-2 border border-gray-200 rounded-full hover:bg-black hover:text-white transition active:scale-95"><Instagram className="w-5 h-5" /></a>
+                 <a href="#" className="p-2 border border-gray-200 rounded-full hover:bg-black hover:text-white transition active:scale-95"><Linkedin className="w-5 h-5" /></a>
                </div>
             </div>
           </motion.div>

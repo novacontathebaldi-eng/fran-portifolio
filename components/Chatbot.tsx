@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -138,7 +139,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const SocialLinks = () => (
     <div className="mt-4 space-y-3">
       <a 
-        href="https://wa.me/5527996670426?text=Ol%C3%A1%2C%20vim%20pelo%20site%20e%20gostaria%20de%20saber%20mais." 
+        href={`https://wa.me/${settings.contact.whatsapp}?text=Ol%C3%A1%2C%20vim%20pelo%20site.`} 
         target="_blank" 
         rel="noreferrer"
         className="flex items-center justify-between bg-[#25D366] text-white p-3 rounded-lg hover:brightness-105 transition shadow-sm w-full"
@@ -154,13 +155,13 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
       </a>
       <div className="flex gap-2">
         <a 
-          href="https://instagram.com/othebaldi" 
+          href={`https://instagram.com/${settings.contact.instagram.replace('@','')}`} 
           target="_blank" 
           rel="noreferrer"
           className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-tr from-yellow-500 via-red-500 to-purple-600 text-white p-3 rounded-lg hover:opacity-90 transition shadow-sm"
         >
           <Instagram className="w-5 h-5" />
-          <span className="text-xs font-bold">@othebaldi</span>
+          <span className="text-xs font-bold">{settings.contact.instagram}</span>
         </a>
       </div>
     </div>
@@ -171,6 +172,9 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     const [viewDate, setViewDate] = useState(new Date());
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
     const [booked, setBooked] = useState(false);
+
+    // Auto-determine location based on Type
+    const defaultLocation = data?.type === 'meeting' ? 'Escritório / Online' : (data?.address || 'Local da Obra');
 
     // Helper to generate next 7 days from viewDate
     const dates = useMemo(() => {
@@ -197,7 +201,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
             date: selectedDate,
             time: time,
             type: data?.type || 'meeting',
-            location: data?.type === 'visit' ? (data?.address || 'A definir') : 'Online / Escritório',
+            location: defaultLocation,
         });
         
         setBooked(true);
@@ -206,11 +210,11 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
 
     if (booked) {
         return (
-            <div className="mt-4 p-4 bg-green-50 text-green-800 rounded-lg flex items-center gap-3 border border-green-100">
+            <div className="mt-4 p-4 bg-green-50 text-green-800 rounded-lg flex items-center gap-3 border border-green-100 animate-fadeIn">
                 <CheckCircle className="w-5 h-5" />
                 <div>
                     <p className="font-bold text-sm">Solicitação Recebida</p>
-                    <p className="text-xs">Aguarde a confirmação da equipe.</p>
+                    <p className="text-xs">Entraremos em contato para confirmar.</p>
                 </div>
             </div>
         );

@@ -1,5 +1,6 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ChatSession, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address } from '../types';
+import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ChatSession, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address, BlockRule } from '../types';
 import { MOCK_PROJECTS, MOCK_USER_CLIENT, MOCK_USER_ADMIN } from '../data';
 import { chatWithConcierge } from '../api/chat';
 
@@ -60,8 +61,11 @@ interface ProjectContextType {
   scheduleSettings: ScheduleSettings;
   updateScheduleSettings: (settings: ScheduleSettings) => void;
   addAppointment: (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => void;
+  editAppointment: (appt: Appointment) => void; // For Admin
   updateAppointmentStatus: (id: string, status: Appointment['status']) => void;
   checkAvailability: (date: string) => string[]; // Returns available hours
+  addBlockRule: (rule: Omit<BlockRule, 'id'>) => void;
+  removeBlockRule: (id: string) => void;
 
   // Toast Logic
   toast: ToastState;
@@ -73,6 +77,16 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 const DEFAULT_SETTINGS: GlobalSettings = {
   enableShop: true,
+  contact: {
+    email: 'contato@fransiller.com.br',
+    phone: '+55 (11) 99999-9999',
+    whatsapp: '5511999999999',
+    address: 'Av. Paulista, 1234 - Jardins, São Paulo - SP',
+    mapsQuery: 'Av. Paulista, 1234, São Paulo',
+    instagram: '@fransiller_arq',
+    linkedin: 'Fran Siller Arquitetura',
+    hours: 'Segunda a Sexta, 09h às 18h'
+  },
   aiConfig: {
     model: 'gemini-2.5-flash',
     useCustomSystemInstruction: false,
@@ -84,9 +98,7 @@ SUA IDENTIDADE:
 - Seu objetivo nº 1 é CONVERTER VISITANTES EM CLIENTES (Capturar Leads) e AGENDAR VISITAS/REUNIÕES.
 
 DADOS CRÍTICOS:
-- WhatsApp: +5527996670426
-- Instagram: instagram.com/othebaldi
-- Localização: Brasil (Global).
+- Use as informações globais de contato fornecidas no contexto.
 
 REGRAS:
 1. Se o usuário quiser agendar, chame a tool 'scheduleMeeting'.
@@ -105,7 +117,7 @@ const DEFAULT_SCHEDULE_SETTINGS: ScheduleSettings = {
   workDays: [1, 2, 3, 4, 5], // Mon-Fri
   startHour: "09:00",
   endHour: "18:00",
-  blockedDates: []
+  blockedRules: [] // New block system
 };
 
 const MOCK_NOTES: AdminNote[] = [
@@ -246,13 +258,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.aiConfig && typeof parsed.aiConfig.useCustomSystemInstruction === 'undefined') {
-          parsed.aiConfig.useCustomSystemInstruction = false;
-        }
-        if (parsed.aiConfig && typeof parsed.aiConfig.defaultGreeting === 'undefined') {
-          parsed.aiConfig.defaultGreeting = DEFAULT_SETTINGS.aiConfig.defaultGreeting;
-        }
-        return parsed;
+        // Robust Merge for new fields
+        const merged = { ...DEFAULT_SETTINGS, ...parsed };
+        if (!merged.contact) merged.contact = DEFAULT_SETTINGS.contact;
+        return merged;
       } catch (e) {
         return DEFAULT_SETTINGS;
       }
@@ -292,7 +301,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []);
 
   // Initialize Site Content with Migration Logic
-  // FIX: Added robust merging to prevent white screens if 'office' or 'blocks' keys are missing in old localStorage data
   const [siteContent, setSiteContent] = useState<SiteContent>(() => {
     const savedContent = localStorage.getItem('fran_site_content');
     if (savedContent) {
@@ -319,6 +327,22 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
     return DEFAULT_SITE_CONTENT;
   });
+
+  // Sync Global Settings Contact Info with Site Content Office Info (One way sync for legacy display)
+  useEffect(() => {
+    if (settings.contact) {
+      setSiteContent(prev => ({
+        ...prev,
+        office: {
+          ...prev.office,
+          address: settings.contact.address,
+          hoursDescription: settings.contact.hours,
+          mapQuery: settings.contact.mapsQuery,
+          // mapsLink handled dynamically in components based on mapQuery
+        }
+      }));
+    }
+  }, [settings.contact]);
 
   useEffect(() => {
     localStorage.setItem('fran_site_content', JSON.stringify(siteContent));
@@ -502,6 +526,24 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   
   const updateScheduleSettings = (newSettings: ScheduleSettings) => setScheduleSettings(newSettings);
 
+  const addBlockRule = (rule: Omit<BlockRule, 'id'>) => {
+    const newRule: BlockRule = {
+      ...rule,
+      id: Math.random().toString(36).substr(2, 9)
+    };
+    setScheduleSettings(prev => ({
+      ...prev,
+      blockedRules: [...prev.blockedRules, newRule]
+    }));
+  };
+
+  const removeBlockRule = (id: string) => {
+    setScheduleSettings(prev => ({
+      ...prev,
+      blockedRules: prev.blockedRules.filter(r => r.id !== id)
+    }));
+  };
+
   const addAppointment = (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => {
     const newAppt: Appointment = {
       ...appt,
@@ -512,20 +554,21 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setAppointments(prev => [...prev, newAppt]);
   };
 
+  const editAppointment = (appt: Appointment) => {
+    setAppointments(prev => prev.map(a => a.id === appt.id ? appt : a));
+  };
+
   const updateAppointmentStatus = (id: string, status: Appointment['status']) => {
     setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
   };
 
   const checkAvailability = (dateStr: string): string[] => {
-    // 1. Check if blocked
-    if (scheduleSettings.blockedDates.includes(dateStr)) return [];
-
-    // 2. Check if workday
+    // 1. Check if workday
     const dateObj = new Date(dateStr + 'T12:00:00'); // noon to avoid timezone edge cases
     const dayOfWeek = dateObj.getDay(); // 0-6
     if (!scheduleSettings.workDays.includes(dayOfWeek)) return [];
 
-    // 3. Generate slots (hourly)
+    // 2. Generate slots (hourly)
     const slots: string[] = [];
     let startH = parseInt(scheduleSettings.startHour.split(':')[0]);
     let endH = parseInt(scheduleSettings.endHour.split(':')[0]);
@@ -533,14 +576,26 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     for (let h = startH; h < endH; h++) {
       const timeSlot = `${h.toString().padStart(2, '0')}:00`;
       
-      // 4. Check conflicts
+      // 3. Check conflicts with Appointments
       const isTaken = appointments.some(a => 
         a.date === dateStr && 
         a.time === timeSlot && 
         a.status !== 'cancelled'
       );
 
-      if (!isTaken) {
+      // 4. Check conflicts with BlockRules
+      const isBlocked = scheduleSettings.blockedRules.some(rule => {
+        if (rule.date !== dateStr) return false;
+        
+        // Full Day Block
+        if (rule.start === '00:00' && rule.end === '23:59') return true;
+
+        // Time Range Block
+        // Simple string comparison works for HH:mm format (e.g. "09:00" >= "08:00")
+        return timeSlot >= rule.start && timeSlot < rule.end;
+      });
+
+      if (!isTaken && !isBlocked) {
         slots.push(timeSlot);
       }
     }
@@ -682,8 +737,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       scheduleSettings,
       updateScheduleSettings,
       addAppointment,
+      editAppointment,
       updateAppointmentStatus,
       checkAvailability,
+      addBlockRule,
+      removeBlockRule,
       // Toast
       toast,
       showToast,
