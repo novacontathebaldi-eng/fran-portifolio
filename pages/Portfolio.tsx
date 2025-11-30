@@ -36,8 +36,8 @@ export const Portfolio: React.FC = () => {
       </div>
 
       {/* 2. Full-Width Sticky Filter Bar (Outside Container) */}
-      {/* Adjusted top values to eliminate gap: Mobile 56px, Desktop 60px (Slightly under-lapping header) */}
-      <div className="sticky top-[56px] md:top-[60px] z-40 w-full bg-white/95 backdrop-blur-md border-y border-gray-100 transition-all duration-300 shadow-sm rounded-none">
+      {/* Adjusted top values: top-20 (80px) for Mobile Header, top-16 (64px) for Desktop Header */}
+      <div className="sticky top-20 md:top-16 z-40 w-full bg-white/95 backdrop-blur-md border-y border-gray-100 transition-all duration-300 shadow-sm rounded-none">
         <div className="container mx-auto px-6 py-3 md:py-4">
           <div className="flex flex-wrap items-center justify-between gap-2 md:gap-4">
             
