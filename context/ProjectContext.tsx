@@ -32,6 +32,7 @@ interface ProjectContextType {
   
   // Chat & AI Logic
   sendMessageToAI: (message: string) => Promise<any>;
+  addMessageToChat: (message: ChatMessage) => void; // New: Manual message injection
   currentChatMessages: ChatMessage[]; // The messages currently displayed in Chatbot
   createNewChat: () => void;
   logAiFeedback: (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => void;
@@ -598,6 +599,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setAiFeedbacks(prev => [newItem, ...prev]);
   };
 
+  const addMessageToChat = (message: ChatMessage) => {
+    setCurrentChatMessages(prev => [...prev, message]);
+  };
+
   const sendMessageToAI = async (message: string) => {
     let updatedMessages = [...currentChatMessages];
 
@@ -683,6 +688,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       updateSiteContent,
       updateSettings,
       sendMessageToAI,
+      addMessageToChat,
       currentChatMessages,
       createNewChat,
       logAiFeedback,
