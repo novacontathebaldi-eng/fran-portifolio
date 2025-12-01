@@ -24,6 +24,19 @@ export interface Project {
   price?: string; 
 }
 
+export interface CulturalProject {
+  id: string;
+  title: string;
+  category: string; // 'Patrimônio', 'Exposição', 'Restauro', 'Pesquisa', 'Publicação'
+  year: number;
+  location: string;
+  image: string;
+  partners?: string; // New field for institutional partners
+  description: string;
+  blocks?: ContentBlock[];
+  images: string[]; // Legacy support fallback
+}
+
 export type UserRole = 'admin' | 'client';
 
 export interface ClientMemory {

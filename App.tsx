@@ -6,6 +6,8 @@ import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Portfolio } from './pages/Portfolio';
 import { ProjectDetails } from './pages/ProjectDetails';
+import { Cultural } from './pages/Cultural';
+import { CulturalDetails } from './pages/CulturalDetails';
 import { About } from './pages/About';
 import { Office } from './pages/Office';
 import { Contact } from './pages/Contact';
@@ -14,6 +16,7 @@ import { ClientArea } from './pages/ClientArea';
 import { BudgetFlow } from './pages/BudgetFlow';
 import { AdminDashboard } from './pages/Admin/AdminDashboard';
 import { ProjectForm } from './pages/Admin/ProjectForm';
+import { CulturalProjectForm } from './pages/Admin/CulturalProjectForm';
 import { ProjectProvider, useProjects } from './context/ProjectContext';
 
 // --- Error Boundary Component ---
@@ -138,6 +141,8 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/" element={<Layout><Home /></Layout>} />
         <Route path="/portfolio" element={<Layout><Portfolio /></Layout>} />
         <Route path="/project/:id" element={<Layout><ProjectDetails /></Layout>} />
+        <Route path="/cultural" element={<Layout><Cultural /></Layout>} />
+        <Route path="/cultural/:id" element={<Layout><CulturalDetails /></Layout>} />
         <Route path="/about" element={<Layout><About /></Layout>} />
         <Route path="/office" element={<Layout><Office /></Layout>} />
         <Route path="/contact" element={<Layout><Contact /></Layout>} />
@@ -171,6 +176,15 @@ const AnimatedRoutes: React.FC = () => {
         <Route 
           path="/admin/project/edit/:id" 
           element={currentUser?.role === 'admin' ? <ProjectForm /> : <Navigate to="/auth" />} 
+        />
+        {/* Cultural Admin Routes */}
+        <Route 
+          path="/admin/cultural/new" 
+          element={currentUser?.role === 'admin' ? <CulturalProjectForm /> : <Navigate to="/auth" />} 
+        />
+        <Route 
+          path="/admin/cultural/edit/:id" 
+          element={currentUser?.role === 'admin' ? <CulturalProjectForm /> : <Navigate to="/auth" />} 
         />
 
         {/* Fallback */}

@@ -1,6 +1,6 @@
 
 
-import { Project, ServicePackage, User } from './types';
+import { Project, ServicePackage, User, CulturalProject } from './types';
 
 export const MOCK_PROJECTS: Project[] = [
   {
@@ -78,6 +78,41 @@ export const MOCK_PROJECTS: Project[] = [
     description: 'Maximizando o espaço em um micro-apartamento através de soluções inteligentes de marcenaria.',
     images: ['https://picsum.photos/id/43/800/600', 'https://picsum.photos/id/44/800/600'],
     blocks: []
+  }
+];
+
+export const MOCK_CULTURAL_PROJECTS: CulturalProject[] = [
+  {
+    id: 'c1',
+    title: 'Restauro da Igreja Matriz',
+    category: 'Restauro',
+    year: 2022,
+    location: 'Ouro Preto, MG',
+    image: 'https://picsum.photos/id/101/800/600',
+    partners: 'IPHAN, Prefeitura de Ouro Preto',
+    description: 'Projeto de restauro integral da nave principal e altar, recuperando afrescos do século XVIII.',
+    images: ['https://picsum.photos/id/102/800/600'],
+    blocks: [
+      { id: 'b1', type: 'text', content: 'Um trabalho minucioso de prospecção pictórica e consolidação estrutural para devolver à comunidade este marco histórico.' },
+      { id: 'b2', type: 'image-full', content: 'https://picsum.photos/id/103/1200/800', caption: 'Detalhe do altar-mor restaurado' },
+      { id: 'b3', type: 'quote', content: 'Restaurar é respeitar a cicatriz do tempo.' }
+    ]
+  },
+  {
+    id: 'c2',
+    title: 'Exposição Memória Urbana',
+    category: 'Exposição',
+    year: 2023,
+    location: 'São Paulo, SP',
+    image: 'https://picsum.photos/id/104/800/600',
+    partners: 'Museu da Casa Brasileira',
+    description: 'Cenografia e curadoria arquitetônica para exposição sobre a evolução urbana da capital.',
+    images: ['https://picsum.photos/id/106/800/600'],
+    blocks: [
+      { id: 'b1', type: 'heading', content: 'Cenografia Imersiva' },
+      { id: 'b2', type: 'text', content: 'Criamos um percurso labiríntico que simula as ruas estreitas do centro antigo, guiando o visitante através de séculos de história.' },
+      { id: 'b3', type: 'image-grid', content: '', items: ['https://picsum.photos/id/107/800/600', 'https://picsum.photos/id/108/800/600'] }
+    ]
   }
 ];
 

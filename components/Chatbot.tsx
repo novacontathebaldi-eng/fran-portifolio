@@ -332,6 +332,19 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     }
   }, [displayMessages, isOpen]);
 
+  // Handle Body Scroll Lock on Mobile
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+
+    if (isOpen && isMobile) {
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;

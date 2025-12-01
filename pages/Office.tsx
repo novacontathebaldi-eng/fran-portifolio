@@ -193,7 +193,7 @@ export const Office: React.FC = () => {
         // 7. MAP (Full width responsive map)
         if (block.type === 'map') {
           return (
-            <div key={block.id} className="w-full h-[400px] md:h-[600px] bg-gray-200 mt-12 grayscale hover:grayscale-0 transition duration-1000">
+            <div key={block.id} className="w-full h-[400px] md:h-[600px] bg-gray-200 mt-12 transition duration-1000">
                <iframe 
                   width="100%" 
                   height="100%" 

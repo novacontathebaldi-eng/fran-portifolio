@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, LayoutDashboard } from 'lucide-react';
@@ -84,7 +86,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     location.pathname === '/' || 
     location.pathname === '/about' || 
     isOfficeWithHero || 
-    location.pathname.startsWith('/project/');
+    location.pathname.startsWith('/project/') ||
+    location.pathname.startsWith('/cultural/'); // Assuming Cultural Details might want transparency too
 
   // Refactored Nav Logic for Smooth Transitions
   // Logic: 
@@ -159,6 +162,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link to="/" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Início</Link>
             <Link to="/about" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Sobre</Link>
             <Link to="/portfolio" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Portfólio</Link>
+            <Link to="/cultural" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Cultura</Link>
             {settings.enableShop && (
               <Link to="/services" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Serviços</Link>
             )}
@@ -225,6 +229,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link to="/about" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Sobre</Link>
             <Link to="/office" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">O Escritório</Link>
             <Link to="/portfolio" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Portfólio</Link>
+            <Link to="/cultural" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Cultura</Link>
             {settings.enableShop && (
               <Link to="/services" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Serviços</Link>
             )}
@@ -279,6 +284,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <h4 className="text-xs font-bold uppercase tracking-widest mb-8 text-accent">Navegação</h4>
               <ul className="space-y-4 text-sm text-gray-400">
                 <li><Link to="/portfolio" className="hover:text-white transition block">Projetos</Link></li>
+                <li><Link to="/cultural" className="hover:text-white transition block">Cultura</Link></li>
                 {settings.enableShop && <li><Link to="/services" className="hover:text-white transition block">Serviços</Link></li>}
                 <li><Link to="/office" className="hover:text-white transition block">Nosso Espaço</Link></li>
                 <li><Link to="/about" className="hover:text-white transition block">Filosofia</Link></li>

@@ -1,6 +1,8 @@
+
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ChatSession, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address } from '../types';
-import { MOCK_PROJECTS, MOCK_USER_CLIENT, MOCK_USER_ADMIN } from '../data';
+import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ChatSession, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address, CulturalProject } from '../types';
+import { MOCK_PROJECTS, MOCK_USER_CLIENT, MOCK_USER_ADMIN, MOCK_CULTURAL_PROJECTS } from '../data';
 import { chatWithConcierge } from '../api/chat';
 
 export type ToastType = 'success' | 'error' | 'info';
@@ -13,6 +15,7 @@ interface ToastState {
 
 interface ProjectContextType {
   projects: Project[];
+  culturalProjects: CulturalProject[]; // NEW
   currentUser: User | null;
   users: User[]; // All users (for admin)
   siteContent: SiteContent;
@@ -25,6 +28,12 @@ interface ProjectContextType {
   addProject: (project: Project) => void;
   updateProject: (project: Project) => void;
   deleteProject: (id: string) => void;
+  
+  // Cultural Projects CRUD
+  addCulturalProject: (project: CulturalProject) => void;
+  updateCulturalProject: (project: CulturalProject) => void;
+  deleteCulturalProject: (id: string) => void;
+
   updateSiteContent: (content: SiteContent) => void;
   updateSettings: (settings: GlobalSettings) => void;
   
@@ -232,6 +241,7 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Global Data
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
+  const [culturalProjects, setCulturalProjects] = useState<CulturalProject[]>(MOCK_CULTURAL_PROJECTS); // NEW
   
   // Users Database Simulation
   const [users, setUsers] = useState<User[]>([MOCK_USER_ADMIN, ENHANCED_MOCK_USER_CLIENT]);
@@ -398,6 +408,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateProject = (project: Project) => setProjects(prev => prev.map(p => p.id === project.id ? project : p));
   const deleteProject = (id: string) => setProjects(prev => prev.filter(p => p.id !== id));
   
+  // --- CRUD Cultural Project ---
+  const addCulturalProject = (project: CulturalProject) => setCulturalProjects(prev => [project, ...prev]);
+  const updateCulturalProject = (project: CulturalProject) => setCulturalProjects(prev => prev.map(p => p.id === project.id ? project : p));
+  const deleteCulturalProject = (id: string) => setCulturalProjects(prev => prev.filter(p => p.id !== id));
+
   // Generic update User and Sync Current User if match
   const updateUser = (updatedUser: User) => {
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
@@ -692,7 +707,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   return (
     <ProjectContext.Provider value={{ 
-      projects, 
+      projects,
+      culturalProjects, 
       currentUser,
       users,
       siteContent, 
@@ -705,6 +721,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       addProject, 
       updateProject, 
       deleteProject,
+      addCulturalProject,
+      updateCulturalProject,
+      deleteCulturalProject,
       updateSiteContent,
       updateSettings,
       sendMessageToAI,
