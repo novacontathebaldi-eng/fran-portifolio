@@ -170,20 +170,51 @@ export const ClientArea: React.FC = () => {
 
   return (
     <div className="min-h-screen pt-44 pb-24 bg-gray-50">
-      {/* ADDED max-w-5xl to constrain width */}
       <div className="container mx-auto px-6 max-w-5xl">
         
         {/* Header com Botão de Logout */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl md:text-4xl font-serif">Portal do Cliente</h1>
           
-          {/* REMOVED DUPLICATE LOGOUT BUTTON FROM HERE */}
+          <button 
+            onClick={logout} 
+            className="flex items-center space-x-2 text-red-500 hover:text-red-700 transition text-sm font-bold border border-red-100 hover:border-red-200 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-full"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Sair</span>
+          </button>
         </div>
         
+        {/* Barra de Abas - Estilo Portfólio Sticky */}
+        <div className="sticky top-[80px] z-40 bg-white border-y border-gray-100 mb-8 -mx-6 px-6 md:mx-0 md:px-0 shadow-sm w-[calc(100%+3rem)] md:w-full">
+            <nav className="flex items-center space-x-2 md:space-x-4 overflow-x-auto no-scrollbar py-3 md:py-4">
+              <button onClick={() => setActiveTab('projects')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'projects' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+                <Package className="w-4 h-4" />
+                <span className="whitespace-nowrap">Projetos</span>
+              </button>
+              <button onClick={() => setActiveTab('schedule')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'schedule' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+                <Calendar className="w-4 h-4" />
+                <span className="whitespace-nowrap">Agendamentos</span>
+              </button>
+              <button onClick={() => setActiveTab('docs')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'docs' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+                <FileText className="w-4 h-4" />
+                <span className="whitespace-nowrap">Arquivos</span>
+              </button>
+              <button onClick={() => setActiveTab('memories')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'memories' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+                <Brain className="w-4 h-4" />
+                <span className="whitespace-nowrap">IA & Memórias</span>
+              </button>
+              <button onClick={() => setActiveTab('profile')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'profile' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+                <UserCircle className="w-4 h-4" />
+                <span className="whitespace-nowrap">Perfil</span>
+              </button>
+            </nav>
+        </div>
+
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
-          <div className="w-full lg:w-1/4 h-fit lg:sticky lg:top-24 z-30">
-            <div className="bg-white rounded-t-xl lg:rounded-xl shadow-sm p-6 lg:p-6 mb-0 lg:mb-0 border-b lg:border-b-0 border-gray-100 flex flex-col items-center text-center">
+          {/* Sidebar - Apenas Perfil */}
+          <div className="w-full lg:w-1/4 h-fit lg:sticky lg:top-44 z-30">
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex flex-col items-center text-center">
               <div className="relative mb-4 group cursor-pointer">
                 <div className="w-20 h-20 lg:w-24 lg:h-24 bg-accent rounded-full flex items-center justify-center text-2xl lg:text-3xl font-serif font-bold text-white shrink-0 overflow-hidden shadow-md">
                    {currentUser.avatar ? (
@@ -203,46 +234,6 @@ export const ClientArea: React.FC = () => {
               <p className="text-xs text-secondary truncate mb-2">{currentUser.email}</p>
               <div className="text-xs bg-black text-white px-3 py-1 rounded-full uppercase font-bold tracking-wider">Cliente VIP</div>
             </div>
-            
-            {/* UPDATED NAV: Added sticky, blur, removed negative margins, improved shadows */}
-            <nav className="bg-white/95 backdrop-blur-md rounded-xl shadow-sm lg:mt-6 p-2 lg:p-4 sticky top-[80px] z-40 overflow-x-auto no-scrollbar w-full border border-gray-100 lg:static">
-               <div className="flex lg:flex-col gap-2 min-w-max lg:min-w-0">
-                  <button onClick={() => setActiveTab('projects')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-2 lg:py-3 rounded-full lg:rounded-lg transition text-sm ${activeTab === 'projects' ? 'bg-black text-white lg:bg-gray-100 lg:text-black font-bold' : 'text-gray-500 hover:bg-gray-50 bg-gray-100 lg:bg-transparent'}`}>
-                    <Package className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
-                    <span className="whitespace-nowrap">Meus Projetos</span>
-                  </button>
-                  <button onClick={() => setActiveTab('schedule')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-2 lg:py-3 rounded-full lg:rounded-lg transition text-sm ${activeTab === 'schedule' ? 'bg-black text-white lg:bg-gray-100 lg:text-black font-bold' : 'text-gray-500 hover:bg-gray-50 bg-gray-100 lg:bg-transparent'}`}>
-                    <Calendar className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
-                    <span className="whitespace-nowrap">Agendamentos</span>
-                  </button>
-                  <button onClick={() => setActiveTab('docs')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-2 lg:py-3 rounded-full lg:rounded-lg transition text-sm ${activeTab === 'docs' ? 'bg-black text-white lg:bg-gray-100 lg:text-black font-bold' : 'text-gray-500 hover:bg-gray-50 bg-gray-100 lg:bg-transparent'}`}>
-                    <FileText className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
-                    <span className="whitespace-nowrap">Arquivos</span>
-                  </button>
-                  <button onClick={() => setActiveTab('memories')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-2 lg:py-3 rounded-full lg:rounded-lg transition text-sm ${activeTab === 'memories' ? 'bg-black text-white lg:bg-gray-100 lg:text-black font-bold' : 'text-gray-500 hover:bg-gray-50 bg-gray-100 lg:bg-transparent'}`}>
-                    <Brain className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
-                    <span className="whitespace-nowrap">Memórias & IA</span>
-                  </button>
-                  <button onClick={() => setActiveTab('profile')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-2 lg:py-3 rounded-full lg:rounded-lg transition text-sm ${activeTab === 'profile' ? 'bg-black text-white lg:bg-gray-100 lg:text-black font-bold' : 'text-gray-500 hover:bg-gray-50 bg-gray-100 lg:bg-transparent'}`}>
-                    <UserCircle className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
-                    <span className="whitespace-nowrap">Meus Dados</span>
-                  </button>
-                  
-                  {/* BOTÃO DE LOGOUT MOBILE - MANTIDO */}
-                  <button onClick={logout} className="lg:hidden flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-2 rounded-full bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition text-sm font-bold">
-                    <LogOut className="w-4 h-4 shrink-0" />
-                    <span className="whitespace-nowrap">Sair</span>
-                  </button>
-               </div>
-               
-              {/* BOTÃO DE LOGOUT DESKTOP - MANTIDO */}
-              <div className="hidden lg:block pt-4 mt-4 border-t border-gray-100">
-                <button onClick={logout} className="w-full flex items-center space-x-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-lg transition text-sm">
-                  <LogOut className="w-5 h-5 shrink-0" />
-                  <span>Sair</span>
-                </button>
-              </div>
-            </nav>
           </div>
 
           {/* Content Area */}
@@ -280,7 +271,7 @@ export const ClientArea: React.FC = () => {
                <div className="animate-fadeIn">
                  <h2 className="text-2xl font-serif mb-6">Meus Agendamentos</h2>
                  <p className="text-gray-500 text-sm mb-6">Gerencie suas visitas técnicas e reuniões.</p>
-                 {/* ... (Agendamentos code remains same) ... */}
+                 
                  {myAppointments.length > 0 ? (
                     <div className="space-y-6">
                        {myAppointments.map(appt => {
