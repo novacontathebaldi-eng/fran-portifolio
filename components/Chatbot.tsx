@@ -155,7 +155,7 @@ const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: 
   const isVisit = data?.type === 'visit';
   const locationText = isVisit 
       ? (data?.address || "Endereço da Obra") 
-      : siteContent.office.address; // Use Office Address for meetings
+      : (data?.location || siteContent.office.address); // Use Office Address or Override
 
   const dates = useMemo(() => {
       const arr = [];

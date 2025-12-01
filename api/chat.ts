@@ -70,7 +70,11 @@ const tools = [
           properties: {
             type: { 
               type: Type.STRING, 
-              description: 'The type of appointment. "meeting" (Online or Office) or "visit" (Client construction site).' 
+              description: 'The type of appointment. "meeting" (for Online/Virtual or Office meetings) or "visit" (Client construction site).' 
+            },
+            modality: {
+              type: Type.STRING,
+              description: 'The format of the meeting. Set to "online" if user mentions "online", "virtual", "meet", "zoom", "video". Set to "in_person" if they mention "office", "presencial" or "coffee". Default is "in_person".'
             },
             address: {
               type: Type.STRING,
@@ -257,7 +261,15 @@ export async function chatWithConcierge(
             if (!responseData.text) responseData.text = "Estou te redirecionando agora mesmo.";
           }
           else if (call.name === 'scheduleMeeting') {
-            responseData.uiComponent = { type: 'CalendarWidget', data: call.args };
+            const widgetData = { ...call.args };
+            
+            // LOGIC FIX: Check if modality is online
+            if (widgetData.modality === 'online') {
+                widgetData.location = 'Online (Google Meet)';
+                widgetData.type = 'meeting'; // Force type meeting
+            }
+            
+            responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
             // Ensure specific text prompt for the widget
             if (!responseData.text) responseData.text = "Verifiquei nossa disponibilidade. Por favor, selecione o melhor dia e horário no calendário abaixo.";
           }
