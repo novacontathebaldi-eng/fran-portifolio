@@ -305,6 +305,37 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  // Scroll Lock for Mobile Logic
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+
+    if (!isOpen || !isMobile) return;
+
+    // 1. Lock CSS Overflow
+    document.body.style.overflow = 'hidden';
+
+    // 2. Prevent Touch Move on Background (iOS Fix)
+    // This prevents the background page from scrolling ("rubber banding") while chat is open
+    const preventScroll = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      // Allow scroll ONLY if target is inside the chat message area
+      // We check for the class 'chatbot-scroll-view' which we add to the scrollable container below
+      if (target.closest('.chatbot-scroll-view')) {
+        return;
+      }
+      e.preventDefault();
+    };
+
+    // Add listener with { passive: false } to allow preventDefault()
+    document.body.addEventListener('touchmove', preventScroll, { passive: false });
+
+    // Cleanup: Restore scroll when component unmounts or chat closes
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.body.removeEventListener('touchmove', preventScroll);
+    };
+  }, [isOpen]);
+
   // Initial greeting
   const defaultMessages = useMemo<ChatMessage[]>(() => {
     const rawGreeting = settings.aiConfig.defaultGreeting || "Olá. Como posso ajudar?";
@@ -331,19 +362,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
       }, 300);
     }
   }, [displayMessages, isOpen]);
-
-  // Handle Body Scroll Lock on Mobile
-  useEffect(() => {
-    const isMobile = window.innerWidth < 768;
-
-    if (isOpen && isMobile) {
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -428,8 +446,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                </div>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-6 scroll-smooth">
+            {/* Messages - Added 'chatbot-scroll-view' class for scroll lock targeting */}
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-6 scroll-smooth chatbot-scroll-view">
               {displayMessages.map((msg: any, idx: number) => (
                 <div 
                   key={msg.id} 
