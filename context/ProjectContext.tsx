@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
 import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ChatSession, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address } from '../types';
 import { MOCK_PROJECTS, MOCK_USER_CLIENT, MOCK_USER_ADMIN } from '../data';
@@ -96,7 +94,7 @@ DADOS CRÍTICOS:
 
 REGRAS:
 1. Se o usuário quiser agendar, chame a tool 'scheduleMeeting'.
-   - Se for visita técnica, PERGUNTE o endereço da obra/local ou se ele quer usar um endereço cadastrado no perfil.
+   - Se for visita técnica, PERGUNTE o endereço da obra/terreno antes de chamar 'scheduleMeeting'.
    - Se for reunião, pode ser Online ou no escritório.
 2. Se quiser deixar recado, use 'saveClientNote'.
 3. Para contatos, use 'getSocialLinks'.
@@ -400,6 +398,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateProject = (project: Project) => setProjects(prev => prev.map(p => p.id === project.id ? project : p));
   const deleteProject = (id: string) => setProjects(prev => prev.filter(p => p.id !== id));
   
+  // Generic update User and Sync Current User if match
   const updateUser = (updatedUser: User) => {
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
     if (currentUser?.id === updatedUser.id) {
@@ -408,6 +407,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   // --- Client Memory Logic ---
+  // Helper to ensure updates sync to DB (users array) and Session (currentUser)
   const syncUserMemoriesToDB = (userId: string, newMemories: ClientMemory[]) => {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, memories: newMemories } : u));
     if (currentUser?.id === userId) {
@@ -439,6 +439,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   // --- Folder & File Management Logic ---
+  // Helper to sync Folders
   const syncUserFoldersToDB = (userId: string, newFolders: ClientFolder[]) => {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, folders: newFolders } : u));
     if (currentUser?.id === userId) {
@@ -650,6 +651,17 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         actions: responseData.actions
       };
       
+      // Handle 'learnMemory' action from Bot
+      if (responseData.actions) {
+         responseData.actions.forEach((action: any) => {
+            if (action.type === 'learnMemory') {
+               addClientMemory(action.payload);
+               // Optional: Trigger toast to show AI learned something (or keep it silent as requested)
+               // showToast(`Aprendi algo novo: ${action.payload.topic}`, 'info'); 
+            }
+         });
+      }
+
       setCurrentChatMessages(prev => [...prev, botMsg]);
       return responseData;
 

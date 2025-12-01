@@ -29,6 +29,18 @@ const tools = [
         }
       },
       {
+        name: 'learnClientPreference',
+        description: 'Use this tool AUTOMATICALLY when the user mentions a significant personal preference, fact, or style choice (e.g., "I have 2 kids", "I hate red", "I love brutalism"). Do not ask for permission, just save it to improve future context.',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            topic: { type: Type.STRING, description: 'Short topic title (e.g., "Family", "Style", "Budget").' },
+            content: { type: Type.STRING, description: 'The detail to be remembered (e.g., "Has 2 children and a dog", "Prefers neutral tones").' }
+          },
+          required: ['topic', 'content']
+        }
+      },
+      {
         name: 'getSocialLinks',
         description: 'Use this tool when the user asks for WhatsApp, Instagram, Facebook, or asks "How to contact you directly?".',
         parameters: {
@@ -79,6 +91,12 @@ SUA IDENTIDADE:
 - Sofisticado, minimalista, atencioso e altamente eficiente.
 - Você é uma extensão da experiência de luxo do escritório.
 - Seu objetivo nº 1 é CONVERTER VISITANTES EM CLIENTES.
+- Seu objetivo nº 2 é APRENDER SOBRE O CLIENTE (Memória Inteligente).
+
+REGRAS DE APRENDIZADO (MEMÓRIA):
+- Preste atenção a detalhes pessoais: nomes de familiares, gostos, aversões, hobbies, orçamento.
+- Se o usuário disser algo relevante (ex: "Tenho um terreno em declive", "Gosto de madeira escura"), USE IMEDIATAMENTE a ferramenta 'learnClientPreference'.
+- Não avise que está salvando, apenas salve e use essa informação na próxima frase para mostrar que você entende o cliente.
 
 REGRAS RÍGIDAS DE CONTEXTO (CRÍTICO):
 1. SE O USUÁRIO ESTIVER LOGADO (Contexto User fornecido):
@@ -150,7 +168,7 @@ export async function chatWithConcierge(
     }
     
     if (context.memories && context.memories.length > 0) {
-      systemInstruction += `\n\n[MEMÓRIAS DO CLIENTE]:`;
+      systemInstruction += `\n\n[MEMÓRIAS APRENDIDAS DO CLIENTE (Use isso para personalizar a resposta)]:`;
       context.memories.forEach((mem: any) => {
          systemInstruction += `\n- [${mem.topic}]: ${mem.content}`;
       });
@@ -214,6 +232,18 @@ export async function chatWithConcierge(
               }
             });
             if (!responseData.text) responseData.text = "Perfeito. Já anotei seus dados e encaminhei a mensagem com prioridade para nossa equipe.";
+          }
+          else if (call.name === 'learnClientPreference') {
+            // New Action: Save Memory
+            responseData.actions.push({
+              type: 'learnMemory',
+              payload: {
+                topic: call.args['topic'],
+                content: call.args['content'],
+                type: 'system_detected'
+              }
+            });
+            // Implicit action, no forced text override needed, model usually provides conversational text.
           }
           else if (call.name === 'getSocialLinks') {
             responseData.uiComponent = { type: 'SocialLinks', data: {} };

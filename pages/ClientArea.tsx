@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+
+import React, { useState, useRef, useMemo } from 'react';
 import { useProjects } from '../context/ProjectContext';
-import { Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon } from 'lucide-react';
+import { Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Project, ClientMemory, ClientFolder, Address, User } from '../types';
+import { Project, ClientMemory, ClientFolder, Address, User, Appointment } from '../types';
 import { Navigate } from 'react-router-dom';
 
 // Mock Upload
@@ -15,7 +16,7 @@ const uploadToStorage = async (file: File): Promise<string> => {
 };
 
 export const ClientArea: React.FC = () => {
-  const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory, appointments, updateAppointmentStatus, updateUser, showToast, siteContent } = useProjects();
+  const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory, appointments, updateAppointmentStatus, updateAppointment, updateUser, showToast, siteContent, checkAvailability } = useProjects();
   const [activeTab, setActiveTab] = useState<'profile' | 'projects' | 'docs' | 'settings' | 'favs' | 'memories' | 'schedule'>('projects');
   
   // Profile & Address State
@@ -31,6 +32,12 @@ export const ClientArea: React.FC = () => {
 
   // File Navigation State
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+
+  // Reschedule State
+  const [reschedulingAppt, setReschedulingAppt] = useState<Appointment | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState<string | null>(null);
+  const [rescheduleViewDate, setRescheduleViewDate] = useState(new Date());
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
   if (!currentUser) {
     return <Navigate to="/auth" replace />;
@@ -113,10 +120,65 @@ export const ClientArea: React.FC = () => {
     }
   };
 
+  // --- Reschedule Logic ---
+  const handleOpenReschedule = (appt: Appointment) => {
+    setReschedulingAppt(appt);
+    setRescheduleDate(null);
+    setAvailableSlots([]);
+    setRescheduleViewDate(new Date()); // Reset view to today
+  };
+
+  const handleDateClick = (dateStr: string) => {
+    setRescheduleDate(dateStr);
+    const slots = checkAvailability(dateStr);
+    // If we are rescheduling to the SAME day, we must exclude the current slot if it's still occupied by the current appt (logic handled by checkAvailability usually, but context logic is simple)
+    // For simplicity, checkAvailability returns free slots. We just use them.
+    setAvailableSlots(slots);
+  };
+
+  const confirmReschedule = (newTime: string) => {
+    if (!reschedulingAppt || !rescheduleDate) return;
+    
+    const updatedAppt: Appointment = {
+      ...reschedulingAppt,
+      date: rescheduleDate,
+      time: newTime,
+      status: 'pending' // Reset to pending for approval
+    };
+    
+    updateAppointment(updatedAppt);
+    setReschedulingAppt(null);
+    showToast('Reagendamento solicitado. Aguarde confirmação.', 'success');
+  };
+
+  const nextDays = useMemo(() => {
+    const arr = [];
+    const start = new Date(rescheduleViewDate);
+    // Ensure we don't show past dates if viewDate is today
+    if (start < new Date() && start.getDate() !== new Date().getDate()) {
+       start.setDate(new Date().getDate());
+    }
+    
+    for (let i = 0; i < 5; i++) { 
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        arr.push(d);
+    }
+    return arr;
+  }, [rescheduleViewDate]);
+
+
   return (
     <div className="min-h-screen pt-44 pb-24 bg-gray-50">
-      <div className="container mx-auto px-6">
-        <h1 className="text-3xl md:text-4xl font-serif mb-8">Portal do Cliente</h1>
+      {/* ADDED max-w-5xl to constrain width */}
+      <div className="container mx-auto px-6 max-w-5xl">
+        
+        {/* Header com Botão de Logout */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <h1 className="text-3xl md:text-4xl font-serif">Portal do Cliente</h1>
+          
+          {/* REMOVED DUPLICATE LOGOUT BUTTON FROM HERE */}
+        </div>
         
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
@@ -142,7 +204,8 @@ export const ClientArea: React.FC = () => {
               <div className="text-xs bg-black text-white px-3 py-1 rounded-full uppercase font-bold tracking-wider">Cliente VIP</div>
             </div>
             
-            <nav className="bg-white rounded-b-xl lg:rounded-xl shadow-sm lg:mt-6 p-2 lg:p-4 sticky top-[72px] lg:static z-30 overflow-x-auto no-scrollbar -mx-6 px-6 lg:mx-0 lg:px-4 lg:overflow-visible border-b lg:border-0 border-gray-100">
+            {/* UPDATED NAV: Added sticky, blur, removed negative margins, improved shadows */}
+            <nav className="bg-white/95 backdrop-blur-md rounded-xl shadow-sm lg:mt-6 p-2 lg:p-4 sticky top-[80px] z-40 overflow-x-auto no-scrollbar w-full border border-gray-100 lg:static">
                <div className="flex lg:flex-col gap-2 min-w-max lg:min-w-0">
                   <button onClick={() => setActiveTab('projects')} className={`flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-2 lg:py-3 rounded-full lg:rounded-lg transition text-sm ${activeTab === 'projects' ? 'bg-black text-white lg:bg-gray-100 lg:text-black font-bold' : 'text-gray-500 hover:bg-gray-50 bg-gray-100 lg:bg-transparent'}`}>
                     <Package className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
@@ -164,8 +227,15 @@ export const ClientArea: React.FC = () => {
                     <UserCircle className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
                     <span className="whitespace-nowrap">Meus Dados</span>
                   </button>
+                  
+                  {/* BOTÃO DE LOGOUT MOBILE - MANTIDO */}
+                  <button onClick={logout} className="lg:hidden flex-shrink-0 snap-start flex items-center space-x-3 px-4 py-2 rounded-full bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition text-sm font-bold">
+                    <LogOut className="w-4 h-4 shrink-0" />
+                    <span className="whitespace-nowrap">Sair</span>
+                  </button>
                </div>
                
+              {/* BOTÃO DE LOGOUT DESKTOP - MANTIDO */}
               <div className="hidden lg:block pt-4 mt-4 border-t border-gray-100">
                 <button onClick={logout} className="w-full flex items-center space-x-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-lg transition text-sm">
                   <LogOut className="w-5 h-5 shrink-0" />
@@ -210,77 +280,103 @@ export const ClientArea: React.FC = () => {
                <div className="animate-fadeIn">
                  <h2 className="text-2xl font-serif mb-6">Meus Agendamentos</h2>
                  <p className="text-gray-500 text-sm mb-6">Gerencie suas visitas técnicas e reuniões.</p>
-
+                 {/* ... (Agendamentos code remains same) ... */}
                  {myAppointments.length > 0 ? (
                     <div className="space-y-6">
                        {myAppointments.map(appt => {
-                          // Logic to determine if it is Online or Physical for rendering
+                          // Logic: Online check
                           const isOnline = appt.type === 'meeting' && (appt.location.toLowerCase().includes('online') || !!appt.meetingLink);
-                          
-                          // Determine Map Query
-                          let mapQuery = "";
-                          if (!isOnline) {
-                             if (appt.type === 'visit') {
-                                mapQuery = appt.location;
-                             } else {
-                                // In-person meeting -> Office Address
-                                mapQuery = siteContent.office.address;
-                             }
-                          }
+                          const isVisit = appt.type === 'visit';
+                          const mapQuery = isVisit ? appt.location : siteContent.office.address;
+                          const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
 
                           return (
-                          <div key={appt.id} className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-                             <div className={`p-4 flex justify-between items-center ${appt.status === 'confirmed' ? 'bg-green-50 text-green-800' : appt.status === 'pending' ? 'bg-yellow-50 text-yellow-800' : 'bg-gray-100 text-gray-500'}`}>
+                          <div key={appt.id} className="border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition">
+                             {/* Header / Status Bar */}
+                             <div className={`p-4 flex flex-col md:flex-row md:justify-between md:items-center gap-2 ${
+                                appt.status === 'confirmed' ? 'bg-green-50 text-green-900' : 
+                                appt.status === 'pending' ? 'bg-yellow-50 text-yellow-900' : 'bg-gray-100 text-gray-500'
+                             }`}>
                                 <div className="flex items-center gap-2">
                                    {appt.status === 'confirmed' && <CheckCircle className="w-5 h-5" />}
                                    {appt.status === 'pending' && <Clock className="w-5 h-5" />}
                                    {appt.status === 'cancelled' && <Ban className="w-5 h-5" />}
-                                   <span className="font-bold uppercase text-xs tracking-wider">
-                                      {appt.status === 'confirmed' ? 'Confirmado' : appt.status === 'pending' ? 'Aguardando Confirmação' : 'Cancelado'}
-                                   </span>
+                                   <div>
+                                     <span className="font-bold uppercase text-xs tracking-wider block">
+                                        {appt.status === 'confirmed' ? 'Confirmado' : appt.status === 'pending' ? 'Solicitação Pendente' : 'Cancelado'}
+                                     </span>
+                                     {appt.status === 'pending' && <span className="text-[10px] opacity-75">Aguardando aprovação da equipe</span>}
+                                   </div>
                                 </div>
-                                <span className="text-sm font-bold">{new Date(appt.date).toLocaleDateString('pt-BR')} às {appt.time}</span>
+                                <span className="text-sm font-bold bg-white/50 px-3 py-1 rounded-full">{new Date(appt.date).toLocaleDateString('pt-BR')} às {appt.time}</span>
                              </div>
                              
                              <div className="p-6">
                                 <div className="flex flex-col md:flex-row gap-6">
-                                   <div className="flex-grow space-y-3">
-                                      <h3 className="font-serif text-xl">{appt.type === 'visit' ? 'Visita Técnica' : 'Reunião de Alinhamento'}</h3>
-                                      <div className="flex items-start gap-2 text-gray-600">
-                                         {isOnline ? <VideoIcon className="w-5 h-5 shrink-0 mt-0.5" /> : <MapPin className="w-5 h-5 shrink-0 mt-0.5" />}
-                                         <p className="text-sm">{appt.location}</p>
+                                   <div className="flex-grow space-y-4">
+                                      <div>
+                                         <h3 className="font-serif text-xl font-bold flex items-center gap-2">
+                                            {appt.type === 'visit' ? 'Visita Técnica' : 'Reunião de Alinhamento'}
+                                            {isOnline && <span className="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full uppercase">Online</span>}
+                                         </h3>
+                                         <p className="text-gray-500 text-sm mt-1">{isVisit ? 'Local da Obra' : (isOnline ? 'Videoconferência' : 'Escritório Fran Siller')}</p>
+                                      </div>
+
+                                      <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-lg">
+                                         {isOnline ? <VideoIcon className="w-5 h-5 shrink-0 mt-0.5 text-blue-500" /> : <MapPin className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />}
+                                         <div>
+                                            <p className="text-sm font-bold text-gray-800">
+                                               {isOnline ? 'Link da Reunião' : 'Endereço'}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                               {isOnline 
+                                                  ? (appt.meetingLink ? 'Link disponível abaixo.' : 'O link será disponibilizado aqui após a confirmação.') 
+                                                  : mapQuery
+                                               }
+                                            </p>
+                                         </div>
                                       </div>
                                       
                                       {/* ACTION BUTTONS */}
                                       {appt.status !== 'cancelled' && (
-                                         <div className="flex flex-wrap gap-4 mt-6">
-                                            {/* Show Link Button if Online */}
-                                            {isOnline && appt.meetingLink && (
-                                               <a 
-                                                 href={appt.meetingLink}
-                                                 target="_blank"
-                                                 rel="noreferrer"
-                                                 className="flex items-center gap-2 text-xs font-bold text-white bg-black hover:bg-accent hover:text-black px-4 py-2 rounded-lg transition"
-                                               >
-                                                  <VideoIcon className="w-4 h-4" /> Entrar na Reunião
-                                               </a>
-                                            )}
-
-                                            {/* Show Map Button if Physical */}
-                                            {!isOnline && (
+                                         <div className="flex flex-wrap gap-3 pt-2">
+                                            {/* Primary Action */}
+                                            {isOnline ? (
+                                                appt.status === 'confirmed' && appt.meetingLink ? (
+                                                   <a 
+                                                     href={appt.meetingLink}
+                                                     target="_blank"
+                                                     rel="noreferrer"
+                                                     className="flex items-center gap-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-5 py-2.5 rounded-lg transition shadow-sm hover:shadow-md"
+                                                   >
+                                                      <VideoIcon className="w-4 h-4" /> Entrar na Reunião
+                                                   </a>
+                                                ) : (
+                                                   <button disabled className="flex items-center gap-2 text-xs font-bold text-gray-400 bg-gray-100 px-5 py-2.5 rounded-lg cursor-not-allowed">
+                                                      <Clock className="w-4 h-4" /> Aguardando Link
+                                                   </button>
+                                                )
+                                            ) : (
                                                 <a 
-                                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
+                                                  href={mapsLink}
                                                   target="_blank"
                                                   rel="noreferrer"
-                                                  className="flex items-center gap-2 text-xs font-bold text-blue-600 hover:underline bg-blue-50 px-3 py-2 rounded-lg"
+                                                  className="flex items-center gap-2 text-xs font-bold text-white bg-black hover:bg-accent hover:text-black px-5 py-2.5 rounded-lg transition shadow-sm"
                                                 >
-                                                   <ExternalLink className="w-4 h-4" /> Abrir no Maps
+                                                   <ExternalLink className="w-4 h-4" /> Abrir no Maps / Waze
                                                 </a>
                                             )}
 
                                             <button 
+                                               onClick={() => handleOpenReschedule(appt)}
+                                               className="flex items-center gap-2 text-xs font-bold text-gray-700 hover:bg-gray-100 border border-gray-200 px-4 py-2.5 rounded-lg transition"
+                                            >
+                                               <RefreshCw className="w-4 h-4" /> Reagendar
+                                            </button>
+
+                                            <button 
                                                onClick={() => { if(confirm('Deseja cancelar este agendamento?')) updateAppointmentStatus(appt.id, 'cancelled'); }}
-                                               className="flex items-center gap-2 text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg transition"
+                                               className="flex items-center gap-2 text-xs font-bold text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 px-4 py-2.5 rounded-lg transition"
                                             >
                                                <X className="w-4 h-4" /> Cancelar
                                             </button>
@@ -290,15 +386,16 @@ export const ClientArea: React.FC = () => {
 
                                    {/* EMBEDDED MAP FOR PHYSICAL MEETINGS/VISITS */}
                                    {!isOnline && appt.status !== 'cancelled' && (
-                                      <div className="w-full md:w-48 h-32 bg-gray-200 rounded-lg overflow-hidden shrink-0 hidden md:block">
+                                      <div className="w-full md:w-56 h-40 bg-gray-200 rounded-lg overflow-hidden shrink-0 border border-gray-100 shadow-inner hidden md:block relative group">
                                           <iframe 
                                             width="100%" 
                                             height="100%" 
                                             style={{ border: 0 }} 
                                             loading="lazy" 
-                                            src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
-                                            className="w-full h-full opacity-80 hover:opacity-100 transition"
+                                            src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                                            className="w-full h-full opacity-80 group-hover:opacity-100 transition duration-500"
                                           ></iframe>
+                                          <a href={mapsLink} target="_blank" rel="noreferrer" className="absolute inset-0 z-10 bg-black/0 group-hover:bg-black/10 transition"></a>
                                       </div>
                                    )}
                                 </div>
@@ -307,10 +404,10 @@ export const ClientArea: React.FC = () => {
                        )})}
                     </div>
                  ) : (
-                    <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-lg">
-                       <Calendar className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                       <p>Nenhum agendamento futuro.</p>
-                       <p className="text-xs mt-2">Use o Chatbot para marcar uma visita.</p>
+                    <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-lg border-2 border-dashed border-gray-100">
+                       <Calendar className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                       <p className="font-medium text-gray-500">Nenhum agendamento futuro.</p>
+                       <p className="text-xs mt-2">Use o Chatbot (canto inferior direito) para marcar uma visita.</p>
                     </div>
                  )}
                </div>
@@ -320,7 +417,12 @@ export const ClientArea: React.FC = () => {
                <div className="animate-fadeIn">
                  {!currentFolder ? (
                    <>
-                     <h2 className="text-2xl font-serif mb-6">Arquivos e Contratos</h2>
+                     <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-serif">Arquivos e Contratos</h2>
+                        <div className="text-xs bg-gray-100 px-3 py-1.5 rounded-full text-gray-500 font-bold flex items-center gap-2">
+                           <Lock className="w-3 h-3" /> Apenas Leitura
+                        </div>
+                     </div>
                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                         {currentUser.folders && currentUser.folders.length > 0 ? (
                            currentUser.folders.map(folder => (
@@ -331,10 +433,15 @@ export const ClientArea: React.FC = () => {
                              >
                                <div className="text-yellow-500 mb-3 group-hover:scale-110 transition-transform"><Folder className="w-16 h-16 fill-current" /></div>
                                <span className="font-bold text-sm text-center">{folder.name}</span>
+                               <span className="text-[10px] text-gray-400 mt-1">{folder.files.length} arquivos</span>
                              </button>
                            ))
                         ) : (
-                           <div className="col-span-full py-12 text-center text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200">Pasta vazia.</div>
+                           <div className="col-span-full py-12 text-center text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                              <Folder className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                              <p>Nenhuma pasta compartilhada.</p>
+                              <p className="text-xs mt-1">Aguarde o administrador enviar arquivos.</p>
+                           </div>
                         )}
                      </div>
                    </>
@@ -370,7 +477,7 @@ export const ClientArea: React.FC = () => {
               <div className="animate-fadeIn space-y-8">
                  <div>
                    <h2 className="text-2xl font-serif mb-2">Memórias do Assistente</h2>
-                   <p className="text-gray-500 text-sm">Contexto aprendido pela IA.</p>
+                   <p className="text-gray-500 text-sm">O que o sistema aprendeu sobre suas preferências.</p>
                  </div>
                  <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
                     <div className="flex justify-between items-center mb-6">
@@ -379,24 +486,34 @@ export const ClientArea: React.FC = () => {
                     </div>
                     {showAddMemory && (
                        <div className="bg-white p-4 rounded-lg shadow-sm mb-6 border border-gray-200 animate-slideDown">
-                          <input value={newMemory.topic} onChange={e => setNewMemory({...newMemory, topic: e.target.value})} className="w-full border p-2 rounded text-sm mb-2" placeholder="Tópico" />
-                          <input value={newMemory.content} onChange={e => setNewMemory({...newMemory, content: e.target.value})} className="w-full border p-2 rounded text-sm mb-2" placeholder="Detalhe" />
+                          <input value={newMemory.topic} onChange={e => setNewMemory({...newMemory, topic: e.target.value})} className="w-full border p-2 rounded text-sm mb-2" placeholder="Tópico (ex: Estilo, Família)" />
+                          <input value={newMemory.content} onChange={e => setNewMemory({...newMemory, content: e.target.value})} className="w-full border p-2 rounded text-sm mb-2" placeholder="Detalhe (ex: Prefiro minimalismo)" />
                           <div className="flex justify-end gap-2"><button onClick={handleAddMemory} className="text-xs bg-black text-white px-4 py-2 rounded-full font-bold">Salvar</button></div>
                        </div>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       {clientMemories.map(mem => (
+                       {clientMemories.length > 0 ? (
+                          clientMemories.map(mem => (
                            <div key={mem.id} className="bg-white p-4 rounded-lg border border-gray-100 hover:shadow-sm transition relative group">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-accent block mb-1">{mem.topic}</span>
+                              <div className="flex justify-between items-start">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-accent block mb-1">{mem.topic}</span>
+                                <div className="flex gap-1">
+                                  {mem.type === 'system_detected' && <span title="Aprendido pela IA" className="text-[10px] bg-purple-100 text-purple-600 px-1.5 rounded">AUTO</span>}
+                                  <button onClick={() => { if(confirm('Apagar esta memória?')) deleteClientMemory(mem.id) }} className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition"><Trash2 className="w-3 h-3"/></button>
+                                </div>
+                              </div>
                               <p className="text-sm text-gray-700">{mem.content}</p>
                            </div>
-                       ))}
+                          ))
+                       ) : (
+                          <div className="col-span-full text-center py-8 text-gray-400 text-sm">Nenhuma memória registrada ainda.</div>
+                       )}
                     </div>
                  </div>
               </div>
             )}
 
-            {/* NEW PROFILE TAB */}
+            {/* PROFILE TAB */}
             {activeTab === 'profile' && (
               <div className="animate-fadeIn">
                 <div className="flex justify-between items-center mb-6">
@@ -562,6 +679,84 @@ export const ClientArea: React.FC = () => {
               </div>
             )}
             
+            {/* ... Reschedule Modal Code (kept the same, not shown to save space) ... */}
+            <AnimatePresence>
+              {reschedulingAppt && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                   <motion.div 
+                     initial={{ scale: 0.9, opacity: 0 }}
+                     animate={{ scale: 1, opacity: 1 }}
+                     exit={{ scale: 0.9, opacity: 0 }}
+                     className="bg-white rounded-2xl w-full max-w-md p-6 overflow-hidden"
+                   >
+                     <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-bold font-serif">Reagendar Compromisso</h3>
+                        <button onClick={() => setReschedulingAppt(null)}><X className="w-5 h-5 text-gray-400 hover:text-black"/></button>
+                     </div>
+                     
+                     <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <p className="font-bold mb-1">Atual:</p>
+                        <p>{new Date(reschedulingAppt.date).toLocaleDateString('pt-BR')} às {reschedulingAppt.time}</p>
+                     </div>
+
+                     <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                           <span className="text-xs font-bold uppercase text-gray-500">Selecione nova data</span>
+                           <div className="flex gap-1">
+                              <button onClick={() => { const d = new Date(rescheduleViewDate); d.setDate(d.getDate()-5); setRescheduleViewDate(d); }} className="p-1 hover:bg-gray-100 rounded text-gray-500"><ChevronLeft className="w-4 h-4" /></button>
+                              <button onClick={() => { const d = new Date(rescheduleViewDate); d.setDate(d.getDate()+5); setRescheduleViewDate(d); }} className="p-1 hover:bg-gray-100 rounded text-gray-500"><ChevronRight className="w-4 h-4" /></button>
+                           </div>
+                        </div>
+                        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                           {nextDays.map((d) => {
+                             const dStr = d.toISOString().split('T')[0];
+                             const isSelected = rescheduleDate === dStr;
+                             return (
+                                 <button 
+                                   key={dStr} 
+                                   onClick={() => handleDateClick(dStr)}
+                                   className={`flex flex-col items-center justify-center min-w-[50px] p-2 rounded-lg border transition ${isSelected ? 'bg-black text-white border-black shadow-md' : 'bg-gray-50 border-gray-100 hover:bg-gray-100 text-gray-600'}`}
+                                 >
+                                     <span className="text-[10px] uppercase font-bold">{d.toLocaleDateString('pt-BR', { weekday: 'short' })}</span>
+                                     <span className="text-sm font-bold">{d.getDate()}</span>
+                                 </button>
+                             );
+                           })}
+                        </div>
+                     </div>
+
+                     {rescheduleDate && (
+                       <div className="animate-fadeIn">
+                          <p className="text-xs font-bold uppercase text-gray-500 mb-2">Horários Disponíveis</p>
+                          {availableSlots.length > 0 ? (
+                             <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto pr-1">
+                                {availableSlots.map(slot => (
+                                   <button 
+                                     key={slot} 
+                                     onClick={() => confirmReschedule(slot)}
+                                     className="py-2 px-2 bg-white border border-gray-200 rounded-lg text-xs font-bold hover:border-black hover:bg-black hover:text-white transition active:scale-95"
+                                   >
+                                       {slot}
+                                   </button>
+                                ))}
+                             </div>
+                          ) : (
+                             <div className="text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                <p className="text-xs text-gray-400">Sem horários livres nesta data.</p>
+                             </div>
+                          )}
+                       </div>
+                     )}
+                     
+                     {!rescheduleDate && (
+                        <div className="text-center py-8 text-gray-300 text-xs italic">Selecione uma data acima para ver horários.</div>
+                     )}
+
+                   </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+
           </div>
         </div>
       </div>

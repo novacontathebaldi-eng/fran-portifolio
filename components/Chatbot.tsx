@@ -1,11 +1,24 @@
-
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock, LogIn, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../context/ProjectContext';
 import { ChatMessage, Project } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
+
+// --- Helper for Markdown ---
+const renderFormattedText = (text: string) => {
+  if (!text) return null;
+  // Splits by **text** keeping the content in the capturing group
+  const parts = text.split(/\*\*(.*?)\*\*/g);
+  
+  return parts.map((part, index) => {
+    // Odd indices are the captured bold text
+    if (index % 2 === 1) {
+      return <strong key={index} className="font-bold">{part}</strong>;
+    }
+    return part;
+  });
+};
 
 // --- GenUI Components (Extracted to prevent re-mounting) ---
 
@@ -415,7 +428,12 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                       ? 'bg-black text-white rounded-br-none' 
                       : 'bg-white border border-gray-200 rounded-bl-none text-gray-700'
                   }`}>
-                    {msg.text && <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>}
+                    {/* Render with Markdown support */}
+                    {msg.text && (
+                      <p className="leading-relaxed whitespace-pre-wrap">
+                        {renderFormattedText(msg.text)}
+                      </p>
+                    )}
                     
                     {/* GenUI Rendering */}
                     {msg.uiComponent?.type === 'ProjectCarousel' && <ProjectCarousel data={msg.uiComponent.data} />}

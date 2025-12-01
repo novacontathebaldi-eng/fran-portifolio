@@ -25,7 +25,11 @@ interface ErrorBoundaryState {
   hasError: boolean;
 }
 
+// Fix: Extend Component directly to correctly inherit setState and props types
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  // Fix: Remove redundant public state declaration that may conflict with Component type definitions
+  // public state: ErrorBoundaryState = { hasError: false };
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
@@ -180,7 +184,8 @@ const AnimatedRoutes: React.FC = () => {
   );
 };
 
-const AppContent: React.FC = () => {
+// Main App Component with Providers
+const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   if (loading) {
@@ -188,20 +193,14 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <Router>
-      <ScrollToTop />
-      <ErrorBoundary>
-        <GlobalToast />
-        <AnimatedRoutes />
-      </ErrorBoundary>
-    </Router>
-  );
-}
-
-const App: React.FC = () => {
-  return (
     <ProjectProvider>
-      <AppContent />
+      <Router>
+        <ErrorBoundary>
+          <ScrollToTop />
+          <GlobalToast />
+          <AnimatedRoutes />
+        </ErrorBoundary>
+      </Router>
     </ProjectProvider>
   );
 };
