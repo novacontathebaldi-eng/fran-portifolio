@@ -20,7 +20,7 @@ interface ProjectContextType {
   settings: GlobalSettings;
   adminNotes: AdminNote[];
   aiFeedbacks: AiFeedbackItem[];
-  isLoadingAuth: boolean; // Novo estado
+  isLoadingAuth: boolean;
   
   // Auth
   login: (email: string, password: string) => Promise<{ user: User | null; error: any }>;
@@ -78,6 +78,9 @@ interface ProjectContextType {
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
+
+// UUID CONSTANT FOR SINGLETON SETTINGS ROW
+const SETTINGS_ID = '00000000-0000-0000-0000-000000000001';
 
 const DEFAULT_SETTINGS: GlobalSettings = {
   enableShop: true,
@@ -150,7 +153,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true); // Inicialmente true
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
   // Chat State
   const [currentChatMessages, setCurrentChatMessages] = useState<ChatMessage[]>([]);
@@ -178,19 +181,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setToast(prev => ({ ...prev, isVisible: false }));
   }, []);
 
-  // --- HELPER: Fetch Full User Profile (with memories/folders) ---
   const fetchFullUserProfile = async (userId: string): Promise<User | null> => {
     try {
         const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
         if (error || !profile) return null;
 
-        // Fetch Memories
         const { data: memories } = await supabase.from('client_memories').select('*').eq('user_id', userId);
-        
-        // Fetch Folders with Files
         const { data: folders } = await supabase.from('client_folders').select('*, files:client_files(*)').eq('user_id', userId);
-
-        // Fetch Appointments for this user
         const { data: userAppts } = await supabase.from('appointments').select('*').eq('client_id', userId);
 
         return {
@@ -202,7 +199,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           avatar: profile.avatar,
           bio: profile.bio,
           cpf: profile.cpf,
-          birthDate: profile.birth_date, // Map from snake_case
+          birthDate: profile.birth_date,
           addresses: profile.addresses || [],
           
           memories: memories || [],
@@ -229,30 +226,29 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       const { data: cultData } = await supabase.from('cultural_projects').select('*').order('year', { ascending: false });
       if (cultData) setCulturalProjects(cultData);
 
-      // 3. Settings - FIX: Handle missing 'content' column by consolidating structure
-      const { data: settingsRow } = await supabase.from('site_settings').select('*').eq('id', 'main').single();
+      // 3. Settings & Content - USING UUID AND 3 COLUMNS
+      const { data: settingsRow } = await supabase
+        .from('site_settings')
+        .select('about, office, settings')
+        .eq('id', SETTINGS_ID)
+        .maybeSingle();
       
       if (settingsRow) {
-        const json = settingsRow.settings || {};
-        
-        // Check if we are using the new bundled structure (to avoid missing columns)
-        if (json.global || json.content || json.schedule) {
-            // New Format
-            if (json.global) setSettings({ ...DEFAULT_SETTINGS, ...json.global });
-            if (json.content) setSiteContent({ ...DEFAULT_SITE_CONTENT, ...json.content });
-            if (json.schedule) setScheduleSettings({ ...DEFAULT_SCHEDULE_SETTINGS, ...json.schedule });
-        } else {
-            // Fallback / Legacy Format
-            // If 'content' exists in the row (unlikely based on error), use it
-            if (settingsRow.content) setSiteContent({ ...DEFAULT_SITE_CONTENT, ...settingsRow.content });
-            
-            // If 'settings' column is just flat GlobalSettings
-            if (json.enableShop !== undefined || json.aiConfig !== undefined) {
-                 setSettings({ ...DEFAULT_SETTINGS, ...json });
-            }
-            
-            if (settingsRow.schedule_settings) setScheduleSettings({ ...DEFAULT_SCHEDULE_SETTINGS, ...settingsRow.schedule_settings });
-        }
+          // Update Site Content (About + Office)
+          setSiteContent({
+              about: { ...DEFAULT_SITE_CONTENT.about, ...(settingsRow.about || {}) },
+              office: { ...DEFAULT_SITE_CONTENT.office, ...(settingsRow.office || {}) }
+          });
+
+          // Update Global Settings + Schedule (bundled in 'settings' column)
+          const savedBundle = settingsRow.settings || {};
+          
+          if (savedBundle.global) {
+             setSettings({ ...DEFAULT_SETTINGS, ...savedBundle.global });
+          }
+          if (savedBundle.schedule) {
+             setScheduleSettings({ ...DEFAULT_SCHEDULE_SETTINGS, ...savedBundle.schedule });
+          }
       }
 
       // 4. Appointments
@@ -264,13 +260,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     const init = async () => {
       await fetchGlobalData();
 
-      // Session Management
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         const user = await fetchFullUserProfile(session.user.id);
         if (user) setCurrentUser(user);
       }
-      setIsLoadingAuth(false); // Auth check done
+      setIsLoadingAuth(false);
     };
 
     init();
@@ -290,19 +285,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     return () => subscription.unsubscribe();
   }, []); 
 
-  // --- Admin: Fetch All Users (Deep fetch) ---
+  // --- Admin: Fetch All Users ---
   useEffect(() => {
     if (currentUser?.role === 'admin') {
       const fetchAllUsers = async () => {
         try {
           const { data: profiles, error } = await supabase.from('profiles').select('*');
-          
-          if (error) {
-              console.error("Error fetching profiles for admin:", error);
-              return;
-          }
-
-          if (!profiles) return;
+          if (error || !profiles) return;
 
           const { data: allFolders } = await supabase.from('client_folders').select('*, files:client_files(*)');
           const { data: allMemories } = await supabase.from('client_memories').select('*');
@@ -335,7 +324,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       
       fetchAllUsers();
     }
-  }, [currentUser?.role, currentUser?.folders, currentUser?.memories]); // Adicionado deps para atualizar admin quando admin edita a si mesmo ou ações locais ocorrem
+  }, [currentUser?.role, currentUser?.folders, currentUser?.memories]); 
 
   // --- AUTH ACTIONS ---
   
@@ -374,29 +363,38 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     await supabase.auth.signOut();
   };
 
-  // FIX: Centralized persistence logic to avoid "Column not found" errors
+  // --- SETTINGS PERSISTENCE (FIXED) ---
   const persistSettings = async (newContent?: SiteContent, newSettings?: GlobalSettings, newSchedule?: ScheduleSettings) => {
-    // Determine what to save (use new or fallback to current state)
-    const contentToSave = newContent || siteContent;
-    const settingsToSave = newSettings || settings;
-    const scheduleToSave = newSchedule || scheduleSettings;
+    // 1. Determine final state
+    const finalContent = newContent || siteContent;
+    const finalSettings = newSettings || settings;
+    const finalSchedule = newSchedule || scheduleSettings;
 
-    // Bundle everything into the 'settings' column (JSONB)
-    // This avoids needing 'content' or 'schedule_settings' columns in the DB
-    const bundledData = {
-        global: settingsToSave,
-        content: contentToSave,
-        schedule: scheduleToSave
+    // 2. Update Local State IMMEDIATELY (Optimistic UI)
+    if (newContent) setSiteContent(newContent);
+    if (newSettings) setSettings(newSettings);
+    if (newSchedule) setScheduleSettings(newSchedule);
+
+    // 3. Prepare DB Payload - Mapping to the 3 distinct JSONB columns
+    const payload = {
+        id: SETTINGS_ID,
+        about: finalContent.about,
+        office: finalContent.office,
+        settings: {
+            global: finalSettings,
+            schedule: finalSchedule
+        }
     };
 
-    const { error } = await supabase.from('site_settings').upsert({ 
-        id: 'main', 
-        settings: bundledData 
-    });
+    // 4. Send to Supabase
+    const { error } = await supabase
+        .from('site_settings')
+        .upsert(payload, { onConflict: 'id' });
 
     if (error) {
-        console.error("Error saving settings:", error);
-        showToast("Erro ao salvar no banco de dados. Tente novamente.", "error");
+        console.error("Error saving settings to DB:", error);
+        showToast("Erro ao salvar alterações no banco de dados.", "error");
+        // Optional: Revert local state if critical
     }
   };
 
@@ -439,17 +437,14 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const updateSiteContent = (content: SiteContent) => {
-    setSiteContent(content);
     persistSettings(content, undefined, undefined);
   };
 
   const updateSettings = (newSettings: GlobalSettings) => {
-    setSettings(newSettings);
     persistSettings(undefined, newSettings, undefined);
   };
 
   const updateScheduleSettings = (newSettings: ScheduleSettings) => {
-    setScheduleSettings(newSettings);
     persistSettings(undefined, undefined, newSettings);
   };
 
@@ -462,7 +457,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       addresses: updatedUser.addresses,
       cpf: updatedUser.cpf,
       birth_date: updatedUser.birthDate,
-      chats: updatedUser.chats // Sync chats if updated
+      chats: updatedUser.chats
     }).eq('id', updatedUser.id);
 
     if (!error) {
@@ -703,14 +698,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     return slots;
   };
 
-  // --- AI Chat Logic ---
   const createNewChat = () => setCurrentChatMessages([]);
 
   const archiveCurrentChat = async () => {
     if (currentChatMessages.length === 0) return;
     
     if (currentUser) {
-       // Save to profile if logged in
        const newChat: ChatSession = {
            id: Date.now().toString(),
            title: `Conversa de ${new Date().toLocaleDateString('pt-BR')}`,
@@ -815,7 +808,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       settings,
       adminNotes,
       aiFeedbacks,
-      isLoadingAuth, // Exposto no contexto
+      isLoadingAuth, 
       login, 
       logout, 
       registerUser,

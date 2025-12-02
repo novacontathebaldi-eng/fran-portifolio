@@ -7,7 +7,7 @@ import { OfficeDetails } from '../types';
 export const Office: React.FC = () => {
   const { siteContent } = useProjects();
   
-  // Safe access to office content
+  // Safe access to office content from Context
   const officeData = siteContent?.office || ({} as OfficeDetails);
   const { blocks, address, hoursDescription, mapsLink, mapQuery, phone, email } = officeData;
 
