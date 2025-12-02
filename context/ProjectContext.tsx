@@ -141,6 +141,21 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
   }
 };
 
+// Helper to map DB Snake Case to App Camel Case
+const mapAppointment = (a: any): Appointment => ({
+  id: a.id,
+  clientId: a.client_id, 
+  clientName: a.client_name,
+  type: a.type,
+  date: a.date,
+  time: a.time,
+  location: a.location,
+  meetingLink: a.meeting_link,
+  status: a.status,
+  createdAt: a.created_at,
+  notes: a.notes
+});
+
 const translateAuthError = (message: string): string => {
   if (message.includes("Invalid login credentials")) return "E-mail ou senha incorretos. Tente novamente.";
   if (message.includes("User already registered")) return "Este e-mail já está cadastrado. Tente fazer login.";
@@ -211,7 +226,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         const { data: memories } = await supabase.from('client_memories').select('*').eq('user_id', userId);
         const { data: folders } = await supabase.from('client_folders').select('*, files:client_files(*)').eq('user_id', userId);
+        
+        // Fetch appointments for this user specifically
         const { data: userAppts } = await supabase.from('appointments').select('*').eq('client_id', userId);
+        const mappedAppts = userAppts ? userAppts.map(mapAppointment) : [];
 
         return {
           id: profile.id,
@@ -227,7 +245,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           
           memories: memories || [],
           folders: folders || [],
-          appointments: userAppts || [],
+          appointments: mappedAppts,
           
           chats: profile.chats || [], 
           projects: [], 
@@ -274,9 +292,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           }
       }
 
-      // 4. Appointments
+      // 4. Appointments (Admin View - Fetch All)
       const { data: aptData } = await supabase.from('appointments').select('*');
-      if (aptData) setAppointments(aptData);
+      if (aptData) {
+        // Map snake_case to camelCase
+        const mapped = aptData.map(mapAppointment);
+        setAppointments(mapped);
+      }
   };
 
   useEffect(() => {
@@ -673,11 +695,20 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     const { data, error } = await supabase.from('appointments').insert(payload).select().single();
     
     if (data && !error) {
+        // Refetch all to stay strictly synced
         const { data: aptData } = await supabase.from('appointments').select('*');
-        if (aptData) setAppointments(aptData);
+        if (aptData) {
+            const mapped = aptData.map(mapAppointment);
+            setAppointments(mapped);
+        }
+        
+        // Update current user specific appointments
         if (currentUser && currentUser.id === appt.clientId) {
             const { data: userAppts } = await supabase.from('appointments').select('*').eq('client_id', currentUser.id);
-            if (userAppts) setCurrentUser(prev => prev ? ({ ...prev, appointments: userAppts }) : null);
+            if (userAppts) {
+                const mappedUserAppts = userAppts.map(mapAppointment);
+                setCurrentUser(prev => prev ? ({ ...prev, appointments: mappedUserAppts }) : null);
+            }
         }
     } else {
       console.error("Error adding appointment:", error);

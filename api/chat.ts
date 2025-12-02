@@ -116,16 +116,20 @@ SUA IDENTIDADE:
 - Você é uma extensão da experiência de luxo do escritório.
 
 REGRA DE OURO - AGENDAMENTOS (CRÍTICO):
-1. Se o usuário pedir para agendar mas NÃO fornecer Data e Hora:
-   - Responda: "Claro, por favor selecione o melhor horário no calendário abaixo."
-   - CHAME A TOOL 'scheduleMeeting' (sem parâmetros de data/hora) para exibir o widget.
-   
-2. Se o usuário fornecer Data e Hora ("Quero dia 15 às 14h"):
-   - CHAME A TOOL 'scheduleMeeting' preenchendo os campos 'date' e 'time'.
-   
-3. JAMAIS, EM HIPÓTESE ALGUMA, confirme um agendamento apenas com texto ("Ok, agendei"). 
-   - Se a tool não for chamada, o agendamento NÃO existe.
-   - Sempre dependa da tool para realizar a ação.
+
+1. FLUXO PARA VISITA TÉCNICA (Obra/Presencial):
+   - Se o usuário pedir visita técnica, VOCÊ DEVE PERGUNTAR O ENDEREÇO DA OBRA PRIMEIRO.
+   - NUNCA mostre o calendário (tool scheduleMeeting) para visita técnica se você não souber o endereço.
+   - Responda apenas com texto: "Para agendarmos a visita, por favor, me informe o endereço da obra."
+   - SOMENTE após o usuário fornecer o endereço, chame a tool 'scheduleMeeting' passando o endereço.
+
+2. FLUXO PARA REUNIÃO (Online/Escritório):
+   - Pode mostrar o calendário imediatamente. Chame 'scheduleMeeting'.
+
+3. QUANDO O USUÁRIO ESCOLHER O HORÁRIO NO CALENDÁRIO:
+   - O sistema enviará uma mensagem automática confirmando data e hora.
+   - Nesse momento, chame a tool 'scheduleMeeting' NOVAMENTE, agora preenchendo 'date' e 'time'.
+   - ISSO É O QUE EFETIVAMENTE SALVA O AGENDAMENTO.
 
 DETECÇÃO AUTOMÁTICA DE PREFERÊNCIAS - REGRA CRÍTICA (PASSIVA):
 - Monitore CADA mensagem do usuário em busca de fatos importantes.
@@ -268,7 +272,7 @@ export async function chatWithConcierge(
       });
 
       const modelText = response.text;
-      const functionCalls = response.functionCalls;
+      const functionCalls = response.functionCalls as any[]; // Cast to any[] to fix type error
 
       let responseData: any = {
         role: 'model',
@@ -329,24 +333,35 @@ export async function chatWithConcierge(
           else if (call.name === 'scheduleMeeting') {
             const widgetData = { ...call.args };
             
-            if (widgetData.modality === 'online') {
-                widgetData.location = 'Online (Google Meet)';
-                widgetData.type = 'meeting'; 
-            }
-
-            // CRITICAL LOGIC: 
-            // If both DATE and TIME are present -> Action (Direct Booking)
-            // If missing -> UI Component (Calendar Widget)
-            if (widgetData.date && widgetData.time) {
-                responseData.actions.push({
-                  type: 'scheduleMeeting',
-                  payload: widgetData
-                });
-                if (!responseData.text) responseData.text = `Perfeito. Enviando solicitação para ${new Date(widgetData.date as string).toLocaleDateString()} às ${widgetData.time}.`;
+            // --- LOGIC TO HANDLE MISSING ADDRESS FOR VISITS ---
+            const isVisit = widgetData.type === 'visit';
+            const hasAddress = widgetData.address && widgetData.address.length > 0;
+            
+            if (isVisit && !hasAddress) {
+              // Deny the widget, force text response asking for address
+              responseData.text = "Para agendarmos a visita técnica, preciso que me informe o endereço completo da obra.";
+              // Do NOT add action or uiComponent
             } else {
-                // Force Widget
-                responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
-                if (!responseData.text) responseData.text = "Por favor, selecione uma data e horário disponíveis abaixo.";
+              // Proceed with standard logic
+              if (widgetData.modality === 'online') {
+                  widgetData.location = 'Online (Google Meet)';
+                  widgetData.type = 'meeting'; 
+              }
+
+              // CRITICAL LOGIC: 
+              // If both DATE and TIME are present -> Action (Direct Booking)
+              // If missing -> UI Component (Calendar Widget)
+              if (widgetData.date && widgetData.time) {
+                  responseData.actions.push({
+                    type: 'scheduleMeeting',
+                    payload: widgetData
+                  });
+                  if (!responseData.text) responseData.text = `Perfeito. Agendamento confirmado para ${new Date(widgetData.date as string).toLocaleDateString()} às ${widgetData.time}.`;
+              } else {
+                  // Force Widget
+                  responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
+                  if (!responseData.text) responseData.text = "Por favor, selecione uma data e horário disponíveis abaixo.";
+              }
             }
           }
         }

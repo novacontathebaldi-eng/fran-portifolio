@@ -118,19 +118,18 @@ const BookingSuccess = ({ data, closeChat }: { data: any, closeChat: () => void 
   );
 };
 
-const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: () => void, messageId: string }) => {
-  const { currentUser, checkAvailability, addAppointment, siteContent, showToast, addMessageToChat, updateMessageUI } = useProjects();
+const CalendarWidget = ({ data, closeChat, onSendMessage }: { data: any, closeChat: () => void, onSendMessage: (text: string) => void }) => {
+  const { currentUser, checkAvailability, siteContent } = useProjects();
   const navigate = useNavigate();
   
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
+  
   // Search ahead for next 5 AVAILABLE days
   const availableDates = useMemo(() => {
     const dates = [];
     const today = new Date();
     let current = new Date(today);
-    // Move to tomorrow if late in the day (optional, but good UX)
+    // Move to tomorrow if late in the day
     if (today.getHours() > 17) {
         current.setDate(today.getDate() + 1);
     }
@@ -140,7 +139,6 @@ const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: 
        const dateStr = current.toISOString().split('T')[0];
        const slots = checkAvailability(dateStr);
        
-       // Only add if there are slots available
        if (slots.length > 0) {
           dates.push({
              dateObj: new Date(current),
@@ -149,11 +147,11 @@ const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: 
           });
        }
 
-       if (dates.length >= 5) break; // Limit to 5 days showing
+       if (dates.length >= 5) break; 
        current.setDate(current.getDate() + 1);
     }
     return dates;
-  }, [checkAvailability]); // Recalculate if availability logic changes
+  }, [checkAvailability]); 
 
   // Auto select first day if available and none selected
   useEffect(() => {
@@ -190,57 +188,25 @@ const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: 
 
   const activeDaySlots = availableDates.find(d => d.dateStr === selectedDate)?.slots || [];
 
-  const confirmBooking = async (time: string) => {
-      if (!selectedDate || isSubmitting) return;
-      setIsSubmitting(true);
-      
-      try {
-        await addAppointment({
-            clientId: currentUser.id,
-            clientName: currentUser.name,
-            date: selectedDate,
-            time: time,
-            type: data?.type || 'meeting',
-            location: locationText,
-        });
-        
-        showToast('Solicitação enviada com sucesso!', 'success');
-        
-        // Update UI PERMANENTLY in Context
-        updateMessageUI(messageId, {
-            type: 'BookingSuccess',
-            data: {
-                date: selectedDate,
-                time,
-                location: locationText
-            }
-        });
-
-        if (addMessageToChat) {
-          addMessageToChat({
-              id: Date.now().toString(),
-              role: 'model',
-              text: `Agendamento pré-confirmado para ${new Date(selectedDate).toLocaleDateString()} às ${time}. Você pode acompanhar o status no seu painel.`
-          });
-        }
-      } catch (err) {
-        showToast('Erro ao realizar agendamento.', 'error');
-        console.error(err);
-      } finally {
-        setIsSubmitting(false);
-      }
+  const handleSlotClick = (time: string) => {
+    if (!selectedDate) return;
+    
+    // Construct a clear natural language message for the AI
+    const typeLabel = isVisit ? "visita técnica" : "reunião";
+    const userMessage = `Confirmar agendamento de ${typeLabel} em ${locationText} para o dia ${selectedDate} às ${time}.`;
+    
+    // Trigger the chat message automatically
+    onSendMessage(userMessage);
   };
 
   return (
       <div className="mt-4 bg-white rounded-xl border border-gray-200 p-4 shadow-sm relative animate-fadeIn">
-          {isSubmitting && <div className="absolute inset-0 bg-white/50 z-10 cursor-wait flex items-center justify-center"><div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div></div>}
-          
           <div className="flex justify-between items-center mb-4">
               <div className="flex flex-col">
                 <span className="text-xs font-bold uppercase tracking-wider text-gray-900">
                     {isVisit ? 'Visita Técnica' : 'Reunião'}
                 </span>
-                <span className="text-[10px] text-gray-400 truncate max-w-[200px]" title={locationText}>
+                <span className="text-xs text-gray-400 truncate max-w-[200px]" title={locationText}>
                     {locationText}
                 </span>
               </div>
@@ -272,7 +238,7 @@ const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: 
                      {activeDaySlots.map(slot => (
                          <button 
                            key={slot} 
-                           onClick={() => confirmBooking(slot)}
+                           onClick={() => handleSlotClick(slot)}
                            className="py-2 px-2 bg-white border border-gray-200 rounded-lg text-xs font-bold hover:border-black hover:bg-black hover:text-white transition flex items-center justify-center gap-1 active:scale-95"
                          >
                              {slot}
@@ -312,7 +278,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const { sendMessageToAI, currentUser, addAdminNote, showToast, currentChatMessages, logAiFeedback, settings, addAppointment, siteContent, archiveCurrentChat, addClientMemory, restoreChatSession } = useProjects();
+  const { sendMessageToAI, currentUser, addAdminNote, showToast, currentChatMessages, logAiFeedback, settings, addAppointment, siteContent, archiveCurrentChat, addClientMemory, restoreChatSession, updateMessageUI } = useProjects();
   
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -366,12 +332,9 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     }
   }, [displayMessages, isOpen, showHistory]);
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const processUserMessage = async (userText: string) => {
+    if (!userText.trim() || isLoading) return;
 
-    const userText = input;
-    setInput('');
     setIsLoading(true);
 
     try {
@@ -406,6 +369,11 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                     location: locationText
                 });
 
+                // Update the last message UI to show success component instead of calendar if it was there
+                // But the AI likely returned a new message confirming.
+                // We can also inject a success UI component into the last AI message if needed.
+                // Here, we just rely on the toast and the AI's text response.
+                
                 showToast("Agendamento realizado via IA!", "success");
             } else {
                 showToast("Faça login para confirmar o agendamento.", "error");
@@ -426,6 +394,18 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = input;
+    setInput('');
+    processUserMessage(text);
+  };
+
+  // Wrapper for programmatic sending (from CalendarWidget)
+  const handleProgrammaticSend = (text: string) => {
+    processUserMessage(text);
   };
 
   const handleCopy = (text: string, id: string) => {
@@ -555,7 +535,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                       {/* GenUI Rendering */}
                       {msg.uiComponent?.type === 'ProjectCarousel' && <ProjectCarousel data={msg.uiComponent.data} />}
                       {msg.uiComponent?.type === 'SocialLinks' && <SocialLinks />}
-                      {msg.uiComponent?.type === 'CalendarWidget' && <CalendarWidget data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} messageId={msg.id} />}
+                      {msg.uiComponent?.type === 'CalendarWidget' && <CalendarWidget data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} onSendMessage={handleProgrammaticSend} />}
                       {msg.uiComponent?.type === 'BookingSuccess' && <BookingSuccess data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} />}
                     </div>
                     
