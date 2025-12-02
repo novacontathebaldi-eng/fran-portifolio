@@ -1,7 +1,7 @@
-import React, { useState, useEffect, ReactNode, ErrorInfo } from 'react';
+import React, { useState, useEffect, ReactNode, ErrorInfo, Component } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle, AlertCircle, Info, X, RefreshCw } from 'lucide-react';
+import { CheckCircle, AlertCircle, Info, X, RefreshCw, Loader2 } from 'lucide-react';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Portfolio } from './pages/Portfolio';
@@ -28,7 +28,7 @@ interface ErrorBoundaryState {
   hasError: boolean;
 }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
@@ -129,6 +129,34 @@ const GlobalToast = () => {
   );
 };
 
+// --- Protected Route Component ---
+interface ProtectedRouteProps {
+  children: ReactNode;
+  role?: 'admin' | 'client';
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
+  const { currentUser, isLoadingAuth } = useProjects();
+
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (role && currentUser.role !== role) {
+    return <Navigate to="/" replace />; // Or unauthorized page
+  }
+
+  return <>{children}</>;
+};
+
 // Wrapper for Routes to allow useLocation hook
 const AnimatedRoutes: React.FC = () => {
   const location = useLocation();
@@ -153,7 +181,11 @@ const AnimatedRoutes: React.FC = () => {
         {/* Client Protected Routes */}
         <Route 
           path="/profile/*" 
-          element={currentUser ? <Layout><ClientArea /></Layout> : <Navigate to="/auth" />} 
+          element={
+            <ProtectedRoute>
+              <Layout><ClientArea /></Layout>
+            </ProtectedRoute>
+          } 
         />
 
         {/* Shop/Budget Routes (Conditional) */}
@@ -167,24 +199,44 @@ const AnimatedRoutes: React.FC = () => {
         {/* Admin Routes */}
         <Route 
           path="/admin" 
-          element={currentUser?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/auth" />} 
+          element={
+            <ProtectedRoute role="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } 
         />
         <Route 
           path="/admin/project/new" 
-          element={currentUser?.role === 'admin' ? <ProjectForm /> : <Navigate to="/auth" />} 
+          element={
+            <ProtectedRoute role="admin">
+              <ProjectForm />
+            </ProtectedRoute>
+          } 
         />
         <Route 
           path="/admin/project/edit/:id" 
-          element={currentUser?.role === 'admin' ? <ProjectForm /> : <Navigate to="/auth" />} 
+          element={
+            <ProtectedRoute role="admin">
+              <ProjectForm />
+            </ProtectedRoute>
+          } 
         />
         {/* Cultural Admin Routes */}
         <Route 
           path="/admin/cultural/new" 
-          element={currentUser?.role === 'admin' ? <CulturalProjectForm /> : <Navigate to="/auth" />} 
+          element={
+            <ProtectedRoute role="admin">
+              <CulturalProjectForm />
+            </ProtectedRoute>
+          } 
         />
         <Route 
           path="/admin/cultural/edit/:id" 
-          element={currentUser?.role === 'admin' ? <CulturalProjectForm /> : <Navigate to="/auth" />} 
+          element={
+            <ProtectedRoute role="admin">
+              <CulturalProjectForm />
+            </ProtectedRoute>
+          } 
         />
 
         {/* Fallback */}

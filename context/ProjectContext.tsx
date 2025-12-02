@@ -20,6 +20,7 @@ interface ProjectContextType {
   settings: GlobalSettings;
   adminNotes: AdminNote[];
   aiFeedbacks: AiFeedbackItem[];
+  isLoadingAuth: boolean; // Novo estado
   
   // Auth
   login: (email: string, password: string) => Promise<{ user: User | null; error: any }>;
@@ -149,6 +150,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true); // Inicialmente true
   
   // Chat State
   const [currentChatMessages, setCurrentChatMessages] = useState<ChatMessage[]>([]);
@@ -227,12 +229,30 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       const { data: cultData } = await supabase.from('cultural_projects').select('*').order('year', { ascending: false });
       if (cultData) setCulturalProjects(cultData);
 
-      // 3. Settings
-      const { data: settingsData } = await supabase.from('site_settings').select('*').eq('id', 'main').single();
-      if (settingsData) {
-        if (settingsData.content) setSiteContent({ ...DEFAULT_SITE_CONTENT, ...settingsData.content });
-        if (settingsData.settings) setSettings({ ...DEFAULT_SETTINGS, ...settingsData.settings });
-        if (settingsData.schedule_settings) setScheduleSettings({ ...DEFAULT_SCHEDULE_SETTINGS, ...settingsData.schedule_settings });
+      // 3. Settings - FIX: Handle missing 'content' column by consolidating structure
+      const { data: settingsRow } = await supabase.from('site_settings').select('*').eq('id', 'main').single();
+      
+      if (settingsRow) {
+        const json = settingsRow.settings || {};
+        
+        // Check if we are using the new bundled structure (to avoid missing columns)
+        if (json.global || json.content || json.schedule) {
+            // New Format
+            if (json.global) setSettings({ ...DEFAULT_SETTINGS, ...json.global });
+            if (json.content) setSiteContent({ ...DEFAULT_SITE_CONTENT, ...json.content });
+            if (json.schedule) setScheduleSettings({ ...DEFAULT_SCHEDULE_SETTINGS, ...json.schedule });
+        } else {
+            // Fallback / Legacy Format
+            // If 'content' exists in the row (unlikely based on error), use it
+            if (settingsRow.content) setSiteContent({ ...DEFAULT_SITE_CONTENT, ...settingsRow.content });
+            
+            // If 'settings' column is just flat GlobalSettings
+            if (json.enableShop !== undefined || json.aiConfig !== undefined) {
+                 setSettings({ ...DEFAULT_SETTINGS, ...json });
+            }
+            
+            if (settingsRow.schedule_settings) setScheduleSettings({ ...DEFAULT_SCHEDULE_SETTINGS, ...settingsRow.schedule_settings });
+        }
       }
 
       // 4. Appointments
@@ -241,15 +261,19 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   useEffect(() => {
-    fetchGlobalData();
+    const init = async () => {
+      await fetchGlobalData();
 
-    // Session Management
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      // Session Management
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         const user = await fetchFullUserProfile(session.user.id);
         if (user) setCurrentUser(user);
       }
-    });
+      setIsLoadingAuth(false); // Auth check done
+    };
+
+    init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
@@ -261,6 +285,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         setCurrentUser(null);
         setCurrentChatMessages([]);
       }
+      setIsLoadingAuth(false);
     });
     return () => subscription.unsubscribe();
   }, []); 
@@ -310,7 +335,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       
       fetchAllUsers();
     }
-  }, [currentUser?.role]);
+  }, [currentUser?.role, currentUser?.folders, currentUser?.memories]); // Adicionado deps para atualizar admin quando admin edita a si mesmo ou ações locais ocorrem
 
   // --- AUTH ACTIONS ---
   
@@ -349,14 +374,30 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     await supabase.auth.signOut();
   };
 
+  // FIX: Centralized persistence logic to avoid "Column not found" errors
   const persistSettings = async (newContent?: SiteContent, newSettings?: GlobalSettings, newSchedule?: ScheduleSettings) => {
-    const updates: any = {};
-    if (newContent) updates.content = newContent;
-    if (newSettings) updates.settings = newSettings;
-    if (newSchedule) updates.schedule_settings = newSchedule;
+    // Determine what to save (use new or fallback to current state)
+    const contentToSave = newContent || siteContent;
+    const settingsToSave = newSettings || settings;
+    const scheduleToSave = newSchedule || scheduleSettings;
 
-    const { error } = await supabase.from('site_settings').upsert({ id: 'main', ...updates });
-    if (error) console.error("Error saving settings:", error);
+    // Bundle everything into the 'settings' column (JSONB)
+    // This avoids needing 'content' or 'schedule_settings' columns in the DB
+    const bundledData = {
+        global: settingsToSave,
+        content: contentToSave,
+        schedule: scheduleToSave
+    };
+
+    const { error } = await supabase.from('site_settings').upsert({ 
+        id: 'main', 
+        settings: bundledData 
+    });
+
+    if (error) {
+        console.error("Error saving settings:", error);
+        showToast("Erro ao salvar no banco de dados. Tente novamente.", "error");
+    }
   };
 
   const addProject = async (project: Project) => {
@@ -761,7 +802,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
     setAdminNotes(prev => [newNote, ...prev]);
   };
-  const markNoteAsRead = (id: string) => setAdminNotes(prev => prev.map(n => n.id === id ? { ...n, status: 'read' } : n));
+  const markNoteAsRead: (id: string) => void = (id) => setAdminNotes(prev => prev.map(n => n.id === id ? { ...n, status: 'read' } : n));
   const deleteAdminNote = (id: string) => setAdminNotes(prev => prev.filter(n => n.id !== id));
 
   return (
@@ -774,6 +815,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       settings,
       adminNotes,
       aiFeedbacks,
+      isLoadingAuth, // Exposto no contexto
       login, 
       logout, 
       registerUser,

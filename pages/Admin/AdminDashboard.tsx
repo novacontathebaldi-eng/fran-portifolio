@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History } from 'lucide-react';
 import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory } from '../../types';
-import { motion, Reorder } from 'framer-motion';
+import { motion, Reorder, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 
 // Real Supabase Upload
@@ -75,6 +74,17 @@ export const AdminDashboard: React.FC = () => {
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [blockForm, setBlockForm] = useState({ date: '', time: '' });
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+
+  // SYNC SELECTED CLIENT WITH GLOBAL USERS STATE
+  // This ensures that when a folder is created/deleted/renamed via Context, the local view updates immediately.
+  useEffect(() => {
+    if (selectedClient) {
+        const updatedUser = users.find(u => u.id === selectedClient.id);
+        if (updatedUser) {
+            setSelectedClient(updatedUser);
+        }
+    }
+  }, [users]); // Trigger whenever users list changes in context
 
   const handleDelete = (id: string) => {
     if (confirm('Tem certeza que deseja excluir este projeto?')) {
@@ -222,20 +232,12 @@ export const AdminDashboard: React.FC = () => {
   const saveContent = async () => {
     setSaving(true);
     try {
-      // 1. Force update to Supabase to ensure persistence
-      const { error } = await supabase.from('site_settings').upsert({ 
-        id: 'main', 
-        content: contentForm 
-      });
-
-      if (error) throw error;
-
-      // 2. Update Local Context to reflect immediately in UI
+      // Usar a função do contexto que já trata o salvamento correto no banco
       updateSiteContent(contentForm);
-      showToast('Conteúdo salvo no banco de dados com sucesso!', 'success');
+      showToast('Conteúdo salvo com sucesso!', 'success');
     } catch (err) {
       console.error("Erro ao salvar:", err);
-      showToast('Erro ao salvar no banco de dados.', 'error');
+      showToast('Erro ao salvar.', 'error');
     } finally {
       setSaving(false);
     }
@@ -244,16 +246,8 @@ export const AdminDashboard: React.FC = () => {
   const saveSettings = async () => {
     setSaving(true);
     try {
-       // Save settings and content together
-       const { error } = await supabase.from('site_settings').upsert({ 
-        id: 'main', 
-        settings: settingsForm,
-        content: contentForm 
-      });
-      
-      if (error) throw error;
-
       updateSettings(settingsForm);
+      // Atualiza também o conteúdo caso tenha sido modificado
       updateSiteContent(contentForm);
       showToast('Configurações salvas.', 'success');
     } catch (err) {
@@ -270,7 +264,6 @@ export const AdminDashboard: React.FC = () => {
         const updatedMemories = (selectedClient.memories || []).filter(m => m.id !== memoryId);
         const updatedClient = { ...selectedClient, memories: updatedMemories };
         updateUser(updatedClient);
-        setSelectedClient(updatedClient);
         showToast('Memória removida.', 'success');
     }
   }
@@ -281,11 +274,6 @@ export const AdminDashboard: React.FC = () => {
       setNewFolderName('');
       setShowNewFolderInput(false);
       showToast('Pasta criada.', 'success');
-      // Refresh local selected user from central store
-      setTimeout(() => {
-          const updated = users.find(u => u.id === selectedClient.id);
-          if (updated) setSelectedClient(updated);
-      }, 100);
     }
   };
 
@@ -299,20 +287,12 @@ export const AdminDashboard: React.FC = () => {
       renameClientFolder(selectedClient.id, editingFolderId, editFolderName);
       setEditingFolderId(null);
       showToast('Pasta renomeada.', 'success');
-      setTimeout(() => {
-          const updated = users.find(u => u.id === selectedClient.id);
-          if (updated) setSelectedClient(updated);
-      }, 100);
     }
   };
 
   const handleDeleteFolder = (folderId: string) => {
     if (selectedClient && confirm('Excluir esta pasta e todos os arquivos?')) {
       deleteClientFolder(selectedClient.id, folderId);
-      setTimeout(() => {
-          const updated = users.find(u => u.id === selectedClient.id);
-          if (updated) setSelectedClient(updated);
-      }, 100);
       if (currentAdminFolderId === folderId) setCurrentAdminFolderId(null);
     }
   };
@@ -324,10 +304,6 @@ export const AdminDashboard: React.FC = () => {
     try {
       await uploadFileToFolder(selectedClient.id, currentAdminFolderId, file);
       showToast('Arquivo enviado!', 'success');
-      setTimeout(() => {
-          const updated = users.find(u => u.id === selectedClient.id);
-          if (updated) setSelectedClient(updated);
-      }, 100);
     } catch (err) {
       showToast('Erro no envio.', 'error');
     } finally {
@@ -338,10 +314,6 @@ export const AdminDashboard: React.FC = () => {
   const handleDeleteFile = (fileId: string) => {
     if (selectedClient && currentAdminFolderId && confirm('Excluir arquivo?')) {
       deleteClientFile(selectedClient.id, currentAdminFolderId, fileId);
-      setTimeout(() => {
-          const updated = users.find(u => u.id === selectedClient.id);
-          if (updated) setSelectedClient(updated);
-      }, 100);
     }
   };
 
@@ -1284,6 +1256,145 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                </div>
              </div>
+          )}
+
+          {/* Agenda View */}
+          {activeTab === 'agenda' && (
+            <div className="animate-fadeIn">
+              <div className="flex justify-between items-center mb-8">
+                 <h2 className="text-3xl font-serif font-bold text-black">Agenda & Horários</h2>
+                 <div className="flex gap-2">
+                    <button onClick={() => setShowBlockModal(true)} className="bg-red-50 text-red-600 px-4 py-2 rounded-full font-bold text-xs hover:bg-red-100 transition flex items-center gap-1">
+                       <Ban className="w-3 h-3" /> Bloquear Horário
+                    </button>
+                    <button onClick={() => setShowHistory(!showHistory)} className={`px-4 py-2 rounded-full font-bold text-xs transition flex items-center gap-1 ${showHistory ? 'bg-black text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-black'}`}>
+                       <History className="w-3 h-3" /> Histórico
+                    </button>
+                 </div>
+              </div>
+
+              {/* Block Modal */}
+              <AnimatePresence>
+                {showBlockModal && (
+                   <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-xl p-6 max-w-sm w-full">
+                         <h3 className="font-bold text-lg mb-4">Bloquear Agenda</h3>
+                         <div className="space-y-4">
+                            <div>
+                               <label className="text-xs font-bold uppercase text-gray-500">Data</label>
+                               <input type="date" value={blockForm.date} onChange={e => setBlockForm({...blockForm, date: e.target.value})} className="w-full border p-2 rounded mt-1" />
+                            </div>
+                            <div>
+                               <label className="text-xs font-bold uppercase text-gray-500">Horário (Opcional - Dia Inteiro se vazio)</label>
+                               <input type="time" value={blockForm.time} onChange={e => setBlockForm({...blockForm, time: e.target.value})} className="w-full border p-2 rounded mt-1" />
+                            </div>
+                            <div className="flex gap-2 pt-2">
+                               <button onClick={handleAddBlock} className="flex-1 bg-red-500 text-white py-2 rounded font-bold hover:bg-red-600">Bloquear</button>
+                               <button onClick={() => setShowBlockModal(false)} className="flex-1 bg-gray-100 text-gray-600 py-2 rounded font-bold hover:bg-gray-200">Cancelar</button>
+                            </div>
+                         </div>
+                      </motion.div>
+                   </div>
+                )}
+              </AnimatePresence>
+              
+              {/* Appointments List */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                 <div className="lg:col-span-2 space-y-6">
+                    <h3 className="font-bold text-lg border-b pb-2">Próximos Compromissos</h3>
+                    {sortedAppointments.filter(a => showHistory ? true : new Date(a.date).getTime() >= new Date().setHours(0,0,0,0)).length > 0 ? (
+                       sortedAppointments
+                         .filter(a => showHistory ? true : new Date(a.date).getTime() >= new Date().setHours(0,0,0,0))
+                         .map(appt => (
+                          <div key={appt.id} className={`bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between gap-4 ${appt.status === 'cancelled' ? 'opacity-50' : ''}`}>
+                             <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                   <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${appt.status === 'confirmed' ? 'bg-green-100 text-green-700' : appt.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'}`}>
+                                      {appt.status === 'confirmed' ? 'Confirmado' : appt.status === 'pending' ? 'Pendente' : 'Cancelado'}
+                                   </span>
+                                   <span className="text-xs text-gray-400">{appt.type === 'visit' ? 'Visita Técnica' : 'Reunião'}</span>
+                                </div>
+                                <h4 className="font-bold text-lg">{new Date(appt.date).toLocaleDateString()} às {appt.time}</h4>
+                                <p className="text-gray-600">{appt.clientName}</p>
+                                {appt.location && <p className="text-xs text-gray-400 mt-1 flex items-center gap-1"><MapPin className="w-3 h-3"/> {appt.location}</p>}
+                             </div>
+                             
+                             <div className="flex flex-col gap-2 justify-center min-w-[140px]">
+                                {appt.status === 'pending' && (
+                                   <button onClick={() => updateAppointmentStatus(appt.id, 'confirmed')} className="bg-green-500 text-white py-2 rounded font-bold text-xs hover:bg-green-600 transition">Aprovar</button>
+                                )}
+                                {appt.status !== 'cancelled' && (
+                                   <button onClick={() => updateAppointmentStatus(appt.id, 'cancelled')} className="bg-gray-100 text-gray-600 py-2 rounded font-bold text-xs hover:bg-gray-200 transition">Cancelar</button>
+                                )}
+                                <button onClick={() => deleteAppointmentPermanently(appt.id)} className="text-red-300 text-xs hover:text-red-500 hover:underline">Excluir</button>
+                                {appt.status === 'confirmed' && appt.type === 'meeting' && (
+                                   <button onClick={() => { const link = prompt('Link da Reunião:', appt.meetingLink || ''); if(link) updateAppointment({...appt, meetingLink: link}) }} className="text-blue-500 text-xs font-bold hover:underline mt-1 text-center">
+                                      {appt.meetingLink ? 'Editar Link' : 'Adicionar Link'}
+                                   </button>
+                                )}
+                             </div>
+                          </div>
+                       ))
+                    ) : (
+                       <div className="p-12 text-center text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">Nenhum agendamento futuro.</div>
+                    )}
+                 </div>
+
+                 {/* Settings Side */}
+                 <div className="space-y-6">
+                    <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                       <h3 className="font-bold text-lg mb-4">Configuração Semanal</h3>
+                       <div className="flex flex-wrap gap-2 mb-4">
+                          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d, i) => (
+                             <button 
+                               key={i} 
+                               onClick={() => {
+                                  const newDays = scheduleSettings.workDays.includes(i) 
+                                     ? scheduleSettings.workDays.filter(day => day !== i)
+                                     : [...scheduleSettings.workDays, i].sort();
+                                  updateScheduleSettings({...scheduleSettings, workDays: newDays});
+                               }}
+                               className={`w-10 h-10 rounded-full text-xs font-bold transition ${scheduleSettings.workDays.includes(i) ? 'bg-black text-white' : 'bg-gray-100 text-gray-400'}`}
+                             >
+                                {d}
+                             </button>
+                          ))}
+                       </div>
+                       <div className="grid grid-cols-2 gap-4">
+                          <div>
+                             <label className="text-[10px] uppercase font-bold text-gray-400">Início</label>
+                             <input type="time" value={scheduleSettings.startHour} onChange={e => updateScheduleSettings({...scheduleSettings, startHour: e.target.value})} className="w-full border p-2 rounded text-sm" />
+                          </div>
+                          <div>
+                             <label className="text-[10px] uppercase font-bold text-gray-400">Fim</label>
+                             <input type="time" value={scheduleSettings.endHour} onChange={e => updateScheduleSettings({...scheduleSettings, endHour: e.target.value})} className="w-full border p-2 rounded text-sm" />
+                          </div>
+                       </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                       <h3 className="font-bold text-lg mb-4">Bloqueios Ativos</h3>
+                       <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {scheduleSettings.blockedDates.map(date => (
+                             <div key={date} className="flex justify-between items-center text-sm p-2 bg-red-50 text-red-700 rounded">
+                                <span>Dia {new Date(date).toLocaleDateString()}</span>
+                                <button onClick={() => handleRemoveBlockDate(date)}><X className="w-4 h-4"/></button>
+                             </div>
+                          ))}
+                          {scheduleSettings.blockedSlots?.map((slot, i) => (
+                             <div key={i} className="flex justify-between items-center text-sm p-2 bg-yellow-50 text-yellow-700 rounded">
+                                <span>{new Date(slot.date).toLocaleDateString()} às {slot.time}</span>
+                                <button onClick={() => handleRemoveBlockSlot(slot.date, slot.time)}><X className="w-4 h-4"/></button>
+                             </div>
+                          ))}
+                          {scheduleSettings.blockedDates.length === 0 && (!scheduleSettings.blockedSlots || scheduleSettings.blockedSlots.length === 0) && (
+                             <p className="text-gray-400 text-xs text-center">Nenhum bloqueio.</p>
+                          )}
+                       </div>
+                    </div>
+                 </div>
+              </div>
+            </div>
           )}
 
         </div>
