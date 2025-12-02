@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock, LogIn, ArrowRight } from 'lucide-react';
+import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock, LogIn, ArrowRight, Archive, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../context/ProjectContext';
 import { ChatMessage, Project } from '../types';
@@ -289,6 +289,7 @@ interface ChatbotProps {
 
 export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onToggle, hideButton = false }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   
   const isControlled = externalIsOpen !== undefined && onToggle !== undefined;
   const isOpen = isControlled ? externalIsOpen : internalIsOpen;
@@ -298,7 +299,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const { sendMessageToAI, currentUser, projects, addAdminNote, showToast, currentChatMessages, createNewChat, logAiFeedback, settings, addAppointment, updateMessageUI, siteContent } = useProjects();
+  const { sendMessageToAI, currentUser, addAdminNote, showToast, currentChatMessages, createNewChat, logAiFeedback, settings, addAppointment, siteContent, archiveCurrentChat } = useProjects();
   
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -309,10 +310,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
 
     if (!isOpen || !isMobile) return;
 
-    // 1. Lock CSS Overflow
     document.body.style.overflow = 'hidden';
 
-    // 2. Prevent Touch Move on Background (iOS Fix)
     const preventScroll = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest('.chatbot-scroll-view')) {
@@ -347,12 +346,12 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const displayMessages = currentChatMessages.length > 0 ? currentChatMessages : defaultMessages;
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !showHistory) {
       setTimeout(() => {
         lastMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 300);
     }
-  }, [displayMessages, isOpen]);
+  }, [displayMessages, isOpen, showHistory]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -431,6 +430,11 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     else showToast("Obrigado. Vamos melhorar.", "info");
   };
 
+  const handleArchive = async () => {
+    await archiveCurrentChat();
+    showToast("Conversa salva no histórico.", "success");
+  };
+
   return (
     <>
       <AnimatePresence>
@@ -454,73 +458,108 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                  </div>
                </div>
                <div className="flex gap-2">
-                 <button onClick={createNewChat} className="p-2 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-white" title="Reiniciar Conversa">
-                   <RefreshCw className="w-4 h-4" />
+                 {currentUser && (
+                    <button 
+                      onClick={() => setShowHistory(!showHistory)} 
+                      className={`p-2 rounded-full transition ${showHistory ? 'bg-white text-black' : 'hover:bg-white/10 text-gray-400 hover:text-white'}`} 
+                      title="Histórico"
+                    >
+                      <History className="w-4 h-4" />
+                    </button>
+                 )}
+                 <button onClick={handleArchive} className="p-2 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-white" title="Arquivar e Limpar">
+                   <Archive className="w-4 h-4" />
                  </button>
                  <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition"><X className="w-4 h-4 text-gray-400 hover:text-white" /></button>
                </div>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-6 scroll-smooth chatbot-scroll-view">
-              {displayMessages.map((msg: any, idx: number) => (
-                <div 
-                  key={msg.id} 
-                  ref={idx === displayMessages.length - 1 ? lastMessageRef : null}
-                  className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
-                >
-                  <div className={`max-w-[90%] rounded-2xl p-4 text-sm shadow-sm ${
-                    msg.role === 'user' 
-                      ? 'bg-black text-white rounded-br-none' 
-                      : 'bg-white border border-gray-200 rounded-bl-none text-gray-700'
-                  }`}>
-                    {msg.text && (
-                      <p className="leading-relaxed whitespace-pre-wrap">
-                        {renderFormattedText(msg.text)}
-                      </p>
-                    )}
-                    
-                    {/* GenUI Rendering */}
-                    {msg.uiComponent?.type === 'ProjectCarousel' && <ProjectCarousel data={msg.uiComponent.data} />}
-                    {msg.uiComponent?.type === 'SocialLinks' && <SocialLinks />}
-                    {msg.uiComponent?.type === 'CalendarWidget' && <CalendarWidget data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} messageId={msg.id} />}
-                    {msg.uiComponent?.type === 'BookingSuccess' && <BookingSuccess data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} />}
-                  </div>
-                  
-                  {msg.role === 'model' && (
-                    <div className="flex items-center gap-2 mt-1 ml-2 opacity-100 transition-opacity">
-                      <button onClick={() => handleCopy(msg.text || '', msg.id)} className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-black transition">{copiedId === msg.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}</button>
-                      <div className="h-3 w-[1px] bg-gray-200"></div>
-                      <button onClick={() => handleFeedback(msg, 'like')} className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-black"><ThumbsUp className="w-3 h-3" /></button>
-                      <button onClick={() => handleFeedback(msg, 'dislike')} className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-black"><ThumbsDown className="w-3 h-3" /></button>
+            {/* Content Area */}
+            {showHistory && currentUser ? (
+               <div className="flex-1 overflow-y-auto p-4 bg-gray-50 chatbot-scroll-view">
+                   <h4 className="font-bold text-sm mb-4">Conversas Anteriores</h4>
+                   {currentUser.chats && currentUser.chats.length > 0 ? (
+                      <div className="space-y-3">
+                        {currentUser.chats.map(chat => (
+                           <div key={chat.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                              <p className="text-xs font-bold uppercase text-gray-400 mb-1">{new Date(chat.createdAt).toLocaleDateString()}</p>
+                              <p className="text-sm font-bold text-gray-800 mb-2">{chat.title}</p>
+                              <p className="text-xs text-gray-500 line-clamp-2 italic">"{chat.messages[chat.messages.length-1]?.text || 'Sem mensagens'}"</p>
+                              <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-400">
+                                 {chat.messages.length} mensagens
+                              </div>
+                           </div>
+                        ))}
+                      </div>
+                   ) : (
+                      <div className="text-center py-8 text-gray-400 text-sm">Nenhum histórico salvo.</div>
+                   )}
+                   <button onClick={() => setShowHistory(false)} className="mt-4 w-full bg-black text-white py-2 rounded-full text-xs font-bold">Voltar ao Chat Atual</button>
+               </div>
+            ) : (
+              /* Chat Messages */
+              <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-6 scroll-smooth chatbot-scroll-view">
+                {displayMessages.map((msg: any, idx: number) => (
+                  <div 
+                    key={msg.id} 
+                    ref={idx === displayMessages.length - 1 ? lastMessageRef : null}
+                    className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                  >
+                    <div className={`max-w-[90%] rounded-2xl p-4 text-sm shadow-sm ${
+                      msg.role === 'user' 
+                        ? 'bg-black text-white rounded-br-none' 
+                        : 'bg-white border border-gray-200 rounded-bl-none text-gray-700'
+                    }`}>
+                      {msg.text && (
+                        <p className="leading-relaxed whitespace-pre-wrap">
+                          {renderFormattedText(msg.text)}
+                        </p>
+                      )}
+                      
+                      {/* GenUI Rendering */}
+                      {msg.uiComponent?.type === 'ProjectCarousel' && <ProjectCarousel data={msg.uiComponent.data} />}
+                      {msg.uiComponent?.type === 'SocialLinks' && <SocialLinks />}
+                      {msg.uiComponent?.type === 'CalendarWidget' && <CalendarWidget data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} messageId={msg.id} />}
+                      {msg.uiComponent?.type === 'BookingSuccess' && <BookingSuccess data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} />}
                     </div>
-                  )}
-                </div>
-              ))}
-              {isLoading && (
-                 <div className="flex justify-start">
-                   <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none p-4 flex items-center gap-2 shadow-sm">
-                     <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
-                     <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-100"></span>
-                     <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-200"></span>
-                   </div>
-                 </div>
-              )}
-            </div>
+                    
+                    {msg.role === 'model' && (
+                      <div className="flex items-center gap-2 mt-1 ml-2 opacity-100 transition-opacity">
+                        <button onClick={() => handleCopy(msg.text || '', msg.id)} className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-black transition">{copiedId === msg.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}</button>
+                        <div className="h-3 w-[1px] bg-gray-200"></div>
+                        <button onClick={() => handleFeedback(msg, 'like')} className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-black"><ThumbsUp className="w-3 h-3" /></button>
+                        <button onClick={() => handleFeedback(msg, 'dislike')} className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-black"><ThumbsDown className="w-3 h-3" /></button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none p-4 flex items-center gap-2 shadow-sm">
+                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-100"></span>
+                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-200"></span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Input */}
-            <form onSubmit={handleSend} className="p-4 bg-white border-t border-gray-100 flex gap-2 shrink-0">
-              <input 
-                type="text" 
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Digite sua mensagem..." 
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 py-3 text-base md:text-sm focus:outline-none focus:border-black focus:ring-0 transition-colors placeholder-gray-400"
-              />
-              <button type="submit" disabled={isLoading} className="bg-black text-white p-3 rounded-full hover:bg-accent hover:text-black transition disabled:opacity-50 flex-shrink-0 shadow-lg">
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
+            {!showHistory && (
+              <form onSubmit={handleSend} className="p-4 bg-white border-t border-gray-100 flex gap-2 shrink-0">
+                <input 
+                  type="text" 
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Digite sua mensagem..." 
+                  className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 py-3 text-base md:text-sm focus:outline-none focus:border-black focus:ring-0 transition-colors placeholder-gray-400"
+                />
+                <button type="submit" disabled={isLoading} className="bg-black text-white p-3 rounded-full hover:bg-accent hover:text-black transition disabled:opacity-50 flex-shrink-0 shadow-lg">
+                  <Send className="w-4 h-4" />
+                </button>
+              </form>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

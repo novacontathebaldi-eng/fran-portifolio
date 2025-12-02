@@ -52,7 +52,7 @@ const Login: React.FC = () => {
       const { user, error } = await login(email, password);
       
       if (error) {
-        setError(error.message || 'Erro ao fazer login. Verifique suas credenciais.');
+        setError(error.message);
       } else {
          // Force redirect to profile with replace to clear history stack
          navigate('/profile', { replace: true });
@@ -64,13 +64,18 @@ const Login: React.FC = () => {
     }
   };
 
+  const handleInput = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
+    setter(value);
+    if (error) setError('');
+  };
+
   return (
     <div className="max-w-md w-full mx-auto animate-fadeIn">
       <h2 className="text-3xl font-serif mb-2">Entrar</h2>
       <p className="text-secondary mb-8">Acesse o painel do seu projeto.</p>
       
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm flex items-center gap-2">
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm flex items-center gap-2 animate-fadeIn">
           <AlertCircle className="w-4 h-4" />
           {error}
         </div>
@@ -82,7 +87,7 @@ const Login: React.FC = () => {
           <input 
             type="email" 
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => handleInput(setEmail, e.target.value)}
             className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" 
             placeholder="voce@exemplo.com.br" 
             required
@@ -93,7 +98,7 @@ const Login: React.FC = () => {
           <input 
             type="password" 
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => handleInput(setPassword, e.target.value)}
             className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" 
             placeholder="••••••••" 
             required
@@ -148,7 +153,7 @@ const Register: React.FC = () => {
     try {
       const { error } = await registerUser(formData.name, formData.email, formData.phone, formData.password);
       if (error) {
-        setError(error.message || "Erro ao criar conta.");
+        setError(error.message);
       } else {
         navigate('/profile', { replace: true });
       }
@@ -161,6 +166,7 @@ const Register: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (error) setError('');
   };
 
   return (
@@ -169,7 +175,7 @@ const Register: React.FC = () => {
       <p className="text-secondary mb-8">Comece sua jornada com Fran Siller Arquitetura.</p>
       
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm flex items-center gap-2">
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm flex items-center gap-2 animate-fadeIn">
           <AlertCircle className="w-4 h-4" />
           {error}
         </div>

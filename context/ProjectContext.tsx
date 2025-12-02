@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address, CulturalProject } from '../types';
+import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address, CulturalProject, ChatSession } from '../types';
 import { chatWithConcierge } from '../api/chat';
 import { supabase } from '../supabaseClient';
 
@@ -42,6 +42,7 @@ interface ProjectContextType {
   updateMessageUI: (id: string, uiComponent: any) => void;
   currentChatMessages: ChatMessage[];
   createNewChat: () => void;
+  archiveCurrentChat: () => Promise<void>;
   logAiFeedback: (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => void;
   
   clientMemories: ClientMemory[];
@@ -133,6 +134,14 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
   }
 };
 
+const translateAuthError = (message: string): string => {
+  if (message.includes("Invalid login credentials")) return "E-mail ou senha incorretos. Tente novamente.";
+  if (message.includes("User already registered")) return "Este e-mail já está cadastrado. Tente fazer login.";
+  if (message.includes("Password should be at least")) return "A senha deve ter pelo menos 6 caracteres.";
+  if (message.includes("Email not confirmed")) return "Verifique seu e-mail para confirmar a conta.";
+  return "Ocorreu um erro na autenticação. Tente novamente.";
+};
+
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Global Data
   const [projects, setProjects] = useState<Project[]>([]);
@@ -196,9 +205,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           
           memories: memories || [],
           folders: folders || [],
-          appointments: userAppts || [], // FIXED: Now user sees their own appointments
+          appointments: userAppts || [],
           
-          chats: [], 
+          chats: profile.chats || [], 
           projects: [], 
           favorites: [],
         };
@@ -273,7 +282,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
           const { data: allFolders } = await supabase.from('client_folders').select('*, files:client_files(*)');
           const { data: allMemories } = await supabase.from('client_memories').select('*');
-          // const { data: allAppts } = await supabase.from('appointments').select('*'); // We already have global appointments
 
           const mapped: User[] = profiles.map((p: any) => ({
                id: p.id,
@@ -289,8 +297,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
                
                folders: allFolders?.filter((f: any) => f.user_id === p.id) || [],
                memories: allMemories?.filter((m: any) => m.user_id === p.id) || [],
-               appointments: [], // Admin sees appointments in separate list usually, but could map here if needed
-               chats: [],
+               appointments: [],
+               chats: p.chats || [],
                projects: [],
                favorites: [],
           }));
@@ -309,7 +317,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   
   const login = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    return { user: null, error };
+    if (error) {
+        return { user: null, error: { message: translateAuthError(error.message) } };
+    }
+    return { user: null, error: null };
   };
 
   const registerUser = async (name: string, email: string, phone: string, password: string) => {
@@ -319,7 +330,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       options: { data: { name, phone } }
     });
 
-    if (data.user && !error) {
+    if (error) {
+        return { user: null, error: { message: translateAuthError(error.message) } };
+    }
+
+    if (data.user) {
         const { error: profileError } = await supabase
             .from('profiles')
             .update({ name: name, phone: phone })
@@ -328,7 +343,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (profileError) console.error("Error updating profile phone:", profileError);
     }
 
-    return { user: null, error };
+    return { user: null, error: null };
   };
 
   const logout = async () => {
@@ -406,7 +421,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       avatar: updatedUser.avatar,
       addresses: updatedUser.addresses,
       cpf: updatedUser.cpf,
-      birth_date: updatedUser.birthDate
+      birth_date: updatedUser.birthDate,
+      chats: updatedUser.chats // Sync chats if updated
     }).eq('id', updatedUser.id);
 
     if (!error) {
@@ -561,9 +577,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
   };
 
-  // --- APPOINTMENTS (FIXED) ---
+  // --- APPOINTMENTS ---
   const addAppointment = async (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => {
-    // Construct strict payload for Supabase
     const payload = {
         client_id: appt.clientId,
         client_name: appt.clientName,
@@ -571,7 +586,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         time: appt.time,
         type: appt.type,
         location: appt.location,
-        status: 'pending', // Default status
+        status: 'pending',
         meeting_link: appt.meetingLink || null,
         notes: appt.notes || null
     };
@@ -579,10 +594,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     const { data, error } = await supabase.from('appointments').insert(payload).select().single();
     
     if (data && !error) {
-        // Refresh local appointments list
         const { data: aptData } = await supabase.from('appointments').select('*');
         if (aptData) setAppointments(aptData);
-        // Refresh Current User Appointments too
         if (currentUser && currentUser.id === appt.clientId) {
             const { data: userAppts } = await supabase.from('appointments').select('*').eq('client_id', currentUser.id);
             if (userAppts) setCurrentUser(prev => prev ? ({ ...prev, appointments: userAppts }) : null);
@@ -652,6 +665,26 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // --- AI Chat Logic ---
   const createNewChat = () => setCurrentChatMessages([]);
+
+  const archiveCurrentChat = async () => {
+    if (currentChatMessages.length === 0) return;
+    
+    if (currentUser) {
+       // Save to profile if logged in
+       const newChat: ChatSession = {
+           id: Date.now().toString(),
+           title: `Conversa de ${new Date().toLocaleDateString('pt-BR')}`,
+           messages: currentChatMessages,
+           createdAt: new Date().toISOString(),
+           lastUpdated: new Date().toISOString()
+       };
+       
+       const updatedChats = [newChat, ...(currentUser.chats || [])];
+       await updateUser({ ...currentUser, chats: updatedChats });
+    }
+    
+    setCurrentChatMessages([]);
+  };
 
   const logAiFeedback = (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => {
     const newItem: AiFeedbackItem = {
@@ -766,6 +799,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       updateMessageUI,
       currentChatMessages,
       createNewChat,
+      archiveCurrentChat,
       logAiFeedback,
       clientMemories: currentUser?.memories || [],
       addClientMemory,
