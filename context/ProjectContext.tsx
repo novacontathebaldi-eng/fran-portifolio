@@ -44,7 +44,8 @@ interface ProjectContextType {
   currentChatMessages: ChatMessage[];
   loadChatMessages: (messages: ChatMessage[]) => void;
   createNewChat: () => void;
-  archiveCurrentChat: () => Promise<'success' | 'unauthorized' | 'error'>;
+  archiveCurrentChat: () => Promise<'success' | 'guest' | 'error'>;
+  clearCurrentChat: () => void; // New simple clear
   restoreChatSession: (chatId: string) => void;
   logAiFeedback: (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => void;
   
@@ -200,6 +201,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     if (currentChatMessages.length > 0) {
       localStorage.setItem(LS_CHAT_KEY, JSON.stringify(currentChatMessages));
+    } else {
+      // Clean up empty state
+      localStorage.removeItem(LS_CHAT_KEY);
     }
   }, [currentChatMessages]);
 
@@ -777,52 +781,71 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     localStorage.removeItem(LS_CHAT_KEY);
   };
 
-  // UPDATED: archiveCurrentChat to handle errors and avoid cleaning if save fails
-  const archiveCurrentChat = async (): Promise<'success' | 'unauthorized' | 'error'> => {
+  // REFACTORED ARCHIVE FUNCTION
+  const archiveCurrentChat = async (): Promise<'success' | 'guest' | 'error'> => {
+    // 1. If empty, just return success, no action needed
     if (currentChatMessages.length === 0) return 'success';
-    
-    if (currentUser) {
-       // Sanitize messages: Remove circular refs or heavy UI components before saving
-       const cleanMessages = currentChatMessages.map(msg => ({
+
+    // 2. Check if logged in
+    if (!currentUser) {
+       // Guest user: just clear the chat locally, no saving
+       setCurrentChatMessages([]);
+       localStorage.removeItem(LS_CHAT_KEY);
+       return 'guest';
+    }
+
+    try {
+        // 3. Prepare Chat Object
+        // Sanitize messages: Remove circular refs or heavy UI components before saving
+        const cleanMessages = currentChatMessages.map(msg => ({
           id: msg.id,
           role: msg.role,
           text: msg.text || '',
-          // Simplified UI component data or strip if causing issues
           uiComponent: msg.uiComponent ? { type: msg.uiComponent.type, data: msg.uiComponent.data } : undefined,
           actions: msg.actions
-       }));
+        }));
 
-       const newChat: ChatSession = {
-           id: Date.now().toString(),
-           title: `Conversa de ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`,
-           messages: cleanMessages,
-           createdAt: new Date().toISOString(),
-           lastUpdated: new Date().toISOString()
-       };
-       
-       const updatedChats = [newChat, ...(currentUser.chats || [])];
-       
-       // Call updateUser AND wait for result
-       const success = await updateUser({ ...currentUser, chats: updatedChats });
-       
-       if (success) {
-           setCurrentChatMessages([]);
-           localStorage.removeItem(LS_CHAT_KEY);
-           return 'success';
-       } else {
-           return 'error';
-       }
-    } else {
-       return 'unauthorized';
+        const newChat: ChatSession = {
+            id: Date.now().toString(),
+            title: `Conversa de ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`,
+            messages: cleanMessages,
+            createdAt: new Date().toISOString(),
+            lastUpdated: new Date().toISOString()
+        };
+
+        const updatedChats = [newChat, ...(currentUser.chats || [])];
+
+        // 4. OPTIMISTIC UPDATE: Update Context/UI Immediately
+        const optimisticUser = { ...currentUser, chats: updatedChats };
+        setCurrentUser(optimisticUser);
+        
+        // 5. Clear Chat Area Immediately
+        setCurrentChatMessages([]);
+        localStorage.removeItem(LS_CHAT_KEY);
+
+        // 6. Background DB Sync (Fire and Forget for UI responsiveness)
+        // We use the existing updateUser which handles DB + Local State sync
+        await updateUser(optimisticUser);
+        
+        return 'success';
+
+    } catch (e) {
+        console.error("Error archiving chat", e);
+        return 'error';
     }
   };
+  
+  // Simple Clear for Guest or Reset
+  const clearCurrentChat = () => {
+    setCurrentChatMessages([]);
+    localStorage.removeItem(LS_CHAT_KEY);
+  }
   
   const restoreChatSession = (chatId: string) => {
      if (!currentUser) return;
      const session = currentUser.chats?.find(c => c.id === chatId);
      if (session) {
         setCurrentChatMessages(session.messages);
-        // Sync to LS handles by useEffect
         showToast('Conversa restaurada.', 'info');
      }
   };
@@ -941,6 +964,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       loadChatMessages,
       createNewChat,
       archiveCurrentChat,
+      clearCurrentChat,
       restoreChatSession,
       logAiFeedback,
       clientMemories: currentUser?.memories || [],

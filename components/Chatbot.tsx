@@ -297,7 +297,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const { sendMessageToAI, currentUser, addAdminNote, showToast, currentChatMessages, logAiFeedback, settings, siteContent, archiveCurrentChat, addClientMemory, restoreChatSession, updateMessageUI } = useProjects();
+  const { sendMessageToAI, currentUser, addAdminNote, showToast, currentChatMessages, logAiFeedback, settings, siteContent, archiveCurrentChat, addClientMemory, restoreChatSession, updateMessageUI, clearCurrentChat } = useProjects();
   
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -341,15 +341,16 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     }];
   }, [currentUser, settings.aiConfig.defaultGreeting]);
 
-  const displayMessages = currentChatMessages.length > 0 ? currentChatMessages : defaultMessages;
+  // Safe display list avoiding crashes if array is undefined during transitions
+  const displayMessages = (currentChatMessages && currentChatMessages.length > 0) ? currentChatMessages : defaultMessages;
 
   useEffect(() => {
-    if (isOpen && !showHistory) {
+    if (isOpen && !showHistory && lastMessageRef.current) {
       setTimeout(() => {
         lastMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 300);
+      }, 100);
     }
-  }, [displayMessages, isOpen, showHistory]);
+  }, [displayMessages.length, isOpen, showHistory]);
 
   const processUserMessage = async (userText: string) => {
     if (!userText.trim() || isLoading) return;
@@ -422,11 +423,12 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     
     if (result === 'success') {
       showToast("Conversa arquivada com sucesso.", "success");
-    } else if (result === 'unauthorized') {
-      showToast("Faça login para salvar o histórico.", "info");
-      navigate('/auth');
+    } else if (result === 'guest') {
+      // Logic Fix: Do not redirect guests. Just clear the chat.
+      clearCurrentChat();
+      showToast("Chat limpo. Faça login para salvar o histórico.", "info");
     } else {
-      // 'error' case: Toast is handled by updateUser inside context
+      showToast("Erro ao arquivar.", "error");
     }
   };
 
