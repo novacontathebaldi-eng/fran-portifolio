@@ -1,19 +1,30 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useProjects } from '../../context/ProjectContext';
 import { CulturalProject, ContentBlock } from '../../types';
 import { ArrowLeft, Save, Upload, Type, Image as ImageIcon, LayoutGrid, Quote, Trash2, ArrowUp, ArrowDown, GripVertical, Plus, Heading } from 'lucide-react';
 import { motion, Reorder } from 'framer-motion';
+import { supabase } from '../../supabaseClient';
 
-// Mock Upload for now
+// Real Supabase Upload
 const uploadToSupabase = async (file: File): Promise<string> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(URL.createObjectURL(file));
-    }, 800);
-  });
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
+  const filePath = `${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('storage-Fran')
+    .upload(filePath, file);
+
+  if (uploadError) {
+    throw uploadError;
+  }
+
+  const { data } = supabase.storage
+    .from('storage-Fran')
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
 };
 
 export const CulturalProjectForm: React.FC = () => {
@@ -75,6 +86,8 @@ export const CulturalProjectForm: React.FC = () => {
         const url = await uploadToSupabase(e.target.files[0]);
         setFormData(prev => ({ ...prev, image: url }));
         showToast('Capa atualizada.', 'success');
+    } catch(err) {
+        showToast('Erro ao fazer upload da capa.', 'error');
     } finally {
         setUploading(false);
     }
@@ -173,8 +186,7 @@ export const CulturalProjectForm: React.FC = () => {
       updateCulturalProject({ ...projectData, id } as CulturalProject);
       showToast('Projeto cultural atualizado!', 'success');
     } else {
-      const newId = Math.random().toString(36).substr(2, 9);
-      addCulturalProject({ ...projectData, id: newId } as CulturalProject);
+      addCulturalProject({ ...projectData } as CulturalProject);
       showToast('Novo projeto cultural criado!', 'success');
     }
     navigate('/admin');
@@ -241,11 +253,11 @@ export const CulturalProjectForm: React.FC = () => {
                           </>
                       ) : (
                           <div className="text-center text-gray-400">
-                             <ImageIcon className="w-8 h-8 mx-auto mb-2" />
-                             <span className="text-sm">Clique para upload</span>
+                             {uploading ? <span className="animate-pulse">Enviando...</span> : <ImageIcon className="w-8 h-8 mx-auto mb-2" />}
+                             <span className="text-sm">{uploading ? '' : 'Clique para upload'}</span>
                           </div>
                       )}
-                      <input type="file" className="hidden" onChange={handleCoverUpload} accept="image/*" />
+                      <input type="file" className="hidden" onChange={handleCoverUpload} accept="image/*" disabled={uploading} />
                    </label>
                 </div>
                 

@@ -1,18 +1,30 @@
-
 import React, { useState, useRef, useMemo } from 'react';
 import { useProjects } from '../context/ProjectContext';
 import { Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Project, ClientMemory, ClientFolder, Address, User, Appointment } from '../types';
 import { Navigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 
-// Mock Upload
-const uploadToStorage = async (file: File): Promise<string> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(URL.createObjectURL(file));
-    }, 1000);
-  });
+// Real Supabase Upload
+const uploadToSupabase = async (file: File): Promise<string> => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
+  const filePath = `${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('storage-Fran')
+    .upload(filePath, file);
+
+  if (uploadError) {
+    throw uploadError;
+  }
+
+  const { data } = supabase.storage
+    .from('storage-Fran')
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
 };
 
 export const ClientArea: React.FC = () => {
@@ -65,9 +77,11 @@ export const ClientArea: React.FC = () => {
     if (!e.target.files || !e.target.files[0] || !currentUser) return;
     setUploadingAvatar(true);
     try {
-      const url = await uploadToStorage(e.target.files[0]);
+      const url = await uploadToSupabase(e.target.files[0]);
       updateUser({ ...currentUser, avatar: url });
       showToast('Foto de perfil atualizada.', 'success');
+    } catch(err) {
+      showToast('Erro ao atualizar foto.', 'error');
     } finally {
       setUploadingAvatar(false);
     }

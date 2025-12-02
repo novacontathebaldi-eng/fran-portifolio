@@ -1,19 +1,30 @@
-
-
 import React, { useState } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark } from 'lucide-react';
 import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory } from '../../types';
 import { motion, Reorder } from 'framer-motion';
+import { supabase } from '../../supabaseClient';
 
-// Mock Supabase Upload Simulation
+// Real Supabase Upload
 const uploadToSupabase = async (file: File): Promise<string> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(URL.createObjectURL(file));
-    }, 1000);
-  });
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
+  const filePath = `${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('storage-Fran')
+    .upload(filePath, file);
+
+  if (uploadError) {
+    throw uploadError;
+  }
+
+  const { data } = supabase.storage
+    .from('storage-Fran')
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
 };
 
 export const AdminDashboard: React.FC = () => {
