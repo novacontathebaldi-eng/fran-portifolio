@@ -176,43 +176,46 @@ const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: 
       if (!selectedDate || isSubmitting) return;
       setIsSubmitting(true);
       
-      await new Promise(r => setTimeout(r, 600));
-
-      await addAppointment({
-          clientId: currentUser.id,
-          clientName: currentUser.name,
-          date: selectedDate,
-          time: time,
-          type: data?.type || 'meeting',
-          location: locationText,
-      });
-      
-      showToast('Solicitação enviada com sucesso!', 'success');
-      
-      // Update UI PERMANENTLY in Context
-      updateMessageUI(messageId, {
-          type: 'BookingSuccess',
-          data: {
-              date: selectedDate,
-              time,
-              location: locationText
-          }
-      });
-
-      if (addMessageToChat) {
-        addMessageToChat({
-            id: Date.now().toString(),
-            role: 'model',
-            text: `Agendamento pré-confirmado para ${new Date(selectedDate).toLocaleDateString()} às ${time}. Você pode acompanhar o status no seu painel.`
+      try {
+        await addAppointment({
+            clientId: currentUser.id,
+            clientName: currentUser.name,
+            date: selectedDate,
+            time: time,
+            type: data?.type || 'meeting',
+            location: locationText,
         });
+        
+        showToast('Solicitação enviada com sucesso!', 'success');
+        
+        // Update UI PERMANENTLY in Context
+        updateMessageUI(messageId, {
+            type: 'BookingSuccess',
+            data: {
+                date: selectedDate,
+                time,
+                location: locationText
+            }
+        });
+
+        if (addMessageToChat) {
+          addMessageToChat({
+              id: Date.now().toString(),
+              role: 'model',
+              text: `Agendamento pré-confirmado para ${new Date(selectedDate).toLocaleDateString()} às ${time}. Você pode acompanhar o status no seu painel.`
+          });
+        }
+      } catch (err) {
+        showToast('Erro ao realizar agendamento.', 'error');
+        console.error(err);
+      } finally {
+        setIsSubmitting(false);
       }
-      
-      setIsSubmitting(false);
   };
 
   return (
       <div className="mt-4 bg-white rounded-xl border border-gray-200 p-4 shadow-sm relative">
-          {isSubmitting && <div className="absolute inset-0 bg-white/50 z-10 cursor-wait"></div>}
+          {isSubmitting && <div className="absolute inset-0 bg-white/50 z-10 cursor-wait flex items-center justify-center"><div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div></div>}
           
           <div className="flex justify-between items-center mb-4">
               <div className="flex flex-col">
@@ -391,25 +394,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                     location: locationText
                 });
 
-                // Inject UI Feedback
-                // Find the message ID to update or add a new one
-                // Since this happens immediately after response, we can assume the last message is the one to update?
-                // Actually, sendMessageToAI adds the text response. We should add a new UI message.
-                // However, updated logic in api/chat already returns the text. 
-                // We will just show a toast or rely on text response + "BookingSuccess" injection if needed.
-                // Better approach: Since the text response already says "I scheduled it", we show the Success Card.
-                
-                // We need to find the ID of the bot message that just arrived to attach the UI component if not present
-                // Or simply trigger a toast.
                 showToast("Agendamento realizado via IA!", "success");
-                
-                // Let's force a UI update to show the success card instead of nothing
-                // We need the ID of the newly added message.
-                // sendMessageToAI updates state asynchronously. We can't easily get the ID here.
-                // BUT, we can add a specialized message for success.
-                // Actually, `sendMessageToAI` sets state.
-                // Let's just rely on the Toast and the user checking their dashboard, 
-                // OR inject a system message confirming it.
             } else {
                 showToast("Faça login para confirmar o agendamento.", "error");
                 navigate('/auth');

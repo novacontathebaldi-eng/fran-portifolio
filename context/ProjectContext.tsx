@@ -64,7 +64,7 @@ interface ProjectContextType {
   appointments: Appointment[];
   scheduleSettings: ScheduleSettings;
   updateScheduleSettings: (settings: ScheduleSettings) => void;
-  addAppointment: (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => Promise<void>; // Changed to Promise
+  addAppointment: (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => Promise<void>;
   updateAppointment: (appt: Appointment) => void;
   updateAppointmentStatus: (id: string, status: Appointment['status']) => void;
   deleteAppointmentPermanently: (id: string) => void;
@@ -194,7 +194,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           memories: memories || [],
           folders: folders || [],
           
-          chats: [], // Chats not persisted in this demo context
+          chats: [], 
           projects: [], 
           favorites: [],
           appointments: []
@@ -241,7 +241,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
-          // If we don't have user or ID changed, fetch
           if (!currentUser || currentUser.id !== session.user.id) {
              const user = await fetchFullUserProfile(session.user.id);
              if (user) setCurrentUser(user);
@@ -256,44 +255,51 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // --- Admin: Fetch All Users (Deep fetch) ---
   useEffect(() => {
-    // CORRECTION: Ensure we fetch users if role is admin
+    // FIX: Robust check for admin role to fetch all users
     if (currentUser?.role === 'admin') {
       const fetchAllUsers = async () => {
-        const { data: profiles, error } = await supabase.from('profiles').select('*');
-        if (error || !profiles) {
-            console.error("Error fetching profiles:", error);
-            return;
+        try {
+          const { data: profiles, error } = await supabase.from('profiles').select('*');
+          
+          if (error) {
+              console.error("Error fetching profiles for admin:", error);
+              return;
+          }
+
+          if (!profiles) return;
+
+          const { data: allFolders } = await supabase.from('client_folders').select('*, files:client_files(*)');
+          const { data: allMemories } = await supabase.from('client_memories').select('*');
+
+          const mapped: User[] = profiles.map((p: any) => ({
+               id: p.id,
+               name: p.name,
+               email: p.email,
+               role: p.role,
+               phone: p.phone,
+               avatar: p.avatar,
+               bio: p.bio,
+               cpf: p.cpf,
+               birthDate: p.birth_date,
+               addresses: p.addresses || [],
+               
+               folders: allFolders?.filter((f: any) => f.user_id === p.id) || [],
+               memories: allMemories?.filter((m: any) => m.user_id === p.id) || [],
+               chats: [],
+               projects: [],
+               favorites: [],
+               appointments: []
+          }));
+          
+          setUsers(mapped);
+        } catch (err) {
+          console.error("Critical error in Admin User Fetch:", err);
         }
-
-        const { data: allFolders } = await supabase.from('client_folders').select('*, files:client_files(*)');
-        const { data: allMemories } = await supabase.from('client_memories').select('*');
-
-        const mapped: User[] = profiles.map((p: any) => ({
-             id: p.id,
-             name: p.name,
-             email: p.email,
-             role: p.role,
-             phone: p.phone,
-             avatar: p.avatar,
-             bio: p.bio,
-             cpf: p.cpf,
-             birthDate: p.birth_date,
-             addresses: p.addresses || [],
-             
-             folders: allFolders?.filter((f: any) => f.user_id === p.id) || [],
-             memories: allMemories?.filter((m: any) => m.user_id === p.id) || [],
-             chats: [],
-             projects: [],
-             favorites: [],
-             appointments: []
-        }));
-        
-        setUsers(mapped);
       };
       
       fetchAllUsers();
     }
-  }, [currentUser]); // Depend mostly on currentUser changing
+  }, [currentUser?.role]);
 
   // --- AUTH ACTIONS ---
   
@@ -303,7 +309,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const registerUser = async (name: string, email: string, phone: string, password: string) => {
-    // 1. SignUp
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -311,7 +316,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
 
     if (data.user && !error) {
-        // 2. CRITICAL: Force update profile with phone immediately
         const { error: profileError } = await supabase
             .from('profiles')
             .update({ name: name, phone: phone })
@@ -327,7 +331,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     await supabase.auth.signOut();
   };
 
-  // --- PERSISTENCE HELPERS ---
   const persistSettings = async (newContent?: SiteContent, newSettings?: GlobalSettings, newSchedule?: ScheduleSettings) => {
     const updates: any = {};
     if (newContent) updates.content = newContent;
@@ -338,11 +341,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (error) console.error("Error saving settings:", error);
   };
 
-  // --- PROJECT ACTIONS ---
   const addProject = async (project: Project) => {
     const { error } = await supabase.from('projects').insert(project);
     if (!error) {
-       fetchGlobalData(); // Refresh list
+       fetchGlobalData();
     } else {
       showToast('Erro ao salvar projeto.', 'error');
     }
@@ -377,7 +379,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (!error) setCulturalProjects(prev => prev.filter(p => p.id !== id));
   };
 
-  // --- SETTINGS ACTIONS ---
   const updateSiteContent = (content: SiteContent) => {
     setSiteContent(content);
     persistSettings(content, undefined, undefined);
@@ -412,7 +413,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  // --- MEMORIES (DB Persisted) ---
   const addClientMemory = async (memory: Omit<ClientMemory, 'id' | 'createdAt'>) => {
     if (!currentUser) return;
     
@@ -424,7 +424,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }).select().single();
 
     if (data && !error) {
-        // Update Local State
         const newMem: ClientMemory = {
             id: data.id,
             topic: data.topic,
@@ -438,7 +437,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const updateClientMemory = async (id: string, content: string) => {
-     // TODO implementation if needed
   };
   
   const deleteClientMemory = async (id: string) => {
@@ -449,7 +447,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  // --- FOLDERS & FILES (DB Persisted) ---
   const createClientFolder = async (userId: string, folderName: string) => {
       const { data, error } = await supabase.from('client_folders').insert({
           user_id: userId,
@@ -560,24 +557,27 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
   };
 
-  // --- APPOINTMENTS ---
+  // --- APPOINTMENTS (FIXED) ---
   const addAppointment = async (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => {
-    const newAppt = {
-      ...appt,
-      status: 'pending',
-      client_id: appt.clientId,
-      client_name: appt.clientName,
-      meeting_link: appt.meetingLink
+    // Construct strict payload for Supabase
+    const payload = {
+        client_id: appt.clientId,
+        client_name: appt.clientName,
+        date: appt.date,
+        time: appt.time,
+        type: appt.type,
+        location: appt.location,
+        status: 'pending', // Default status
+        meeting_link: appt.meetingLink || null,
+        notes: appt.notes || null
     };
-    // Remove camelCase keys
-    delete (newAppt as any).clientId;
-    delete (newAppt as any).clientName;
-    delete (newAppt as any).meetingLink;
 
-    const { data, error } = await supabase.from('appointments').insert(newAppt).select().single();
+    const { data, error } = await supabase.from('appointments').insert(payload).select().single();
+    
     if (data && !error) {
-        // Fetch to update state
-        fetchGlobalData(); 
+        // Refresh local appointments list
+        const { data: aptData } = await supabase.from('appointments').select('*');
+        if (aptData) setAppointments(aptData);
     } else {
       console.error("Error adding appointment:", error);
       showToast("Erro ao agendar compromisso.", "error");
@@ -719,7 +719,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
   
-  // --- Admin Notes ---
   const addAdminNote = (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => {
     const newNote: AdminNote = {
       ...note,
