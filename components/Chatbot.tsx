@@ -123,9 +123,44 @@ const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: 
   const navigate = useNavigate();
   
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [viewDate, setViewDate] = useState(new Date());
-  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Search ahead for next 5 AVAILABLE days
+  const availableDates = useMemo(() => {
+    const dates = [];
+    const today = new Date();
+    let current = new Date(today);
+    // Move to tomorrow if late in the day (optional, but good UX)
+    if (today.getHours() > 17) {
+        current.setDate(today.getDate() + 1);
+    }
+
+    // Look ahead 30 days to find at least 5 available days
+    for (let i = 0; i < 30; i++) {
+       const dateStr = current.toISOString().split('T')[0];
+       const slots = checkAvailability(dateStr);
+       
+       // Only add if there are slots available
+       if (slots.length > 0) {
+          dates.push({
+             dateObj: new Date(current),
+             dateStr: dateStr,
+             slots: slots
+          });
+       }
+
+       if (dates.length >= 5) break; // Limit to 5 days showing
+       current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  }, [checkAvailability]); // Recalculate if availability logic changes
+
+  // Auto select first day if available and none selected
+  useEffect(() => {
+      if (!selectedDate && availableDates.length > 0) {
+          setSelectedDate(availableDates[0].dateStr);
+      }
+  }, [availableDates]);
 
   // Login Check
   if (!currentUser) {
@@ -153,24 +188,7 @@ const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: 
       ? (data?.address || "Endereço da Obra") 
       : (data?.location || siteContent.office.address); 
 
-  const dates = useMemo(() => {
-      const arr = [];
-      const start = new Date(viewDate);
-      if (start < new Date()) start.setDate(new Date().getDate() + 1);
-      
-      for (let i = 0; i < 5; i++) { 
-          const d = new Date(start);
-          d.setDate(start.getDate() + i);
-          arr.push(d);
-      }
-      return arr;
-  }, [viewDate]);
-
-  const handleDateClick = (dateStr: string) => {
-      if (isSubmitting) return;
-      setSelectedDate(dateStr);
-      setAvailableSlots(checkAvailability(dateStr));
-  };
+  const activeDaySlots = availableDates.find(d => d.dateStr === selectedDate)?.slots || [];
 
   const confirmBooking = async (time: string) => {
       if (!selectedDate || isSubmitting) return;
@@ -214,7 +232,7 @@ const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: 
   };
 
   return (
-      <div className="mt-4 bg-white rounded-xl border border-gray-200 p-4 shadow-sm relative">
+      <div className="mt-4 bg-white rounded-xl border border-gray-200 p-4 shadow-sm relative animate-fadeIn">
           {isSubmitting && <div className="absolute inset-0 bg-white/50 z-10 cursor-wait flex items-center justify-center"><div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div></div>}
           
           <div className="flex justify-between items-center mb-4">
@@ -226,53 +244,48 @@ const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: 
                     {locationText}
                 </span>
               </div>
-              <div className="flex gap-1">
-                 <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate()-5); setViewDate(d); }} className="p-1 hover:bg-gray-100 rounded text-gray-500"><ChevronLeft className="w-4 h-4" /></button>
-                 <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate()+5); setViewDate(d); }} className="p-1 hover:bg-gray-100 rounded text-gray-500"><ChevronRight className="w-4 h-4" /></button>
+          </div>
+
+          {availableDates.length > 0 ? (
+            <>
+              {/* Date Selector */}
+              <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-4">
+                  {availableDates.map((d) => {
+                     const isSelected = selectedDate === d.dateStr;
+                     return (
+                         <button 
+                           key={d.dateStr} 
+                           onClick={() => setSelectedDate(d.dateStr)}
+                           className={`flex flex-col items-center justify-center min-w-[50px] p-2 rounded-lg border transition ${isSelected ? 'bg-black text-white border-black shadow-md scale-105' : 'bg-gray-50 border-gray-100 hover:bg-gray-100 text-gray-600'}`}
+                         >
+                             <span className="text-[10px] uppercase font-bold">{d.dateObj.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}</span>
+                             <span className="text-sm font-bold">{d.dateObj.getDate()}</span>
+                         </button>
+                     );
+                  })}
               </div>
-          </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-4">
-              {dates.map((d) => {
-                 const dStr = d.toISOString().split('T')[0];
-                 const isSelected = selectedDate === dStr;
-                 return (
-                     <button 
-                       key={dStr} 
-                       onClick={() => handleDateClick(dStr)}
-                       className={`flex flex-col items-center justify-center min-w-[50px] p-2 rounded-lg border transition ${isSelected ? 'bg-black text-white border-black shadow-md' : 'bg-gray-50 border-gray-100 hover:bg-gray-100 text-gray-600'}`}
-                     >
-                         <span className="text-[10px] uppercase font-bold">{d.toLocaleDateString('pt-BR', { weekday: 'short' })}</span>
-                         <span className="text-sm font-bold">{d.getDate()}</span>
-                     </button>
-                 );
-              })}
-          </div>
-
-          {selectedDate ? (
+              {/* Time Slots */}
               <div className="animate-fadeIn min-h-[100px]">
-                  <p className="text-xs text-gray-400 mb-3 font-medium">Horários disponíveis:</p>
-                  {availableSlots.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-2">
-                         {availableSlots.map(slot => (
-                             <button 
-                               key={slot} 
-                               onClick={() => confirmBooking(slot)}
-                               className="py-2 px-2 bg-white border border-gray-200 rounded-lg text-xs font-bold hover:border-black hover:bg-black hover:text-white transition flex items-center justify-center gap-1 active:scale-95"
-                             >
-                                 {slot}
-                             </button>
-                         ))}
-                      </div>
-                  ) : (
-                      <div className="text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                         <p className="text-xs text-gray-400">Sem horários livres.</p>
-                      </div>
-                  )}
+                  <p className="text-[10px] uppercase font-bold text-gray-400 mb-2">Horários Livres</p>
+                  <div className="grid grid-cols-3 gap-2">
+                     {activeDaySlots.map(slot => (
+                         <button 
+                           key={slot} 
+                           onClick={() => confirmBooking(slot)}
+                           className="py-2 px-2 bg-white border border-gray-200 rounded-lg text-xs font-bold hover:border-black hover:bg-black hover:text-white transition flex items-center justify-center gap-1 active:scale-95"
+                         >
+                             {slot}
+                         </button>
+                     ))}
+                  </div>
               </div>
+            </>
           ) : (
-             <div className="min-h-[100px] flex items-center justify-center text-gray-300 text-xs italic">
-                Selecione um dia acima
+             <div className="min-h-[100px] flex flex-col items-center justify-center text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                <Calendar className="w-8 h-8 text-gray-300 mb-2"/>
+                <p className="text-xs text-gray-500 font-medium">Sem datas disponíveis.</p>
+                <p className="text-[10px] text-gray-400">Entre em contato via WhatsApp.</p>
              </div>
           )}
       </div>
@@ -377,7 +390,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
             }, 1500); 
           }
           else if (action.type === 'scheduleMeeting') {
-            // AUTOMATIC SCHEDULING TRIGGERED BY LLM
+            // AUTOMATIC SCHEDULING TRIGGERED BY LLM (ONLY IF DATE/TIME PROVIDED)
             if (currentUser) {
                 const data = action.payload;
                 const locationText = data?.type === 'visit' 

@@ -64,7 +64,7 @@ const tools = [
       },
       {
         name: 'scheduleMeeting',
-        description: 'Use this tool ONLY when the user CONFIRMS they want to schedule a meeting ("reunião") or a site visit ("visita técnica") AND provides a date/time. If date/time is missing, do not use this tool yet.',
+        description: 'Use this tool when the user wants to schedule a meeting ("reunião") or a site visit ("visita técnica"). If they provide a date and time, include them. If not, call this tool without date/time to show the calendar.',
         parameters: {
           type: Type.OBJECT,
           properties: {
@@ -103,10 +103,17 @@ SUA IDENTIDADE:
 - Sofisticado, minimalista, atencioso e altamente eficiente.
 - Você é uma extensão da experiência de luxo do escritório.
 
-REGRA DE OURO - AGENDAMENTOS:
-- Se o usuário pedir para agendar e fornecer Data e Hora: VOCÊ DEVE CHAMAR A TOOL 'scheduleMeeting'.
-- JAMAIS confirme um agendamento apenas com texto ("Ok, agendei"). Se você não chamar a tool, o agendamento NÃO acontece.
-- Se a tool for chamada, responda confirmando que a solicitação foi enviada para o sistema.
+REGRA DE OURO - AGENDAMENTOS (CRÍTICO):
+1. Se o usuário pedir para agendar mas NÃO fornecer Data e Hora:
+   - Responda: "Claro, por favor selecione o melhor horário no calendário abaixo."
+   - CHAME A TOOL 'scheduleMeeting' (sem parâmetros de data/hora) para exibir o widget.
+   
+2. Se o usuário fornecer Data e Hora ("Quero dia 15 às 14h"):
+   - CHAME A TOOL 'scheduleMeeting' preenchendo os campos 'date' e 'time'.
+   
+3. JAMAIS, EM HIPÓTESE ALGUMA, confirme um agendamento apenas com texto ("Ok, agendei"). 
+   - Se a tool não for chamada, o agendamento NÃO existe.
+   - Sempre dependa da tool para realizar a ação.
 
 REGRA DE OURO - MEMÓRIA (PASSIVA):
 - Monitore a conversa para fatos importantes: gostos, aversões, composição familiar, orçamento, localização do terreno.
@@ -118,11 +125,7 @@ CONTEXTO E FLUXO:
    - Trate-o pelo nome.
    - Use o histórico de memórias anteriores para personalizar a conversa.
 
-2. UX DE AGENDAMENTO:
-   - Se o usuário NÃO der data/hora, mostre o Widget de Calendário (eu cuidarei disso na UI, você só precisa perguntar quando ele prefere).
-   - Se o usuário DER data/hora, chame a tool 'scheduleMeeting' com os parâmetros preenchidos.
-
-3. ESTILO DE RESPOSTA:
+2. ESTILO DE RESPOSTA:
    - Português do Brasil culto.
    - Respostas curtas e objetivas.
 `;
@@ -265,15 +268,19 @@ export async function chatWithConcierge(
                 widgetData.type = 'meeting'; 
             }
 
-            // CRITICAL: If date/time provided, FORCE Action. If not, Widget.
+            // CRITICAL LOGIC: 
+            // If both DATE and TIME are present -> Action (Direct Booking)
+            // If missing -> UI Component (Calendar Widget)
             if (widgetData.date && widgetData.time) {
                 responseData.actions.push({
                   type: 'scheduleMeeting',
                   payload: widgetData
                 });
-                if (!responseData.text) responseData.text = `Perfeito. Enviando solicitação para ${new Date(widgetData.date).toLocaleDateString()} às ${widgetData.time}.`;
+                if (!responseData.text) responseData.text = `Perfeito. Enviando solicitação para ${new Date(widgetData.date as string).toLocaleDateString()} às ${widgetData.time}.`;
             } else {
+                // Force Widget
                 responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
+                if (!responseData.text) responseData.text = "Por favor, selecione uma data e horário disponíveis abaixo.";
             }
           }
         }
