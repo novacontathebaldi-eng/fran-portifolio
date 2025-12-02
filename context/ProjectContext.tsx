@@ -44,7 +44,7 @@ interface ProjectContextType {
   currentChatMessages: ChatMessage[];
   loadChatMessages: (messages: ChatMessage[]) => void;
   createNewChat: () => void;
-  archiveCurrentChat: () => Promise<boolean>;
+  archiveCurrentChat: () => Promise<'success' | 'unauthorized' | 'error'>;
   restoreChatSession: (chatId: string) => void;
   logAiFeedback: (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => void;
   
@@ -59,7 +59,7 @@ interface ProjectContextType {
   uploadFileToFolder: (userId: string, folderId: string, file: File) => Promise<void>;
   deleteClientFile: (userId: string, folderId: string, fileId: string) => void;
 
-  updateUser: (user: User) => void;
+  updateUser: (user: User) => Promise<boolean>;
   
   addAdminNote: (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => void;
   markNoteAsRead: (id: string) => void;
@@ -200,11 +200,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     if (currentChatMessages.length > 0) {
       localStorage.setItem(LS_CHAT_KEY, JSON.stringify(currentChatMessages));
-    } else {
-      // Se estiver vazio (limpo explicitamente), removemos do LS
-      // Mas cuidado: não remova se for apenas inicialização. 
-      // A função createNewChat/archive cuidará da remoção.
-      // Aqui apenas salvamos se tiver conteúdo.
     }
   }, [currentChatMessages]);
 
@@ -514,7 +509,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     persistSettings(undefined, undefined, newSettings);
   };
 
-  const updateUser = async (updatedUser: User) => {
+  // UPDATED: Now returns boolean status to caller
+  const updateUser = async (updatedUser: User): Promise<boolean> => {
     const { error } = await supabase.from('profiles').update({
       name: updatedUser.name,
       phone: updatedUser.phone,
@@ -529,8 +525,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (!error) {
       if (currentUser?.id === updatedUser.id) setCurrentUser(updatedUser);
       setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+      return true;
     } else {
+        console.error("Error updating user:", error);
         showToast("Erro ao atualizar perfil.", "error");
+        return false;
     }
   };
 
@@ -778,29 +777,43 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     localStorage.removeItem(LS_CHAT_KEY);
   };
 
-  const archiveCurrentChat = async (): Promise<boolean> => {
-    if (currentChatMessages.length === 0) return false;
+  // UPDATED: archiveCurrentChat to handle errors and avoid cleaning if save fails
+  const archiveCurrentChat = async (): Promise<'success' | 'unauthorized' | 'error'> => {
+    if (currentChatMessages.length === 0) return 'success';
     
     if (currentUser) {
+       // Sanitize messages: Remove circular refs or heavy UI components before saving
+       const cleanMessages = currentChatMessages.map(msg => ({
+          id: msg.id,
+          role: msg.role,
+          text: msg.text || '',
+          // Simplified UI component data or strip if causing issues
+          uiComponent: msg.uiComponent ? { type: msg.uiComponent.type, data: msg.uiComponent.data } : undefined,
+          actions: msg.actions
+       }));
+
        const newChat: ChatSession = {
            id: Date.now().toString(),
-           title: `Conversa de ${new Date().toLocaleDateString('pt-BR')}`,
-           messages: currentChatMessages,
+           title: `Conversa de ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`,
+           messages: cleanMessages,
            createdAt: new Date().toISOString(),
            lastUpdated: new Date().toISOString()
        };
        
        const updatedChats = [newChat, ...(currentUser.chats || [])];
-       await updateUser({ ...currentUser, chats: updatedChats });
        
-       // Clear Active
-       setCurrentChatMessages([]);
-       localStorage.removeItem(LS_CHAT_KEY);
-       return true;
+       // Call updateUser AND wait for result
+       const success = await updateUser({ ...currentUser, chats: updatedChats });
+       
+       if (success) {
+           setCurrentChatMessages([]);
+           localStorage.removeItem(LS_CHAT_KEY);
+           return 'success';
+       } else {
+           return 'error';
+       }
     } else {
-       // If anonymous, we can't archive to DB.
-       // We can just return false to let UI handle warning
-       return false;
+       return 'unauthorized';
     }
   };
   

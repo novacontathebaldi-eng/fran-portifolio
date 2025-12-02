@@ -118,8 +118,8 @@ const BookingSuccess = ({ data, closeChat }: { data: any, closeChat: () => void 
   );
 };
 
-const CalendarWidget = ({ data, closeChat, onSendMessage }: { data: any, closeChat: () => void, onSendMessage: (text: string) => void }) => {
-  const { currentUser, checkAvailability, siteContent } = useProjects();
+const CalendarWidget = ({ data, messageId, closeChat }: { data: any, messageId: string, closeChat: () => void }) => {
+  const { currentUser, checkAvailability, siteContent, addAppointment, updateMessageUI, showToast } = useProjects();
   const navigate = useNavigate();
   
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -188,15 +188,34 @@ const CalendarWidget = ({ data, closeChat, onSendMessage }: { data: any, closeCh
 
   const activeDaySlots = availableDates.find(d => d.dateStr === selectedDate)?.slots || [];
 
-  const handleSlotClick = (time: string) => {
-    if (!selectedDate) return;
+  const handleSlotClick = async (time: string) => {
+    if (!selectedDate || !currentUser) return;
     
-    // Construct a clear natural language message for the AI
-    const typeLabel = isVisit ? "visita técnica" : "reunião";
-    const userMessage = `Confirmar agendamento de ${typeLabel} em ${locationText} para o dia ${selectedDate} às ${time}.`;
-    
-    // Trigger the chat message automatically
-    onSendMessage(userMessage);
+    const appointmentData = {
+        clientId: currentUser.id,
+        clientName: currentUser.name,
+        date: selectedDate,
+        time: time,
+        type: data.type || 'meeting',
+        location: locationText,
+        meetingLink: data.type === 'meeting' && data.modality === 'online' ? null : undefined,
+        notes: data.notes
+    };
+
+    try {
+        await addAppointment(appointmentData);
+        
+        // Update UI permanently
+        updateMessageUI(messageId, { 
+            type: 'BookingSuccess', 
+            data: appointmentData 
+        });
+
+        showToast("Solicitação enviada com sucesso!", "success");
+
+    } catch (error) {
+        showToast("Erro ao realizar agendamento.", "error");
+    }
   };
 
   return (
@@ -369,11 +388,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                     location: locationText
                 });
 
-                // Update the last message UI to show success component instead of calendar if it was there
-                // But the AI likely returned a new message confirming.
-                // We can also inject a success UI component into the last AI message if needed.
-                // Here, we just rely on the toast and the AI's text response.
-                
                 showToast("Agendamento realizado via IA!", "success");
             } else {
                 showToast("Faça login para confirmar o agendamento.", "error");
@@ -403,11 +417,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     processUserMessage(text);
   };
 
-  // Wrapper for programmatic sending (from CalendarWidget)
-  const handleProgrammaticSend = (text: string) => {
-    processUserMessage(text);
-  };
-
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -429,13 +438,18 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     else showToast("Obrigado. Vamos melhorar.", "info");
   };
 
+  // UPDATED: handleArchive handles new return types
   const handleArchive = async () => {
-    const success = await archiveCurrentChat();
-    if (success) {
-      showToast("Conversa salva no histórico.", "success");
-    } else {
+    const result = await archiveCurrentChat();
+    
+    if (result === 'success') {
+      showToast("Conversa arquivada com sucesso.", "success");
+    } else if (result === 'unauthorized') {
       showToast("Faça login para salvar o histórico.", "info");
       navigate('/auth');
+    } else {
+      // 'error' case: Toast is handled by updateUser inside context
+      // Do NOT redirect, keep chat open so user doesn't lose data
     }
   };
 
@@ -535,7 +549,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                       {/* GenUI Rendering */}
                       {msg.uiComponent?.type === 'ProjectCarousel' && <ProjectCarousel data={msg.uiComponent.data} />}
                       {msg.uiComponent?.type === 'SocialLinks' && <SocialLinks />}
-                      {msg.uiComponent?.type === 'CalendarWidget' && <CalendarWidget data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} onSendMessage={handleProgrammaticSend} />}
+                      {msg.uiComponent?.type === 'CalendarWidget' && <CalendarWidget data={msg.uiComponent.data} messageId={msg.id} closeChat={() => setIsOpen(false)} />}
                       {msg.uiComponent?.type === 'BookingSuccess' && <BookingSuccess data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} />}
                     </div>
                     
