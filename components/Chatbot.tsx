@@ -312,10 +312,62 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const { sendMessageToAI, currentUser, addAdminNote, showToast, currentChatMessages, createNewChat, logAiFeedback, settings, addAppointment, siteContent, archiveCurrentChat, addClientMemory } = useProjects();
+  const { sendMessageToAI, currentUser, addAdminNote, showToast, currentChatMessages, createNewChat, logAiFeedback, settings, addAppointment, siteContent, archiveCurrentChat, addClientMemory, loadChatMessages, restoreChatSession } = useProjects();
   
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // --- PERSISTENCE LOGIC (LocalStorage) ---
+
+  // 1. Save to LocalStorage whenever messages change (only if not logged in)
+  useEffect(() => {
+    if (!currentUser && currentChatMessages.length > 0) {
+      localStorage.setItem('chatbot_history_temp', JSON.stringify(currentChatMessages));
+    }
+  }, [currentChatMessages, currentUser]);
+
+  // 2. Load from LocalStorage on mount (only if not logged in)
+  useEffect(() => {
+    const saved = localStorage.getItem('chatbot_history_temp');
+    if (saved && !currentUser) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          loadChatMessages(parsed);
+        }
+      } catch (e) {
+        console.error("Failed to load chat history", e);
+      }
+    }
+  }, []);
+
+  // 3. Sync Logic: When user logs in, check for temp history, archive it to their account, and clear local
+  useEffect(() => {
+    if (currentUser) {
+      const temp = localStorage.getItem('chatbot_history_temp');
+      if (temp) {
+        try {
+          // If we have temp messages, we load them into context first (if not already there)
+          // Then call archiveCurrentChat to push them to DB as a saved session
+          const parsed = JSON.parse(temp);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+             // We don't overwrite currentChatMessages if they already have something from the user session
+             // But usually on login, context resets. 
+             // Ideally, we want to SAVE this temp session to the user's history so they don't lose it.
+             // We can do this by treating it as a previous session.
+             // However, for simplicity and UX, we can just load it as the *current* active chat.
+             loadChatMessages(parsed);
+             // Then clear storage so we don't reload it next time
+             localStorage.removeItem('chatbot_history_temp');
+             showToast("Conversa anterior restaurada.", "info");
+          }
+        } catch (e) {
+           // ignore
+        }
+      }
+    }
+  }, [currentUser]);
+
 
   // Scroll Lock for Mobile Logic
   useEffect(() => {
@@ -451,7 +503,14 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
 
   const handleArchive = async () => {
     await archiveCurrentChat();
+    // Clear localStorage as well when manually archiving
+    localStorage.removeItem('chatbot_history_temp');
     showToast("Conversa salva no histórico.", "success");
+  };
+
+  const handleRestoreChat = (chatId: string) => {
+    restoreChatSession(chatId);
+    setShowHistory(false);
   };
 
   return (
@@ -500,14 +559,21 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                    {currentUser.chats && currentUser.chats.length > 0 ? (
                       <div className="space-y-3">
                         {currentUser.chats.map(chat => (
-                           <div key={chat.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                              <p className="text-xs font-bold uppercase text-gray-400 mb-1">{new Date(chat.createdAt).toLocaleDateString()}</p>
+                           <button 
+                             key={chat.id} 
+                             onClick={() => handleRestoreChat(chat.id)}
+                             className="w-full text-left bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:border-black transition group"
+                           >
+                              <div className="flex justify-between items-center mb-1">
+                                <p className="text-xs font-bold uppercase text-gray-400">{new Date(chat.createdAt).toLocaleDateString()}</p>
+                                <span className="opacity-0 group-hover:opacity-100 text-xs text-blue-500 font-bold">Restaurar</span>
+                              </div>
                               <p className="text-sm font-bold text-gray-800 mb-2">{chat.title}</p>
                               <p className="text-xs text-gray-500 line-clamp-2 italic">"{chat.messages[chat.messages.length-1]?.text || 'Sem mensagens'}"</p>
                               <div className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-400">
                                  {chat.messages.length} mensagens
                               </div>
-                           </div>
+                           </button>
                         ))}
                       </div>
                    ) : (

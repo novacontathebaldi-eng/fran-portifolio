@@ -42,8 +42,10 @@ interface ProjectContextType {
   addMessageToChat: (message: ChatMessage) => void;
   updateMessageUI: (id: string, uiComponent: any) => void;
   currentChatMessages: ChatMessage[];
+  loadChatMessages: (messages: ChatMessage[]) => void;
   createNewChat: () => void;
   archiveCurrentChat: () => Promise<void>;
+  restoreChatSession: (chatId: string) => void;
   logAiFeedback: (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => void;
   
   clientMemories: ClientMemory[];
@@ -739,6 +741,21 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     
     setCurrentChatMessages([]);
   };
+  
+  // NEW FUNCTION: Restore Chat
+  const restoreChatSession = (chatId: string) => {
+     if (!currentUser) return;
+     const session = currentUser.chats?.find(c => c.id === chatId);
+     if (session) {
+        setCurrentChatMessages(session.messages);
+        showToast('Conversa restaurada.', 'info');
+     }
+  };
+  
+  // NEW FUNCTION: Load Messages (from LocalStorage typically)
+  const loadChatMessages = (messages: ChatMessage[]) => {
+      setCurrentChatMessages(messages);
+  };
 
   const logAiFeedback = (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => {
     const newItem: AiFeedbackItem = {
@@ -845,8 +862,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       addMessageToChat,
       updateMessageUI,
       currentChatMessages,
+      loadChatMessages,
       createNewChat,
       archiveCurrentChat,
+      restoreChatSession,
       logAiFeedback,
       clientMemories: currentUser?.memories || [],
       addClientMemory,
