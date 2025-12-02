@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -55,9 +54,8 @@ const Login: React.FC = () => {
       if (error) {
         setError(error.message || 'Erro ao fazer login. Verifique suas credenciais.');
       } else {
-         // Navigation happens reactively via useEffect in App.tsx or ProjectContext state change
-         // But for UX we force it if success
-         navigate('/profile');
+         // Force redirect to profile with replace to clear history stack
+         navigate('/profile', { replace: true });
       }
     } catch (err) {
       setError('Ocorreu um erro inesperado.');
@@ -102,11 +100,7 @@ const Login: React.FC = () => {
           />
         </div>
         
-        <div className="flex justify-between items-center text-sm">
-          <label className="flex items-center space-x-2 text-gray-500">
-            <input type="checkbox" className="rounded" />
-            <span>Lembrar-me</span>
-          </label>
+        <div className="flex justify-end items-center text-sm">
           <Link to="/auth/recover" className="text-black underline">Esqueceu a senha?</Link>
         </div>
 
@@ -156,7 +150,7 @@ const Register: React.FC = () => {
       if (error) {
         setError(error.message || "Erro ao criar conta.");
       } else {
-        navigate('/profile');
+        navigate('/profile', { replace: true });
       }
     } catch (err) {
       setError("Erro inesperado ao criar conta.");

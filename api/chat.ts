@@ -64,7 +64,7 @@ const tools = [
       },
       {
         name: 'scheduleMeeting',
-        description: 'Use this tool ONLY when the user CONFIRMS they want to schedule a meeting ("reunião") or a site visit ("visita técnica"). Do not call this prematurely.',
+        description: 'Use this tool when the user CONFIRMS they want to schedule a meeting ("reunião") or a site visit ("visita técnica"). If they provide a date and time, include it.',
         parameters: {
           type: Type.OBJECT,
           properties: {
@@ -79,6 +79,14 @@ const tools = [
             address: {
               type: Type.STRING,
               description: 'MANDATORY only if type is "visit". The address of the construction site. IF type is "meeting", DO NOT ASK for address.'
+            },
+            date: {
+              type: Type.STRING,
+              description: 'The date in format YYYY-MM-DD if explicitly mentioned by the user.'
+            },
+            time: {
+              type: Type.STRING,
+              description: 'The time in format HH:MM if explicitly mentioned by the user.'
             }
           },
           required: ['type']
@@ -118,8 +126,8 @@ REGRAS RÍGIDAS DE CONTEXTO (CRÍTICO):
 
 3. FLUXO DE AGENDAMENTO (UX):
    - Quando o usuário quiser agendar, chame a tool 'scheduleMeeting'.
-   - NÃO pergunte datas ou horários no texto. Diga: "Por favor, selecione o melhor horário no calendário abaixo."
-   - Após o agendamento, o sistema cuidará da confirmação visual.
+   - Se o usuário especificar data e hora (ex: "Amanhã às 14h"), inclua nos parâmetros da tool.
+   - Se o usuário NÃO especificar data e hora, não pergunte no texto. Apenas chame a tool sem data, e o sistema mostrará o widget de calendário.
 
 4. TOM DE VOZ:
    - Breve, elegante e resolutivo.
@@ -146,6 +154,11 @@ export async function chatWithConcierge(
   let systemInstruction = aiConfig.useCustomSystemInstruction 
     ? aiConfig.systemInstruction 
     : DEFAULT_SYSTEM_INSTRUCTION;
+
+  // Add Date Context
+  systemInstruction += `\n\n[CONTEXTO DE DATA E HORA]:
+  - Data Atual: ${new Date().toLocaleDateString('pt-BR')} (Use isso para calcular "amanhã", "próxima segunda", etc).
+  `;
 
   // Inject Office Address and Hours dynamically from Admin Context
   if (context.office) {
@@ -238,7 +251,6 @@ export async function chatWithConcierge(
             if (!responseData.text) responseData.text = "Perfeito. Já anotei seus dados e encaminhei a mensagem com prioridade para nossa equipe.";
           }
           else if (call.name === 'learnClientPreference') {
-            // New Action: Save Memory
             responseData.actions.push({
               type: 'learnMemory',
               payload: {
@@ -247,7 +259,6 @@ export async function chatWithConcierge(
                 type: 'system_detected'
               }
             });
-            // Implicit action, no forced text override needed, model usually provides conversational text.
           }
           else if (call.name === 'getSocialLinks') {
             responseData.uiComponent = { type: 'SocialLinks', data: {} };
@@ -263,15 +274,25 @@ export async function chatWithConcierge(
           else if (call.name === 'scheduleMeeting') {
             const widgetData = { ...call.args };
             
-            // LOGIC FIX: Check if modality is online
+            // Fix online location
             if (widgetData.modality === 'online') {
                 widgetData.location = 'Online (Google Meet)';
-                widgetData.type = 'meeting'; // Force type meeting
+                widgetData.type = 'meeting'; 
             }
-            
-            responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
-            // Ensure specific text prompt for the widget
-            if (!responseData.text) responseData.text = "Verifiquei nossa disponibilidade. Por favor, selecione o melhor dia e horário no calendário abaixo.";
+
+            // Check if user provided specific date/time
+            if (widgetData.date && widgetData.time) {
+                // Return Action to Force Schedule
+                responseData.actions.push({
+                  type: 'scheduleMeeting',
+                  payload: widgetData
+                });
+                if (!responseData.text) responseData.text = `Entendido. Vou agendar para ${widgetData.date} às ${widgetData.time}.`;
+            } else {
+                // Return Widget
+                responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
+                if (!responseData.text) responseData.text = "Verifiquei nossa disponibilidade. Por favor, selecione o melhor dia e horário no calendário abaixo.";
+            }
           }
         }
       }

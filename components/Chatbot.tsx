@@ -148,14 +148,10 @@ const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: 
     );
   }
 
-  // FIXED: Logic for Location Display
-  // meeting + Presencial (Implied by lack of explicit "online" flag usually, so we default to Office Address)
-  // meeting + Online (If user asks, bot explains, but address card shows office address as HQ)
-  // visit -> Construction site address
   const isVisit = data?.type === 'visit';
   const locationText = isVisit 
       ? (data?.address || "Endereço da Obra") 
-      : (data?.location || siteContent.office.address); // Use Office Address or Override
+      : (data?.location || siteContent.office.address); 
 
   const dates = useMemo(() => {
       const arr = [];
@@ -182,7 +178,7 @@ const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: 
       
       await new Promise(r => setTimeout(r, 600));
 
-      addAppointment({
+      await addAppointment({
           clientId: currentUser.id,
           clientName: currentUser.name,
           date: selectedDate,
@@ -203,7 +199,6 @@ const CalendarWidget = ({ data, closeChat, messageId }: { data: any, closeChat: 
           }
       });
 
-      // Add success message text bubble
       if (addMessageToChat) {
         addMessageToChat({
             id: Date.now().toString(),
@@ -300,7 +295,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const { sendMessageToAI, currentUser, projects, addAdminNote, showToast, currentChatMessages, createNewChat, logAiFeedback, settings } = useProjects();
+  const { sendMessageToAI, currentUser, projects, addAdminNote, showToast, currentChatMessages, createNewChat, logAiFeedback, settings, addAppointment, updateMessageUI, siteContent } = useProjects();
   
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -315,28 +310,21 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     document.body.style.overflow = 'hidden';
 
     // 2. Prevent Touch Move on Background (iOS Fix)
-    // This prevents the background page from scrolling ("rubber banding") while chat is open
     const preventScroll = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
-      // Allow scroll ONLY if target is inside the chat message area
-      // We check for the class 'chatbot-scroll-view' which we add to the scrollable container below
       if (target.closest('.chatbot-scroll-view')) {
         return;
       }
       e.preventDefault();
     };
 
-    // Add listener with { passive: false } to allow preventDefault()
     document.body.addEventListener('touchmove', preventScroll, { passive: false });
-
-    // Cleanup: Restore scroll when component unmounts or chat closes
     return () => {
       document.body.style.overflow = 'unset';
       document.body.removeEventListener('touchmove', preventScroll);
     };
   }, [isOpen]);
 
-  // Initial greeting
   const defaultMessages = useMemo<ChatMessage[]>(() => {
     const rawGreeting = settings.aiConfig.defaultGreeting || "Olá. Como posso ajudar?";
     let processedGreeting = rawGreeting;
@@ -374,17 +362,60 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     try {
       const response = await sendMessageToAI(userText);
       
+      // Handle Actions
       if (response.actions && response.actions.length > 0) {
-        response.actions.forEach((action: any) => {
+        for (const action of response.actions) {
           if (action.type === 'saveNote') {
             addAdminNote(action.payload);
             showToast("Recado enviado para a equipe.", "success");
-          } else if (action.type === 'navigate') {
+          } 
+          else if (action.type === 'navigate') {
             setTimeout(() => {
               navigate(action.payload.path);
             }, 1500); 
           }
-        });
+          else if (action.type === 'scheduleMeeting') {
+            // AUTOMATIC SCHEDULING TRIGGERED BY LLM
+            if (currentUser) {
+                const data = action.payload;
+                const locationText = data?.type === 'visit' 
+                    ? (data?.address || "Endereço da Obra") 
+                    : (data?.location || siteContent.office.address);
+
+                await addAppointment({
+                    clientId: currentUser.id,
+                    clientName: currentUser.name,
+                    date: data.date,
+                    time: data.time,
+                    type: data.type,
+                    location: locationText
+                });
+
+                // Inject UI Feedback
+                // Find the message ID to update or add a new one
+                // Since this happens immediately after response, we can assume the last message is the one to update?
+                // Actually, sendMessageToAI adds the text response. We should add a new UI message.
+                // However, updated logic in api/chat already returns the text. 
+                // We will just show a toast or rely on text response + "BookingSuccess" injection if needed.
+                // Better approach: Since the text response already says "I scheduled it", we show the Success Card.
+                
+                // We need to find the ID of the bot message that just arrived to attach the UI component if not present
+                // Or simply trigger a toast.
+                showToast("Agendamento realizado via IA!", "success");
+                
+                // Let's force a UI update to show the success card instead of nothing
+                // We need the ID of the newly added message.
+                // sendMessageToAI updates state asynchronously. We can't easily get the ID here.
+                // BUT, we can add a specialized message for success.
+                // Actually, `sendMessageToAI` sets state.
+                // Let's just rely on the Toast and the user checking their dashboard, 
+                // OR inject a system message confirming it.
+            } else {
+                showToast("Faça login para confirmar o agendamento.", "error");
+                navigate('/auth');
+            }
+          }
+        }
       }
 
     } catch (err) {
@@ -394,7 +425,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     }
   };
 
-  // --- Action Handlers ---
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -446,7 +476,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                </div>
             </div>
 
-            {/* Messages - Added 'chatbot-scroll-view' class for scroll lock targeting */}
+            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-6 scroll-smooth chatbot-scroll-view">
               {displayMessages.map((msg: any, idx: number) => (
                 <div 
@@ -459,7 +489,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                       ? 'bg-black text-white rounded-br-none' 
                       : 'bg-white border border-gray-200 rounded-bl-none text-gray-700'
                   }`}>
-                    {/* Render with Markdown support */}
                     {msg.text && (
                       <p className="leading-relaxed whitespace-pre-wrap">
                         {renderFormattedText(msg.text)}
@@ -469,13 +498,10 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                     {/* GenUI Rendering */}
                     {msg.uiComponent?.type === 'ProjectCarousel' && <ProjectCarousel data={msg.uiComponent.data} />}
                     {msg.uiComponent?.type === 'SocialLinks' && <SocialLinks />}
-                    {/* Pass messageId to CalendarWidget for UI updates */}
                     {msg.uiComponent?.type === 'CalendarWidget' && <CalendarWidget data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} messageId={msg.id} />}
-                    {/* Render new Success Component */}
                     {msg.uiComponent?.type === 'BookingSuccess' && <BookingSuccess data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} />}
                   </div>
                   
-                  {/* Bot Action Bar */}
                   {msg.role === 'model' && (
                     <div className="flex items-center gap-2 mt-1 ml-2 opacity-100 transition-opacity">
                       <button onClick={() => handleCopy(msg.text || '', msg.id)} className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-black transition">{copiedId === msg.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}</button>

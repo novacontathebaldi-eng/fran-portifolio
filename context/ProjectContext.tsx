@@ -64,7 +64,7 @@ interface ProjectContextType {
   appointments: Appointment[];
   scheduleSettings: ScheduleSettings;
   updateScheduleSettings: (settings: ScheduleSettings) => void;
-  addAppointment: (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => void;
+  addAppointment: (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => Promise<void>; // Changed to Promise
   updateAppointment: (appt: Appointment) => void;
   updateAppointmentStatus: (id: string, status: Appointment['status']) => void;
   deleteAppointmentPermanently: (id: string) => void;
@@ -256,11 +256,14 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // --- Admin: Fetch All Users (Deep fetch) ---
   useEffect(() => {
+    // CORRECTION: Ensure we fetch users if role is admin
     if (currentUser?.role === 'admin') {
       const fetchAllUsers = async () => {
-        // We need folders for admin view
-        const { data: profiles } = await supabase.from('profiles').select('*');
-        if (!profiles) return;
+        const { data: profiles, error } = await supabase.from('profiles').select('*');
+        if (error || !profiles) {
+            console.error("Error fetching profiles:", error);
+            return;
+        }
 
         const { data: allFolders } = await supabase.from('client_folders').select('*, files:client_files(*)');
         const { data: allMemories } = await supabase.from('client_memories').select('*');
@@ -284,11 +287,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
              favorites: [],
              appointments: []
         }));
+        
         setUsers(mapped);
       };
+      
       fetchAllUsers();
     }
-  }, [currentUser, projects]); // Refetch when projects change (in case we link them later)
+  }, [currentUser]); // Depend mostly on currentUser changing
 
   // --- AUTH ACTIONS ---
   
@@ -307,7 +312,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     if (data.user && !error) {
         // 2. CRITICAL: Force update profile with phone immediately
-        // Supabase triggers might be slightly delayed or missing phone from metadata depending on config.
         const { error: profileError } = await supabase
             .from('profiles')
             .update({ name: name, phone: phone })
@@ -430,7 +434,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         };
         const updatedMemories = [...(currentUser.memories || []), newMem];
         setCurrentUser({ ...currentUser, memories: updatedMemories });
-        // Also update users list if admin needs to see it immediately (optional but good)
     }
   };
 
@@ -461,10 +464,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
               files: []
           };
           
-          // Update Admin View
           setUsers(prev => prev.map(u => u.id === userId ? { ...u, folders: [...(u.folders || []), newFolder] } : u));
           
-          // Update Current User if applicable
           if (currentUser?.id === userId) {
               setCurrentUser(prev => prev ? ({ ...prev, folders: [...(prev.folders || []), newFolder] }) : null);
           }
@@ -483,7 +484,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
                    folders: u.folders?.map(f => f.id === folderId ? { ...f, name: newName } : f)
                };
            }));
-           // Update current user if needed
            if (currentUser?.id === userId) {
              setCurrentUser(prev => prev ? ({
                  ...prev,
@@ -504,7 +504,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const uploadFileToFolder = async (userId: string, folderId: string, file: File) => {
-      // 1. Upload to Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
       const filePath = `client_files/${userId}/${folderId}/${fileName}`;
@@ -514,7 +513,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       const { data: publicUrlData } = supabase.storage.from('storage-Fran').getPublicUrl(filePath);
 
-      // 2. Insert to DB
       const { data, error: dbError } = await supabase.from('client_files').insert({
           folder_id: folderId,
           name: file.name,
@@ -533,7 +531,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
               createdAt: data.created_at
           };
 
-          // Update State
           const updateState = (prevUser: User) => {
               return {
                   ...prevUser,
@@ -568,25 +565,26 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     const newAppt = {
       ...appt,
       status: 'pending',
-      // Map frontend camelCase to DB snake_case if necessary, or just use raw object if columns match
       client_id: appt.clientId,
       client_name: appt.clientName,
       meeting_link: appt.meetingLink
     };
-    // Remove camelCase keys for DB insert
+    // Remove camelCase keys
     delete (newAppt as any).clientId;
     delete (newAppt as any).clientName;
     delete (newAppt as any).meetingLink;
 
     const { data, error } = await supabase.from('appointments').insert(newAppt).select().single();
     if (data && !error) {
-        // Refresh appointments
-        fetchGlobalData();
+        // Fetch to update state
+        fetchGlobalData(); 
+    } else {
+      console.error("Error adding appointment:", error);
+      showToast("Erro ao agendar compromisso.", "error");
     }
   };
 
   const updateAppointment = async (appt: Appointment) => {
-     // Convert to snake_case for DB
      const dbAppt = {
          status: appt.status,
          date: appt.date,
