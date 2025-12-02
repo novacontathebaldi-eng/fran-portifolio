@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock, LogIn, ArrowRight, Archive, History } from 'lucide-react';
+import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock, LogIn, ArrowRight, Archive, History, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../context/ProjectContext';
 import { ChatMessage, Project } from '../types';
@@ -123,6 +123,7 @@ const CalendarWidget = ({ data, messageId, closeChat }: { data: any, messageId: 
   const navigate = useNavigate();
   
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [loadingSlot, setLoadingSlot] = useState<string | null>(null);
   
   // Search ahead for next 5 AVAILABLE days
   const availableDates = useMemo(() => {
@@ -189,7 +190,9 @@ const CalendarWidget = ({ data, messageId, closeChat }: { data: any, messageId: 
   const activeDaySlots = availableDates.find(d => d.dateStr === selectedDate)?.slots || [];
 
   const handleSlotClick = async (time: string) => {
-    if (!selectedDate || !currentUser) return;
+    if (!selectedDate || !currentUser || loadingSlot) return;
+    
+    setLoadingSlot(time);
     
     const appointmentData = {
         clientId: currentUser.id,
@@ -205,7 +208,7 @@ const CalendarWidget = ({ data, messageId, closeChat }: { data: any, messageId: 
     try {
         await addAppointment(appointmentData);
         
-        // Update UI permanently
+        // Update UI permanently with Success Component
         updateMessageUI(messageId, { 
             type: 'BookingSuccess', 
             data: appointmentData 
@@ -214,6 +217,7 @@ const CalendarWidget = ({ data, messageId, closeChat }: { data: any, messageId: 
         showToast("Solicitação enviada com sucesso!", "success");
 
     } catch (error) {
+        setLoadingSlot(null);
         showToast("Erro ao realizar agendamento.", "error");
     }
   };
@@ -258,9 +262,10 @@ const CalendarWidget = ({ data, messageId, closeChat }: { data: any, messageId: 
                          <button 
                            key={slot} 
                            onClick={() => handleSlotClick(slot)}
-                           className="py-2 px-2 bg-white border border-gray-200 rounded-lg text-xs font-bold hover:border-black hover:bg-black hover:text-white transition flex items-center justify-center gap-1 active:scale-95"
+                           disabled={loadingSlot !== null}
+                           className={`py-2 px-2 bg-white border border-gray-200 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${loadingSlot === slot ? 'bg-black text-white' : 'hover:border-black hover:bg-black hover:text-white active:scale-95'}`}
                          >
-                             {slot}
+                             {loadingSlot === slot ? <Loader2 className="w-3 h-3 animate-spin"/> : slot}
                          </button>
                      ))}
                   </div>
@@ -372,8 +377,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
               navigate(action.payload.path);
             }, 1500); 
           }
-          // scheduleMeeting ACTION REMOVED - NOW HANDLED BY WIDGET ONLY
-          // The LLM tool does not accept dates anymore, so this action type will simply not be emitted by the API.
           else if (action.type === 'learnMemory') {
             if (currentUser) {
                 addClientMemory(action.payload);

@@ -76,7 +76,7 @@ const tools = [
       },
       {
         name: 'scheduleMeeting',
-        description: 'Use this tool when the user wants to schedule a meeting ("reunião") or a site visit ("visita técnica"). If they provide a date and time, include them. If not, call this tool without date/time to show the calendar.',
+        description: 'Use this tool ONLY AFTER collecting necessary details. Renders a calendar widget for the user to pick a date/time. Do NOT ask for date/time in text, use this tool.',
         parameters: {
           type: Type.OBJECT,
           properties: {
@@ -86,19 +86,15 @@ const tools = [
             },
             modality: {
               type: Type.STRING,
-              description: 'The format of the meeting. Set to "online" if user mentions "online", "virtual", "meet", "zoom", "video". Set to "in_person" if they mention "office", "presencial" or "coffee". Default is "in_person".'
+              description: 'REQUIRED for "meeting". Set to "online" or "in_person".'
             },
             address: {
               type: Type.STRING,
-              description: 'MANDATORY only if type is "visit". The address of the construction site.'
+              description: 'REQUIRED for "visit". The address of the construction site.'
             },
-            date: {
+            notes: {
               type: Type.STRING,
-              description: 'The date in format YYYY-MM-DD.'
-            },
-            time: {
-              type: Type.STRING,
-              description: 'The time in format HH:MM.'
+              description: 'Optional notes about the meeting purpose.'
             }
           },
           required: ['type']
@@ -113,57 +109,43 @@ VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA.
 
 SUA IDENTIDADE:
 - Sofisticado, minimalista, atencioso e altamente eficiente.
-- Você é uma extensão da experiência de luxo do escritório.
 
-REGRA DE OURO - AGENDAMENTOS (CRÍTICO):
+PROTOCOLO RÍGIDO DE AGENDAMENTO (OBRIGATÓRIO):
 
-1. FLUXO PARA VISITA TÉCNICA (Obra/Presencial):
-   - Se o usuário pedir visita técnica, VOCÊ DEVE PERGUNTAR O ENDEREÇO DA OBRA PRIMEIRO.
-   - NUNCA mostre o calendário (tool scheduleMeeting) para visita técnica se você não souber o endereço.
-   - Responda apenas com texto: "Para agendarmos a visita, por favor, me informe o endereço da obra."
-   - SOMENTE após o usuário fornecer o endereço, chame a tool 'scheduleMeeting' passando o endereço.
+1. OBJETIVO:
+   - Nunca mostre o calendário (tool 'scheduleMeeting') sem antes ter as informações necessárias.
+   - O usuário escolhe a data e hora CLICANDO no calendário, não falando.
 
-2. FLUXO PARA REUNIÃO (Online/Escritório):
-   - VOCÊ DEVE SABER O FORMATO (ONLINE ou PRESENCIAL) ANTES DE MOSTRAR O CALENDÁRIO.
-   - Se o usuário disser apenas "quero uma reunião" ou "posso agendar uma reunião":
-     * PERGUNTE: "Prefere que a reunião seja online (videoconferência) ou presencial em nosso escritório?"
-     * NÃO chame a tool 'scheduleMeeting' ainda.
-   - Se o usuário JÁ ESPECIFICOU (ex: "quero reunião online", "vou ao escritório"):
-     * Pode chamar 'scheduleMeeting' imediatamente, definindo 'modality' como 'online' ou 'in_person'.
+2. FLUXO PARA "VISITA TÉCNICA" (Ir até a obra do cliente):
+   - Passo 1: O usuário pede visita.
+   - Passo 2: VOCÊ VERIFICA: Eu tenho o endereço da obra?
+     * SE NÃO: Pergunte "Qual é o endereço completo da obra/terreno?" (NÃO chame a tool ainda).
+     * SE SIM: Chame a tool 'scheduleMeeting' com type='visit' e address='Endereço fornecido'.
 
-3. QUANDO O USUÁRIO ESCOLHER O HORÁRIO NO CALENDÁRIO:
-   - O sistema enviará uma mensagem automática confirmando data e hora.
-   - Nesse momento, chame a tool 'scheduleMeeting' NOVAMENTE, agora preenchendo 'date' e 'time'.
-   - ISSO É O QUE EFETIVAMENTE SALVA O AGENDAMENTO.
+3. FLUXO PARA "REUNIÃO" (Conversa de alinhamento/projeto):
+   - Passo 1: O usuário pede reunião.
+   - Passo 2: VOCÊ VERIFICA: Eu sei se é Online ou Presencial?
+     * SE NÃO: Pergunte "Prefere que a reunião seja online (videoconferência) ou presencial no nosso escritório?" (NÃO chame a tool ainda).
+     * SE SIM: Chame a tool 'scheduleMeeting' com type='meeting' e modality='online' ou 'in_person'.
 
-DETECÇÃO AUTOMÁTICA DE PREFERÊNCIAS - REGRA CRÍTICA (PASSIVA):
-- Monitore CADA mensagem do usuário em busca de fatos importantes.
-- Se o usuário mencionar qualquer um dos seguintes tópicos, CHAME A TOOL 'learnClientPreference' IMEDIATAMENTE e SILENCIOSAMENTE:
-   * Família: "Tenho 2 filhos", "Moro com minha esposa", "Temos um cachorro".
-   * Orçamento: "Meu budget é 300k", "Quero gastar pouco", "Orçamento ilimitado".
-   * Estilo: "Gosto de minimalista", "Prefiro clássico", "Odeio moderno".
-   * Cores/Materiais: "Amo madeira", "Odeio vermelho", "Gosto de tons neutros".
-   * Localização: "Meu terreno fica em Vitória", "Apartamento na praia".
-   * Necessidades: "Preciso de home office", "Cozinha gourmet é essencial".
-- NUNCA pergunte permissão ("Posso anotar isso?"). Apenas anote.
-- NUNCA avise que anotou ("Anotei que você gosta de azul"). Apenas continue a conversa naturalmente.
+4. APÓS CHAMAR A TOOL 'scheduleMeeting':
+   - Responda algo como: "Aqui está a nossa agenda. Por favor, selecione o melhor horário abaixo."
+   - NÃO pergunte "qual data fica bom?". O widget fará isso.
 
 NAVEGAÇÃO DO SITE:
 Quando mencionar seções, SEMPRE ofereça link markdown no formato [Nome da Seção](/#/rota) E chame a tool 'navigateSite' para redirecionar se o usuário expressar desejo de ir.
 - "Quer ver nossos projetos? Acesse o [Portfólio](/#/portfolio)"
 - "Conheça nosso [Escritório](/#/office)"
-- "Veja nossa parte [Cultural](/#/cultural)"
 - "Entre em [Contato](/#/contact)"
 
 CONTEXTO E FLUXO:
 1. SE O USUÁRIO ESTIVER LOGADO:
    - Trate-o pelo nome.
-   - Use o histórico de memórias anteriores para personalizar a conversa (ex: se ele gosta de madeira, mencione madeira ao sugerir projetos).
+   - Use o histórico de memórias anteriores para personalizar a conversa.
 
 2. ESTILO DE RESPOSTA:
    - Português do Brasil culto.
    - Respostas curtas e objetivas.
-   - Evite listas longas ou explicações desnecessárias.
 `;
 
 export async function chatWithConcierge(
@@ -338,42 +320,33 @@ export async function chatWithConcierge(
           else if (call.name === 'scheduleMeeting') {
             const widgetData = { ...call.args };
             
-            // --- LOGIC TO HANDLE MISSING ADDRESS FOR VISITS ---
+            // Check Required Fields
             const isVisit = widgetData.type === 'visit';
-            const hasAddress = widgetData.address && widgetData.address.length > 0;
-            
-            if (isVisit && !hasAddress) {
-              // Deny the widget, force text response asking for address
-              responseData.text = "Para agendarmos a visita técnica, preciso que me informe o endereço completo da obra.";
-              // Do NOT add action or uiComponent
-            } else {
-              // Proceed with standard logic
-              if (widgetData.modality === 'online') {
-                  widgetData.location = 'Online (Google Meet)';
-                  widgetData.type = 'meeting'; 
-              }
+            const hasAddress = isVisit ? (widgetData.address && widgetData.address.length > 5) : true;
+            const isMeeting = widgetData.type === 'meeting';
+            const hasModality = isMeeting ? (widgetData.modality === 'online' || widgetData.modality === 'in_person') : true;
 
-              // CRITICAL LOGIC: 
-              // If both DATE and TIME are present -> Action (Direct Booking)
-              // If missing -> UI Component (Calendar Widget)
-              if (widgetData.date && widgetData.time) {
-                  responseData.actions.push({
-                    type: 'scheduleMeeting',
-                    payload: widgetData
-                  });
-                  if (!responseData.text) responseData.text = `Obrigado! Agendamento confirmado para ${new Date(widgetData.date as string).toLocaleDateString()} às ${widgetData.time}.`;
-              } else {
-                  // Force Widget
-                  responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
-                  if (!responseData.text) responseData.text = "Verifiquei na agenda da Fran e temos os seguintes horários disponíveis, por favor, selecione uma data e horário abaixo.";
-              }
+            if (isVisit && !hasAddress) {
+               responseData.text = "Para agendar a visita técnica, preciso saber o endereço completo da obra.";
+               // No UI component implies asking again
+            } else if (isMeeting && !hasModality) {
+               responseData.text = "Para a reunião, você prefere que seja online ou presencial?";
+               // No UI component implies asking again
+            } else {
+               // Success - Show Calendar
+               if (widgetData.modality === 'online') {
+                  widgetData.location = 'Online (Google Meet)';
+               }
+               // Always show widget to pick date, even if user hallucinated a date in text
+               responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
+               if (!responseData.text) responseData.text = "Verifiquei nossa agenda. Por favor, selecione abaixo o melhor dia e horário para você.";
             }
           }
         }
       }
 
       if (!responseData.text && !responseData.uiComponent && responseData.actions.length === 0) {
-        responseData.text = "Perfeito! Anotei tudo! Como posso ajudar mais?";
+        responseData.text = "Entendido. Como posso ajudar mais?";
       }
 
       return responseData;
@@ -382,7 +355,7 @@ export async function chatWithConcierge(
     console.error("AI Error:", error);
     return {
       role: 'model',
-      text: "Desculpe, tive um problema de conexão. Poderia repetir? Se persistir, entre em contato com o suporte técnico pelo email: suporte.thebaldi@gmail.com"
+      text: "Desculpe, tive um problema de conexão. Poderia repetir?"
     };
   }
 }
