@@ -2,8 +2,9 @@
 
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
 import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ChatSession, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address, CulturalProject } from '../types';
-import { MOCK_PROJECTS, MOCK_USER_CLIENT, MOCK_USER_ADMIN, MOCK_CULTURAL_PROJECTS } from '../data';
+import { MOCK_PROJECTS, MOCK_CULTURAL_PROJECTS } from '../data';
 import { chatWithConcierge } from '../api/chat';
+import { supabase } from '../supabaseClient';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -15,21 +16,23 @@ interface ToastState {
 
 interface ProjectContextType {
   projects: Project[];
-  culturalProjects: CulturalProject[]; // NEW
+  culturalProjects: CulturalProject[];
   currentUser: User | null;
-  users: User[]; // All users (for admin)
+  users: User[]; // Restored for Admin Dashboard
   siteContent: SiteContent;
   settings: GlobalSettings;
   adminNotes: AdminNote[];
-  aiFeedbacks: AiFeedbackItem[]; // New: Store AI Feedback
-  login: (email: string) => User | null;
-  logout: () => void;
-  registerUser: (name: string, email: string, phone: string) => void;
+  aiFeedbacks: AiFeedbackItem[];
+  
+  // Auth (Updated for Supabase)
+  login: (email: string, password: string) => Promise<{ user: User | null; error: any }>;
+  logout: () => Promise<void>;
+  registerUser: (name: string, email: string, phone: string, password: string) => Promise<{ user: User | null; error: any }>;
+  
   addProject: (project: Project) => void;
   updateProject: (project: Project) => void;
   deleteProject: (id: string) => void;
   
-  // Cultural Projects CRUD
   addCulturalProject: (project: CulturalProject) => void;
   updateCulturalProject: (project: CulturalProject) => void;
   deleteCulturalProject: (id: string) => void;
@@ -37,36 +40,30 @@ interface ProjectContextType {
   updateSiteContent: (content: SiteContent) => void;
   updateSettings: (settings: GlobalSettings) => void;
   
-  // Chat & AI Logic
   sendMessageToAI: (message: string) => Promise<any>;
-  addMessageToChat: (message: ChatMessage) => void; // New: Manual message injection
-  updateMessageUI: (id: string, uiComponent: any) => void; // New: Persist UI changes
-  currentChatMessages: ChatMessage[]; // The messages currently displayed in Chatbot
+  addMessageToChat: (message: ChatMessage) => void;
+  updateMessageUI: (id: string, uiComponent: any) => void;
+  currentChatMessages: ChatMessage[];
   createNewChat: () => void;
   logAiFeedback: (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => void;
   
-  // Client Memory Logic (Backend Simulation)
-  clientMemories: ClientMemory[]; // Only for currently logged in user
+  clientMemories: ClientMemory[];
   addClientMemory: (memory: Omit<ClientMemory, 'id' | 'createdAt'>) => void;
   updateClientMemory: (id: string, content: string) => void;
   deleteClientMemory: (id: string) => void;
 
-  // Folder & File Management Logic
   createClientFolder: (userId: string, folderName: string) => void;
   renameClientFolder: (userId: string, folderId: string, newName: string) => void;
   deleteClientFolder: (userId: string, folderId: string) => void;
   uploadFileToFolder: (userId: string, folderId: string, file: File) => Promise<void>;
   deleteClientFile: (userId: string, folderId: string, fileId: string) => void;
 
-  // Admin Client Management
   updateUser: (user: User) => void;
   
-  // Admin Notes Logic
   addAdminNote: (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => void;
   markNoteAsRead: (id: string) => void;
   deleteAdminNote: (id: string) => void;
 
-  // Appointment Logic
   appointments: Appointment[];
   scheduleSettings: ScheduleSettings;
   updateScheduleSettings: (settings: ScheduleSettings) => void;
@@ -74,9 +71,8 @@ interface ProjectContextType {
   updateAppointment: (appt: Appointment) => void;
   updateAppointmentStatus: (id: string, status: Appointment['status']) => void;
   deleteAppointmentPermanently: (id: string) => void;
-  checkAvailability: (date: string) => string[]; // Returns available hours
+  checkAvailability: (date: string) => string[];
 
-  // Toast Logic
   toast: ToastState;
   showToast: (message: string, type?: ToastType) => void;
   hideToast: () => void;
@@ -89,25 +85,7 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   aiConfig: {
     model: 'gemini-2.5-flash',
     useCustomSystemInstruction: false,
-    systemInstruction: `VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA.
-
-SUA IDENTIDADE:
-- Sofisticado, minimalista, atencioso e altamente eficiente.
-- Você não é apenas um bot, é uma extensão da experiência de luxo do escritório.
-- Seu objetivo nº 1 é CONVERTER VISITANTES EM CLIENTES (Capturar Leads) e AGENDAR VISITAS/REUNIÕES.
-
-DADOS CRÍTICOS:
-- WhatsApp: +5527996670426
-- Instagram: instagram.com/othebaldi
-- Localização: Brasil (Global).
-
-REGRAS:
-1. Se o usuário quiser agendar, chame a tool 'scheduleMeeting'.
-   - Se for visita técnica, PERGUNTE o endereço da obra/terreno antes de chamar 'scheduleMeeting'.
-   - Se for reunião, pode ser Online ou no escritório.
-2. Se quiser deixar recado, use 'saveClientNote'.
-3. Para contatos, use 'getSocialLinks'.
-4. Seja breve.`,
+    systemInstruction: `VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA...`,
     defaultGreeting: "Olá {name}. Sou o Concierge Digital Fran Siller. Como posso tornar seu dia melhor?",
     temperature: 0.7
   }
@@ -115,7 +93,7 @@ REGRAS:
 
 const DEFAULT_SCHEDULE_SETTINGS: ScheduleSettings = {
   enabled: true,
-  workDays: [1, 2, 3, 4, 5], // Mon-Fri
+  workDays: [1, 2, 3, 4, 5],
   startHour: "09:00",
   endHour: "18:00",
   blockedDates: [],
@@ -140,7 +118,7 @@ const MOCK_APPOINTMENTS: Appointment[] = [
     clientId: 'u1',
     clientName: 'Cliente Exemplo',
     type: 'meeting',
-    date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
+    date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
     time: '14:00',
     location: 'Online (Google Meet)',
     meetingLink: 'https://meet.google.com/abc-defg-hij',
@@ -149,42 +127,22 @@ const MOCK_APPOINTMENTS: Appointment[] = [
   }
 ];
 
-// Enhanced Mock Data
-const ENHANCED_MOCK_USER_CLIENT: User = {
-  ...MOCK_USER_CLIENT,
-  phone: '(11) 98765-4321',
-  cpf: '123.456.789-00',
-  birthDate: '1990-05-15',
-  addresses: [
-    {
-      id: 'addr1',
-      label: 'Residência Atual',
-      street: 'Rua das Flores',
-      number: '123',
-      district: 'Jardins',
-      city: 'São Paulo',
-      state: 'SP',
-      zipCode: '01234-567'
-    }
-  ]
-};
-
 const DEFAULT_SITE_CONTENT: SiteContent = {
   about: {
     heroSubtitle: 'Quem Somos',
     heroTitle: 'Arquitetura com alma e propósito.',
     heroImage: 'https://picsum.photos/seed/architect_portrait/1920/1080',
     profileImage: 'https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/378557752_597176842380637_7080388795805736658_n..jpg',
-    bio: `Com mais de 15 anos de experiência no mercado de arquitetura de alto padrão, Fran Siller fundou seu escritório com uma premissa clara: criar espaços que não sejam apenas visualmente impactantes, mas que melhorem a qualidade de vida de quem os habita.\n\nFormada pela FAU-USP com especialização em Design de Interiores em Milão, Fran traz uma abordagem que mescla o rigor técnico da arquitetura brasileira com a sensibilidade estética e o cuidado nos detalhes do design italiano.\n\n"Acredito que a casa é uma extensão da nossa identidade. Meu trabalho é traduzir a essência de cada cliente em formas, texturas e luz."`,
+    bio: `Com mais de 15 anos de experiência no mercado de arquitetura de alto padrão, Fran Siller fundou seu escritório com uma premissa clara...`,
     stats: [
       { id: '1', value: '15+', label: 'Anos de Exp.' },
       { id: '2', value: '80+', label: 'Projetos' },
       { id: '3', value: '12', label: 'Prêmios' }
     ],
     pillars: [
-      { id: 'p1', title: 'Sustentabilidade', description: 'Priorizamos materiais naturais, ventilação cruzada e eficiência energética. Respeitar o meio ambiente é respeitar o futuro do morar.' },
-      { id: 'p2', title: 'Atemporalidade', description: 'Fugimos de tendências passageiras. Buscamos uma estética que permaneça relevante e bela ao longo das décadas.' },
-      { id: 'p3', title: 'Experiência Humana', description: 'A arquitetura deve servir às pessoas. O conforto, a ergonomia e o bem-estar sensorial são nossas prioridades máximas.' }
+      { id: 'p1', title: 'Sustentabilidade', description: 'Priorizamos materiais naturais...' },
+      { id: 'p2', title: 'Atemporalidade', description: 'Fugimos de tendências passageiras...' },
+      { id: 'p3', title: 'Experiência Humana', description: 'A arquitetura deve servir às pessoas...' }
     ],
     recognition: ['CASA VOGUE', 'ARCHDAILY', 'ELLE DECOR', 'CASACOR']
   },
@@ -216,7 +174,7 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
       { 
         id: 'intro-text', 
         type: 'text', 
-        content: 'Nosso espaço foi projetado para inspirar. Localizado no coração histórico de Santa Leopoldina, o escritório ocupa um casarão restaurado que une o charme do passado com a funcionalidade contemporânea. Aqui, recebemos nossos clientes com o conforto de uma casa e a infraestrutura de um atelier de criação.' 
+        content: 'Nosso espaço foi projetado para inspirar...' 
       },
       {
         id: 'details-section',
@@ -241,12 +199,10 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Global Data
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
-  const [culturalProjects, setCulturalProjects] = useState<CulturalProject[]>(MOCK_CULTURAL_PROJECTS); // NEW
-  
-  // Users Database Simulation
-  const [users, setUsers] = useState<User[]>([MOCK_USER_ADMIN, ENHANCED_MOCK_USER_CLIENT]);
+  const [culturalProjects, setCulturalProjects] = useState<CulturalProject[]>(MOCK_CULTURAL_PROJECTS);
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   
   // Chat State
   const [currentChatMessages, setCurrentChatMessages] = useState<ChatMessage[]>([]);
@@ -283,22 +239,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     localStorage.setItem('fran_settings', JSON.stringify(settings));
   }, [settings]);
 
-  // Load guest chat from local storage on mount
-  useEffect(() => {
-    const savedChat = localStorage.getItem('guest_chat_history');
-    if (savedChat) {
-      setCurrentChatMessages(JSON.parse(savedChat));
-    }
-  }, []);
-
-  // Save guest chat to local storage
-  useEffect(() => {
-    if (!currentUser && currentChatMessages.length > 0) {
-      localStorage.setItem('guest_chat_history', JSON.stringify(currentChatMessages));
-    }
-  }, [currentChatMessages, currentUser]);
-
-
   const showToast = useCallback((message: string, type: ToastType = 'info') => {
     setToast({ message, type, isVisible: true });
     setTimeout(() => {
@@ -310,7 +250,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setToast(prev => ({ ...prev, isVisible: false }));
   }, []);
 
-  // Initialize Site Content with Migration Logic
+  // Initialize Site Content
   const [siteContent, setSiteContent] = useState<SiteContent>(() => {
     const savedContent = localStorage.getItem('fran_site_content');
     if (savedContent) {
@@ -342,65 +282,157 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     localStorage.setItem('fran_site_content', JSON.stringify(siteContent));
   }, [siteContent]);
 
-  // --- Auth & Sync Logic ---
+  // --- Auth & Sync Logic (SUPABASE) ---
 
-  const login = (email: string) => {
-    const foundUser = users.find(u => u.email === email);
-    
-    if (foundUser) {
-      const guestHistory = localStorage.getItem('guest_chat_history');
-      let updatedUser = { ...foundUser };
-      let activeMessages = [];
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) throw error;
+      if (data) {
+        // Map Supabase profile to App User Type
+        const mappedUser: User = {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role as 'admin' | 'client',
+          phone: data.phone,
+          avatar: data.avatar,
+          bio: data.bio,
+          // Initialize mock relational data to avoid crashes
+          folders: [], 
+          memories: [],
+          chats: [],
+          projects: [], 
+          favorites: [],
+          appointments: [],
+          addresses: []
+        };
+        setCurrentUser(mappedUser);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
 
-      if (guestHistory) {
-        const parsedHistory: ChatMessage[] = JSON.parse(guestHistory);
-        const newSession: ChatSession = {
-          id: Date.now().toString(),
-          title: `Sincronizado em ${new Date().toLocaleDateString()}`,
-          messages: parsedHistory,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        };
-        updatedUser = {
-          ...updatedUser,
-          chats: [newSession, ...(updatedUser.chats || [])]
-        };
-        activeMessages = parsedHistory;
-        localStorage.removeItem('guest_chat_history');
+  useEffect(() => {
+    // 1. Check active session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        fetchProfile(session.user.id);
+      }
+    });
+
+    // 2. Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        // Only fetch if we don't have the user or it's a different user
+        if (!currentUser || currentUser.id !== session.user.id) {
+            fetchProfile(session.user.id);
+        }
       } else {
-        activeMessages = [];
+        setCurrentUser(null);
+        setCurrentChatMessages([]);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []); 
+
+  // Fetch Users for Admin
+  useEffect(() => {
+    if (currentUser?.role === 'admin') {
+      const fetchAllUsers = async () => {
+        const { data } = await supabase.from('profiles').select('*');
+        if (data) {
+           const mapped: User[] = data.map((d: any) => ({
+             id: d.id,
+             name: d.name,
+             email: d.email,
+             role: d.role,
+             phone: d.phone,
+             avatar: d.avatar,
+             bio: d.bio,
+             folders: [],
+             memories: [],
+             chats: [],
+             projects: [],
+             favorites: [],
+             appointments: [],
+             addresses: []
+           }));
+           setUsers(mapped);
+        }
+      };
+      fetchAllUsers();
+    }
+  }, [currentUser]);
+
+  const login = async (email: string, password: string): Promise<{ user: User | null; error: any }> => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.error("Supabase Login Error:", error);
+      return { user: null, error };
+    }
+
+    if (data.user) {
+       return { user: null, error: null }; 
+    }
+
+    return { user: null, error: 'Unknown error' };
+  };
+
+  const registerUser = async (name: string, email: string, phone: string, password: string): Promise<{ user: User | null; error: any }> => {
+    // 1. Sign Up in Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name, phone } // Metadata used by triggers if configured
+      }
+    });
+
+    if (authError) return { user: null, error: authError };
+
+    if (authData.user) {
+      // 2. Create Profile Entry manually
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: authData.user.id, // Linked to auth.users.id
+            name: name,
+            email: email,
+            phone: phone,
+            role: 'client', // Default role
+            created_at: new Date().toISOString()
+          }
+        ]);
+
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+        return { user: null, error: profileError };
       }
 
-      setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-      setCurrentUser(updatedUser);
-      setCurrentChatMessages(activeMessages);
-      return updatedUser;
+      return { user: null, error: null }; 
     }
-    return null;
+    
+    return { user: null, error: 'Unknown error' };
   };
 
-  const registerUser = (name: string, email: string, phone: string) => {
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name,
-      email,
-      phone,
-      role: 'client',
-      folders: [],
-      memories: [],
-      chats: [],
-      projects: [],
-      addresses: []
-    };
-    setUsers(prev => [...prev, newUser]);
-    // Auto login
-    setCurrentUser(newUser);
-    setCurrentChatMessages([]);
-  };
-
-  const logout = () => {
-    setCurrentUser(null);
-    setCurrentChatMessages([]); 
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) console.error("Logout error", error);
   };
 
   // --- CRUD Project ---
@@ -413,23 +445,15 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateCulturalProject = (project: CulturalProject) => setCulturalProjects(prev => prev.map(p => p.id === project.id ? project : p));
   const deleteCulturalProject = (id: string) => setCulturalProjects(prev => prev.filter(p => p.id !== id));
 
-  // Generic update User and Sync Current User if match
   const updateUser = (updatedUser: User) => {
-    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
     if (currentUser?.id === updatedUser.id) {
       setCurrentUser(updatedUser);
     }
+    // Update users list as well
+    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
   };
 
   // --- Client Memory Logic ---
-  // Helper to ensure updates sync to DB (users array) and Session (currentUser)
-  const syncUserMemoriesToDB = (userId: string, newMemories: ClientMemory[]) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, memories: newMemories } : u));
-    if (currentUser?.id === userId) {
-      setCurrentUser(prev => prev ? { ...prev, memories: newMemories } : null);
-    }
-  };
-
   const addClientMemory = (memory: Omit<ClientMemory, 'id' | 'createdAt'>) => {
     if (!currentUser) return;
     const newMemory: ClientMemory = {
@@ -438,60 +462,66 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       createdAt: new Date().toISOString()
     };
     const updatedMemories = [...(currentUser.memories || []), newMemory];
-    syncUserMemoriesToDB(currentUser.id, updatedMemories);
+    setCurrentUser({ ...currentUser, memories: updatedMemories });
+    // Update in users list too
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, memories: updatedMemories } : u));
   };
 
   const updateClientMemory = (id: string, content: string) => {
     if (!currentUser) return;
     const updatedMemories = (currentUser.memories || []).map(m => m.id === id ? { ...m, content } : m);
-    syncUserMemoriesToDB(currentUser.id, updatedMemories);
+    setCurrentUser({ ...currentUser, memories: updatedMemories });
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, memories: updatedMemories } : u));
   };
 
   const deleteClientMemory = (id: string) => {
     if (!currentUser) return;
     const updatedMemories = (currentUser.memories || []).filter(m => m.id !== id);
-    syncUserMemoriesToDB(currentUser.id, updatedMemories);
+    setCurrentUser({ ...currentUser, memories: updatedMemories });
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, memories: updatedMemories } : u));
   };
 
-  // --- Folder & File Management Logic ---
-  // Helper to sync Folders
-  const syncUserFoldersToDB = (userId: string, newFolders: ClientFolder[]) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, folders: newFolders } : u));
-    if (currentUser?.id === userId) {
-      setCurrentUser(prev => prev ? { ...prev, folders: newFolders } : null);
-    }
-  };
-
+  // --- Folder & File Management Logic (Mocked in Local State for now) ---
   const createClientFolder = (userId: string, folderName: string) => {
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
-    const newFolder: ClientFolder = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: folderName,
-      createdAt: new Date().toISOString(),
-      files: []
-    };
-    const updatedFolders = [...(user.folders || []), newFolder];
-    syncUserFoldersToDB(userId, updatedFolders);
+     const newFolder: ClientFolder = {
+          id: Math.random().toString(36).substr(2, 9),
+          name: folderName,
+          createdAt: new Date().toISOString(),
+          files: []
+     };
+
+     if (currentUser && currentUser.id === userId) {
+        setCurrentUser({ ...currentUser, folders: [...(currentUser.folders || []), newFolder] });
+     }
+     
+     setUsers(prev => prev.map(u => u.id === userId ? { ...u, folders: [...(u.folders || []), newFolder] } : u));
   };
 
   const renameClientFolder = (userId: string, folderId: string, newName: string) => {
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
-    const updatedFolders = (user.folders || []).map(f => f.id === folderId ? { ...f, name: newName } : f);
-    syncUserFoldersToDB(userId, updatedFolders);
+     if (currentUser && currentUser.id === userId) {
+        const updatedFolders = (currentUser.folders || []).map(f => f.id === folderId ? { ...f, name: newName } : f);
+        setCurrentUser({ ...currentUser, folders: updatedFolders });
+     }
+     
+     setUsers(prev => prev.map(u => u.id === userId ? { 
+       ...u, 
+       folders: (u.folders || []).map(f => f.id === folderId ? { ...f, name: newName } : f) 
+     } : u));
   };
 
   const deleteClientFolder = (userId: string, folderId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
-    const updatedFolders = (user.folders || []).filter(f => f.id !== folderId);
-    syncUserFoldersToDB(userId, updatedFolders);
+     if (currentUser && currentUser.id === userId) {
+        const updatedFolders = (currentUser.folders || []).filter(f => f.id !== folderId);
+        setCurrentUser({ ...currentUser, folders: updatedFolders });
+     }
+
+     setUsers(prev => prev.map(u => u.id === userId ? { 
+       ...u, 
+       folders: (u.folders || []).filter(f => f.id !== folderId) 
+     } : u));
   };
 
   const uploadFileToFolder = async (userId: string, folderId: string, file: File) => {
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
     const mockUrl = URL.createObjectURL(file); 
     const fileType = file.type.includes('image') ? 'image' : file.type.includes('pdf') ? 'pdf' : file.type.includes('video') ? 'video' : 'other';
     const fileSize = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
@@ -503,25 +533,48 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       size: fileSize,
       createdAt: new Date().toISOString()
     };
-    const updatedFolders = (user.folders || []).map(f => {
-      if (f.id === folderId) {
-        return { ...f, files: [...f.files, newFile] };
-      }
-      return f;
-    });
-    syncUserFoldersToDB(userId, updatedFolders);
+
+    if (currentUser && currentUser.id === userId) {
+        const updatedFolders = (currentUser.folders || []).map(f => {
+          if (f.id === folderId) {
+            return { ...f, files: [...f.files, newFile] };
+          }
+          return f;
+        });
+        setCurrentUser({ ...currentUser, folders: updatedFolders });
+    }
+
+    setUsers(prev => prev.map(u => u.id === userId ? { 
+       ...u, 
+       folders: (u.folders || []).map(f => {
+          if (f.id === folderId) {
+            return { ...f, files: [...f.files, newFile] };
+          }
+          return f;
+       })
+     } : u));
   };
 
   const deleteClientFile = (userId: string, folderId: string, fileId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
-    const updatedFolders = (user.folders || []).map(f => {
-      if (f.id === folderId) {
-        return { ...f, files: f.files.filter(file => file.id !== fileId) };
-      }
-      return f;
-    });
-    syncUserFoldersToDB(userId, updatedFolders);
+     if (currentUser && currentUser.id === userId) {
+        const updatedFolders = (currentUser.folders || []).map(f => {
+          if (f.id === folderId) {
+            return { ...f, files: f.files.filter(file => file.id !== fileId) };
+          }
+          return f;
+        });
+        setCurrentUser({ ...currentUser, folders: updatedFolders });
+     }
+
+     setUsers(prev => prev.map(u => u.id === userId ? { 
+       ...u, 
+       folders: (u.folders || []).map(f => {
+          if (f.id === folderId) {
+            return { ...f, files: f.files.filter(file => file.id !== fileId) };
+          }
+          return f;
+       })
+     } : u));
   };
 
   // --- Schedule & Appointment Logic ---
@@ -551,15 +604,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const checkAvailability = (dateStr: string): string[] => {
-    // 1. Check if blocked full day
     if (scheduleSettings.blockedDates.includes(dateStr)) return [];
 
-    // 2. Check if workday
-    const dateObj = new Date(dateStr + 'T12:00:00'); // noon to avoid timezone edge cases
-    const dayOfWeek = dateObj.getDay(); // 0-6
+    const dateObj = new Date(dateStr + 'T12:00:00');
+    const dayOfWeek = dateObj.getDay(); 
     if (!scheduleSettings.workDays.includes(dayOfWeek)) return [];
 
-    // 3. Generate slots (hourly)
     const slots: string[] = [];
     let startH = parseInt(scheduleSettings.startHour.split(':')[0]);
     let endH = parseInt(scheduleSettings.endHour.split(':')[0]);
@@ -567,13 +617,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     for (let h = startH; h < endH; h++) {
       const timeSlot = `${h.toString().padStart(2, '0')}:00`;
       
-      // 4. Check specific blocked slots
       const isBlockedSlot = scheduleSettings.blockedSlots?.some(
           b => b.date === dateStr && b.time === timeSlot
       );
       if (isBlockedSlot) continue;
 
-      // 5. Check conflicts with existing appointments
       const isTaken = appointments.some(a => 
         a.date === dateStr && 
         a.time === timeSlot && 
@@ -589,22 +637,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // --- Chat Logic ---
   const createNewChat = () => {
-    if (currentUser && currentChatMessages.length > 0) {
-      const newSession: ChatSession = {
-        id: Date.now().toString(),
-        title: `Conversa em ${new Date().toLocaleDateString()}`,
-        messages: [...currentChatMessages],
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString()
-      };
-      const updatedChats = [newSession, ...(currentUser.chats || [])];
-      setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, chats: updatedChats } : u));
-      setCurrentUser(prev => prev ? { ...prev, chats: updatedChats } : null);
-    }
     setCurrentChatMessages([]);
-    if (!currentUser) {
-      localStorage.removeItem('guest_chat_history');
-    }
   };
 
   const logAiFeedback = (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => {
@@ -620,7 +653,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setCurrentChatMessages(prev => [...prev, message]);
   };
 
-  // NEW: Update UI Component of a specific message
   const updateMessageUI = (id: string, uiComponent: any) => {
     setCurrentChatMessages(prev => prev.map(msg => 
       msg.id === id ? { ...msg, uiComponent } : msg
@@ -651,11 +683,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setCurrentChatMessages(updatedMessages);
 
     try {
-      // Pass office details and other context
       const responseData = await chatWithConcierge(updatedMessages, { 
         user: currentUser,
         memories: currentUser?.memories || [],
-        office: siteContent.office // Inject Office Data
+        office: siteContent.office 
       }, settings.aiConfig);
       
       const botMsg: ChatMessage = {
@@ -666,13 +697,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         actions: responseData.actions
       };
       
-      // Handle 'learnMemory' action from Bot
       if (responseData.actions) {
          responseData.actions.forEach((action: any) => {
             if (action.type === 'learnMemory') {
                addClientMemory(action.payload);
-               // Optional: Trigger toast to show AI learned something (or keep it silent as requested)
-               // showToast(`Aprendi algo novo: ${action.payload.topic}`, 'info'); 
             }
          });
       }
@@ -745,7 +773,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       addAdminNote,
       markNoteAsRead,
       deleteAdminNote,
-      // Scheduling
       appointments,
       scheduleSettings,
       updateScheduleSettings,
@@ -754,7 +781,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       updateAppointmentStatus,
       deleteAppointmentPermanently,
       checkAvailability,
-      // Toast
       toast,
       showToast,
       hideToast

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
 
 export const Auth: React.FC = () => {
@@ -40,22 +40,29 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useProjects();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     
-    const user = login(email);
-    
-    if (user) {
-      if (user.role === 'admin') {
-        navigate('/admin');
+    try {
+      const { user, error } = await login(email, password);
+      
+      if (error) {
+        setError(error.message || 'Erro ao fazer login. Verifique suas credenciais.');
       } else {
-        navigate('/profile');
+         // Navigation happens reactively via useEffect in App.tsx or ProjectContext state change
+         // But for UX we force it if success
+         navigate('/profile');
       }
-    } else {
-      setError('Email não encontrado. Tente "cliente@exemplo.com.br" ou "admin@fran.com".');
+    } catch (err) {
+      setError('Ocorreu um erro inesperado.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -80,12 +87,19 @@ const Login: React.FC = () => {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" 
             placeholder="voce@exemplo.com.br" 
+            required
           />
-          <span className="text-xs text-gray-400 mt-1 block">Dica: Use "admin@fran.com" ou "cliente@exemplo.com.br"</span>
         </div>
         <div>
           <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Senha</label>
-          <input type="password" className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" placeholder="••••••••" />
+          <input 
+            type="password" 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" 
+            placeholder="••••••••" 
+            required
+          />
         </div>
         
         <div className="flex justify-between items-center text-sm">
@@ -96,7 +110,9 @@ const Login: React.FC = () => {
           <Link to="/auth/recover" className="text-black underline">Esqueceu a senha?</Link>
         </div>
 
-        <button className="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-accent transition">Entrar</button>
+        <button disabled={loading} className="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-accent transition disabled:opacity-50 flex items-center justify-center">
+           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Entrar'}
+        </button>
       </form>
       
       <p className="mt-8 text-center text-sm text-gray-500">
@@ -116,15 +132,37 @@ const Register: React.FC = () => {
     password: '',
     confirmPassword: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Senhas não conferem");
+      setError("As senhas não conferem.");
       return;
     }
-    registerUser(formData.name, formData.email, formData.phone);
-    navigate('/profile');
+
+    if (formData.password.length < 6) {
+      setError("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await registerUser(formData.name, formData.email, formData.phone, formData.password);
+      if (error) {
+        setError(error.message || "Erro ao criar conta.");
+      } else {
+        navigate('/profile');
+      }
+    } catch (err) {
+      setError("Erro inesperado ao criar conta.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,6 +174,13 @@ const Register: React.FC = () => {
       <h2 className="text-3xl font-serif mb-2">Criar Conta</h2>
       <p className="text-secondary mb-8">Comece sua jornada com Fran Siller Arquitetura.</p>
       
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm flex items-center gap-2">
+          <AlertCircle className="w-4 h-4" />
+          {error}
+        </div>
+      )}
+
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
           <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Nome Completo</label>
@@ -164,7 +209,9 @@ const Register: React.FC = () => {
            Ao se registrar, você concorda com nossos <button type="button" className="underline">Termos de Serviço</button> e <button type="button" className="underline">Política de Privacidade</button>.
         </div>
 
-        <button className="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-accent transition">Criar Conta</button>
+        <button disabled={loading} className="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-accent transition disabled:opacity-50 flex items-center justify-center">
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Criar Conta'}
+        </button>
       </form>
       
       <p className="mt-8 text-center text-sm text-gray-500">
