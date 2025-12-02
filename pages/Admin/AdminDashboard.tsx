@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark } from 'lucide-react';
+import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2 } from 'lucide-react';
 import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory } from '../../types';
 import { motion, Reorder } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
@@ -36,10 +37,25 @@ export const AdminDashboard: React.FC = () => {
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   
   // Local forms
   const [contentForm, setContentForm] = useState<SiteContent>(siteContent);
   const [settingsForm, setSettingsForm] = useState<GlobalSettings>(settings);
+
+  // Sync contentForm with siteContent when it loads from DB
+  useEffect(() => {
+    if (siteContent) {
+      setContentForm(siteContent);
+    }
+  }, [siteContent]);
+
+  // Sync settingsForm with settings when it loads from DB
+  useEffect(() => {
+    if (settings) {
+      setSettingsForm(settings);
+    }
+  }, [settings]);
 
   // Client Details View
   const [selectedClient, setSelectedClient] = useState<User | null>(null);
@@ -203,16 +219,48 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const saveContent = () => {
-    updateSiteContent(contentForm);
-    showToast('Conteúdo atualizado com sucesso!', 'success');
+  const saveContent = async () => {
+    setSaving(true);
+    try {
+      // 1. Force update to Supabase to ensure persistence
+      const { error } = await supabase.from('site_settings').upsert({ 
+        id: 'main', 
+        content: contentForm 
+      });
+
+      if (error) throw error;
+
+      // 2. Update Local Context to reflect immediately in UI
+      updateSiteContent(contentForm);
+      showToast('Conteúdo salvo no banco de dados com sucesso!', 'success');
+    } catch (err) {
+      console.error("Erro ao salvar:", err);
+      showToast('Erro ao salvar no banco de dados.', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const saveSettings = () => {
-    updateSettings(settingsForm);
-    // Also save office data which resides in contentForm
-    updateSiteContent(contentForm);
-    showToast('Configurações salvas.', 'success');
+  const saveSettings = async () => {
+    setSaving(true);
+    try {
+       // Save settings and content together
+       const { error } = await supabase.from('site_settings').upsert({ 
+        id: 'main', 
+        settings: settingsForm,
+        content: contentForm 
+      });
+      
+      if (error) throw error;
+
+      updateSettings(settingsForm);
+      updateSiteContent(contentForm);
+      showToast('Configurações salvas.', 'success');
+    } catch (err) {
+      showToast('Erro ao salvar configurações.', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // ... (Other handlers unchanged) ...
@@ -780,8 +828,9 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               <div className="mt-8">
-                <button onClick={saveSettings} className="w-full bg-black text-white px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2">
-                    <Save className="w-5 h-5" /> Salvar Configurações
+                <button onClick={saveSettings} disabled={saving} className="w-full bg-black text-white px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2 disabled:opacity-50">
+                    {saving ? <Loader2 className="w-5 h-5 animate-spin"/> : <Save className="w-5 h-5" />}
+                    {saving ? 'Salvando...' : 'Salvar Configurações'}
                 </button>
               </div>
             </div>
@@ -890,8 +939,9 @@ export const AdminDashboard: React.FC = () => {
                  </div>
 
                  <div className="mt-8">
-                    <button onClick={saveSettings} className="w-full bg-black text-white px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2">
-                        <Save className="w-5 h-5" /> Salvar Configurações de IA
+                    <button onClick={saveSettings} disabled={saving} className="w-full bg-black text-white px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2 disabled:opacity-50">
+                        {saving ? <Loader2 className="w-5 h-5 animate-spin"/> : <Save className="w-5 h-5" />}
+                        {saving ? 'Salvando...' : 'Salvar Configurações de IA'}
                     </button>
                  </div>
              </div>
@@ -1099,8 +1149,9 @@ export const AdminDashboard: React.FC = () => {
                   </div>
 
                   <div className="mt-6 pt-6 border-t border-gray-100">
-                     <button onClick={saveContent} className="w-full md:w-auto bg-green-500 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-green-600 transition flex items-center justify-center gap-2">
-                        <Save className="w-5 h-5" /> Salvar Alterações
+                     <button onClick={saveContent} disabled={saving} className="w-full md:w-auto bg-green-500 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-green-600 transition flex items-center justify-center gap-2 disabled:opacity-50">
+                        {saving ? <Loader2 className="w-5 h-5 animate-spin"/> : <Save className="w-5 h-5" />}
+                        {saving ? 'Salvando...' : 'Salvar Alterações'}
                      </button>
                   </div>
                </div>
@@ -1112,8 +1163,9 @@ export const AdminDashboard: React.FC = () => {
              <div className="animate-fadeIn max-w-5xl">
                <div className="flex justify-between items-center mb-8">
                  <h2 className="text-3xl font-serif font-bold text-black">Página do Escritório (Visual)</h2>
-                 <button onClick={saveContent} className="bg-black text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2">
-                    <Save className="w-5 h-5" /> Salvar Página
+                 <button onClick={saveContent} disabled={saving} className="bg-black text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2 disabled:opacity-50">
+                    {saving ? <Loader2 className="w-5 h-5 animate-spin"/> : <Save className="w-5 h-5" />}
+                    {saving ? 'Salvando...' : 'Salvar Página'}
                  </button>
                </div>
                
