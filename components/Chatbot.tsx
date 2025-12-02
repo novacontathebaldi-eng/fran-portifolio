@@ -299,7 +299,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const { sendMessageToAI, currentUser, addAdminNote, showToast, currentChatMessages, createNewChat, logAiFeedback, settings, addAppointment, siteContent, archiveCurrentChat } = useProjects();
+  const { sendMessageToAI, currentUser, addAdminNote, showToast, currentChatMessages, createNewChat, logAiFeedback, settings, addAppointment, siteContent, archiveCurrentChat, addClientMemory } = useProjects();
   
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -364,7 +364,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     try {
       const response = await sendMessageToAI(userText);
       
-      // Handle Actions
+      // Handle Actions - Centralized here to ensure execution
       if (response.actions && response.actions.length > 0) {
         for (const action of response.actions) {
           if (action.type === 'saveNote') {
@@ -397,6 +397,12 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
             } else {
                 showToast("Faça login para confirmar o agendamento.", "error");
                 navigate('/auth');
+            }
+          }
+          else if (action.type === 'learnMemory') {
+            if (currentUser) {
+                addClientMemory(action.payload);
+                // Silent save
             }
           }
         }

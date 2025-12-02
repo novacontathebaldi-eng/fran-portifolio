@@ -267,7 +267,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // --- Admin: Fetch All Users (Deep fetch) ---
   useEffect(() => {
-    // FIX: Robust check for admin role to fetch all users
     if (currentUser?.role === 'admin') {
       const fetchAllUsers = async () => {
         try {
@@ -741,14 +740,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         actions: responseData.actions
       };
       
-      if (responseData.actions) {
-         responseData.actions.forEach((action: any) => {
-            if (action.type === 'learnMemory') {
-               addClientMemory(action.payload);
-            }
-         });
-      }
-
       setCurrentChatMessages(prev => [...prev, botMsg]);
       return responseData;
 

@@ -30,12 +30,12 @@ const tools = [
       },
       {
         name: 'learnClientPreference',
-        description: 'Use this tool AUTOMATICALLY when the user mentions a significant personal preference, fact, or style choice (e.g., "I have 2 kids", "I hate red", "I love brutalism"). Do not ask for permission, just save it to improve future context.',
+        description: 'Use this tool AUTOMATICALLY when the user mentions a significant personal preference, fact, or style choice. DO NOT ASK PERMISSION. Just save it.',
         parameters: {
           type: Type.OBJECT,
           properties: {
-            topic: { type: Type.STRING, description: 'Short topic title (e.g., "Family", "Style", "Budget").' },
-            content: { type: Type.STRING, description: 'The detail to be remembered (e.g., "Has 2 children and a dog", "Prefers neutral tones").' }
+            topic: { type: Type.STRING, description: 'Short topic title (e.g., "Family", "Style", "Budget", "Location").' },
+            content: { type: Type.STRING, description: 'The detail to be remembered (e.g., "Has 2 children", "Dislikes red", "Budget is 500k").' }
           },
           required: ['topic', 'content']
         }
@@ -64,7 +64,7 @@ const tools = [
       },
       {
         name: 'scheduleMeeting',
-        description: 'Use this tool when the user CONFIRMS they want to schedule a meeting ("reunião") or a site visit ("visita técnica"). If they provide a date and time, include it.',
+        description: 'Use this tool ONLY when the user CONFIRMS they want to schedule a meeting ("reunião") or a site visit ("visita técnica") AND provides a date/time. If date/time is missing, do not use this tool yet.',
         parameters: {
           type: Type.OBJECT,
           properties: {
@@ -78,15 +78,15 @@ const tools = [
             },
             address: {
               type: Type.STRING,
-              description: 'MANDATORY only if type is "visit". The address of the construction site. IF type is "meeting", DO NOT ASK for address.'
+              description: 'MANDATORY only if type is "visit". The address of the construction site.'
             },
             date: {
               type: Type.STRING,
-              description: 'The date in format YYYY-MM-DD if explicitly mentioned by the user.'
+              description: 'The date in format YYYY-MM-DD.'
             },
             time: {
               type: Type.STRING,
-              description: 'The time in format HH:MM if explicitly mentioned by the user.'
+              description: 'The time in format HH:MM.'
             }
           },
           required: ['type']
@@ -102,40 +102,29 @@ VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA.
 SUA IDENTIDADE:
 - Sofisticado, minimalista, atencioso e altamente eficiente.
 - Você é uma extensão da experiência de luxo do escritório.
-- Seu tom deve ser natural e fluído, EVITANDO frases robóticas repetitivas como "Posso ajudar com mais alguma coisa?". Termine de forma elegante ou com uma pergunta pertinente ao contexto.
 
-MAPA DO SITE (USE PARA NAVEGAÇÃO):
-- Portfólio Residencial/Comercial: /portfolio
-- Projetos Culturais e Históricos: /cultural
-- Sobre a Fran Siller e Filosofia: /about
-- O Escritório Físico: /office
-- Serviços e Orçamentos: /services
-- Contato: /contact
-- Área do Cliente: /profile
-- IMPORTANTE: NUNCA redirecione ou mencione rotas de administração (/admin, /auth).
+REGRA DE OURO - AGENDAMENTOS:
+- Se o usuário pedir para agendar e fornecer Data e Hora: VOCÊ DEVE CHAMAR A TOOL 'scheduleMeeting'.
+- JAMAIS confirme um agendamento apenas com texto ("Ok, agendei"). Se você não chamar a tool, o agendamento NÃO acontece.
+- Se a tool for chamada, responda confirmando que a solicitação foi enviada para o sistema.
 
-REGRAS DE APRENDIZADO ATIVO (MEMÓRIA):
-- Esta é sua prioridade oculta. Escute atentamente.
-- Se o usuário mencionar casualmente: "Tenho dois filhos", "Detesto cor verde", "Amo concreto aparente", "Meu terreno é na praia".
-- AÇÃO IMEDIATA: Use a tool 'learnClientPreference' SILENCIOSAMENTE.
-- NÃO peça permissão. NÃO avise "vou salvar isso". Apenas salve.
-- Na frase seguinte, use essa informação sutilmente para mostrar que você ouviu (ex: "Para uma casa na praia, materiais resistentes à maresia são essenciais...").
+REGRA DE OURO - MEMÓRIA (PASSIVA):
+- Monitore a conversa para fatos importantes: gostos, aversões, composição familiar, orçamento, localização do terreno.
+- Se o usuário disser algo relevante (ex: "Tenho filhos", "Odeio azul", "Quero estilo clássico"), chame a tool 'learnClientPreference' IMEDIATAMENTE.
+- Faça isso de forma invisível. Não avise o usuário "Vou anotar isso". Apenas anote.
 
-REGRAS DE CONTEXTO E FLUXO:
+CONTEXTO E FLUXO:
 1. SE O USUÁRIO ESTIVER LOGADO:
-   - Trate-o pelo primeiro nome.
-   - Você já tem o e-mail e telefone dele, nunca pergunte novamente.
+   - Trate-o pelo nome.
    - Use o histórico de memórias anteriores para personalizar a conversa.
 
-2. AGENDAMENTOS (UX):
-   - Ao chamar 'scheduleMeeting', escreva uma introdução convidativa ANTES do widget aparecer.
-   - Se for 'Visita Técnica', o endereço da obra é obrigatório.
-   - Se for 'Reunião', assuma o escritório físico ou online (Google Meet) conforme a preferência.
+2. UX DE AGENDAMENTO:
+   - Se o usuário NÃO der data/hora, mostre o Widget de Calendário (eu cuidarei disso na UI, você só precisa perguntar quando ele prefere).
+   - Se o usuário DER data/hora, chame a tool 'scheduleMeeting' com os parâmetros preenchidos.
 
 3. ESTILO DE RESPOSTA:
-   - Respostas curtas e ricas em conteúdo são melhores que textos longos.
-   - Use formatação markdown (**negrito**) para destacar pontos chave.
-   - Fale Português do Brasil culto e acolhedor.
+   - Português do Brasil culto.
+   - Respostas curtas e objetivas.
 `;
 
 export async function chatWithConcierge(
@@ -161,44 +150,37 @@ export async function chatWithConcierge(
 
   // Add Date Context
   systemInstruction += `\n\n[CONTEXTO TEMPORAL]:
-  - Data Atual: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')} (Use isso para entender "bom dia", "boa tarde", "amanhã", etc).
+  - Data Atual: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}.
   `;
 
   // Inject Office Address and Hours dynamically from Admin Context
   if (context.office) {
     systemInstruction += `\n\n[DADOS DO ESCRITÓRIO - FONTE DE VERDADE]:
-    - Endereço Oficial (Para Reuniões Presenciais): ${context.office.address}
+    - Endereço Oficial: ${context.office.address}
     - Cidade/Estado: ${context.office.city} - ${context.office.state}
-    - Horário de Funcionamento: ${context.office.hoursDescription}
+    - Horário: ${context.office.hoursDescription}
     `;
   }
   
   if (context?.user) {
-    systemInstruction += `\n\n[PERFIL DO CLIENTE - CONFIDENCIAL]:
+    systemInstruction += `\n\n[PERFIL DO CLIENTE]:
     - Nome: ${context.user.name}
-    - Email: ${context.user.email} (NÃO PERGUNTAR)
-    - Telefone: ${context.user.phone || 'Cadastrado'} (NÃO PERGUNTAR)
-    - Status: ${context.user.role === 'admin' ? 'Administrador do Sistema' : 'Cliente VIP'}
+    - Email: ${context.user.email}
     `;
 
     if (context.user.addresses && context.user.addresses.length > 0) {
-      systemInstruction += `\n- Endereços Salvos (Útil para Visitas):`;
+      systemInstruction += `\n- Endereços Salvos:`;
       context.user.addresses.forEach(addr => {
         systemInstruction += `\n  * [${addr.label}]: ${addr.street}, ${addr.number} (${addr.city})`;
       });
     }
     
     if (context.memories && context.memories.length > 0) {
-      systemInstruction += `\n\n[MEMÓRIAS APRENDIDAS (Use para personalizar)]:`;
+      systemInstruction += `\n\n[MEMÓRIAS (O QUE JÁ SABEMOS)]:`;
       context.memories.forEach((mem: any) => {
          systemInstruction += `\n- [${mem.topic}]: ${mem.content}`;
       });
     }
-  } else {
-    systemInstruction += `\n\n[USUÁRIO VISITANTE]:
-    - Tente obter o nome dele de forma natural se a conversa se estender.
-    - Se ele tentar agendar ou ver documentos, avise gentilmente que precisará de login.
-    `;
   }
 
   const modelName = aiConfig?.model || 'gemini-2.5-flash';
@@ -213,7 +195,7 @@ export async function chatWithConcierge(
     contents = [{ role: 'user', parts: [{ text: typeof message === 'string' ? message : '' }] }];
   }
 
-  // Filter out system messages or non-standard roles if any
+  // Filter out system messages or non-standard roles
   contents = contents.filter(c => c.role === 'user' || c.role === 'model');
 
   try {
@@ -240,7 +222,7 @@ export async function chatWithConcierge(
         for (const call of functionCalls) {
           if (call.name === 'showProjects') {
             responseData.uiComponent = { type: 'ProjectCarousel', data: call.args };
-            if (!responseData.text) responseData.text = "Aqui estão alguns projetos do nosso portfólio que selecionamos para você.";
+            if (!responseData.text) responseData.text = "Aqui estão alguns projetos selecionados.";
           } 
           else if (call.name === 'saveClientNote') {
             responseData.actions.push({
@@ -252,7 +234,7 @@ export async function chatWithConcierge(
                 source: 'chatbot'
               }
             });
-            if (!responseData.text) responseData.text = "Recebido. Sua mensagem foi encaminhada diretamente para nossa equipe de atendimento. Entraremos em contato em breve.";
+            if (!responseData.text) responseData.text = "Recebido. Sua mensagem foi encaminhada.";
           }
           else if (call.name === 'learnClientPreference') {
             responseData.actions.push({
@@ -263,46 +245,42 @@ export async function chatWithConcierge(
                 type: 'system_detected'
               }
             });
-            // Intentionally no text override here, let the model continue its conversation flow.
+            // Implicit save, no text override needed
           }
           else if (call.name === 'getSocialLinks') {
             responseData.uiComponent = { type: 'SocialLinks', data: {} };
-            if (!responseData.text) responseData.text = "Claro, aqui estão nossos canais de contato direto.";
+            if (!responseData.text) responseData.text = "Aqui estão nossos canais de contato.";
           }
           else if (call.name === 'navigateSite') {
             responseData.actions.push({
               type: 'navigate',
               payload: { path: call.args['path'] }
             });
-            if (!responseData.text) responseData.text = "Estou te levando para lá agora mesmo.";
           }
           else if (call.name === 'scheduleMeeting') {
             const widgetData = { ...call.args };
             
-            // Fix online location
             if (widgetData.modality === 'online') {
                 widgetData.location = 'Online (Google Meet)';
                 widgetData.type = 'meeting'; 
             }
 
-            // Check if user provided specific date/time
+            // CRITICAL: If date/time provided, FORCE Action. If not, Widget.
             if (widgetData.date && widgetData.time) {
-                // Return Action to Force Schedule
                 responseData.actions.push({
                   type: 'scheduleMeeting',
                   payload: widgetData
                 });
-                if (!responseData.text) responseData.text = `Excelente. Estou confirmando seu agendamento para ${widgetData.date} às ${widgetData.time}.`;
+                if (!responseData.text) responseData.text = `Perfeito. Enviando solicitação para ${new Date(widgetData.date).toLocaleDateString()} às ${widgetData.time}.`;
             } else {
-                // Return Widget
                 responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
             }
           }
         }
       }
 
-      if (!responseData.text && !responseData.uiComponent) {
-        responseData.text = "Compreendo. Como mais posso auxiliar você hoje?";
+      if (!responseData.text && !responseData.uiComponent && responseData.actions.length === 0) {
+        responseData.text = "Compreendo. Como posso ajudar mais?";
       }
 
       return responseData;
@@ -311,7 +289,7 @@ export async function chatWithConcierge(
     console.error("AI Error:", error);
     return {
       role: 'model',
-      text: "Peço desculpas, tive um breve lapso de conexão. Poderia repetir sua solicitação, por favor?"
+      text: "Desculpe, tive um problema de conexão. Poderia repetir?"
     };
   }
 }
