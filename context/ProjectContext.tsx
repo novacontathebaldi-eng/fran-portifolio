@@ -23,9 +23,9 @@ interface ProjectContextType {
   isLoadingAuth: boolean;
   
   // Auth
-  login: (email: string, password: string) => Promise<{ user: User | null; error: any }>;
+  login: (email: string, password: string) => Promise<{ user: any | null; error: any }>;
   logout: () => Promise<void>;
-  registerUser: (name: string, email: string, phone: string, password: string) => Promise<{ user: User | null; error: any }>;
+  registerUser: (name: string, email: string, phone: string, password: string) => Promise<{ user: any | null; error: any }>;
   
   addProject: (project: Project) => void;
   updateProject: (project: Project) => void;
@@ -272,6 +272,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
+          // Only fetch if we don't have the user or it's a different user
           if (!currentUser || currentUser.id !== session.user.id) {
              const user = await fetchFullUserProfile(session.user.id);
              if (user) setCurrentUser(user);
@@ -329,14 +330,26 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   // --- AUTH ACTIONS ---
   
   const login = async (email: string, password: string) => {
+    setIsLoadingAuth(true); // Force loading state so ProtectedRoutes wait
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    
     if (error) {
+        setIsLoadingAuth(false);
         return { user: null, error: { message: translateAuthError(error.message) } };
     }
-    return { user: null, error: null };
+
+    // Force fetch profile immediately to update state BEFORE return
+    if (data.user) {
+        const user = await fetchFullUserProfile(data.user.id);
+        setCurrentUser(user);
+    }
+
+    setIsLoadingAuth(false);
+    return { user: data.user, error: null };
   };
 
   const registerUser = async (name: string, email: string, phone: string, password: string) => {
+    setIsLoadingAuth(true);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -344,22 +357,30 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
 
     if (error) {
+        setIsLoadingAuth(false);
         return { user: null, error: { message: translateAuthError(error.message) } };
     }
 
     if (data.user) {
+        // Update profile
         const { error: profileError } = await supabase
             .from('profiles')
             .update({ name: name, phone: phone })
             .eq('id', data.user.id);
             
         if (profileError) console.error("Error updating profile phone:", profileError);
+
+        // Fetch full profile to ensure state is ready
+        const user = await fetchFullUserProfile(data.user.id);
+        setCurrentUser(user);
     }
 
-    return { user: null, error: null };
+    setIsLoadingAuth(false);
+    return { user: data.user, error: null };
   };
 
   const logout = async () => {
+    setCurrentUser(null); // Optimistic clear for immediate UI feedback
     await supabase.auth.signOut();
   };
 

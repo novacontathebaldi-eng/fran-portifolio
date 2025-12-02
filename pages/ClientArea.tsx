@@ -3,7 +3,7 @@ import { useProjects } from '../context/ProjectContext';
 import { Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Project, ClientMemory, ClientFolder, Address, User, Appointment } from '../types';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 // Real Supabase Upload
@@ -31,6 +31,8 @@ export const ClientArea: React.FC = () => {
   const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory, appointments, updateAppointmentStatus, updateAppointment, updateUser, showToast, siteContent, checkAvailability } = useProjects();
   const [activeTab, setActiveTab] = useState<'profile' | 'projects' | 'docs' | 'settings' | 'favs' | 'memories' | 'schedule'>('projects');
   
+  const navigate = useNavigate();
+
   // Profile & Address State
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState<Partial<User>>({});
@@ -59,6 +61,12 @@ export const ClientArea: React.FC = () => {
   const myAppointments = appointments.filter(a => a.clientId === currentUser.id).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   // --- Handlers ---
+
+  const handleLogout = async () => {
+      await logout();
+      showToast('Você saiu do sistema.', 'success');
+      navigate('/auth', { replace: true });
+  };
 
   const handleEditProfile = () => {
     setProfileForm({ ...currentUser });
@@ -191,7 +199,7 @@ export const ClientArea: React.FC = () => {
           <h1 className="text-3xl md:text-4xl font-serif">Portal do Cliente</h1>
           
           <button 
-            onClick={logout} 
+            onClick={handleLogout} 
             className="flex items-center space-x-2 text-red-500 hover:text-red-700 transition text-sm font-bold border border-red-100 hover:border-red-200 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-full"
           >
             <LogOut className="w-4 h-4" />
