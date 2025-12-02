@@ -129,40 +129,7 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     hoursDescription: 'Segunda a Sexta, 09h às 18h',
     email: 'contato@fransiller.com.br',
     phone: '+55 (27) 99667-0426',
-    blocks: [
-      { 
-        id: 'hero', 
-        type: 'image-full', 
-        content: 'https://picsum.photos/id/48/1200/800', 
-        caption: 'Nossa fachada em Santa Leopoldina' 
-      },
-      { 
-        id: 'intro-heading', 
-        type: 'heading', 
-        content: 'Onde as ideias tomam forma.' 
-      },
-      { 
-        id: 'intro-text', 
-        type: 'text', 
-        content: 'Nosso espaço foi projetado para inspirar...' 
-      },
-      {
-        id: 'details-section',
-        type: 'details',
-        content: 'Informações de Contato'
-      },
-      {
-        id: 'gallery',
-        type: 'image-grid',
-        content: '',
-        items: ['https://picsum.photos/id/49/800/600', 'https://picsum.photos/id/50/800/600']
-      },
-      {
-        id: 'map-section',
-        type: 'map',
-        content: 'Localização'
-      }
-    ]
+    blocks: []
   }
 };
 
@@ -200,9 +167,46 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setToast(prev => ({ ...prev, isVisible: false }));
   }, []);
 
+  // --- HELPER: Fetch Full User Profile (with memories/folders) ---
+  const fetchFullUserProfile = async (userId: string): Promise<User | null> => {
+    try {
+        const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+        if (error || !profile) return null;
+
+        // Fetch Memories
+        const { data: memories } = await supabase.from('client_memories').select('*').eq('user_id', userId);
+        
+        // Fetch Folders with Files
+        const { data: folders } = await supabase.from('client_folders').select('*, files:client_files(*)').eq('user_id', userId);
+
+        return {
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role as 'admin' | 'client',
+          phone: profile.phone,
+          avatar: profile.avatar,
+          bio: profile.bio,
+          cpf: profile.cpf,
+          birthDate: profile.birth_date, // Map from snake_case
+          addresses: profile.addresses || [],
+          
+          memories: memories || [],
+          folders: folders || [],
+          
+          chats: [], // Chats not persisted in this demo context
+          projects: [], 
+          favorites: [],
+          appointments: []
+        };
+    } catch (e) {
+        console.error("Error fetching full profile:", e);
+        return null;
+    }
+  };
+
   // --- INITIAL DATA FETCHING ---
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchGlobalData = async () => {
       // 1. Projects
       const { data: projectsData } = await supabase.from('projects').select('*').order('year', { ascending: false });
       if (projectsData) setProjects(projectsData);
@@ -211,9 +215,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       const { data: cultData } = await supabase.from('cultural_projects').select('*').order('year', { ascending: false });
       if (cultData) setCulturalProjects(cultData);
 
-      // 3. Site Content & Settings (Assuming a single row 'main' or similar logic)
-      // Note: We'll store SiteContent and Settings in a 'site_settings' table or similar.
-      // For this migration, if the table doesn't exist, we fallback to DEFAULT.
+      // 3. Settings
       const { data: settingsData } = await supabase.from('site_settings').select('*').eq('id', 'main').single();
       if (settingsData) {
         if (settingsData.content) setSiteContent({ ...DEFAULT_SITE_CONTENT, ...settingsData.content });
@@ -221,70 +223,29 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (settingsData.schedule_settings) setScheduleSettings({ ...DEFAULT_SCHEDULE_SETTINGS, ...settingsData.schedule_settings });
       }
 
-      // 4. Appointments (Only fetch relevant ones)
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData.session) {
-         // If admin, fetch all. If client, fetch own.
-         // This logic is ideally handled by RLS on Supabase side, so we just select *.
-         const { data: aptData } = await supabase.from('appointments').select('*');
-         if (aptData) setAppointments(aptData);
-      }
-    };
-
-    fetchData();
-  }, [currentUser]); // Refetch if user logs in/out
-
-  // --- Auth & Profile Sync ---
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) throw error;
-      if (data) {
-        // Fetch relations manually if needed, or assume they are joined if using foreign keys
-        // For simplicity in this mock-to-supabase transition, we keep the structure flat or use simple joins
-        // We need to fetch folders/memories separately if they are in other tables.
-        
-        // Example: Fetch Folders
-        // const { data: folders } = await supabase.from('folders').select('*, files(*)').eq('user_id', userId);
-        
-        const mappedUser: User = {
-          id: data.id,
-          name: data.name,
-          email: data.email,
-          role: data.role as 'admin' | 'client',
-          phone: data.phone,
-          avatar: data.avatar,
-          bio: data.bio,
-          folders: [], // In a full app, fetch these relations
-          memories: [],
-          chats: [],
-          projects: [], // Assigned projects
-          favorites: [],
-          appointments: [],
-          addresses: data.addresses || [] // Assuming JSONB column for addresses
-        };
-        setCurrentUser(mappedUser);
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    }
+      // 4. Appointments
+      const { data: aptData } = await supabase.from('appointments').select('*');
+      if (aptData) setAppointments(aptData);
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) fetchProfile(session.user.id);
+    fetchGlobalData();
+
+    // Session Management
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        const user = await fetchFullUserProfile(session.user.id);
+        if (user) setCurrentUser(user);
+      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
-        if (!currentUser || currentUser.id !== session.user.id) {
-            fetchProfile(session.user.id);
-        }
+          // If we don't have user or ID changed, fetch
+          if (!currentUser || currentUser.id !== session.user.id) {
+             const user = await fetchFullUserProfile(session.user.id);
+             if (user) setCurrentUser(user);
+          }
       } else {
         setCurrentUser(null);
         setCurrentChatMessages([]);
@@ -293,46 +254,68 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     return () => subscription.unsubscribe();
   }, []); 
 
-  // Fetch All Users for Admin
+  // --- Admin: Fetch All Users (Deep fetch) ---
   useEffect(() => {
     if (currentUser?.role === 'admin') {
       const fetchAllUsers = async () => {
-        const { data } = await supabase.from('profiles').select('*');
-        if (data) {
-           const mapped: User[] = data.map((d: any) => ({
-             id: d.id,
-             name: d.name,
-             email: d.email,
-             role: d.role,
-             phone: d.phone,
-             avatar: d.avatar,
-             bio: d.bio,
-             folders: [],
-             memories: [],
+        // We need folders for admin view
+        const { data: profiles } = await supabase.from('profiles').select('*');
+        if (!profiles) return;
+
+        const { data: allFolders } = await supabase.from('client_folders').select('*, files:client_files(*)');
+        const { data: allMemories } = await supabase.from('client_memories').select('*');
+
+        const mapped: User[] = profiles.map((p: any) => ({
+             id: p.id,
+             name: p.name,
+             email: p.email,
+             role: p.role,
+             phone: p.phone,
+             avatar: p.avatar,
+             bio: p.bio,
+             cpf: p.cpf,
+             birthDate: p.birth_date,
+             addresses: p.addresses || [],
+             
+             folders: allFolders?.filter((f: any) => f.user_id === p.id) || [],
+             memories: allMemories?.filter((m: any) => m.user_id === p.id) || [],
              chats: [],
              projects: [],
              favorites: [],
-             appointments: [],
-             addresses: d.addresses || []
-           }));
-           setUsers(mapped);
-        }
+             appointments: []
+        }));
+        setUsers(mapped);
       };
       fetchAllUsers();
     }
-  }, [currentUser]);
+  }, [currentUser, projects]); // Refetch when projects change (in case we link them later)
 
+  // --- AUTH ACTIONS ---
+  
   const login = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     return { user: null, error };
   };
 
   const registerUser = async (name: string, email: string, phone: string, password: string) => {
+    // 1. SignUp
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { name, phone } }
     });
+
+    if (data.user && !error) {
+        // 2. CRITICAL: Force update profile with phone immediately
+        // Supabase triggers might be slightly delayed or missing phone from metadata depending on config.
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ name: name, phone: phone })
+            .eq('id', data.user.id);
+            
+        if (profileError) console.error("Error updating profile phone:", profileError);
+    }
+
     return { user: null, error };
   };
 
@@ -340,21 +323,31 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     await supabase.auth.signOut();
   };
 
-  // --- CRUD Project ---
+  // --- PERSISTENCE HELPERS ---
+  const persistSettings = async (newContent?: SiteContent, newSettings?: GlobalSettings, newSchedule?: ScheduleSettings) => {
+    const updates: any = {};
+    if (newContent) updates.content = newContent;
+    if (newSettings) updates.settings = newSettings;
+    if (newSchedule) updates.schedule_settings = newSchedule;
+
+    const { error } = await supabase.from('site_settings').upsert({ id: 'main', ...updates });
+    if (error) console.error("Error saving settings:", error);
+  };
+
+  // --- PROJECT ACTIONS ---
   const addProject = async (project: Project) => {
     const { error } = await supabase.from('projects').insert(project);
     if (!error) {
-      setProjects(prev => [project, ...prev]);
+       fetchGlobalData(); // Refresh list
     } else {
       showToast('Erro ao salvar projeto.', 'error');
-      console.error(error);
     }
   };
 
   const updateProject = async (project: Project) => {
     const { error } = await supabase.from('projects').update(project).eq('id', project.id);
     if (!error) {
-      setProjects(prev => prev.map(p => p.id === project.id ? project : p));
+       setProjects(prev => prev.map(p => p.id === project.id ? project : p));
     } else {
       showToast('Erro ao atualizar projeto.', 'error');
     }
@@ -362,15 +355,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const deleteProject = async (id: string) => {
     const { error } = await supabase.from('projects').delete().eq('id', id);
-    if (!error) {
-      setProjects(prev => prev.filter(p => p.id !== id));
-    }
+    if (!error) setProjects(prev => prev.filter(p => p.id !== id));
   };
   
-  // --- CRUD Cultural Project ---
   const addCulturalProject = async (project: CulturalProject) => {
     const { error } = await supabase.from('cultural_projects').insert(project);
-    if (!error) setCulturalProjects(prev => [project, ...prev]);
+    if (!error) fetchGlobalData();
   };
 
   const updateCulturalProject = async (project: CulturalProject) => {
@@ -383,18 +373,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (!error) setCulturalProjects(prev => prev.filter(p => p.id !== id));
   };
 
-  // --- Persist Site Content & Settings ---
-  // Using a single row 'main' in 'site_settings' table
-  const persistSettings = async (newContent?: SiteContent, newSettings?: GlobalSettings, newSchedule?: ScheduleSettings) => {
-    const updates: any = {};
-    if (newContent) updates.content = newContent;
-    if (newSettings) updates.settings = newSettings;
-    if (newSchedule) updates.schedule_settings = newSchedule;
-
-    const { error } = await supabase.from('site_settings').upsert({ id: 'main', ...updates });
-    if (error) console.error("Error saving settings:", error);
-  };
-
+  // --- SETTINGS ACTIONS ---
   const updateSiteContent = (content: SiteContent) => {
     setSiteContent(content);
     persistSettings(content, undefined, undefined);
@@ -411,37 +390,215 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const updateUser = async (updatedUser: User) => {
-    // Only update profile fields in DB
     const { error } = await supabase.from('profiles').update({
       name: updatedUser.name,
       phone: updatedUser.phone,
       bio: updatedUser.bio,
       avatar: updatedUser.avatar,
-      addresses: updatedUser.addresses
+      addresses: updatedUser.addresses,
+      cpf: updatedUser.cpf,
+      birth_date: updatedUser.birthDate
     }).eq('id', updatedUser.id);
 
     if (!error) {
       if (currentUser?.id === updatedUser.id) setCurrentUser(updatedUser);
       setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+    } else {
+        showToast("Erro ao atualizar perfil.", "error");
     }
   };
 
-  // --- Appointments ---
-  const addAppointment = async (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => {
-    const newAppt: Appointment = {
-      ...appt,
-      id: Math.random().toString(36).substr(2, 9),
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
+  // --- MEMORIES (DB Persisted) ---
+  const addClientMemory = async (memory: Omit<ClientMemory, 'id' | 'createdAt'>) => {
+    if (!currentUser) return;
     
-    const { error } = await supabase.from('appointments').insert(newAppt);
-    if (!error) setAppointments(prev => [...prev, newAppt]);
+    const { data, error } = await supabase.from('client_memories').insert({
+        user_id: currentUser.id,
+        topic: memory.topic,
+        content: memory.content,
+        type: memory.type
+    }).select().single();
+
+    if (data && !error) {
+        // Update Local State
+        const newMem: ClientMemory = {
+            id: data.id,
+            topic: data.topic,
+            content: data.content,
+            type: data.type,
+            createdAt: data.created_at
+        };
+        const updatedMemories = [...(currentUser.memories || []), newMem];
+        setCurrentUser({ ...currentUser, memories: updatedMemories });
+        // Also update users list if admin needs to see it immediately (optional but good)
+    }
+  };
+
+  const updateClientMemory = async (id: string, content: string) => {
+     // TODO implementation if needed
+  };
+  
+  const deleteClientMemory = async (id: string) => {
+    const { error } = await supabase.from('client_memories').delete().eq('id', id);
+    if (!error && currentUser) {
+        const updated = (currentUser.memories || []).filter(m => m.id !== id);
+        setCurrentUser({...currentUser, memories: updated});
+    }
+  };
+
+  // --- FOLDERS & FILES (DB Persisted) ---
+  const createClientFolder = async (userId: string, folderName: string) => {
+      const { data, error } = await supabase.from('client_folders').insert({
+          user_id: userId,
+          name: folderName
+      }).select().single();
+
+      if (data && !error) {
+          const newFolder: ClientFolder = {
+              id: data.id,
+              name: data.name,
+              createdAt: data.created_at,
+              files: []
+          };
+          
+          // Update Admin View
+          setUsers(prev => prev.map(u => u.id === userId ? { ...u, folders: [...(u.folders || []), newFolder] } : u));
+          
+          // Update Current User if applicable
+          if (currentUser?.id === userId) {
+              setCurrentUser(prev => prev ? ({ ...prev, folders: [...(prev.folders || []), newFolder] }) : null);
+          }
+      } else {
+          showToast("Erro ao criar pasta.", "error");
+      }
+  };
+
+  const renameClientFolder = async (userId: string, folderId: string, newName: string) => {
+      const { error } = await supabase.from('client_folders').update({ name: newName }).eq('id', folderId);
+      if (!error) {
+           setUsers(prev => prev.map(u => {
+               if (u.id !== userId) return u;
+               return {
+                   ...u,
+                   folders: u.folders?.map(f => f.id === folderId ? { ...f, name: newName } : f)
+               };
+           }));
+           // Update current user if needed
+           if (currentUser?.id === userId) {
+             setCurrentUser(prev => prev ? ({
+                 ...prev,
+                 folders: prev.folders?.map(f => f.id === folderId ? { ...f, name: newName } : f)
+             }) : null);
+           }
+      }
+  };
+
+  const deleteClientFolder = async (userId: string, folderId: string) => {
+      const { error } = await supabase.from('client_folders').delete().eq('id', folderId);
+      if (!error) {
+          setUsers(prev => prev.map(u => u.id === userId ? { ...u, folders: u.folders?.filter(f => f.id !== folderId) } : u));
+          if (currentUser?.id === userId) {
+             setCurrentUser(prev => prev ? ({ ...prev, folders: prev.folders?.filter(f => f.id !== folderId) }) : null);
+          }
+      }
+  };
+
+  const uploadFileToFolder = async (userId: string, folderId: string, file: File) => {
+      // 1. Upload to Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
+      const filePath = `client_files/${userId}/${folderId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage.from('storage-Fran').upload(filePath, file);
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage.from('storage-Fran').getPublicUrl(filePath);
+
+      // 2. Insert to DB
+      const { data, error: dbError } = await supabase.from('client_files').insert({
+          folder_id: folderId,
+          name: file.name,
+          url: publicUrlData.publicUrl,
+          type: fileExt === 'pdf' ? 'pdf' : (file.type.startsWith('image/') ? 'image' : 'other'),
+          size: (file.size / 1024 / 1024).toFixed(2) + ' MB'
+      }).select().single();
+
+      if (data && !dbError) {
+          const newFile: ClientFile = {
+              id: data.id,
+              name: data.name,
+              url: data.url,
+              type: data.type,
+              size: data.size,
+              createdAt: data.created_at
+          };
+
+          // Update State
+          const updateState = (prevUser: User) => {
+              return {
+                  ...prevUser,
+                  folders: prevUser.folders?.map(f => f.id === folderId ? { ...f, files: [...f.files, newFile] } : f)
+              };
+          };
+
+          if (currentUser?.id === userId) {
+              setCurrentUser(prev => prev ? updateState(prev) : null);
+          }
+          setUsers(prev => prev.map(u => u.id === userId ? updateState(u) : u));
+      } else {
+          throw new Error("Erro ao salvar referência do arquivo.");
+      }
+  };
+
+  const deleteClientFile = async (userId: string, folderId: string, fileId: string) => {
+      const { error } = await supabase.from('client_files').delete().eq('id', fileId);
+      if (!error) {
+          const updateState = (prevUser: User) => ({
+             ...prevUser,
+             folders: prevUser.folders?.map(f => f.id === folderId ? { ...f, files: f.files.filter(fi => fi.id !== fileId) } : f)
+          });
+
+          if (currentUser?.id === userId) setCurrentUser(prev => prev ? updateState(prev) : null);
+          setUsers(prev => prev.map(u => u.id === userId ? updateState(u) : u));
+      }
+  };
+
+  // --- APPOINTMENTS ---
+  const addAppointment = async (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => {
+    const newAppt = {
+      ...appt,
+      status: 'pending',
+      // Map frontend camelCase to DB snake_case if necessary, or just use raw object if columns match
+      client_id: appt.clientId,
+      client_name: appt.clientName,
+      meeting_link: appt.meetingLink
+    };
+    // Remove camelCase keys for DB insert
+    delete (newAppt as any).clientId;
+    delete (newAppt as any).clientName;
+    delete (newAppt as any).meetingLink;
+
+    const { data, error } = await supabase.from('appointments').insert(newAppt).select().single();
+    if (data && !error) {
+        // Refresh appointments
+        fetchGlobalData();
+    }
   };
 
   const updateAppointment = async (appt: Appointment) => {
-    const { error } = await supabase.from('appointments').update(appt).eq('id', appt.id);
-    if (!error) setAppointments(prev => prev.map(a => a.id === appt.id ? appt : a));
+     // Convert to snake_case for DB
+     const dbAppt = {
+         status: appt.status,
+         date: appt.date,
+         time: appt.time,
+         meeting_link: appt.meetingLink,
+         notes: appt.notes
+     };
+     
+    const { error } = await supabase.from('appointments').update(dbAppt).eq('id', appt.id);
+    if (!error) {
+        setAppointments(prev => prev.map(a => a.id === appt.id ? appt : a));
+    }
   };
 
   const updateAppointmentStatus = async (id: string, status: Appointment['status']) => {
@@ -486,7 +643,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     return slots;
   };
 
-  // --- Chat Logic ---
+  // --- AI Chat Logic ---
   const createNewChat = () => setCurrentChatMessages([]);
 
   const logAiFeedback = (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => {
@@ -563,45 +720,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       };
     }
   };
-
-  // --- Folder Logic (Client side - mock persistence for now as DB schema is complex for files) ---
-  const createClientFolder = (userId: string, folderName: string) => {
-     // TODO: Implement real DB folder creation
-     // For now, keep local state logic for prototype fidelity if DB table not ready
-     const newFolder: ClientFolder = {
-          id: Math.random().toString(36).substr(2, 9),
-          name: folderName,
-          createdAt: new Date().toISOString(),
-          files: []
-     };
-     setUsers(prev => prev.map(u => u.id === userId ? { ...u, folders: [...(u.folders || []), newFolder] } : u));
-     if(currentUser?.id === userId) setCurrentUser(prev => prev ? ({ ...prev, folders: [...(prev.folders||[]), newFolder]}) : null);
-  };
-  const renameClientFolder = (userId: string, folderId: string, newName: string) => { /* ... similar logic ... */ };
-  const deleteClientFolder = (userId: string, folderId: string) => { /* ... similar logic ... */ };
-  const uploadFileToFolder = async (userId: string, folderId: string, file: File) => {
-     // Here we should upload to bucket and then insert record
-     const mockUrl = URL.createObjectURL(file); 
-     // ... logic kept same for UI stability
-  };
-  const deleteClientFile = (userId: string, folderId: string, fileId: string) => { /* ... logic ... */ };
-
-  // --- Client Memories (Mock persistence for now) ---
-  const addClientMemory = (memory: Omit<ClientMemory, 'id' | 'createdAt'>) => {
-    // TODO: DB Insert
-    if (!currentUser) return;
-    const newMemory: ClientMemory = {
-      ...memory,
-      id: Math.random().toString(36).substr(2, 9),
-      createdAt: new Date().toISOString()
-    };
-    const updatedMemories = [...(currentUser.memories || []), newMemory];
-    setCurrentUser({ ...currentUser, memories: updatedMemories });
-  };
-  const updateClientMemory = (id: string, content: string) => {};
-  const deleteClientMemory = (id: string) => {};
-
-  // --- Admin Notes (Mock persistence for now) ---
+  
+  // --- Admin Notes ---
   const addAdminNote = (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => {
     const newNote: AdminNote = {
       ...note,
