@@ -44,7 +44,7 @@ interface ProjectContextType {
   currentChatMessages: ChatMessage[];
   loadChatMessages: (messages: ChatMessage[]) => void;
   createNewChat: () => void;
-  archiveCurrentChat: () => Promise<void>;
+  archiveCurrentChat: () => Promise<boolean>;
   restoreChatSession: (chatId: string) => void;
   logAiFeedback: (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => void;
   
@@ -83,6 +83,7 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 // UUID CONSTANT FOR SINGLETON SETTINGS ROW
 const SETTINGS_ID = '00000000-0000-0000-0000-000000000001';
+const LS_CHAT_KEY = 'active_chat_session';
 
 const DEFAULT_SETTINGS: GlobalSettings = {
   enableShop: true,
@@ -157,8 +158,16 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [users, setUsers] = useState<User[]>([]);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
-  // Chat State
-  const [currentChatMessages, setCurrentChatMessages] = useState<ChatMessage[]>([]);
+  // Chat State - Initialize from LocalStorage
+  const [currentChatMessages, setCurrentChatMessages] = useState<ChatMessage[]>(() => {
+    try {
+      const saved = localStorage.getItem(LS_CHAT_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Erro ao carregar chat do localStorage", e);
+      return [];
+    }
+  });
   
   const [adminNotes, setAdminNotes] = useState<AdminNote[]>([]);
   const [aiFeedbacks, setAiFeedbacks] = useState<AiFeedbackItem[]>([]);
@@ -171,6 +180,18 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   // Settings & Content
   const [settings, setSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS);
   const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+
+  // --- PERSISTENCE EFFECT FOR CHAT ---
+  useEffect(() => {
+    if (currentChatMessages.length > 0) {
+      localStorage.setItem(LS_CHAT_KEY, JSON.stringify(currentChatMessages));
+    } else {
+      // Se estiver vazio (limpo explicitamente), removemos do LS
+      // Mas cuidado: não remova se for apenas inicialização. 
+      // A função createNewChat/archive cuidará da remoção.
+      // Aqui apenas salvamos se tiver conteúdo.
+    }
+  }, [currentChatMessages]);
 
   const showToast = useCallback((message: string, type: ToastType = 'info') => {
     setToast({ message, type, isVisible: true });
@@ -281,7 +302,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           }
       } else {
         setCurrentUser(null);
-        setCurrentChatMessages([]);
+        // Do NOT clear chat messages on logout to preserve context for the user
       }
       setIsLoadingAuth(false);
     });
@@ -721,10 +742,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     return slots;
   };
 
-  const createNewChat = () => setCurrentChatMessages([]);
+  const createNewChat = () => {
+    setCurrentChatMessages([]);
+    localStorage.removeItem(LS_CHAT_KEY);
+  };
 
-  const archiveCurrentChat = async () => {
-    if (currentChatMessages.length === 0) return;
+  const archiveCurrentChat = async (): Promise<boolean> => {
+    if (currentChatMessages.length === 0) return false;
     
     if (currentUser) {
        const newChat: ChatSession = {
@@ -737,22 +761,28 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
        
        const updatedChats = [newChat, ...(currentUser.chats || [])];
        await updateUser({ ...currentUser, chats: updatedChats });
+       
+       // Clear Active
+       setCurrentChatMessages([]);
+       localStorage.removeItem(LS_CHAT_KEY);
+       return true;
+    } else {
+       // If anonymous, we can't archive to DB.
+       // We can just return false to let UI handle warning
+       return false;
     }
-    
-    setCurrentChatMessages([]);
   };
   
-  // NEW FUNCTION: Restore Chat
   const restoreChatSession = (chatId: string) => {
      if (!currentUser) return;
      const session = currentUser.chats?.find(c => c.id === chatId);
      if (session) {
         setCurrentChatMessages(session.messages);
+        // Sync to LS handles by useEffect
         showToast('Conversa restaurada.', 'info');
      }
   };
   
-  // NEW FUNCTION: Load Messages (from LocalStorage typically)
   const loadChatMessages = (messages: ChatMessage[]) => {
       setCurrentChatMessages(messages);
   };
@@ -801,7 +831,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       const responseData = await chatWithConcierge(updatedMessages, { 
         user: currentUser,
         memories: currentUser?.memories || [],
-        office: siteContent.office 
+        office: siteContent.office,
+        projects: projects,
+        culturalProjects: culturalProjects
       }, settings.aiConfig);
       
       const botMsg: ChatMessage = {

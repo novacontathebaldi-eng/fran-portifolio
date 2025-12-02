@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { User, ClientMemory, ChatMessage, OfficeDetails } from '../types';
+import { User, ClientMemory, ChatMessage, OfficeDetails, Project, CulturalProject } from '../types';
 
 // Define tools for GenUI & Actions
 const tools = [
@@ -26,6 +26,18 @@ const tools = [
             message: { type: Type.STRING, description: 'A summary of what the client wants.' }
           },
           required: ['name', 'contact', 'message']
+        }
+      },
+      {
+        name: 'autoNoteInterest',
+        description: 'Use automatically when commercial interest is detected (budget, construction, renovation, quote).',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            interest: { type: Type.STRING, description: 'The specific interest (e.g., "Wants a renovation quote").' },
+            context: { type: Type.STRING, description: 'Context of the conversation.' }
+          },
+          required: ['interest', 'context']
         }
       },
       {
@@ -127,6 +139,13 @@ DETECÇÃO AUTOMÁTICA DE PREFERÊNCIAS - REGRA CRÍTICA (PASSIVA):
 - NUNCA pergunte permissão ("Posso anotar isso?"). Apenas anote.
 - NUNCA avise que anotou ("Anotei que você gosta de azul"). Apenas continue a conversa naturalmente.
 
+NAVEGAÇÃO DO SITE:
+Quando mencionar seções, SEMPRE ofereça link markdown no formato [Nome da Seção](/#/rota) E chame a tool 'navigateSite' para redirecionar se o usuário expressar desejo de ir.
+- "Quer ver nossos projetos? Acesse o [Portfólio](/#/portfolio)"
+- "Conheça nosso [Escritório](/#/office)"
+- "Veja nossa parte [Cultural](/#/cultural)"
+- "Entre em [Contato](/#/contact)"
+
 CONTEXTO E FLUXO:
 1. SE O USUÁRIO ESTIVER LOGADO:
    - Trate-o pelo nome.
@@ -140,7 +159,13 @@ CONTEXTO E FLUXO:
 
 export async function chatWithConcierge(
   message: ChatMessage[] | string, 
-  context: { user: User | null; memories: ClientMemory[]; office?: OfficeDetails }, 
+  context: { 
+    user: User | null; 
+    memories: ClientMemory[]; 
+    office?: OfficeDetails;
+    projects: Project[];
+    culturalProjects: CulturalProject[];
+  }, 
   aiConfig: any
 ) {
   const apiKey = process.env.API_KEY;
@@ -160,9 +185,31 @@ export async function chatWithConcierge(
     : DEFAULT_SYSTEM_INSTRUCTION;
 
   // Add Date Context
+  const now = new Date();
+  const brTime = now.toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    dateStyle: 'full',
+    timeStyle: 'short'
+  });
+
   systemInstruction += `\n\n[CONTEXTO TEMPORAL]:
-  - Data Atual: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}.
+  - Data/Hora Atual em Santa Leopoldina: ${brTime}.
   `;
+
+  // Inject Projects
+  if (context.projects && context.projects.length > 0) {
+    systemInstruction += `\n\n[PORTFÓLIO ATUAL - PROJETOS DISPONÍVEIS]:`;
+    context.projects.slice(0, 8).forEach(proj => {
+        systemInstruction += `\n- "${proj.title}" (${proj.category}, ${proj.year}) em ${proj.location} - ${proj.area}m²`;
+    });
+  }
+
+  if (context.culturalProjects && context.culturalProjects.length > 0) {
+    systemInstruction += `\n\n[PROJETOS CULTURAIS]:`;
+    context.culturalProjects.slice(0, 5).forEach(cult => {
+        systemInstruction += `\n- "${cult.title}" (${cult.category}) - ${cult.location}`;
+    });
+  }
 
   // Inject Office Address and Hours dynamically from Admin Context
   if (context.office) {
@@ -246,6 +293,17 @@ export async function chatWithConcierge(
               }
             });
             if (!responseData.text) responseData.text = "Recebido. Sua mensagem foi encaminhada.";
+          }
+          else if (call.name === 'autoNoteInterest') {
+             responseData.actions.push({
+              type: 'saveNote',
+              payload: {
+                userName: context.user ? context.user.name : 'Visitante Interessado',
+                userContact: context.user ? context.user.email : 'Não identificado',
+                message: `[INTERESSE AUTOMÁTICO] ${call.args['interest']} - Contexto: ${call.args['context']}`,
+                source: 'chatbot'
+              }
+            });
           }
           else if (call.name === 'learnClientPreference') {
             responseData.actions.push({
