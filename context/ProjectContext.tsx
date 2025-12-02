@@ -394,36 +394,20 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const registerUser = async (name: string, email: string, phone: string, password: string): Promise<{ user: User | null; error: any }> => {
     // 1. Sign Up in Auth
+    // The trigger 'on_auth_user_created' on Supabase will automatically create the row in 'profiles'
+    // using the metadata provided here.
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name, phone } // Metadata used by triggers if configured
+        data: { name, phone } // Metadata used by triggers
       }
     });
 
     if (authError) return { user: null, error: authError };
 
+    // Success if user created (Trigger handles the rest)
     if (authData.user) {
-      // 2. Create Profile Entry manually
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: authData.user.id, // Linked to auth.users.id
-            name: name,
-            email: email,
-            phone: phone,
-            role: 'client', // Default role
-            created_at: new Date().toISOString()
-          }
-        ]);
-
-      if (profileError) {
-        console.error("Profile creation error:", profileError);
-        return { user: null, error: profileError };
-      }
-
       return { user: null, error: null }; 
     }
     
