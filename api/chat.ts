@@ -126,7 +126,8 @@ REGRAS RÍGIDAS DE CONTEXTO (CRÍTICO):
 
 3. FLUXO DE AGENDAMENTO (UX):
    - Quando o usuário quiser agendar, chame a tool 'scheduleMeeting'.
-   - Se o usuário especificar data e hora (ex: "Amanhã às 14h"), inclua nos parâmetros da tool.
+   - IMPORTANTE: Sempre que chamar a tool 'scheduleMeeting' (sem data definida), você DEVE gerar um texto introdutório amigável antes do widget aparecer. Exemplo: "Com certeza. Por favor, verifique nossa disponibilidade no calendário abaixo e escolha o melhor horário para você." ou "Claro, [Nome]. Vamos agendar. Selecione uma data no calendário a seguir."
+   - Se o usuário especificar data e hora (ex: "Amanhã às 14h"), inclua nos parâmetros da tool e confirme no texto.
    - Se o usuário NÃO especificar data e hora, não pergunte no texto. Apenas chame a tool sem data, e o sistema mostrará o widget de calendário.
 
 4. TOM DE VOZ:
@@ -291,7 +292,8 @@ export async function chatWithConcierge(
             } else {
                 // Return Widget
                 responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
-                if (!responseData.text) responseData.text = "Verifiquei nossa disponibilidade. Por favor, selecione o melhor dia e horário no calendário abaixo.";
+                // REMOVED HARDCODED FALLBACK to allow AI text to shine
+                // if (!responseData.text) responseData.text = "Verifiquei nossa disponibilidade..."; 
             }
           }
         }

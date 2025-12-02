@@ -179,6 +179,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Fetch Folders with Files
         const { data: folders } = await supabase.from('client_folders').select('*, files:client_files(*)').eq('user_id', userId);
 
+        // Fetch Appointments for this user
+        const { data: userAppts } = await supabase.from('appointments').select('*').eq('client_id', userId);
+
         return {
           id: profile.id,
           name: profile.name,
@@ -193,11 +196,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           
           memories: memories || [],
           folders: folders || [],
+          appointments: userAppts || [], // FIXED: Now user sees their own appointments
           
           chats: [], 
           projects: [], 
           favorites: [],
-          appointments: []
         };
     } catch (e) {
         console.error("Error fetching full profile:", e);
@@ -270,6 +273,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
           const { data: allFolders } = await supabase.from('client_folders').select('*, files:client_files(*)');
           const { data: allMemories } = await supabase.from('client_memories').select('*');
+          // const { data: allAppts } = await supabase.from('appointments').select('*'); // We already have global appointments
 
           const mapped: User[] = profiles.map((p: any) => ({
                id: p.id,
@@ -285,10 +289,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
                
                folders: allFolders?.filter((f: any) => f.user_id === p.id) || [],
                memories: allMemories?.filter((m: any) => m.user_id === p.id) || [],
+               appointments: [], // Admin sees appointments in separate list usually, but could map here if needed
                chats: [],
                projects: [],
                favorites: [],
-               appointments: []
           }));
           
           setUsers(mapped);
@@ -578,6 +582,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Refresh local appointments list
         const { data: aptData } = await supabase.from('appointments').select('*');
         if (aptData) setAppointments(aptData);
+        // Refresh Current User Appointments too
+        if (currentUser && currentUser.id === appt.clientId) {
+            const { data: userAppts } = await supabase.from('appointments').select('*').eq('client_id', currentUser.id);
+            if (userAppts) setCurrentUser(prev => prev ? ({ ...prev, appointments: userAppts }) : null);
+        }
     } else {
       console.error("Error adding appointment:", error);
       showToast("Erro ao agendar compromisso.", "error");

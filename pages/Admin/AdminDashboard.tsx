@@ -511,8 +511,8 @@ export const AdminDashboard: React.FC = () => {
                     <div className="p-3 bg-purple-600 text-white rounded-xl"><Calendar className="w-6 h-6" /></div>
                     {pendingAppointmentsCount > 0 && <span className="text-xs font-bold bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pendente</span>}
                   </div>
-                  <h3 className="text-4xl font-serif font-bold mb-1 text-black">{appointments.filter(a => a.status === 'confirmed').length}</h3>
-                  <p className="text-gray-500 text-sm">Compromissos Confirmados</p>
+                  <h3 className="text-4xl font-serif font-bold mb-1 text-black">{appointments.filter(a => a.status !== 'cancelled').length}</h3>
+                  <p className="text-gray-500 text-sm">Agendamentos Ativos</p>
                 </div>
                 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -524,6 +524,218 @@ export const AdminDashboard: React.FC = () => {
                   <p className="text-gray-500 text-sm">Mensagens</p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Clients View */}
+          {activeTab === 'clients' && (
+            <div className="animate-fadeIn">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-3xl font-serif font-bold text-black">
+                   {selectedClient ? selectedClient.name : 'Clientes & Arquivos'}
+                </h2>
+                {selectedClient && (
+                  <button onClick={() => setSelectedClient(null)} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-black">
+                     <ArrowLeft className="w-4 h-4"/> Voltar para Lista
+                  </button>
+                )}
+              </div>
+
+              {!selectedClient ? (
+                 /* LIST USERS */
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <table className="w-full">
+                       <thead className="bg-gray-50 border-b border-gray-100">
+                          <tr>
+                             <th className="text-left p-6 text-xs font-bold uppercase text-gray-600">Nome</th>
+                             <th className="text-left p-6 text-xs font-bold uppercase text-gray-600 hidden md:table-cell">Email</th>
+                             <th className="text-left p-6 text-xs font-bold uppercase text-gray-600 hidden md:table-cell">Tipo</th>
+                             <th className="text-left p-6 text-xs font-bold uppercase text-gray-600 hidden md:table-cell">Pastas</th>
+                             <th className="text-right p-6 text-xs font-bold uppercase text-gray-600">Ação</th>
+                          </tr>
+                       </thead>
+                       <tbody className="divide-y divide-gray-100">
+                          {users.map(user => (
+                             <tr key={user.id} className="hover:bg-gray-50 transition">
+                                <td className="p-6 font-bold flex items-center gap-3">
+                                   <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs overflow-hidden">
+                                      {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover"/> : user.name.charAt(0)}
+                                   </div>
+                                   {user.name}
+                                </td>
+                                <td className="p-6 text-sm text-gray-600 hidden md:table-cell">{user.email}</td>
+                                <td className="p-6 text-sm hidden md:table-cell">
+                                   <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${user.role === 'admin' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                      {user.role}
+                                   </span>
+                                </td>
+                                <td className="p-6 text-sm text-gray-600 hidden md:table-cell">{user.folders?.length || 0}</td>
+                                <td className="p-6 text-right">
+                                   <button onClick={() => setSelectedClient(user)} className="text-blue-600 font-bold text-xs uppercase hover:underline">Gerenciar</button>
+                                </td>
+                             </tr>
+                          ))}
+                       </tbody>
+                    </table>
+                 </div>
+              ) : (
+                 /* CLIENT DETAILS */
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 min-h-[500px] flex flex-col md:flex-row">
+                    {/* Sidebar Tabs */}
+                    <div className="w-full md:w-64 border-r border-gray-100 p-6 flex flex-col gap-2">
+                       <button onClick={() => setActiveClientTab('info')} className={`text-left px-4 py-3 rounded-lg text-sm font-bold transition ${activeClientTab === 'info' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}>Informações</button>
+                       <button onClick={() => setActiveClientTab('memories')} className={`text-left px-4 py-3 rounded-lg text-sm font-bold transition ${activeClientTab === 'memories' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}>Memória IA</button>
+                       <button onClick={() => setActiveClientTab('files')} className={`text-left px-4 py-3 rounded-lg text-sm font-bold transition ${activeClientTab === 'files' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}>Arquivos</button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-grow p-8">
+                       {activeClientTab === 'info' && (
+                          <div className="space-y-6">
+                             <div className="flex items-center gap-6">
+                                <div className="w-24 h-24 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center text-3xl font-serif text-gray-400">
+                                   {selectedClient.avatar ? <img src={selectedClient.avatar} className="w-full h-full object-cover"/> : selectedClient.name.charAt(0)}
+                                </div>
+                                <div>
+                                   <h3 className="text-2xl font-serif font-bold">{selectedClient.name}</h3>
+                                   <p className="text-gray-500">{selectedClient.email}</p>
+                                   <p className="text-gray-500">{selectedClient.phone || 'Sem telefone'}</p>
+                                </div>
+                             </div>
+                             <div className="border-t border-gray-100 pt-6">
+                                <h4 className="font-bold mb-4">Endereços Cadastrados</h4>
+                                {selectedClient.addresses && selectedClient.addresses.length > 0 ? (
+                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      {selectedClient.addresses.map(addr => (
+                                         <div key={addr.id} className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                            <span className="text-xs font-bold uppercase block mb-1">{addr.label}</span>
+                                            <p className="text-sm">{addr.street}, {addr.number}</p>
+                                            <p className="text-xs text-gray-500">{addr.city} - {addr.state}</p>
+                                         </div>
+                                      ))}
+                                   </div>
+                                ) : <p className="text-gray-400 text-sm">Nenhum endereço.</p>}
+                             </div>
+                          </div>
+                       )}
+
+                       {activeClientTab === 'memories' && (
+                          <div>
+                             <h4 className="font-bold mb-4 flex items-center gap-2"><Brain className="w-5 h-5"/> O que a IA aprendeu sobre este cliente</h4>
+                             <div className="grid grid-cols-1 gap-4">
+                                {selectedClient.memories && selectedClient.memories.length > 0 ? (
+                                   selectedClient.memories.map(mem => (
+                                      <div key={mem.id} className="p-4 bg-gray-50 rounded-lg border border-gray-100 flex justify-between items-start group">
+                                         <div>
+                                            <span className="text-xs font-bold uppercase text-accent block mb-1">{mem.topic}</span>
+                                            <p className="text-sm">{mem.content}</p>
+                                            <span className="text-[10px] text-gray-400 mt-2 block">{new Date(mem.createdAt).toLocaleDateString()} • {mem.type === 'system_detected' ? 'Automático' : 'Manual'}</span>
+                                         </div>
+                                         <button onClick={() => handleAdminDeleteMemory(mem.id)} className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><Trash2 className="w-4 h-4"/></button>
+                                      </div>
+                                   ))
+                                ) : <p className="text-gray-400">Nenhuma memória registrada.</p>}
+                             </div>
+                          </div>
+                       )}
+
+                       {activeClientTab === 'files' && (
+                          <div>
+                             {!currentAdminFolderId ? (
+                                <>
+                                  <div className="flex justify-between items-center mb-6">
+                                     <h4 className="font-bold">Pastas do Cliente</h4>
+                                     <button onClick={() => setShowNewFolderInput(true)} className="text-xs bg-black text-white px-3 py-1.5 rounded-full flex items-center gap-1 hover:bg-accent hover:text-black transition"><Plus className="w-3 h-3"/> Nova Pasta</button>
+                                  </div>
+                                  
+                                  {showNewFolderInput && (
+                                     <div className="mb-6 flex gap-2 animate-fadeIn">
+                                        <input autoFocus value={newFolderName} onChange={e => setNewFolderName(e.target.value)} placeholder="Nome da pasta" className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:border-black" />
+                                        <button onClick={handleCreateFolder} className="bg-green-500 text-white px-3 py-1 rounded text-xs font-bold">Criar</button>
+                                        <button onClick={() => setShowNewFolderInput(false)} className="bg-gray-200 text-gray-600 px-3 py-1 rounded text-xs">Cancelar</button>
+                                     </div>
+                                  )}
+
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                     {selectedClient.folders && selectedClient.folders.length > 0 ? (
+                                        selectedClient.folders.map(folder => (
+                                           <div key={folder.id} className="relative group">
+                                              <button 
+                                                onClick={() => setCurrentAdminFolderId(folder.id)}
+                                                className="w-full flex flex-col items-center justify-center p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition border border-transparent hover:border-gray-200"
+                                              >
+                                                <div className="text-yellow-500 mb-3"><Folder className="w-12 h-12 fill-current" /></div>
+                                                
+                                                {editingFolderId === folder.id ? (
+                                                   <input 
+                                                     autoFocus
+                                                     value={editFolderName} 
+                                                     onChange={e => setEditFolderName(e.target.value)} 
+                                                     onBlur={handleRenameFolder}
+                                                     onKeyDown={e => e.key === 'Enter' && handleRenameFolder()}
+                                                     className="text-center text-sm w-full bg-white border border-blue-300 rounded px-1"
+                                                     onClick={e => e.stopPropagation()}
+                                                   />
+                                                ) : (
+                                                   <>
+                                                     <span className="font-bold text-sm text-center truncate w-full">{folder.name}</span>
+                                                     <span className="text-[10px] text-gray-400 mt-1">{folder.files.length} arquivos</span>
+                                                   </>
+                                                )}
+                                              </button>
+                                              
+                                              {/* Context Menu Mock */}
+                                              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                                                  <button onClick={(e) => { e.stopPropagation(); startRenaming(folder); }} className="p-1 bg-white shadow rounded hover:text-blue-500"><Edit2 className="w-3 h-3"/></button>
+                                                  <button onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }} className="p-1 bg-white shadow rounded hover:text-red-500"><Trash2 className="w-3 h-3"/></button>
+                                              </div>
+                                           </div>
+                                        ))
+                                     ) : <p className="col-span-full text-center text-gray-400 py-12">Nenhuma pasta.</p>}
+                                  </div>
+                                </>
+                             ) : (
+                                /* INSIDE FOLDER VIEW */
+                                <div className="animate-fadeIn">
+                                   <div className="flex items-center gap-2 mb-6">
+                                      <button onClick={() => setCurrentAdminFolderId(null)} className="p-2 hover:bg-gray-100 rounded-full transition"><ArrowLeft className="w-5 h-5" /></button>
+                                      <h2 className="text-xl font-bold">{selectedClient.folders?.find(f => f.id === currentAdminFolderId)?.name}</h2>
+                                   </div>
+
+                                   <div className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-8 text-center mb-6 relative hover:bg-gray-100 transition">
+                                       {uploading ? <p className="text-sm font-bold text-gray-500 animate-pulse">Enviando arquivo...</p> : (
+                                          <>
+                                            <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                                            <p className="text-sm text-gray-500">Arraste arquivos ou clique para upload</p>
+                                          </>
+                                       )}
+                                       <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleFileUpload} disabled={uploading} />
+                                   </div>
+
+                                   <div className="space-y-2">
+                                      {selectedClient.folders?.find(f => f.id === currentAdminFolderId)?.files.map(file => (
+                                          <div key={file.id} className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg group hover:shadow-sm">
+                                              <div className="flex items-center gap-3">
+                                                 <div className={`p-2 rounded ${file.type === 'pdf' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}><FileText className="w-4 h-4"/></div>
+                                                 <div>
+                                                    <p className="text-sm font-bold truncate max-w-[200px]">{file.name}</p>
+                                                    <p className="text-[10px] text-gray-400">{file.size}</p>
+                                                 </div>
+                                              </div>
+                                              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                                                  <a href={file.url} download target="_blank" className="p-2 text-gray-400 hover:text-black"><Download className="w-4 h-4"/></a>
+                                                  <button onClick={() => handleDeleteFile(file.id)} className="p-2 text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4"/></button>
+                                              </div>
+                                          </div>
+                                      ))}
+                                   </div>
+                                </div>
+                             )}
+                          </div>
+                       )}
+                    </div>
+                 </div>
+              )}
             </div>
           )}
 
@@ -781,11 +993,9 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* ... Rest of existing tabs logic ... */}
           {/* Messages View */}
           {activeTab === 'messages' && (
             <div className="animate-fadeIn">
-              {/* ... (Existing messages view code) ... */}
               <h2 className="text-3xl font-serif font-bold mb-8 text-black">Central de Recados</h2>
               <div className="grid grid-cols-1 gap-6">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -824,11 +1034,9 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* ... Other tabs ... */}
           {/* Content View */}
           {activeTab === 'content' && (
              <div className="animate-fadeIn max-w-4xl">
-               {/* ... (Existing Content view code) ... */}
                <h2 className="text-3xl font-serif font-bold mb-8 text-black">Conteúdo do Site</h2>
                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8 space-y-12">
                   {/* Bio Section */}
@@ -899,8 +1107,7 @@ export const AdminDashboard: React.FC = () => {
              </div>
           )}
 
-          {/* ... Office View, Clients, Agenda (Same as existing, just preserving for completeness) ... */}
-           {/* Office View (Same as before) */}
+           {/* Office View */}
           {activeTab === 'office' && (
              <div className="animate-fadeIn max-w-5xl">
                <div className="flex justify-between items-center mb-8">
@@ -942,7 +1149,7 @@ export const AdminDashboard: React.FC = () => {
                           <motion.div layout key={block.id} className="border border-gray-200 rounded-xl p-4 bg-white hover:shadow-md transition relative group">
                              <div className="flex justify-between items-center mb-4 bg-gray-50 -m-4 mb-4 p-3 rounded-t-xl border-b border-gray-100">
                                 <div className="flex items-center gap-2 text-gray-500">
-                                   <GripVertical className="w-4 h-4" />
+                                   <GripVertical className="w-4 h-4 cursor-move" />
                                    <span className="text-xs font-bold uppercase">{block.type}</span>
                                 </div>
                                 <div className="flex gap-1">
