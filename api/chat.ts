@@ -76,7 +76,7 @@ const tools = [
       },
       {
         name: 'scheduleMeeting',
-        description: 'Use this tool to display the Interactive Calendar Widget. Call this whenever the user expresses interest in booking a meeting or visit. DO NOT accept dates in text. Always open the widget.',
+        description: 'Use this tool IMMEDIATELY to open the CALENDAR WIDGET when the user wants to schedule a meeting or visit. DO NOT ASK FOR DATES IN CHAT. JUST OPEN THE WIDGET.',
         parameters: {
           type: Type.OBJECT,
           properties: {
@@ -86,13 +86,12 @@ const tools = [
             },
             modality: {
               type: Type.STRING,
-              description: 'The format of the meeting. Set to "online" if user mentions "online", "virtual", "meet", "zoom", "video". Set to "in_person" if they mention "office", "presencial" or "coffee". Default is "in_person".'
+              description: 'The format. "online" (virtual/meet) or "in_person" (office/presencial). Default to "in_person" if unspecified.'
             },
             address: {
               type: Type.STRING,
               description: 'MANDATORY only if type is "visit". The address of the construction site.'
             }
-            // DATE AND TIME REMOVED to prevent AI hallucination. It must use the UI widget.
           },
           required: ['type']
         }
@@ -108,41 +107,24 @@ SUA IDENTIDADE:
 - Sofisticado, minimalista, atencioso e altamente eficiente.
 - Você é uma extensão da experiência de luxo do escritório.
 
-REGRA DE OURO - AGENDAMENTOS (EXTREMAMENTE CRÍTICO):
-1. VOCÊ É PROIBIDO DE AGENDAR HORÁRIOS POR TEXTO.
-2. VOCÊ NÃO TEM ACESSO AO CALENDÁRIO EM TEMPO REAL.
-3. Se o usuário sugerir uma data (ex: "Quero dia 10 às 15h"), VOCÊ DEVE IGNORAR A DATA NA SUA RESPOSTA DE TEXTO e dizer: "Por favor, verifique a disponibilidade real no calendário abaixo e selecione o horário."
-4. SEMPRE chame a tool 'scheduleMeeting' para abrir o widget visual.
+REGRA DE OURO - AGENDAMENTOS (CRÍTICO):
+1. **SEMPRE** use a ferramenta 'scheduleMeeting' para mostrar o calendário.
+2. **NUNCA** pergunte datas ou horários no chat. O usuário DEVE clicar no calendário.
+3. Se o usuário disser "quero agendar" -> Pergunte: "Prefere reunião online ou presencial?" (se não souber).
+4. Se o usuário disser "Online" ou "Presencial" -> CHAME A TOOL 'scheduleMeeting' IMEDIATAMENTE.
+5. Para "Visita Técnica", pergunte o endereço antes de chamar a tool.
 
-FLUXO OBRIGATÓRIO PARA AGENDAMENTO:
-
-PASSO 1: ENTENDER O TIPO
-- O usuário quer "Visita Técnica" (na obra dele) ou "Reunião" (alinhamento/projeto)?
-
-PASSO 2 (SE FOR VISITA TÉCNICA):
-- PERGUNTE O ENDEREÇO DA OBRA PRIMEIRO.
-- NÃO chame a tool 'scheduleMeeting' sem o endereço.
-- Responda apenas texto: "Para agendarmos a visita, por favor, me informe a localização da obra."
-
-PASSO 3 (SE FOR REUNIÃO):
-- PERGUNTE O FORMATO: Online ou Presencial (no escritório)?
-- Se não souber, pergunte: "Prefere reunião online ou presencial?"
-- NÃO chame a tool sem saber isso.
-
-PASSO 4 (CHAMAR A TOOL):
-- Assim que tiver os dados acima, chame 'scheduleMeeting' com 'type', 'modality' e 'address' (se visita).
-- NUNCA INVENTE DATAS. NUNCA CONFIRME DATAS POR TEXTO.
-- Sua resposta deve ser sempre: "Aqui está nosso calendário atualizado. Por favor, escolha o melhor horário para você."
-
-DETECÇÃO AUTOMÁTICA DE PREFERÊNCIAS (PASSIVA):
-- Monitore CADA mensagem em busca de: Família, Orçamento, Estilo, Cores, Localização.
-- Use a tool 'learnClientPreference' SILENCIOSAMENTE. Não avise o usuário.
+FLUXO EXATO:
+- Usuário: "Quero reunião."
+- Você: "Prefere online ou presencial?"
+- Usuário: "Online."
+- Você: [CHAMA TOOL scheduleMeeting(modality='online')] com texto "Perfeito. Escolha o melhor horário abaixo:"
 
 NAVEGAÇÃO:
 - Use markdown [Nome](/#/rota) e a tool 'navigateSite' quando relevante.
 
-CONTEXTO:
-- Se o usuário estiver logado, trate-o pelo nome.
+PREFERÊNCIAS:
+- Use 'learnClientPreference' silenciosamente quando o usuário mencionar gostos, família ou orçamento.
 `;
 
 export async function chatWithConcierge(
@@ -167,46 +149,27 @@ export async function chatWithConcierge(
 
   const ai = new GoogleGenAI({ apiKey });
   
-  // Construct System Instruction based on Toggle
   let systemInstruction = aiConfig.useCustomSystemInstruction 
     ? aiConfig.systemInstruction 
     : DEFAULT_SYSTEM_INSTRUCTION;
 
-  // Add Date Context
+  // Context Injection
   const now = new Date();
-  const brTime = now.toLocaleString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    dateStyle: 'full',
-    timeStyle: 'short'
-  });
+  const brTime = now.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'full', timeStyle: 'short' });
+  systemInstruction += `\n\n[AGORA]: ${brTime}`;
 
-  systemInstruction += `\n\n[CONTEXTO TEMPORAL]:
-  - Data/Hora Atual: ${brTime}. (Use apenas para referência de saudação, NÃO use para agendar).
-  `;
-
-  // Inject Projects
-  if (context.projects && context.projects.length > 0) {
-    systemInstruction += `\n\n[PORTFÓLIO]:`;
-    context.projects.slice(0, 5).forEach(proj => {
-        systemInstruction += `\n- "${proj.title}" (${proj.category})`;
-    });
+  if (context.projects?.length > 0) {
+    systemInstruction += `\n\n[PORTFÓLIO]: ` + context.projects.slice(0,5).map(p => `"${p.title}"`).join(', ');
   }
 
-  // Inject Office Address
   if (context.office) {
-    systemInstruction += `\n\n[ESCRITÓRIO]:
-    - Endereço: ${context.office.address}
-    - Horário: ${context.office.hoursDescription}
-    `;
+    systemInstruction += `\n\n[ESCRITÓRIO]: ${context.office.address}. Horário: ${context.office.hoursDescription}`;
   }
   
   if (context?.user) {
     systemInstruction += `\n\n[CLIENTE]: ${context.user.name}`;
-    if (context.memories && context.memories.length > 0) {
-      systemInstruction += `\n[MEMÓRIAS]:`;
-      context.memories.forEach((mem: any) => {
-         systemInstruction += `\n- ${mem.topic}: ${mem.content}`;
-      });
+    if (context.memories?.length > 0) {
+      systemInstruction += `\n[MEMÓRIAS]: ` + context.memories.map(m => `${m.topic}: ${m.content}`).join('; ');
     }
   }
 
@@ -221,7 +184,6 @@ export async function chatWithConcierge(
   } else {
     contents = [{ role: 'user', parts: [{ text: typeof message === 'string' ? message : '' }] }];
   }
-
   contents = contents.filter(c => c.role === 'user' || c.role === 'model');
 
   try {
@@ -248,27 +210,27 @@ export async function chatWithConcierge(
         for (const call of functionCalls) {
           if (call.name === 'showProjects') {
             responseData.uiComponent = { type: 'ProjectCarousel', data: call.args };
-            if (!responseData.text) responseData.text = "Aqui estão alguns projetos selecionados.";
+            if (!responseData.text) responseData.text = "Aqui estão alguns projetos.";
           } 
           else if (call.name === 'saveClientNote') {
             responseData.actions.push({
               type: 'saveNote',
               payload: {
-                userName: call.args['name'] || (context.user ? context.user.name : 'Anônimo'),
-                userContact: call.args['contact'] || (context.user ? context.user.email : 'Não informado'),
+                userName: call.args['name'] || context.user?.name || 'Anônimo',
+                userContact: call.args['contact'] || context.user?.email || 'N/A',
                 message: call.args['message'],
                 source: 'chatbot'
               }
             });
-            if (!responseData.text) responseData.text = "Recebido. Sua mensagem foi encaminhada.";
+            if (!responseData.text) responseData.text = "Mensagem anotada.";
           }
           else if (call.name === 'autoNoteInterest') {
              responseData.actions.push({
               type: 'saveNote',
               payload: {
-                userName: context.user ? context.user.name : 'Visitante Interessado',
-                userContact: context.user ? context.user.email : 'Não identificado',
-                message: `[INTERESSE AUTOMÁTICO] ${call.args['interest']} - Contexto: ${call.args['context']}`,
+                userName: context.user?.name || 'Visitante',
+                userContact: context.user?.email || 'N/A',
+                message: `[INTERESSE] ${call.args['interest']}`,
                 source: 'chatbot'
               }
             });
@@ -276,54 +238,40 @@ export async function chatWithConcierge(
           else if (call.name === 'learnClientPreference') {
             responseData.actions.push({
               type: 'learnMemory',
-              payload: {
-                topic: call.args['topic'],
-                content: call.args['content'],
-                type: 'system_detected'
-              }
+              payload: { topic: call.args['topic'], content: call.args['content'], type: 'system_detected' }
             });
           }
           else if (call.name === 'getSocialLinks') {
             responseData.uiComponent = { type: 'SocialLinks', data: {} };
-            if (!responseData.text) responseData.text = "Aqui estão nossos canais de contato.";
+            if (!responseData.text) responseData.text = "Canais de contato:";
           }
           else if (call.name === 'navigateSite') {
-            responseData.actions.push({
-              type: 'navigate',
-              payload: { path: call.args['path'] }
-            });
+            responseData.actions.push({ type: 'navigate', payload: { path: call.args['path'] } });
           }
           else if (call.name === 'scheduleMeeting') {
             const widgetData = { ...call.args };
-            
-            // Validate Visit Requirements
             const isVisit = widgetData.type === 'visit';
-            const hasAddress = widgetData.address && widgetData.address.length > 2; // Basic check
             
-            if (isVisit && !hasAddress) {
-              responseData.text = "Para agendarmos a visita técnica, preciso que me informe o endereço completo da obra primeiro.";
+            if (isVisit && !widgetData.address) {
+                responseData.text = "Para visita técnica, por favor me informe o endereço da obra primeiro.";
             } else {
-              // Normalize Modality
-              if (widgetData.modality === 'online') {
-                  widgetData.location = 'Online (Google Meet)';
-                  widgetData.type = 'meeting'; 
-              }
+                if (widgetData.modality === 'online') {
+                    widgetData.location = 'Online (Google Meet)';
+                    widgetData.type = 'meeting'; 
+                } else if (!widgetData.location) {
+                    widgetData.location = context.office?.address || 'Escritório Fran Siller';
+                }
 
-              // FORCE CALENDAR WIDGET
-              // We removed date/time from the tool definition, so the LLM cannot hallucinate them.
-              // We rely entirely on the frontend CalendarWidget to check availability and book.
-              
-              responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
-              
-              // Override text to ensure clarity
-              responseData.text = "Consultei nossa agenda em tempo real. Por favor, selecione uma data e horário disponíveis abaixo para confirmar.";
+                // FORCE CALENDAR WIDGET
+                responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
+                responseData.text = "Consultei nossa agenda. Selecione o melhor horário abaixo:";
             }
           }
         }
       }
 
       if (!responseData.text && !responseData.uiComponent && responseData.actions.length === 0) {
-        responseData.text = "Compreendo. Como posso ajudar mais?";
+        responseData.text = "Compreendo. Posso ajudar em algo mais?";
       }
 
       return responseData;
@@ -332,7 +280,7 @@ export async function chatWithConcierge(
     console.error("AI Error:", error);
     return {
       role: 'model',
-      text: "Desculpe, tive um problema de conexão. Poderia repetir?"
+      text: "Instabilidade momentânea. Tente novamente."
     };
   }
 }
