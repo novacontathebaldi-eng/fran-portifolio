@@ -76,7 +76,7 @@ const tools = [
       },
       {
         name: 'scheduleMeeting',
-        description: 'Use this tool when the user wants to schedule a meeting ("reunião") or a site visit ("visita técnica"). If they provide a date and time, include them. If not, call this tool without date/time to show the calendar.',
+        description: 'Use this tool to display the Interactive Calendar Widget. Call this whenever the user expresses interest in booking a meeting or visit. DO NOT accept dates in text. Always open the widget.',
         parameters: {
           type: Type.OBJECT,
           properties: {
@@ -91,15 +91,8 @@ const tools = [
             address: {
               type: Type.STRING,
               description: 'MANDATORY only if type is "visit". The address of the construction site.'
-            },
-            date: {
-              type: Type.STRING,
-              description: 'The date in format YYYY-MM-DD.'
-            },
-            time: {
-              type: Type.STRING,
-              description: 'The time in format HH:MM.'
             }
+            // DATE AND TIME REMOVED to prevent AI hallucination. It must use the UI widget.
           },
           required: ['type']
         }
@@ -115,55 +108,41 @@ SUA IDENTIDADE:
 - Sofisticado, minimalista, atencioso e altamente eficiente.
 - Você é uma extensão da experiência de luxo do escritório.
 
-REGRA DE OURO - AGENDAMENTOS (CRÍTICO):
+REGRA DE OURO - AGENDAMENTOS (EXTREMAMENTE CRÍTICO):
+1. VOCÊ É PROIBIDO DE AGENDAR HORÁRIOS POR TEXTO.
+2. VOCÊ NÃO TEM ACESSO AO CALENDÁRIO EM TEMPO REAL.
+3. Se o usuário sugerir uma data (ex: "Quero dia 10 às 15h"), VOCÊ DEVE IGNORAR A DATA NA SUA RESPOSTA DE TEXTO e dizer: "Por favor, verifique a disponibilidade real no calendário abaixo e selecione o horário."
+4. SEMPRE chame a tool 'scheduleMeeting' para abrir o widget visual.
 
-1. FLUXO PARA VISITA TÉCNICA (Obra/Presencial):
-   - Se o usuário pedir visita técnica, VOCÊ DEVE PERGUNTAR O ENDEREÇO DA OBRA PRIMEIRO.
-   - NUNCA mostre o calendário (tool scheduleMeeting) para visita técnica se você não souber o endereço.
-   - Responda apenas com texto: "Para agendarmos a visita, por favor, me informe o endereço da obra."
-   - SOMENTE após o usuário fornecer o endereço, chame a tool 'scheduleMeeting' passando o endereço.
+FLUXO OBRIGATÓRIO PARA AGENDAMENTO:
 
-2. FLUXO PARA REUNIÃO (Online/Escritório):
-   - VOCÊ DEVE SABER O FORMATO (ONLINE ou PRESENCIAL) ANTES DE MOSTRAR O CALENDÁRIO.
-   - Se o usuário disser apenas "quero uma reunião" ou "posso agendar uma reunião":
-     * PERGUNTE: "Prefere que a reunião seja online (videoconferência) ou presencial em nosso escritório?"
-     * NÃO chame a tool 'scheduleMeeting' ainda.
-   - Se o usuário JÁ ESPECIFICOU (ex: "quero reunião online", "vou ao escritório"):
-     * Pode chamar 'scheduleMeeting' imediatamente, definindo 'modality' como 'online' ou 'in_person'.
+PASSO 1: ENTENDER O TIPO
+- O usuário quer "Visita Técnica" (na obra dele) ou "Reunião" (alinhamento/projeto)?
 
-3. QUANDO O USUÁRIO ESCOLHER O HORÁRIO NO CALENDÁRIO:
-   - O sistema enviará uma mensagem automática confirmando data e hora.
-   - Nesse momento, chame a tool 'scheduleMeeting' NOVAMENTE, agora preenchendo 'date' e 'time'.
-   - ISSO É O QUE EFETIVAMENTE SALVA O AGENDAMENTO.
+PASSO 2 (SE FOR VISITA TÉCNICA):
+- PERGUNTE O ENDEREÇO DA OBRA PRIMEIRO.
+- NÃO chame a tool 'scheduleMeeting' sem o endereço.
+- Responda apenas texto: "Para agendarmos a visita, por favor, me informe a localização da obra."
 
-DETECÇÃO AUTOMÁTICA DE PREFERÊNCIAS - REGRA CRÍTICA (PASSIVA):
-- Monitore CADA mensagem do usuário em busca de fatos importantes.
-- Se o usuário mencionar qualquer um dos seguintes tópicos, CHAME A TOOL 'learnClientPreference' IMEDIATAMENTE e SILENCIOSAMENTE:
-   * Família: "Tenho 2 filhos", "Moro com minha esposa", "Temos um cachorro".
-   * Orçamento: "Meu budget é 300k", "Quero gastar pouco", "Orçamento ilimitado".
-   * Estilo: "Gosto de minimalista", "Prefiro clássico", "Odeio moderno".
-   * Cores/Materiais: "Amo madeira", "Odeio vermelho", "Gosto de tons neutros".
-   * Localização: "Meu terreno fica em Vitória", "Apartamento na praia".
-   * Necessidades: "Preciso de home office", "Cozinha gourmet é essencial".
-- NUNCA pergunte permissão ("Posso anotar isso?"). Apenas anote.
-- NUNCA avise que anotou ("Anotei que você gosta de azul"). Apenas continue a conversa naturalmente.
+PASSO 3 (SE FOR REUNIÃO):
+- PERGUNTE O FORMATO: Online ou Presencial (no escritório)?
+- Se não souber, pergunte: "Prefere reunião online ou presencial?"
+- NÃO chame a tool sem saber isso.
 
-NAVEGAÇÃO DO SITE:
-Quando mencionar seções, SEMPRE ofereça link markdown no formato [Nome da Seção](/#/rota) E chame a tool 'navigateSite' para redirecionar se o usuário expressar desejo de ir.
-- "Quer ver nossos projetos? Acesse o [Portfólio](/#/portfolio)"
-- "Conheça nosso [Escritório](/#/office)"
-- "Veja nossa parte [Cultural](/#/cultural)"
-- "Entre em [Contato](/#/contact)"
+PASSO 4 (CHAMAR A TOOL):
+- Assim que tiver os dados acima, chame 'scheduleMeeting' com 'type', 'modality' e 'address' (se visita).
+- NUNCA INVENTE DATAS. NUNCA CONFIRME DATAS POR TEXTO.
+- Sua resposta deve ser sempre: "Aqui está nosso calendário atualizado. Por favor, escolha o melhor horário para você."
 
-CONTEXTO E FLUXO:
-1. SE O USUÁRIO ESTIVER LOGADO:
-   - Trate-o pelo nome.
-   - Use o histórico de memórias anteriores para personalizar a conversa (ex: se ele gosta de madeira, mencione madeira ao sugerir projetos).
+DETECÇÃO AUTOMÁTICA DE PREFERÊNCIAS (PASSIVA):
+- Monitore CADA mensagem em busca de: Família, Orçamento, Estilo, Cores, Localização.
+- Use a tool 'learnClientPreference' SILENCIOSAMENTE. Não avise o usuário.
 
-2. ESTILO DE RESPOSTA:
-   - Português do Brasil culto.
-   - Respostas curtas e objetivas.
-   - Evite listas longas ou explicações desnecessárias.
+NAVEGAÇÃO:
+- Use markdown [Nome](/#/rota) e a tool 'navigateSite' quando relevante.
+
+CONTEXTO:
+- Se o usuário estiver logado, trate-o pelo nome.
 `;
 
 export async function chatWithConcierge(
@@ -202,50 +181,31 @@ export async function chatWithConcierge(
   });
 
   systemInstruction += `\n\n[CONTEXTO TEMPORAL]:
-  - Data/Hora Atual em Santa Leopoldina: ${brTime}.
+  - Data/Hora Atual: ${brTime}. (Use apenas para referência de saudação, NÃO use para agendar).
   `;
 
   // Inject Projects
   if (context.projects && context.projects.length > 0) {
-    systemInstruction += `\n\n[PORTFÓLIO ATUAL - PROJETOS DISPONÍVEIS]:`;
-    context.projects.slice(0, 8).forEach(proj => {
-        systemInstruction += `\n- "${proj.title}" (${proj.category}, ${proj.year}) em ${proj.location} - ${proj.area}m²`;
+    systemInstruction += `\n\n[PORTFÓLIO]:`;
+    context.projects.slice(0, 5).forEach(proj => {
+        systemInstruction += `\n- "${proj.title}" (${proj.category})`;
     });
   }
 
-  if (context.culturalProjects && context.culturalProjects.length > 0) {
-    systemInstruction += `\n\n[PROJETOS CULTURAIS]:`;
-    context.culturalProjects.slice(0, 5).forEach(cult => {
-        systemInstruction += `\n- "${cult.title}" (${cult.category}) - ${cult.location}`;
-    });
-  }
-
-  // Inject Office Address and Hours dynamically from Admin Context
+  // Inject Office Address
   if (context.office) {
-    systemInstruction += `\n\n[DADOS DO ESCRITÓRIO - FONTE DE VERDADE]:
-    - Endereço Oficial: ${context.office.address}
-    - Cidade/Estado: ${context.office.city} - ${context.office.state}
+    systemInstruction += `\n\n[ESCRITÓRIO]:
+    - Endereço: ${context.office.address}
     - Horário: ${context.office.hoursDescription}
     `;
   }
   
   if (context?.user) {
-    systemInstruction += `\n\n[PERFIL DO CLIENTE]:
-    - Nome: ${context.user.name}
-    - Email: ${context.user.email}
-    `;
-
-    if (context.user.addresses && context.user.addresses.length > 0) {
-      systemInstruction += `\n- Endereços Salvos:`;
-      context.user.addresses.forEach(addr => {
-        systemInstruction += `\n  * [${addr.label}]: ${addr.street}, ${addr.number} (${addr.city})`;
-      });
-    }
-    
+    systemInstruction += `\n\n[CLIENTE]: ${context.user.name}`;
     if (context.memories && context.memories.length > 0) {
-      systemInstruction += `\n\n[MEMÓRIAS (O QUE JÁ SABEMOS)]:`;
+      systemInstruction += `\n[MEMÓRIAS]:`;
       context.memories.forEach((mem: any) => {
-         systemInstruction += `\n- [${mem.topic}]: ${mem.content}`;
+         systemInstruction += `\n- ${mem.topic}: ${mem.content}`;
       });
     }
   }
@@ -262,7 +222,6 @@ export async function chatWithConcierge(
     contents = [{ role: 'user', parts: [{ text: typeof message === 'string' ? message : '' }] }];
   }
 
-  // Filter out system messages or non-standard roles
   contents = contents.filter(c => c.role === 'user' || c.role === 'model');
 
   try {
@@ -277,7 +236,7 @@ export async function chatWithConcierge(
       });
 
       const modelText = response.text;
-      const functionCalls = response.functionCalls as any[]; // Cast to any[] to fix type error
+      const functionCalls = response.functionCalls as any[];
 
       let responseData: any = {
         role: 'model',
@@ -323,7 +282,6 @@ export async function chatWithConcierge(
                 type: 'system_detected'
               }
             });
-            // Implicit save, no text override needed
           }
           else if (call.name === 'getSocialLinks') {
             responseData.uiComponent = { type: 'SocialLinks', data: {} };
@@ -338,35 +296,27 @@ export async function chatWithConcierge(
           else if (call.name === 'scheduleMeeting') {
             const widgetData = { ...call.args };
             
-            // --- LOGIC TO HANDLE MISSING ADDRESS FOR VISITS ---
+            // Validate Visit Requirements
             const isVisit = widgetData.type === 'visit';
-            const hasAddress = widgetData.address && widgetData.address.length > 0;
+            const hasAddress = widgetData.address && widgetData.address.length > 2; // Basic check
             
             if (isVisit && !hasAddress) {
-              // Deny the widget, force text response asking for address
-              responseData.text = "Para agendarmos a visita técnica, preciso que me informe o endereço completo da obra.";
-              // Do NOT add action or uiComponent
+              responseData.text = "Para agendarmos a visita técnica, preciso que me informe o endereço completo da obra primeiro.";
             } else {
-              // Proceed with standard logic
+              // Normalize Modality
               if (widgetData.modality === 'online') {
                   widgetData.location = 'Online (Google Meet)';
                   widgetData.type = 'meeting'; 
               }
 
-              // CRITICAL LOGIC: 
-              // If both DATE and TIME are present -> Action (Direct Booking)
-              // If missing -> UI Component (Calendar Widget)
-              if (widgetData.date && widgetData.time) {
-                  responseData.actions.push({
-                    type: 'scheduleMeeting',
-                    payload: widgetData
-                  });
-                  if (!responseData.text) responseData.text = `Perfeito. Agendamento confirmado para ${new Date(widgetData.date as string).toLocaleDateString()} às ${widgetData.time}.`;
-              } else {
-                  // Force Widget
-                  responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
-                  if (!responseData.text) responseData.text = "Por favor, selecione uma data e horário disponíveis abaixo.";
-              }
+              // FORCE CALENDAR WIDGET
+              // We removed date/time from the tool definition, so the LLM cannot hallucinate them.
+              // We rely entirely on the frontend CalendarWidget to check availability and book.
+              
+              responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
+              
+              // Override text to ensure clarity
+              responseData.text = "Consultei nossa agenda em tempo real. Por favor, selecione uma data e horário disponíveis abaixo para confirmar.";
             }
           }
         }

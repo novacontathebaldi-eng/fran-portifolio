@@ -297,7 +297,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const { sendMessageToAI, currentUser, addAdminNote, showToast, currentChatMessages, logAiFeedback, settings, addAppointment, siteContent, archiveCurrentChat, addClientMemory, restoreChatSession, updateMessageUI } = useProjects();
+  const { sendMessageToAI, currentUser, addAdminNote, showToast, currentChatMessages, logAiFeedback, settings, siteContent, archiveCurrentChat, addClientMemory, restoreChatSession, updateMessageUI } = useProjects();
   
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -371,29 +371,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
               navigate(action.payload.path);
             }, 1500); 
           }
-          else if (action.type === 'scheduleMeeting') {
-            // AUTOMATIC SCHEDULING TRIGGERED BY LLM (ONLY IF DATE/TIME PROVIDED)
-            if (currentUser) {
-                const data = action.payload;
-                const locationText = data?.type === 'visit' 
-                    ? (data?.address || "Endereço da Obra") 
-                    : (data?.location || siteContent.office.address);
-
-                await addAppointment({
-                    clientId: currentUser.id,
-                    clientName: currentUser.name,
-                    date: data.date,
-                    time: data.time,
-                    type: data.type,
-                    location: locationText
-                });
-
-                showToast("Agendamento realizado via IA!", "success");
-            } else {
-                showToast("Faça login para confirmar o agendamento.", "error");
-                navigate('/auth');
-            }
-          }
+          // scheduleMeeting ACTION REMOVED - NOW HANDLED BY WIDGET ONLY
+          // The LLM tool does not accept dates anymore, so this action type will simply not be emitted by the API.
           else if (action.type === 'learnMemory') {
             if (currentUser) {
                 addClientMemory(action.payload);
@@ -438,7 +417,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     else showToast("Obrigado. Vamos melhorar.", "info");
   };
 
-  // UPDATED: handleArchive handles new return types
   const handleArchive = async () => {
     const result = await archiveCurrentChat();
     
@@ -449,7 +427,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
       navigate('/auth');
     } else {
       // 'error' case: Toast is handled by updateUser inside context
-      // Do NOT redirect, keep chat open so user doesn't lose data
     }
   };
 
