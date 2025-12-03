@@ -21,23 +21,23 @@ interface ProjectContextType {
   adminNotes: AdminNote[];
   aiFeedbacks: AiFeedbackItem[];
   isLoadingAuth: boolean;
-  
+
   // Auth
   login: (email: string, password: string) => Promise<{ user: any | null; error: any }>;
   logout: () => Promise<void>;
   registerUser: (name: string, email: string, phone: string, password: string) => Promise<{ user: any | null; error: any }>;
-  
+
   addProject: (project: Project) => void;
   updateProject: (project: Project) => void;
   deleteProject: (id: string) => void;
-  
+
   addCulturalProject: (project: CulturalProject) => void;
   updateCulturalProject: (project: CulturalProject) => void;
   deleteCulturalProject: (id: string) => void;
 
   updateSiteContent: (content: SiteContent) => void;
   updateSettings: (settings: GlobalSettings) => void;
-  
+
   sendMessageToAI: (message: string) => Promise<any>;
   addMessageToChat: (message: ChatMessage) => void;
   updateMessageUI: (id: string, uiComponent: any) => void;
@@ -48,7 +48,7 @@ interface ProjectContextType {
   clearCurrentChat: () => void; // New simple clear
   restoreChatSession: (chatId: string) => void;
   logAiFeedback: (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => void;
-  
+
   clientMemories: ClientMemory[];
   addClientMemory: (memory: Omit<ClientMemory, 'id' | 'createdAt'>) => void;
   updateClientMemory: (id: string, content: string) => void;
@@ -61,7 +61,7 @@ interface ProjectContextType {
   deleteClientFile: (userId: string, folderId: string, fileId: string) => void;
 
   updateUser: (user: User) => Promise<boolean>;
-  
+
   addAdminNote: (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => void;
   markNoteAsRead: (id: string) => void;
   deleteAdminNote: (id: string) => void;
@@ -145,7 +145,7 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
 // Helper to map DB Snake Case to App Camel Case
 const mapAppointment = (a: any): Appointment => ({
   id: a.id,
-  clientId: a.client_id, 
+  clientId: a.client_id,
   clientName: a.client_name,
   type: a.type,
   date: a.date,
@@ -169,11 +169,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   // Global Data
   const [projects, setProjects] = useState<Project[]>([]);
   const [culturalProjects, setCulturalProjects] = useState<CulturalProject[]>([]);
-  
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  
+
   // Chat State - Initialize from LocalStorage
   const [currentChatMessages, setCurrentChatMessages] = useState<ChatMessage[]>(() => {
     try {
@@ -184,11 +184,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       return [];
     }
   });
-  
+
   const [adminNotes, setAdminNotes] = useState<AdminNote[]>([]);
   const [aiFeedbacks, setAiFeedbacks] = useState<AiFeedbackItem[]>([]);
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'info', isVisible: false });
-  
+
   // Schedule State
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [scheduleSettings, setScheduleSettings] = useState<ScheduleSettings>(DEFAULT_SCHEDULE_SETTINGS);
@@ -220,84 +220,84 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const fetchFullUserProfile = async (userId: string): Promise<User | null> => {
     try {
-        const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
-        if (error || !profile) return null;
+      const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+      if (error || !profile) return null;
 
-        const { data: memories } = await supabase.from('client_memories').select('*').eq('user_id', userId);
-        const { data: folders } = await supabase.from('client_folders').select('*, files:client_files(*)').eq('user_id', userId);
-        
-        // Fetch appointments for this user specifically
-        const { data: userAppts } = await supabase.from('appointments').select('*').eq('client_id', userId);
-        const mappedAppts = userAppts ? userAppts.map(mapAppointment) : [];
+      const { data: memories } = await supabase.from('client_memories').select('*').eq('user_id', userId);
+      const { data: folders } = await supabase.from('client_folders').select('*, files:client_files(*)').eq('user_id', userId);
 
-        return {
-          id: profile.id,
-          name: profile.name,
-          email: profile.email,
-          role: profile.role as 'admin' | 'client',
-          phone: profile.phone,
-          avatar: profile.avatar,
-          bio: profile.bio,
-          cpf: profile.cpf,
-          birthDate: profile.birth_date,
-          addresses: profile.addresses || [],
-          
-          memories: memories || [],
-          folders: folders || [],
-          appointments: mappedAppts,
-          
-          chats: profile.chats || [], 
-          projects: [], 
-          favorites: [],
-        };
+      // Fetch appointments for this user specifically
+      const { data: userAppts } = await supabase.from('appointments').select('*').eq('client_id', userId);
+      const mappedAppts = userAppts ? userAppts.map(mapAppointment) : [];
+
+      return {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role as 'admin' | 'client',
+        phone: profile.phone,
+        avatar: profile.avatar,
+        bio: profile.bio,
+        cpf: profile.cpf,
+        birthDate: profile.birth_date,
+        addresses: profile.addresses || [],
+
+        memories: memories || [],
+        folders: folders || [],
+        appointments: mappedAppts,
+
+        chats: profile.chats || [],
+        projects: [],
+        favorites: [],
+      };
     } catch (e) {
-        console.error("Error fetching full profile:", e);
-        return null;
+      console.error("Error fetching full profile:", e);
+      return null;
     }
   };
 
   // --- INITIAL DATA FETCHING ---
   const fetchGlobalData = async () => {
-      // 1. Projects
-      const { data: projectsData } = await supabase.from('projects').select('*').order('year', { ascending: false });
-      if (projectsData) setProjects(projectsData);
+    // 1. Projects
+    const { data: projectsData } = await supabase.from('projects').select('*').order('year', { ascending: false });
+    if (projectsData) setProjects(projectsData);
 
-      // 2. Cultural Projects
-      const { data: cultData } = await supabase.from('cultural_projects').select('*').order('year', { ascending: false });
-      if (cultData) setCulturalProjects(cultData);
+    // 2. Cultural Projects
+    const { data: cultData } = await supabase.from('cultural_projects').select('*').order('year', { ascending: false });
+    if (cultData) setCulturalProjects(cultData);
 
-      // 3. Settings & Content - USING UUID AND 3 COLUMNS
-      const { data: settingsRow } = await supabase
-        .from('site_settings')
-        .select('about, office, settings')
-        .eq('id', SETTINGS_ID)
-        .maybeSingle();
-      
-      if (settingsRow) {
-          // Update Site Content (About + Office)
-          setSiteContent({
-              about: { ...DEFAULT_SITE_CONTENT.about, ...(settingsRow.about || {}) },
-              office: { ...DEFAULT_SITE_CONTENT.office, ...(settingsRow.office || {}) }
-          });
+    // 3. Settings & Content - USING UUID AND 3 COLUMNS
+    const { data: settingsRow } = await supabase
+      .from('site_settings')
+      .select('about, office, settings')
+      .eq('id', SETTINGS_ID)
+      .maybeSingle();
 
-          // Update Global Settings + Schedule (bundled in 'settings' column)
-          const savedBundle = settingsRow.settings || {};
-          
-          if (savedBundle.global) {
-             setSettings({ ...DEFAULT_SETTINGS, ...savedBundle.global });
-          }
-          if (savedBundle.schedule) {
-             setScheduleSettings({ ...DEFAULT_SCHEDULE_SETTINGS, ...savedBundle.schedule });
-          }
+    if (settingsRow) {
+      // Update Site Content (About + Office)
+      setSiteContent({
+        about: { ...DEFAULT_SITE_CONTENT.about, ...(settingsRow.about || {}) },
+        office: { ...DEFAULT_SITE_CONTENT.office, ...(settingsRow.office || {}) }
+      });
+
+      // Update Global Settings + Schedule (bundled in 'settings' column)
+      const savedBundle = settingsRow.settings || {};
+
+      if (savedBundle.global) {
+        setSettings({ ...DEFAULT_SETTINGS, ...savedBundle.global });
       }
-
-      // 4. Appointments (Admin View - Fetch All)
-      const { data: aptData } = await supabase.from('appointments').select('*');
-      if (aptData) {
-        // Map snake_case to camelCase
-        const mapped = aptData.map(mapAppointment);
-        setAppointments(mapped);
+      if (savedBundle.schedule) {
+        setScheduleSettings({ ...DEFAULT_SCHEDULE_SETTINGS, ...savedBundle.schedule });
       }
+    }
+
+    // 4. Appointments (Admin View - Fetch All)
+    const { data: aptData } = await supabase.from('appointments').select('*');
+    if (aptData) {
+      // Map snake_case to camelCase
+      const mapped = aptData.map(mapAppointment);
+      setAppointments(mapped);
+    }
   };
 
   useEffect(() => {
@@ -316,11 +316,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
-          // Only fetch if we don't have the user or it's a different user
-          if (!currentUser || currentUser.id !== session.user.id) {
-             const user = await fetchFullUserProfile(session.user.id);
-             if (user) setCurrentUser(user);
-          }
+        // Only fetch if we don't have the user or it's a different user
+        if (!currentUser || currentUser.id !== session.user.id) {
+          const user = await fetchFullUserProfile(session.user.id);
+          if (user) setCurrentUser(user);
+        }
       } else {
         setCurrentUser(null);
         // Do NOT clear chat messages on logout to preserve context for the user
@@ -328,7 +328,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       setIsLoadingAuth(false);
     });
     return () => subscription.unsubscribe();
-  }, []); 
+  }, []);
 
   // --- Admin: Fetch All Users ---
   useEffect(() => {
@@ -342,50 +342,50 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           const { data: allMemories } = await supabase.from('client_memories').select('*');
 
           const mapped: User[] = profiles.map((p: any) => ({
-               id: p.id,
-               name: p.name,
-               email: p.email,
-               role: p.role,
-               phone: p.phone,
-               avatar: p.avatar,
-               bio: p.bio,
-               cpf: p.cpf,
-               birthDate: p.birth_date,
-               addresses: p.addresses || [],
-               
-               folders: allFolders?.filter((f: any) => f.user_id === p.id) || [],
-               memories: allMemories?.filter((m: any) => m.user_id === p.id) || [],
-               appointments: [],
-               chats: p.chats || [],
-               projects: [],
-               favorites: [],
+            id: p.id,
+            name: p.name,
+            email: p.email,
+            role: p.role,
+            phone: p.phone,
+            avatar: p.avatar,
+            bio: p.bio,
+            cpf: p.cpf,
+            birthDate: p.birth_date,
+            addresses: p.addresses || [],
+
+            folders: allFolders?.filter((f: any) => f.user_id === p.id) || [],
+            memories: allMemories?.filter((m: any) => m.user_id === p.id) || [],
+            appointments: [],
+            chats: p.chats || [],
+            projects: [],
+            favorites: [],
           }));
-          
+
           setUsers(mapped);
         } catch (err) {
           console.error("Critical error in Admin User Fetch:", err);
         }
       };
-      
+
       fetchAllUsers();
     }
-  }, [currentUser?.role, currentUser?.folders, currentUser?.memories]); 
+  }, [currentUser?.role, currentUser?.folders, currentUser?.memories]);
 
   // --- AUTH ACTIONS ---
-  
+
   const login = async (email: string, password: string) => {
     setIsLoadingAuth(true); // Force loading state so ProtectedRoutes wait
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    
+
     if (error) {
-        setIsLoadingAuth(false);
-        return { user: null, error: { message: translateAuthError(error.message) } };
+      setIsLoadingAuth(false);
+      return { user: null, error: { message: translateAuthError(error.message) } };
     }
 
     // Force fetch profile immediately to update state BEFORE return
     if (data.user) {
-        const user = await fetchFullUserProfile(data.user.id);
-        setCurrentUser(user);
+      const user = await fetchFullUserProfile(data.user.id);
+      setCurrentUser(user);
     }
 
     setIsLoadingAuth(false);
@@ -401,22 +401,22 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
 
     if (error) {
-        setIsLoadingAuth(false);
-        return { user: null, error: { message: translateAuthError(error.message) } };
+      setIsLoadingAuth(false);
+      return { user: null, error: { message: translateAuthError(error.message) } };
     }
 
     if (data.user) {
-        // Update profile
-        const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ name: name, phone: phone })
-            .eq('id', data.user.id);
-            
-        if (profileError) console.error("Error updating profile phone:", profileError);
+      // Update profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ name: name, phone: phone })
+        .eq('id', data.user.id);
 
-        // Fetch full profile to ensure state is ready
-        const user = await fetchFullUserProfile(data.user.id);
-        setCurrentUser(user);
+      if (profileError) console.error("Error updating profile phone:", profileError);
+
+      // Fetch full profile to ensure state is ready
+      const user = await fetchFullUserProfile(data.user.id);
+      setCurrentUser(user);
     }
 
     setIsLoadingAuth(false);
@@ -442,31 +442,31 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     // 3. Prepare DB Payload - Mapping to the 3 distinct JSONB columns
     const payload = {
-        id: SETTINGS_ID,
-        about: finalContent.about,
-        office: finalContent.office,
-        settings: {
-            global: finalSettings,
-            schedule: finalSchedule
-        }
+      id: SETTINGS_ID,
+      about: finalContent.about,
+      office: finalContent.office,
+      settings: {
+        global: finalSettings,
+        schedule: finalSchedule
+      }
     };
 
     // 4. Send to Supabase
     const { error } = await supabase
-        .from('site_settings')
-        .upsert(payload, { onConflict: 'id' });
+      .from('site_settings')
+      .upsert(payload, { onConflict: 'id' });
 
     if (error) {
-        console.error("Error saving settings to DB:", error);
-        showToast("Erro ao salvar alterações no banco de dados.", "error");
-        // Optional: Revert local state if critical
+      console.error("Error saving settings to DB:", error);
+      showToast("Erro ao salvar alterações no banco de dados.", "error");
+      // Optional: Revert local state if critical
     }
   };
 
   const addProject = async (project: Project) => {
     const { error } = await supabase.from('projects').insert(project);
     if (!error) {
-       fetchGlobalData();
+      fetchGlobalData();
     } else {
       showToast('Erro ao salvar projeto.', 'error');
     }
@@ -475,7 +475,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateProject = async (project: Project) => {
     const { error } = await supabase.from('projects').update(project).eq('id', project.id);
     if (!error) {
-       setProjects(prev => prev.map(p => p.id === project.id ? project : p));
+      setProjects(prev => prev.map(p => p.id === project.id ? project : p));
     } else {
       showToast('Erro ao atualizar projeto.', 'error');
     }
@@ -485,7 +485,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     const { error } = await supabase.from('projects').delete().eq('id', id);
     if (!error) setProjects(prev => prev.filter(p => p.id !== id));
   };
-  
+
   const addCulturalProject = async (project: CulturalProject) => {
     const { error } = await supabase.from('cultural_projects').insert(project);
     if (!error) fetchGlobalData();
@@ -531,188 +531,188 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
       return true;
     } else {
-        console.error("Error updating user:", error);
-        showToast("Erro ao atualizar perfil.", "error");
-        return false;
+      console.error("Error updating user:", error);
+      showToast("Erro ao atualizar perfil.", "error");
+      return false;
     }
   };
 
   const addClientMemory = async (memory: Omit<ClientMemory, 'id' | 'createdAt'>) => {
     if (!currentUser) return;
-    
+
     const { data, error } = await supabase.from('client_memories').insert({
-        user_id: currentUser.id,
-        topic: memory.topic,
-        content: memory.content,
-        type: memory.type
+      user_id: currentUser.id,
+      topic: memory.topic,
+      content: memory.content,
+      type: memory.type
     }).select().single();
 
     if (data && !error) {
-        const newMem: ClientMemory = {
-            id: data.id,
-            topic: data.topic,
-            content: data.content,
-            type: data.type,
-            createdAt: data.created_at
-        };
-        const updatedMemories = [...(currentUser.memories || []), newMem];
-        setCurrentUser({ ...currentUser, memories: updatedMemories });
+      const newMem: ClientMemory = {
+        id: data.id,
+        topic: data.topic,
+        content: data.content,
+        type: data.type,
+        createdAt: data.created_at
+      };
+      const updatedMemories = [...(currentUser.memories || []), newMem];
+      setCurrentUser({ ...currentUser, memories: updatedMemories });
     }
   };
 
   const updateClientMemory = async (id: string, content: string) => {
   };
-  
+
   const deleteClientMemory = async (id: string) => {
     const { error } = await supabase.from('client_memories').delete().eq('id', id);
     if (!error && currentUser) {
-        const updated = (currentUser.memories || []).filter(m => m.id !== id);
-        setCurrentUser({...currentUser, memories: updated});
+      const updated = (currentUser.memories || []).filter(m => m.id !== id);
+      setCurrentUser({ ...currentUser, memories: updated });
     }
   };
 
   const createClientFolder = async (userId: string, folderName: string) => {
-      const { data, error } = await supabase.from('client_folders').insert({
-          user_id: userId,
-          name: folderName
-      }).select().single();
+    const { data, error } = await supabase.from('client_folders').insert({
+      user_id: userId,
+      name: folderName
+    }).select().single();
 
-      if (data && !error) {
-          const newFolder: ClientFolder = {
-              id: data.id,
-              name: data.name,
-              createdAt: data.created_at,
-              files: []
-          };
-          
-          setUsers(prev => prev.map(u => u.id === userId ? { ...u, folders: [...(u.folders || []), newFolder] } : u));
-          
-          if (currentUser?.id === userId) {
-              setCurrentUser(prev => prev ? ({ ...prev, folders: [...(prev.folders || []), newFolder] }) : null);
-          }
-      } else {
-          showToast("Erro ao criar pasta.", "error");
+    if (data && !error) {
+      const newFolder: ClientFolder = {
+        id: data.id,
+        name: data.name,
+        createdAt: data.created_at,
+        files: []
+      };
+
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, folders: [...(u.folders || []), newFolder] } : u));
+
+      if (currentUser?.id === userId) {
+        setCurrentUser(prev => prev ? ({ ...prev, folders: [...(prev.folders || []), newFolder] }) : null);
       }
+    } else {
+      showToast("Erro ao criar pasta.", "error");
+    }
   };
 
   const renameClientFolder = async (userId: string, folderId: string, newName: string) => {
-      const { error } = await supabase.from('client_folders').update({ name: newName }).eq('id', folderId);
-      if (!error) {
-           setUsers(prev => prev.map(u => {
-               if (u.id !== userId) return u;
-               return {
-                   ...u,
-                   folders: u.folders?.map(f => f.id === folderId ? { ...f, name: newName } : f)
-               };
-           }));
-           if (currentUser?.id === userId) {
-             setCurrentUser(prev => prev ? ({
-                 ...prev,
-                 folders: prev.folders?.map(f => f.id === folderId ? { ...f, name: newName } : f)
-             }) : null);
-           }
+    const { error } = await supabase.from('client_folders').update({ name: newName }).eq('id', folderId);
+    if (!error) {
+      setUsers(prev => prev.map(u => {
+        if (u.id !== userId) return u;
+        return {
+          ...u,
+          folders: u.folders?.map(f => f.id === folderId ? { ...f, name: newName } : f)
+        };
+      }));
+      if (currentUser?.id === userId) {
+        setCurrentUser(prev => prev ? ({
+          ...prev,
+          folders: prev.folders?.map(f => f.id === folderId ? { ...f, name: newName } : f)
+        }) : null);
       }
+    }
   };
 
   const deleteClientFolder = async (userId: string, folderId: string) => {
-      const { error } = await supabase.from('client_folders').delete().eq('id', folderId);
-      if (!error) {
-          setUsers(prev => prev.map(u => u.id === userId ? { ...u, folders: u.folders?.filter(f => f.id !== folderId) } : u));
-          if (currentUser?.id === userId) {
-             setCurrentUser(prev => prev ? ({ ...prev, folders: prev.folders?.filter(f => f.id !== folderId) }) : null);
-          }
+    const { error } = await supabase.from('client_folders').delete().eq('id', folderId);
+    if (!error) {
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, folders: u.folders?.filter(f => f.id !== folderId) } : u));
+      if (currentUser?.id === userId) {
+        setCurrentUser(prev => prev ? ({ ...prev, folders: prev.folders?.filter(f => f.id !== folderId) }) : null);
       }
+    }
   };
 
   const uploadFileToFolder = async (userId: string, folderId: string, file: File) => {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
-      const filePath = `client_files/${userId}/${folderId}/${fileName}`;
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
+    const filePath = `client_files/${userId}/${folderId}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage.from('storage-Fran').upload(filePath, file);
-      if (uploadError) throw uploadError;
+    const { error: uploadError } = await supabase.storage.from('storage-Fran').upload(filePath, file);
+    if (uploadError) throw uploadError;
 
-      const { data: publicUrlData } = supabase.storage.from('storage-Fran').getPublicUrl(filePath);
+    const { data: publicUrlData } = supabase.storage.from('storage-Fran').getPublicUrl(filePath);
 
-      const { data, error: dbError } = await supabase.from('client_files').insert({
-          folder_id: folderId,
-          name: file.name,
-          url: publicUrlData.publicUrl,
-          type: fileExt === 'pdf' ? 'pdf' : (file.type.startsWith('image/') ? 'image' : 'other'),
-          size: (file.size / 1024 / 1024).toFixed(2) + ' MB'
-      }).select().single();
+    const { data, error: dbError } = await supabase.from('client_files').insert({
+      folder_id: folderId,
+      name: file.name,
+      url: publicUrlData.publicUrl,
+      type: fileExt === 'pdf' ? 'pdf' : (file.type.startsWith('image/') ? 'image' : 'other'),
+      size: (file.size / 1024 / 1024).toFixed(2) + ' MB'
+    }).select().single();
 
-      if (data && !dbError) {
-          const newFile: ClientFile = {
-              id: data.id,
-              name: data.name,
-              url: data.url,
-              type: data.type,
-              size: data.size,
-              createdAt: data.created_at
-          };
+    if (data && !dbError) {
+      const newFile: ClientFile = {
+        id: data.id,
+        name: data.name,
+        url: data.url,
+        type: data.type,
+        size: data.size,
+        createdAt: data.created_at
+      };
 
-          const updateState = (prevUser: User) => {
-              return {
-                  ...prevUser,
-                  folders: prevUser.folders?.map(f => f.id === folderId ? { ...f, files: [...f.files, newFile] } : f)
-              };
-          };
+      const updateState = (prevUser: User) => {
+        return {
+          ...prevUser,
+          folders: prevUser.folders?.map(f => f.id === folderId ? { ...f, files: [...f.files, newFile] } : f)
+        };
+      };
 
-          if (currentUser?.id === userId) {
-              setCurrentUser(prev => prev ? updateState(prev) : null);
-          }
-          setUsers(prev => prev.map(u => u.id === userId ? updateState(u) : u));
-      } else {
-          throw new Error("Erro ao salvar referência do arquivo.");
+      if (currentUser?.id === userId) {
+        setCurrentUser(prev => prev ? updateState(prev) : null);
       }
+      setUsers(prev => prev.map(u => u.id === userId ? updateState(u) : u));
+    } else {
+      throw new Error("Erro ao salvar referência do arquivo.");
+    }
   };
 
   const deleteClientFile = async (userId: string, folderId: string, fileId: string) => {
-      const { error } = await supabase.from('client_files').delete().eq('id', fileId);
-      if (!error) {
-          const updateState = (prevUser: User) => ({
-             ...prevUser,
-             folders: prevUser.folders?.map(f => f.id === folderId ? { ...f, files: f.files.filter(fi => fi.id !== fileId) } : f)
-          });
+    const { error } = await supabase.from('client_files').delete().eq('id', fileId);
+    if (!error) {
+      const updateState = (prevUser: User) => ({
+        ...prevUser,
+        folders: prevUser.folders?.map(f => f.id === folderId ? { ...f, files: f.files.filter(fi => fi.id !== fileId) } : f)
+      });
 
-          if (currentUser?.id === userId) setCurrentUser(prev => prev ? updateState(prev) : null);
-          setUsers(prev => prev.map(u => u.id === userId ? updateState(u) : u));
-      }
+      if (currentUser?.id === userId) setCurrentUser(prev => prev ? updateState(prev) : null);
+      setUsers(prev => prev.map(u => u.id === userId ? updateState(u) : u));
+    }
   };
 
   // --- APPOINTMENTS ---
   const addAppointment = async (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => {
     const payload = {
-        client_id: appt.clientId,
-        client_name: appt.clientName,
-        date: appt.date,
-        time: appt.time,
-        type: appt.type,
-        location: appt.location,
-        status: 'pending',
-        meeting_link: appt.meetingLink || null,
-        notes: appt.notes || null
+      client_id: appt.clientId,
+      client_name: appt.clientName,
+      date: appt.date,
+      time: appt.time,
+      type: appt.type,
+      location: appt.location,
+      status: 'pending',
+      meeting_link: appt.meetingLink || null,
+      notes: appt.notes || null
     };
 
     const { data, error } = await supabase.from('appointments').insert(payload).select().single();
-    
+
     if (data && !error) {
-        // Refetch all to stay strictly synced
-        const { data: aptData } = await supabase.from('appointments').select('*');
-        if (aptData) {
-            const mapped = aptData.map(mapAppointment);
-            setAppointments(mapped);
+      // Refetch all to stay strictly synced
+      const { data: aptData } = await supabase.from('appointments').select('*');
+      if (aptData) {
+        const mapped = aptData.map(mapAppointment);
+        setAppointments(mapped);
+      }
+
+      // Update current user specific appointments
+      if (currentUser && currentUser.id === appt.clientId) {
+        const { data: userAppts } = await supabase.from('appointments').select('*').eq('client_id', currentUser.id);
+        if (userAppts) {
+          const mappedUserAppts = userAppts.map(mapAppointment);
+          setCurrentUser(prev => prev ? ({ ...prev, appointments: mappedUserAppts }) : null);
         }
-        
-        // Update current user specific appointments
-        if (currentUser && currentUser.id === appt.clientId) {
-            const { data: userAppts } = await supabase.from('appointments').select('*').eq('client_id', currentUser.id);
-            if (userAppts) {
-                const mappedUserAppts = userAppts.map(mapAppointment);
-                setCurrentUser(prev => prev ? ({ ...prev, appointments: mappedUserAppts }) : null);
-            }
-        }
+      }
     } else {
       console.error("Error adding appointment:", error);
       showToast("Erro ao agendar compromisso.", "error");
@@ -720,17 +720,17 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const updateAppointment = async (appt: Appointment) => {
-     const dbAppt = {
-         status: appt.status,
-         date: appt.date,
-         time: appt.time,
-         meeting_link: appt.meetingLink,
-         notes: appt.notes
-     };
-     
+    const dbAppt = {
+      status: appt.status,
+      date: appt.date,
+      time: appt.time,
+      meeting_link: appt.meetingLink,
+      notes: appt.notes
+    };
+
     const { error } = await supabase.from('appointments').update(dbAppt).eq('id', appt.id);
     if (!error) {
-        setAppointments(prev => prev.map(a => a.id === appt.id ? appt : a));
+      setAppointments(prev => prev.map(a => a.id === appt.id ? appt : a));
     }
   };
 
@@ -747,8 +747,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const checkAvailability = (dateStr: string): string[] => {
     if (scheduleSettings.blockedDates.includes(dateStr)) return [];
 
-    const dateObj = new Date(dateStr + 'T12:00:00');
-    const dayOfWeek = dateObj.getDay(); 
+    const dateObj = new Date(dateStr + 'T00:00:00');
+    const dayOfWeek = dateObj.getDay();
     if (!scheduleSettings.workDays.includes(dayOfWeek)) return [];
 
     const slots: string[] = [];
@@ -757,15 +757,15 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     for (let h = startH; h < endH; h++) {
       const timeSlot = `${h.toString().padStart(2, '0')}:00`;
-      
+
       const isBlockedSlot = scheduleSettings.blockedSlots?.some(
-          b => b.date === dateStr && b.time === timeSlot
+        b => b.date === dateStr && b.time === timeSlot
       );
       if (isBlockedSlot) continue;
 
-      const isTaken = appointments.some(a => 
-        a.date === dateStr && 
-        a.time === timeSlot && 
+      const isTaken = appointments.some(a =>
+        a.date === dateStr &&
+        a.time === timeSlot &&
         a.status !== 'cancelled'
       );
 
@@ -788,70 +788,70 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     // 2. Check if logged in
     if (!currentUser) {
-       // Guest user: just clear the chat locally, no saving
-       setCurrentChatMessages([]);
-       localStorage.removeItem(LS_CHAT_KEY);
-       return 'guest';
+      // Guest user: just clear the chat locally, no saving
+      setCurrentChatMessages([]);
+      localStorage.removeItem(LS_CHAT_KEY);
+      return 'guest';
     }
 
     try {
-        // 3. Prepare Chat Object
-        // Sanitize messages: Remove circular refs or heavy UI components before saving
-        const cleanMessages = currentChatMessages.map(msg => ({
-          id: msg.id,
-          role: msg.role,
-          text: msg.text || '',
-          uiComponent: msg.uiComponent ? { type: msg.uiComponent.type, data: msg.uiComponent.data } : undefined,
-          actions: msg.actions
-        }));
+      // 3. Prepare Chat Object
+      // Sanitize messages: Remove circular refs or heavy UI components before saving
+      const cleanMessages = currentChatMessages.map(msg => ({
+        id: msg.id,
+        role: msg.role,
+        text: msg.text || '',
+        uiComponent: msg.uiComponent ? { type: msg.uiComponent.type, data: msg.uiComponent.data } : undefined,
+        actions: msg.actions
+      }));
 
-        const newChat: ChatSession = {
-            id: Date.now().toString(),
-            title: `Conversa de ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`,
-            messages: cleanMessages,
-            createdAt: new Date().toISOString(),
-            lastUpdated: new Date().toISOString()
-        };
+      const newChat: ChatSession = {
+        id: Date.now().toString(),
+        title: `Conversa de ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
+        messages: cleanMessages,
+        createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString()
+      };
 
-        const updatedChats = [newChat, ...(currentUser.chats || [])];
+      const updatedChats = [newChat, ...(currentUser.chats || [])];
 
-        // 4. OPTIMISTIC UPDATE: Update Context/UI Immediately
-        const optimisticUser = { ...currentUser, chats: updatedChats };
-        setCurrentUser(optimisticUser);
-        
-        // 5. Clear Chat Area Immediately
-        setCurrentChatMessages([]);
-        localStorage.removeItem(LS_CHAT_KEY);
+      // 4. OPTIMISTIC UPDATE: Update Context/UI Immediately
+      const optimisticUser = { ...currentUser, chats: updatedChats };
+      setCurrentUser(optimisticUser);
 
-        // 6. Background DB Sync (Fire and Forget for UI responsiveness)
-        // We use the existing updateUser which handles DB + Local State sync
-        await updateUser(optimisticUser);
-        
-        return 'success';
+      // 5. Clear Chat Area Immediately
+      setCurrentChatMessages([]);
+      localStorage.removeItem(LS_CHAT_KEY);
+
+      // 6. Background DB Sync (Fire and Forget for UI responsiveness)
+      // We use the existing updateUser which handles DB + Local State sync
+      await updateUser(optimisticUser);
+
+      return 'success';
 
     } catch (e) {
-        console.error("Error archiving chat", e);
-        return 'error';
+      console.error("Error archiving chat", e);
+      return 'error';
     }
   };
-  
+
   // Simple Clear for Guest or Reset
   const clearCurrentChat = () => {
     setCurrentChatMessages([]);
     localStorage.removeItem(LS_CHAT_KEY);
   }
-  
+
   const restoreChatSession = (chatId: string) => {
-     if (!currentUser) return;
-     const session = currentUser.chats?.find(c => c.id === chatId);
-     if (session) {
-        setCurrentChatMessages(session.messages);
-        showToast('Conversa restaurada.', 'info');
-     }
+    if (!currentUser) return;
+    const session = currentUser.chats?.find(c => c.id === chatId);
+    if (session) {
+      setCurrentChatMessages(session.messages);
+      showToast('Conversa restaurada.', 'info');
+    }
   };
-  
+
   const loadChatMessages = (messages: ChatMessage[]) => {
-      setCurrentChatMessages(messages);
+    setCurrentChatMessages(messages);
   };
 
   const logAiFeedback = (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => {
@@ -866,7 +866,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addMessageToChat = (message: ChatMessage) => setCurrentChatMessages(prev => [...prev, message]);
 
   const updateMessageUI = (id: string, uiComponent: any) => {
-    setCurrentChatMessages(prev => prev.map(msg => 
+    setCurrentChatMessages(prev => prev.map(msg =>
       msg.id === id ? { ...msg, uiComponent } : msg
     ));
   };
@@ -875,19 +875,19 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     let updatedMessages = [...currentChatMessages];
 
     if (updatedMessages.length === 0) {
-        const greetingRaw = settings.aiConfig.defaultGreeting || "Olá. Como posso ajudar?";
-        let personalizedGreeting = greetingRaw;
-        if (currentUser) {
-            personalizedGreeting = greetingRaw.replace('{name}', currentUser.name.split(' ')[0]);
-        } else {
-            personalizedGreeting = greetingRaw.replace(' {name}', '').replace('{name}', '');
-        }
+      const greetingRaw = settings.aiConfig.defaultGreeting || "Olá. Como posso ajudar?";
+      let personalizedGreeting = greetingRaw;
+      if (currentUser) {
+        personalizedGreeting = greetingRaw.replace('{name}', currentUser.name.split(' ')[0]);
+      } else {
+        personalizedGreeting = greetingRaw.replace(' {name}', '').replace('{name}', '');
+      }
 
-        updatedMessages.push({
-            id: 'init-greeting',
-            role: 'model',
-            text: personalizedGreeting
-        });
+      updatedMessages.push({
+        id: 'init-greeting',
+        role: 'model',
+        text: personalizedGreeting
+      });
     }
 
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: message };
@@ -895,14 +895,14 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setCurrentChatMessages(updatedMessages);
 
     try {
-      const responseData = await chatWithConcierge(updatedMessages, { 
+      const responseData = await chatWithConcierge(updatedMessages, {
         user: currentUser,
         memories: currentUser?.memories || [],
         office: siteContent.office,
         projects: projects,
         culturalProjects: culturalProjects
       }, settings.aiConfig);
-      
+
       const botMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',
@@ -910,19 +910,19 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         uiComponent: responseData.uiComponent,
         actions: responseData.actions
       };
-      
+
       setCurrentChatMessages(prev => [...prev, botMsg]);
       return responseData;
 
     } catch (error) {
       console.error(error);
-      return { 
-        role: 'model', 
-        text: "Desculpe, o serviço de IA está indisponível no momento. Por favor, tente novamente mais tarde." 
+      return {
+        role: 'model',
+        text: "Desculpe, o serviço de IA está indisponível no momento. Por favor, tente novamente mais tarde."
       };
     }
   };
-  
+
   const addAdminNote = (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => {
     const newNote: AdminNote = {
       ...note,
@@ -936,21 +936,21 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const deleteAdminNote = (id: string) => setAdminNotes(prev => prev.filter(n => n.id !== id));
 
   return (
-    <ProjectContext.Provider value={{ 
+    <ProjectContext.Provider value={{
       projects,
-      culturalProjects, 
+      culturalProjects,
       currentUser,
       users,
-      siteContent, 
+      siteContent,
       settings,
       adminNotes,
       aiFeedbacks,
-      isLoadingAuth, 
-      login, 
-      logout, 
+      isLoadingAuth,
+      login,
+      logout,
       registerUser,
-      addProject, 
-      updateProject, 
+      addProject,
+      updateProject,
       deleteProject,
       addCulturalProject,
       updateCulturalProject,
