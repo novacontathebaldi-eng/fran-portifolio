@@ -173,7 +173,11 @@ const CalendarWidget = ({ data, messageId, closeChat }: { data: any, messageId: 
 
     // Look ahead 30 days to find at least 5 available days
     for (let i = 0; i < 30; i++) {
-      const dateStr = current.toISOString().split('T')[0];
+      // Use local timezone instead of UTC to prevent day-before bug
+      const year = current.getFullYear();
+      const month = String(current.getMonth() + 1).padStart(2, '0');
+      const day = String(current.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
       const slots = checkAvailability(dateStr);
 
       if (slots.length > 0) {
