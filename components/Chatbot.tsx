@@ -420,7 +420,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
           else if (action.type === 'learnMemory') {
             if (currentUser) {
               addClientMemory(action.payload);
-              // Silent save
+              showToast("Preferência registrada com sucesso!", "success");
             }
           }
         }
