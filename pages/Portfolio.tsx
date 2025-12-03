@@ -29,24 +29,25 @@ export const Portfolio: React.FC = () => {
 
   // 3. Sort Logic
   const sortedProjects = [...filteredProjects].sort((a, b) => {
+    const getTime = (p: typeof projects[0]) => {
+      if (p.created_at) return new Date(p.created_at).getTime();
+      return new Date(p.year, 0, 1).getTime();
+    };
+
     if (sortBy === 'Mais recentes') {
-      // Try created_at first, fallback to year
-      if (a.created_at && b.created_at) {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      }
-      return b.year - a.year;
+      const diff = getTime(b) - getTime(a);
+      if (diff !== 0) return diff;
+      return b.title.localeCompare(a.title); // Tie-breaker
     }
     if (sortBy === 'Mais antigos') {
-      if (a.created_at && b.created_at) {
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      }
-      return a.year - b.year;
+      const diff = getTime(a) - getTime(b);
+      if (diff !== 0) return diff;
+      return a.title.localeCompare(b.title); // Tie-breaker
     }
     if (sortBy === 'Por Categoria') {
       return a.category.localeCompare(b.category);
     }
     if (sortBy === 'Relevância') {
-      // Placeholder for relevance logic
       return 0;
     }
     return 0;
