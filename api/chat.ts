@@ -42,12 +42,12 @@ const tools = [
       },
       {
         name: 'learnClientPreference',
-        description: 'Use this tool AUTOMATICALLY when the user mentions a significant personal preference, fact, or style choice. ALWAYS respond naturally acknowledging what they said (e.g., "Que interessante! Arquitetura do Himalaia tem um charme único" or "Entendo, vou lembrar disso!"). DO NOT send empty messages. The system will save the preference automatically in the background.',
+        description: 'Use this tool AUTOMATICALLY when the user mentions a significant personal preference, fact, or style choice (e.g., "gosto de design minimalista", "prefiro cores neutras", "tenho 2 filhos"). CRITICAL: You MUST provide an engaging, personalized response acknowledging their preference. Examples: "Que interessante! Design minimalista transmite elegância e funcionalidade", "Ótima escolha! Vou registrar essa preferência para melhor te atender", "Entendo perfeitamente! Cores neutras trazem sofisticação atemporal". NEVER leave the response empty or generic.',
         parameters: {
           type: Type.OBJECT,
           properties: {
-            topic: { type: Type.STRING, description: 'Short topic title (e.g., "Family", "Style", "Budget", "Location").' },
-            content: { type: Type.STRING, description: 'The detail to be remembered (e.g., "Has 2 children", "Dislikes red", "Budget is 500k").' }
+            topic: { type: Type.STRING, description: 'Short topic title (e.g., "Estilo", "Cores", "Família", "Orçamento").' },
+            content: { type: Type.STRING, description: 'The detail to be remembered (e.g., "Gosta de design minimalista", "Prefere cores neutras", "Tem 2 filhos").' }
           },
           required: ['topic', 'content']
         }
@@ -66,9 +66,9 @@ const tools = [
         parameters: {
           type: Type.OBJECT,
           properties: {
-            path: { 
-              type: Type.STRING, 
-              description: 'The route path. Options: "/portfolio", "/contact", "/about", "/services", "/profile", "/cultural", "/office"' 
+            path: {
+              type: Type.STRING,
+              description: 'The route path. Options: "/portfolio", "/contact", "/about", "/services", "/profile", "/cultural", "/office"'
             }
           },
           required: ['path']
@@ -80,9 +80,9 @@ const tools = [
         parameters: {
           type: Type.OBJECT,
           properties: {
-            type: { 
-              type: Type.STRING, 
-              description: 'The type of appointment. "meeting" (for Online/Virtual or Office meetings) or "visit" (Client construction site).' 
+            type: {
+              type: Type.STRING,
+              description: 'The type of appointment. "meeting" (for Online/Virtual or Office meetings) or "visit" (Client construction site).'
             },
             modality: {
               type: Type.STRING,
@@ -149,30 +149,30 @@ CONTEXTO E FLUXO:
 `;
 
 export async function chatWithConcierge(
-  message: ChatMessage[] | string, 
-  context: { 
-    user: User | null; 
-    memories: ClientMemory[]; 
+  message: ChatMessage[] | string,
+  context: {
+    user: User | null;
+    memories: ClientMemory[];
     office?: OfficeDetails;
     projects: Project[];
     culturalProjects: CulturalProject[];
-  }, 
+  },
   aiConfig: any
 ) {
   const apiKey = process.env.API_KEY;
 
   if (!apiKey) {
-    return { 
+    return {
       text: "O sistema de IA está em modo de demonstração (Sem API Key).",
       role: 'model'
     };
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  
+
   // Construct System Instruction based on Toggle
-  let systemInstruction = aiConfig.useCustomSystemInstruction 
-    ? aiConfig.systemInstruction 
+  let systemInstruction = aiConfig.useCustomSystemInstruction
+    ? aiConfig.systemInstruction
     : DEFAULT_SYSTEM_INSTRUCTION;
 
   // Add Date Context
@@ -191,14 +191,14 @@ export async function chatWithConcierge(
   if (context.projects && context.projects.length > 0) {
     systemInstruction += `\n\n[PORTFÓLIO ATUAL - PROJETOS DISPONÍVEIS]:`;
     context.projects.slice(0, 8).forEach(proj => {
-        systemInstruction += `\n- "${proj.title}" (${proj.category}, ${proj.year}) em ${proj.location} - ${proj.area}m²`;
+      systemInstruction += `\n- "${proj.title}" (${proj.category}, ${proj.year}) em ${proj.location} - ${proj.area}m²`;
     });
   }
 
   if (context.culturalProjects && context.culturalProjects.length > 0) {
     systemInstruction += `\n\n[PROJETOS CULTURAIS]:`;
     context.culturalProjects.slice(0, 5).forEach(cult => {
-        systemInstruction += `\n- "${cult.title}" (${cult.category}) - ${cult.location}`;
+      systemInstruction += `\n- "${cult.title}" (${cult.category}) - ${cult.location}`;
     });
   }
 
@@ -210,7 +210,7 @@ export async function chatWithConcierge(
     - Horário: ${context.office.hoursDescription}
     `;
   }
-  
+
   if (context?.user) {
     systemInstruction += `\n\n[PERFIL DO CLIENTE]:
     - Nome: ${context.user.name}
@@ -223,11 +223,11 @@ export async function chatWithConcierge(
         systemInstruction += `\n  * [${addr.label}]: ${addr.street}, ${addr.number} (${addr.city})`;
       });
     }
-    
+
     if (context.memories && context.memories.length > 0) {
       systemInstruction += `\n\n[MEMÓRIAS (O QUE JÁ SABEMOS)]:`;
       context.memories.forEach((mem: any) => {
-         systemInstruction += `\n- [${mem.topic}]: ${mem.content}`;
+        systemInstruction += `\n- [${mem.topic}]: ${mem.content}`;
       });
     }
   }
@@ -248,109 +248,108 @@ export async function chatWithConcierge(
   contents = contents.filter(c => c.role === 'user' || c.role === 'model');
 
   try {
-      const response = await ai.models.generateContent({
-        model: modelName,
-        contents: contents,
-        config: {
-          systemInstruction: systemInstruction,
-          tools: tools,
-          temperature: aiConfig?.temperature || 0.7,
-        },
-      });
+    const response = await ai.models.generateContent({
+      model: modelName,
+      contents: contents,
+      config: {
+        systemInstruction: systemInstruction,
+        tools: tools,
+        temperature: aiConfig?.temperature || 0.7,
+      },
+    });
 
-      const modelText = response.text;
-      const functionCalls = response.functionCalls as any[]; // Cast to any[] to fix type error
+    const modelText = response.text;
+    const functionCalls = response.functionCalls as any[]; // Cast to any[] to fix type error
 
-      let responseData: any = {
-        role: 'model',
-        text: modelText || "",
-        actions: []
-      };
+    let responseData: any = {
+      role: 'model',
+      text: modelText || "",
+      actions: []
+    };
 
-      if (functionCalls && functionCalls.length > 0) {
-        for (const call of functionCalls) {
-          if (call.name === 'showProjects') {
-            responseData.uiComponent = { type: 'ProjectCarousel', data: call.args };
-            if (!responseData.text) responseData.text = "Aqui estão alguns projetos selecionados.";
-          } 
-          else if (call.name === 'saveClientNote') {
-            responseData.actions.push({
-              type: 'saveNote',
-              payload: {
-                userName: call.args['name'] || (context.user ? context.user.name : 'Anônimo'),
-                userContact: call.args['contact'] || (context.user ? context.user.email : 'Não informado'),
-                message: call.args['message'],
-                source: 'chatbot'
-              }
-            });
-            if (!responseData.text) responseData.text = "Recebido. Sua mensagem foi encaminhada.";
-          }
-          else if (call.name === 'autoNoteInterest') {
-             responseData.actions.push({
-              type: 'saveNote',
-              payload: {
-                userName: context.user ? context.user.name : 'Visitante Interessado',
-                userContact: context.user ? context.user.email : 'Não identificado',
-                message: `[INTERESSE AUTOMÁTICO] ${call.args['interest']} - Contexto: ${call.args['context']}`,
-                source: 'chatbot'
-              }
-            });
-          }
-          else if (call.name === 'learnClientPreference') {
-            responseData.actions.push({
-              type: 'learnMemory',
-              payload: {
-                topic: call.args['topic'],
-                content: call.args['content'],
-                type: 'system_detected'
-              }
-            });
-            // Implicit save, no text override needed
-          }
-          else if (call.name === 'getSocialLinks') {
-            responseData.uiComponent = { type: 'SocialLinks', data: {} };
-            if (!responseData.text) responseData.text = "Aqui estão nossos canais de contato.";
-          }
-          else if (call.name === 'navigateSite') {
-            responseData.actions.push({
-              type: 'navigate',
-              payload: { path: call.args['path'] }
-            });
-            if (!responseData.text) responseData.text = `Redirecionando para ${call.args['path']}...`;
-          }
-          else if (call.name === 'scheduleMeeting') {
-            const widgetData = { ...call.args };
-            
-            // Check Required Fields
-            const isVisit = widgetData.type === 'visit';
-            const hasAddress = isVisit ? (widgetData.address && widgetData.address.length > 5) : true;
-            const isMeeting = widgetData.type === 'meeting';
-            const hasModality = isMeeting ? (widgetData.modality === 'online' || widgetData.modality === 'in_person') : true;
-
-            if (isVisit && !hasAddress) {
-               responseData.text = "Para agendar a visita técnica, preciso saber o endereço completo da obra.";
-               // No UI component implies asking again
-            } else if (isMeeting && !hasModality) {
-               responseData.text = "Para a reunião, você prefere que seja online ou presencial?";
-               // No UI component implies asking again
-            } else {
-               // Success - Show Calendar
-               if (widgetData.modality === 'online') {
-                  widgetData.location = 'Online (Google Meet)';
-               }
-               // Always show widget to pick date, even if user hallucinated a date in text
-               responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
-               if (!responseData.text) responseData.text = "Verifiquei nossa agenda. Por favor, selecione abaixo o melhor dia e horário para você.";
+    if (functionCalls && functionCalls.length > 0) {
+      for (const call of functionCalls) {
+        if (call.name === 'showProjects') {
+          responseData.uiComponent = { type: 'ProjectCarousel', data: call.args };
+          if (!responseData.text) responseData.text = "Aqui estão alguns projetos selecionados.";
+        }
+        else if (call.name === 'saveClientNote') {
+          responseData.actions.push({
+            type: 'saveNote',
+            payload: {
+              userName: call.args['name'] || (context.user ? context.user.name : 'Anônimo'),
+              userContact: call.args['contact'] || (context.user ? context.user.email : 'Não informado'),
+              message: call.args['message'],
+              source: 'chatbot'
             }
+          });
+          if (!responseData.text) responseData.text = "Recebido. Sua mensagem foi encaminhada.";
+        }
+        else if (call.name === 'autoNoteInterest') {
+          responseData.actions.push({
+            type: 'saveNote',
+            payload: {
+              userName: context.user ? context.user.name : 'Visitante Interessado',
+              userContact: context.user ? context.user.email : 'Não identificado',
+              message: `[INTERESSE AUTOMÁTICO] ${call.args['interest']} - Contexto: ${call.args['context']}`,
+              source: 'chatbot'
+            }
+          });
+        }
+        else if (call.name === 'learnClientPreference') {
+          responseData.actions.push({
+            type: 'learnMemory',
+            payload: {
+              topic: call.args['topic'],
+              content: call.args['content'],
+              type: 'system_detected'
+            }
+          });
+          // Ensure a response text exists - fallback if AI didn't provide one
+          if (!responseData.text || responseData.text.trim() === '') {
+            responseData.text = "Entendido! Vou registrar essa preferência para melhor atendê-lo.";
+          }
+        }
+        else if (call.name === 'getSocialLinks') {
+          responseData.uiComponent = { type: 'SocialLinks', data: {} };
+          if (!responseData.text) responseData.text = "Aqui estão nossos canais de contato.";
+        }
+        else if (call.name === 'navigateSite') {
+          responseData.actions.push({
+            type: 'navigate',
+            payload: { path: call.args['path'] }
+          });
+          if (!responseData.text) responseData.text = `Redirecionando para ${call.args['path']}...`;
+        }
+        else if (call.name === 'scheduleMeeting') {
+          const widgetData = { ...call.args };
+
+          // Check Required Fields
+          const isVisit = widgetData.type === 'visit';
+          const hasAddress = isVisit ? (widgetData.address && widgetData.address.length > 5) : true;
+          const isMeeting = widgetData.type === 'meeting';
+          const hasModality = isMeeting ? (widgetData.modality === 'online' || widgetData.modality === 'in_person') : true;
+
+          if (isVisit && !hasAddress) {
+            responseData.text = "Para agendar a visita técnica, preciso saber o endereço completo da obra.";
+            // No UI component implies asking again
+          } else if (isMeeting && !hasModality) {
+            responseData.text = "Para a reunião, você prefere que seja online ou presencial?";
+            // No UI component implies asking again
+          } else {
+            // Success - Show Calendar
+            if (widgetData.modality === 'online') {
+              widgetData.location = 'Online (Google Meet)';
+            }
+            // Always show widget to pick date, even if user hallucinated a date in text
+            responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
+            if (!responseData.text) responseData.text = "Verifiquei nossa agenda. Por favor, selecione abaixo o melhor dia e horário para você.";
           }
         }
       }
+    }
 
-      if (!responseData.text && !responseData.uiComponent && responseData.actions.length === 0) {
-        responseData.text = "Entendido. Como posso ajudar mais?";
-      }
-
-      return responseData;
+    return responseData;
 
   } catch (error) {
     console.error("AI Error:", error);
