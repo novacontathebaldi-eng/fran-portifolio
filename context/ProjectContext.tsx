@@ -683,6 +683,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // --- APPOINTMENTS ---
   const addAppointment = async (appt: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => {
+
     const payload = {
       client_id: appt.clientId,
       client_name: appt.clientName,
