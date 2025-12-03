@@ -1,28 +1,38 @@
 import React from 'react';
 import { useProjects } from '../context/ProjectContext';
 import { motion, Variants } from 'framer-motion';
-import { MapPin, Clock, Phone } from 'lucide-react';
+import { MapPin, Clock, Phone, Loader2 } from 'lucide-react';
 import { OfficeDetails } from '../types';
 
 export const Office: React.FC = () => {
   const { siteContent } = useProjects();
-  
+
   // Safe access to office content from Context
   const officeData = siteContent?.office || ({} as OfficeDetails);
-  const { blocks, address, hoursDescription, mapsLink, mapQuery, phone, email } = officeData;
+  const { blocks, address, hoursDescription, mapsLink, mapQuery, phone, email, city, state, zipCode } = officeData;
+  const { isLoadingData } = useProjects();
 
   // Animation Variants
   const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 30 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      transition: { 
-        duration: 0.8, 
-        ease: "easeOut" as any 
-      } 
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        ease: "easeOut" as any
+      }
     }
   };
+
+  if (isLoadingData) {
+    return (
+      <div className="min-h-screen pt-32 pb-20 flex flex-col items-center justify-center text-center px-6">
+        <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+        <p className="text-gray-500">Carregando conteúdo...</p>
+      </div>
+    );
+  }
 
   if (!blocks || blocks.length === 0) {
     return (
@@ -40,11 +50,11 @@ export const Office: React.FC = () => {
     <div className={`bg-white min-h-screen ${hasHero ? '' : 'pt-24'}`}>
       {/* Dynamic Block Renderer */}
       {blocks.map((block, index) => {
-        
+
         // 1. HERO IMAGE (Image Full) - Sem margem superior se for o primeiro
         if (block.type === 'image-full') {
           return (
-            <motion.div 
+            <motion.div
               key={block.id}
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -55,7 +65,7 @@ export const Office: React.FC = () => {
               <img src={block.content} alt="Office" className="w-full h-full object-cover" />
               {block.caption && (
                 <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-8 md:p-12">
-                   <p className="text-white text-sm md:text-base font-medium tracking-widest uppercase">{block.caption}</p>
+                  <p className="text-white text-sm md:text-base font-medium tracking-widest uppercase">{block.caption}</p>
                 </div>
               )}
             </motion.div>
@@ -66,7 +76,7 @@ export const Office: React.FC = () => {
         if (block.type === 'heading') {
           return (
             <div key={block.id} className="container mx-auto px-6 pt-12 pb-6 md:pt-20 md:pb-10">
-              <motion.h2 
+              <motion.h2
                 variants={fadeInUp}
                 initial="hidden"
                 whileInView="visible"
@@ -83,7 +93,7 @@ export const Office: React.FC = () => {
         if (block.type === 'text') {
           return (
             <div key={block.id} className="container mx-auto px-6 pb-12 md:pb-20">
-              <motion.div 
+              <motion.div
                 variants={fadeInUp}
                 initial="hidden"
                 whileInView="visible"
@@ -102,7 +112,7 @@ export const Office: React.FC = () => {
             <div key={block.id} className="container mx-auto px-6 py-12 md:py-20">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                 {block.items?.map((img, idx) => (
-                  <motion.div 
+                  <motion.div
                     key={idx}
                     initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
@@ -110,10 +120,10 @@ export const Office: React.FC = () => {
                     transition={{ delay: idx * 0.1, duration: 0.8 }}
                     className="aspect-[4/3] bg-gray-100 overflow-hidden relative group"
                   >
-                    <img 
-                      src={img} 
-                      alt={`Gallery ${idx}`} 
-                      className="w-full h-full object-cover transition-transform duration-1000 ease-in-out group-hover:scale-110" 
+                    <img
+                      src={img}
+                      alt={`Gallery ${idx}`}
+                      className="w-full h-full object-cover transition-transform duration-1000 ease-in-out group-hover:scale-110"
                     />
                   </motion.div>
                 ))}
@@ -128,9 +138,9 @@ export const Office: React.FC = () => {
             <div key={block.id} className="bg-[#f9f9f9] py-24 md:py-32 my-12 md:my-24">
               <div className="container mx-auto px-6 text-center max-w-4xl">
                 <motion.div
-                   initial={{ opacity: 0, y: 20 }}
-                   whileInView={{ opacity: 1, y: 0 }}
-                   viewport={{ once: true }}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
                 >
                   <span className="block text-6xl text-accent font-serif mb-4">“</span>
                   <h3 className="text-3xl md:text-5xl font-serif italic text-primary leading-tight mb-8">
@@ -147,45 +157,49 @@ export const Office: React.FC = () => {
         if (block.type === 'details') {
           return (
             <div key={block.id} className="container mx-auto px-6 py-12 md:py-24">
-               <motion.div 
-                 variants={fadeInUp}
-                 initial="hidden"
-                 whileInView="visible"
-                 viewport={{ once: true }}
-                 className="bg-[#1a1a1a] text-white rounded-sm p-8 md:p-16 shadow-2xl"
-               >
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
-                     <div className="space-y-4">
-                        <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-4">
-                          <MapPin className="w-6 h-6 text-accent" />
-                        </div>
-                        <h4 className="text-xl font-serif">Localização</h4>
-                        <p className="text-gray-400 font-light leading-relaxed">{address}</p>
-                        {mapsLink && (
-                          <a href={mapsLink} target="_blank" rel="noreferrer" className="inline-block text-xs font-bold uppercase tracking-widest border-b border-accent pb-1 hover:text-accent transition mt-2">Ver no Mapa</a>
-                        )}
-                     </div>
-                     
-                     <div className="space-y-4">
-                        <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-4">
-                          <Clock className="w-6 h-6 text-accent" />
-                        </div>
-                        <h4 className="text-xl font-serif">Horário</h4>
-                        <p className="text-gray-400 font-light leading-relaxed">{hoursDescription}</p>
-                     </div>
-
-                     <div className="space-y-4">
-                        <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-4">
-                          <Phone className="w-6 h-6 text-accent" />
-                        </div>
-                        <h4 className="text-xl font-serif">Contato</h4>
-                        <div className="space-y-1">
-                          <p className="text-gray-400 font-light">{phone}</p>
-                          <p className="text-gray-400 font-light">{email}</p>
-                        </div>
-                     </div>
+              <motion.div
+                variants={fadeInUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                className="bg-[#1a1a1a] text-white rounded-sm p-8 md:p-16 shadow-2xl"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-4">
+                      <MapPin className="w-6 h-6 text-accent" />
+                    </div>
+                    <h4 className="text-xl font-serif">Localização</h4>
+                    <p className="text-gray-400 font-light leading-relaxed">
+                      {address}
+                      {(city || state) && <><br />{city}{city && state ? ' - ' : ''}{state}</>}
+                      {zipCode && <><br />CEP: {zipCode}</>}
+                    </p>
+                    {mapsLink && (
+                      <a href={mapsLink} target="_blank" rel="noreferrer" className="inline-block text-xs font-bold uppercase tracking-widest border-b border-accent pb-1 hover:text-accent transition mt-2">Ver no Mapa</a>
+                    )}
                   </div>
-               </motion.div>
+
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-4">
+                      <Clock className="w-6 h-6 text-accent" />
+                    </div>
+                    <h4 className="text-xl font-serif">Horário</h4>
+                    <p className="text-gray-400 font-light leading-relaxed">{hoursDescription}</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-4">
+                      <Phone className="w-6 h-6 text-accent" />
+                    </div>
+                    <h4 className="text-xl font-serif">Contato</h4>
+                    <div className="space-y-1">
+                      <p className="text-gray-400 font-light">{phone}</p>
+                      <p className="text-gray-400 font-light">{email}</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           );
         }
@@ -194,16 +208,16 @@ export const Office: React.FC = () => {
         if (block.type === 'map') {
           return (
             <div key={block.id} className="w-full h-[400px] md:h-[600px] bg-gray-200 mt-12 transition duration-1000">
-               <iframe 
-                  width="100%" 
-                  height="100%" 
-                  style={{ border: 0 }} 
-                  loading="lazy" 
-                  allowFullScreen 
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Office Location"
-                  src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery || address || 'São Paulo')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-               ></iframe>
+              <iframe
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Office Location"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery || address || 'São Paulo')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+              ></iframe>
             </div>
           );
         }

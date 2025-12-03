@@ -942,6 +942,10 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div>
+                  <label className="text-xs font-bold uppercase text-gray-500">CEP</label>
+                  <input value={contentForm.office.zipCode || ''} onChange={e => handleOfficeChange('zipCode', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="00000-000" />
+                </div>
+                <div>
                   <label className="text-xs font-bold uppercase text-gray-500">Email Oficial</label>
                   <input value={contentForm.office.email || ''} onChange={e => handleOfficeChange('email', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="contato@fransiller.com.br" />
                 </div>

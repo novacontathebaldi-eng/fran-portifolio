@@ -21,6 +21,7 @@ interface ProjectContextType {
   adminNotes: AdminNote[];
   aiFeedbacks: AiFeedbackItem[];
   isLoadingAuth: boolean;
+  isLoadingData: boolean;
 
   // Auth
   login: (email: string, password: string) => Promise<{ user: any | null; error: any }>;
@@ -173,6 +174,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Chat State - Initialize from LocalStorage
   const [currentChatMessages, setCurrentChatMessages] = useState<ChatMessage[]>(() => {
@@ -298,6 +300,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       const mapped = aptData.map(mapAppointment);
       setAppointments(mapped);
     }
+
+    setIsLoadingData(false);
   };
 
   useEffect(() => {
@@ -947,6 +951,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       adminNotes,
       aiFeedbacks,
       isLoadingAuth,
+      isLoadingData,
       login,
       logout,
       registerUser,
