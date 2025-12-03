@@ -21,7 +21,8 @@ export interface Project {
   description: string; // Legacy fallback
   blocks?: ContentBlock[]; // New CMS structure
   images: string[];
-  price?: string; 
+  price?: string;
+  created_at?: string; // For "Newest" sorting
 }
 
 export interface CulturalProject {
@@ -35,6 +36,7 @@ export interface CulturalProject {
   description: string;
   blocks?: ContentBlock[];
   images: string[]; // Legacy support fallback
+  created_at?: string;
 }
 
 export type UserRole = 'admin' | 'client';
@@ -114,7 +116,7 @@ export interface User {
   role: UserRole;
   avatar?: string;
   bio?: string;
-  
+
   // Personal Data (Optional - Profile)
   cpf?: string; // Or CNPJ
   birthDate?: string; // ISO Date YYYY-MM-DD
@@ -122,9 +124,9 @@ export interface User {
 
   projects?: Project[];
   favorites?: string[];
-  folders?: ClientFolder[]; 
-  memories?: ClientMemory[]; 
-  chats?: ChatSession[]; 
+  folders?: ClientFolder[];
+  memories?: ClientMemory[];
+  chats?: ChatSession[];
   appointments?: Appointment[];
 }
 
@@ -161,19 +163,19 @@ export interface OfficeDetails {
   zipCode: string;
   mapsLink: string; // Google Maps URL
   mapQuery?: string; // Exact query for the embedded map iframe
-  
+
   // Hours
   hoursDescription: string; // e.g., "Segunda a Sexta, 09h às 18h"
 
   // Contact Info (New Global Settings)
   email: string;
   phone: string;
-  
+
   // New Block System for Office Page
   blocks: ContentBlock[];
-  
+
   // Deprecated but kept for type safety during migration if needed
-  facadeImage?: string; 
+  facadeImage?: string;
   interiorImages?: string[];
   aboutText?: string;
 }
