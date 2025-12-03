@@ -130,7 +130,7 @@ const BookingSuccess = ({ data, closeChat }: { data: any, closeChat: () => void 
         <div>
           <h4 className="font-bold text-gray-900 text-sm">Solicitação Enviada</h4>
           <p className="text-xs text-gray-500 mt-0.5">
-            {new Date(data.date).toLocaleDateString()} às {data.time}
+            {new Date(data.date + 'T00:00:00').toLocaleDateString('pt-BR')} às {data.time}
           </p>
           {data.location && (
             <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
@@ -554,8 +554,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                     className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
                   >
                     <div className={`max-w-[90%] rounded-2xl p-4 text-sm shadow-sm ${msg.role === 'user'
-                        ? 'bg-black text-white rounded-br-none'
-                        : 'bg-white border border-gray-200 rounded-bl-none text-gray-700'
+                      ? 'bg-black text-white rounded-br-none'
+                      : 'bg-white border border-gray-200 rounded-bl-none text-gray-700'
                       }`}>
                       {msg.text && (
                         <p className="leading-relaxed whitespace-pre-wrap">
