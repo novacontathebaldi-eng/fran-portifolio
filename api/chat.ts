@@ -316,6 +316,7 @@ export async function chatWithConcierge(
               type: 'navigate',
               payload: { path: call.args['path'] }
             });
+            if (!responseData.text) responseData.text = `Redirecionando para ${call.args['path']}...`;
           }
           else if (call.name === 'scheduleMeeting') {
             const widgetData = { ...call.args };
