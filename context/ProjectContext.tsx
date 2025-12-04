@@ -127,16 +127,16 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     recognition: ['CASA VOGUE', 'ARCHDAILY', 'ELLE DECOR', 'CASACOR']
   },
   office: {
-    address: 'Rua José de Anchieta Fontana, 177, Centro, Santa Leopoldina - ES. CEP: 29640-000',
-    street: 'Rua José de Anchieta Fontana',
-    number: '177',
+    address: 'Rua Vereador Sebastião José Siller, 330, Centro',
+    street: 'Rua Vereador Sebastião José Siller',
+    number: '330',
     district: 'Centro',
     city: 'Santa Leopoldina',
     state: 'ES',
     zipCode: '29640-000',
-    mapsLink: 'https://www.google.com/maps/search/?api=1&query=Rua+José+de+Anchieta+Fontana+177+Centro+Santa+Leopoldina',
+    mapsLink: 'https://maps.app.goo.gl/fxYnZFrFxKQshMfe9',
     mapQuery: '',
-    hoursDescription: 'Segunda a Sexta, 09h às 18h',
+    hoursDescription: 'Segunda a Sexta, 09h às 17h',
     email: 'contato@fransiller.com.br',
     phone: '+55 (27) 99667-0426',
     blocks: []
