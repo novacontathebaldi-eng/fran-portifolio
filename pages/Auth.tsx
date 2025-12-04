@@ -367,10 +367,20 @@ const ResetPassword: React.FC = () => {
 
   // Verificar se há uma sessão de recuperação válida
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const verifySession = async () => {
       console.log('[ResetPassword] Iniciando verificação de sessão...');
       console.log('[ResetPassword] URL completa:', window.location.href);
       console.log('[ResetPassword] Hash:', window.location.hash);
+
+      // Timeout de segurança - 5 segundos
+      timeoutId = setTimeout(() => {
+        console.error('[ResetPassword] TIMEOUT! setSession demorou mais de 5s');
+        setError('Timeout ao processar link. Tente novamente ou solicite nova recuperação.');
+        setSessionValid(false);
+        setVerifying(false);
+      }, 5000);
 
       try {
         // window.location.hash = "#/auth/reset-password#access_token=...&type=recovery"
@@ -410,6 +420,9 @@ const ResetPassword: React.FC = () => {
             refresh_token: refreshToken || ''
           });
 
+          console.log('[ResetPassword] setSession completou!');
+          clearTimeout(timeoutId); // Cancela timeout se completou
+
           if (sessionError) {
             console.error('[ResetPassword] Erro ao definir sessão:', sessionError);
             setError('Link inválido ou expirado. Solicite uma nova recuperação de senha.');
@@ -423,6 +436,7 @@ const ResetPassword: React.FC = () => {
           // Se não tiver tokens na URL, verificar sessão existente
           const { data: { session }, error } = await supabase.auth.getSession();
 
+          clearTimeout(timeoutId); // Cancela timeout
           console.log('[ResetPassword] Sessão existente:', { hasSession: !!session, error });
 
           if (error || !session) {
@@ -433,6 +447,7 @@ const ResetPassword: React.FC = () => {
           }
         }
       } catch (err) {
+        clearTimeout(timeoutId); // Cancela timeout em caso de erro
         console.error('[ResetPassword] Erro ao verificar sessão:', err);
         setError('Erro ao verificar sessão. Tente novamente.');
         setSessionValid(false);
@@ -443,6 +458,9 @@ const ResetPassword: React.FC = () => {
     };
 
     verifySession();
+
+    // Cleanup do timeout
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
