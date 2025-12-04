@@ -1,10 +1,12 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useProjects } from '../context/ProjectContext';
-import { Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Lock } from 'lucide-react';
+import { Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Lock, Receipt } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Project, ClientMemory, ClientFolder, Address, User, Appointment } from '../types';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { ClientBudgetsView } from './Client/ClientBudgetsView';
+import { ClientBudgetDetail } from './Client/ClientBudgetDetail';
 
 // Real Supabase Upload
 const uploadToSupabase = async (file: File): Promise<string> => {
@@ -29,7 +31,7 @@ const uploadToSupabase = async (file: File): Promise<string> => {
 
 export const ClientArea: React.FC = () => {
   const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory, appointments, updateAppointmentStatus, updateAppointment, updateUser, showToast, siteContent, checkAvailability } = useProjects();
-  const [activeTab, setActiveTab] = useState<'profile' | 'projects' | 'docs' | 'settings' | 'favs' | 'memories' | 'schedule'>('projects');
+  const [activeTab, setActiveTab] = useState<'profile' | 'projects' | 'docs' | 'settings' | 'favs' | 'memories' | 'schedule' | 'budgets'>('projects');
 
   const navigate = useNavigate();
 
@@ -52,6 +54,10 @@ export const ClientArea: React.FC = () => {
   const [rescheduleDate, setRescheduleDate] = useState<string | null>(null);
   const [rescheduleViewDate, setRescheduleViewDate] = useState(new Date());
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+
+  // Budget Navigation State
+  const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null);
+
 
   if (!currentUser) {
     return <Navigate to="/auth" replace />;
@@ -226,6 +232,10 @@ export const ClientArea: React.FC = () => {
               <Brain className="w-4 h-4" />
               <span className="whitespace-nowrap">IA & Memórias</span>
             </button>
+            <button onClick={() => setActiveTab('budgets')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'budgets' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+              <Receipt className="w-4 h-4" />
+              <span className="whitespace-nowrap">Orçamentos</span>
+            </button>
             <button onClick={() => setActiveTab('profile')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'profile' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
               <UserCircle className="w-4 h-4" />
               <span className="whitespace-nowrap">Perfil</span>
@@ -307,7 +317,7 @@ export const ClientArea: React.FC = () => {
                         <div key={appt.id} className="border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition">
                           {/* Header / Status Bar */}
                           <div className={`p-4 flex flex-col md:flex-row md:justify-between md:items-center gap-2 ${appt.status === 'confirmed' ? 'bg-green-50 text-green-900' :
-                              appt.status === 'pending' ? 'bg-yellow-50 text-yellow-900' : 'bg-gray-100 text-gray-500'
+                            appt.status === 'pending' ? 'bg-yellow-50 text-yellow-900' : 'bg-gray-100 text-gray-500'
                             }`}>
                             <div className="flex items-center gap-2">
                               {appt.status === 'confirmed' && <CheckCircle className="w-5 h-5" />}
@@ -523,6 +533,26 @@ export const ClientArea: React.FC = () => {
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* BUDGETS TAB */}
+            {activeTab === 'budgets' && (
+              <div className="animate-fadeIn">
+                {selectedBudgetId ? (
+                  <ClientBudgetDetail
+                    requestId={selectedBudgetId}
+                    onBack={() => setSelectedBudgetId(null)}
+                    showToast={showToast}
+                    clientId={currentUser.id}
+                  />
+                ) : (
+                  <ClientBudgetsView
+                    onViewDetails={(id) => setSelectedBudgetId(id)}
+                    showToast={showToast}
+                    clientId={currentUser.id}
+                  />
+                )}
               </div>
             )}
 
