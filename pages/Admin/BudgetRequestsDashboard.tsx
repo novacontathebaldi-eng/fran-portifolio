@@ -9,7 +9,7 @@ interface BudgetRequestsDashboardProps {
     showToast?: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
-export const BudgetRequestsDashboard: React.FC<Budget RequestsDashboardProps> = ({ onViewDetails, showToast }) => {
+export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = ({ onViewDetails, showToast }) => {
     const [budgetRequests, setBudgetRequests] = useState<BudgetRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
