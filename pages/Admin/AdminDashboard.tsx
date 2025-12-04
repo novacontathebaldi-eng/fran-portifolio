@@ -5,6 +5,9 @@ import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogO
 import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory } from '../../types';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
+import { BudgetRequestsDashboard } from './BudgetRequestsDashboard';
+import { BudgetRequestDetail } from './BudgetRequestDetail';
+import { Receipt } from 'lucide-react';
 
 // Real Supabase Upload
 const uploadToSupabase = async (file: File): Promise<string> => {
@@ -32,9 +35,10 @@ export const AdminDashboard: React.FC = () => {
     const navigate = useNavigate();
 
     // TABS: Added 'cultural'
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'clients' | 'agenda' | 'office'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'clients' | 'agenda' | 'office' | 'budgets'>('dashboard');
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [selectedBudgetRequestId, setSelectedBudgetRequestId] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const [saving, setSaving] = useState(false);
 
@@ -502,6 +506,7 @@ export const AdminDashboard: React.FC = () => {
                     <NavItem id="cultural" icon={Landmark} label="Cultura" />
                     <NavItem id="clients" icon={Users} label="Clientes & Arquivos" />
                     <NavItem id="ai-config" icon={Brain} label="Inteligência Artificial" />
+                    <NavItem id="budgets" icon={Receipt} label="Orçamentos" />
                     <NavItem id="messages" icon={MessageSquare} label="Recados" count={unreadNotesCount} />
                     <NavItem id="office" icon={MapPin} label="Escritório (Site)" />
                     <NavItem id="content" icon={FileText} label="Conteúdo Site" />
@@ -710,6 +715,25 @@ export const AdminDashboard: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    )}
+                    
+                    {/* Budgets View */}
+                    {activeTab === 'budgets' && (
+                        <div className="animate-fadeIn">
+                            {selectedBudgetRequestId ? (
+                                <BudgetRequestDetail
+                                    requestId={selectedBudgetRequestId}
+                                    onBack={() => setSelectedBudgetRequestId(null)}
+                                    showToast={showToast}
+                                    currentUserId={currentUser?.id}
+                                />
+                            ) : (
+                                <BudgetRequestsDashboard
+                                    onViewDetails={(id) => setSelectedBudgetRequestId(id)}
+                                    showToast={showToast}
+                                />
+                            )}
                         </div>
                     )}
 
