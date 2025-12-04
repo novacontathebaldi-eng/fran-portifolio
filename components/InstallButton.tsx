@@ -51,7 +51,7 @@ const InstallButton: React.FC = () => {
             setIsInstallable(false);
         } else {
             // Show instructions for manual installation
-            alert('Para instalar este app:\n\n1. Clique no ícone de menu (⋮) no canto superior direito do navegador\n2. Selecione "Instalar app..." ou "Criar atalho..."\n3. Confirme a instalação\n\nO app será adicionado à sua área de trabalho!');
+            alert('Para instalar este app:\n\n1. Clique no ícone de instalação (📥) na barra de endereços\n   (ao lado do ícone de favoritos ⭐)\n2. Clique em "Instalar"\n\nO app será adicionado à sua área de trabalho!');
         }
     };
 
