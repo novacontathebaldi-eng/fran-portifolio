@@ -465,15 +465,39 @@ const ResetPassword: React.FC = () => {
     setLoading(true);
 
     try {
+      // Extrair token da URL e definir sessão antes de atualizar
+      const hash = window.location.hash;
+      const parts = hash.split('#');
+
+      if (parts.length > 2) {
+        const tokenParams = new URLSearchParams(parts[2]);
+        const accessToken = tokenParams.get('access_token');
+        const refreshToken = tokenParams.get('refresh_token');
+
+        if (accessToken) {
+          console.log('[ResetPassword] Definindo sessão temporária para updateUser...');
+
+          // Definir sessão APENAS para este request
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || ''
+          });
+        }
+      }
+
+      // Agora sim atualizar senha
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) {
+        console.error('[ResetPassword] Erro ao atualizar senha:', error);
         setError('Erro ao redefinir senha. Tente novamente.');
       } else {
+        console.log('[ResetPassword] Senha atualizada com sucesso!');
         setSuccess(true);
         setTimeout(() => navigate('/auth'), 2000);
       }
     } catch (err) {
+      console.error('[ResetPassword] Erro inesperado:', err);
       setError('Ocorreu um erro inesperado. Tente novamente.');
     } finally {
       setLoading(false);
