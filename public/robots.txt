@@ -1,0 +1,22 @@
+# Robots.txt for Fran Siller Arquitetura
+# Controls how search engines crawl the site
+
+User-agent: *
+Allow: /
+
+# Disallow admin and auth areas
+Disallow: /admin
+Disallow: /auth
+Disallow: /profile
+
+# Allow public pages
+Allow: /#/
+Allow: /#/about
+Allow: /#/portfolio
+Allow: /#/cultural
+Allow: /#/office
+Allow: /#/contact
+Allow: /#/services
+
+# Sitemap location
+Sitemap: https://fransiller.othebaldi.me/sitemap.xml
