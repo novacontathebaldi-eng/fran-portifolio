@@ -5,43 +5,11 @@ import { Check, MapPin, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
-
-// Categorias de Serviços
-const SERVICE_CATEGORIES = {
-  'Interiores e Detalhamento': [
-    'Projeto de Interiores',
-    'Projeto Luminotécnico',
-    'Paginação de Pisos e Revestimentos',
-    'Projeto de Marcenaria',
-    'Projeto de Forro (Gesso)',
-    'Consultoria de Decoração'
-  ],
-  'Projetos Executivos': [
-    'Plantas de Demolição e Construção',
-    'Detalhamento de Áreas Molhadas',
-    'Detalhamento de Marmoraria e Vidraçaria'
-  ],
-  'Projetos Legais e Regularização': [
-    'Aprovação na Prefeitura',
-    'Levantamento Cadastral (As-Built)',
-    'Regularização de Imóvel',
-    'Desmembramento / Remembramento',
-    'Estudo de Viabilidade',
-    'Projeto de Acessibilidade (NBR 9050)',
-    'PPCI (Combate a Incêndio)'
-  ],
-  'Arquitetura e Complementares': [
-    'Projeto de Fachada (Retrofit)',
-    'Projeto de Paisagismo',
-    'Projeto de Restauro'
-  ],
-  'Visualização 3D': [
-    'Maquete Eletrônica / Renderização'
-  ],
-  'Assessoria': [
-    'Assessoria Técnica'
-  ]
-};
+interface Service {
+  id: string;
+  category: string;
+  name: string;
+}
 
 interface FormData {
   clientName: string;
@@ -51,11 +19,14 @@ interface FormData {
   projectCity: string;
   projectState: string;
   observations: string;
-  selectedServices: string[];
+  selectedServices: string[]; // IDs dos serviços
 }
 
 export const BudgetFlow: React.FC = () => {
-  const { currentUser, showToast } = useProjects();
+  const { showToast, currentUser } = useProjects();
+
+  const [services, setServices] = useState<Service[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -70,6 +41,29 @@ export const BudgetFlow: React.FC = () => {
     selectedServices: []
   });
 
+  // Buscar serviços do Supabase
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('services')
+          .select('id, category, name, order_index')
+          .eq('active', true)
+          .order('order_index', { ascending: true });
+
+        if (error) throw error;
+        setServices(data || []);
+      } catch (error) {
+        console.error('Erro ao carregar serviços:', error);
+        showToast('Erro ao carregar serviços', 'error');
+      } finally {
+        setLoadingServices(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
   // Auto-preencher dados se usuário estiver logado
   useEffect(() => {
     if (currentUser) {
@@ -82,12 +76,12 @@ export const BudgetFlow: React.FC = () => {
     }
   }, [currentUser]);
 
-  const handleServiceToggle = (service: string) => {
+  const handleServiceToggle = (serviceId: string) => {
     setFormData(prev => ({
       ...prev,
-      selectedServices: prev.selectedServices.includes(service)
-        ? prev.selectedServices.filter(s => s !== service)
-        : [...prev.selectedServices, service]
+      selectedServices: prev.selectedServices.includes(serviceId)
+        ? prev.selectedServices.filter(s => s !== serviceId)
+        : [...prev.selectedServices, serviceId]
     }));
   };
 
@@ -179,10 +173,7 @@ export const BudgetFlow: React.FC = () => {
           <p className="text-secondary text-lg mb-8">
             Recebemos sua solicitação de orçamento. Nossa equipe analisará os detalhes e entrará em contato em até 24 horas.
           </p>
-          <Link
-            to="/"
-            className="inline-block bg-black text-white px-8 py-3 rounded-full hover:bg-accent hover:text-black transition"
-          >
+          <Link to="/" className="inline-block bg-black text-white px-8 py-4 rounded-full font-bold text-sm hover:bg-gray-800 transition">
             Voltar para Início
           </Link>
         </motion.div>
@@ -190,208 +181,177 @@ export const BudgetFlow: React.FC = () => {
     );
   }
 
+  // Agrupar serviços por categoria
+  const servicesByCategory = services.reduce((acc, service) => {
+    if (!acc[service.category]) acc[service.category] = [];
+    acc[service.category].push(service);
+    return acc;
+  }, {} as Record<string, Service[]>);
+
   return (
     <div className="min-h-screen pt-44 pb-24 bg-gray-50">
-      <div className="container mx-auto px-6 max-w-5xl">
-
+      <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <h1 className="text-4xl md:text-5xl font-serif mb-4">Solicite seu Orçamento</h1>
-          <p className="text-secondary text-lg max-w-2xl mx-auto">
-            Preencha o formulário abaixo selecionando os serviços que precisa. Analisaremos sua solicitação e retornaremos com um orçamento personalizado.
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-5xl font-serif mb-4">Solicitar Orçamento</h1>
+          <p className="text-secondary text-lg">
+            Conte-nos sobre o seu projeto e nossa equipe entrará em contato.
           </p>
-        </motion.div>
+        </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 md:p-12">
-
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
           {/* Dados Pessoais */}
-          <div className="mb-10">
-            <h2 className="text-2xl font-serif mb-6 pb-3 border-b border-gray-200">Dados Pessoais</h2>
+          <div className="mb-12">
+            <h2 className="text-2xl font-serif mb-6">Seus Dados</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-bold uppercase tracking-wider text-gray-500 mb-2">
-                  Nome Completo *
-                </label>
+                <label className="block text-sm font-bold uppercase text-gray-500 mb-2">Nome Completo *</label>
                 <input
                   type="text"
-                  required
                   value={formData.clientName}
                   onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                  className="w-full border border-gray-300 p-3 rounded focus:outline-none focus:border-black transition"
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-black transition"
                   placeholder="Seu nome"
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold uppercase tracking-wider text-gray-500 mb-2">
-                  E-mail *
-                </label>
+                <label className="block text-sm font-bold uppercase text-gray-500 mb-2">Email *</label>
                 <input
                   type="email"
-                  required
                   value={formData.clientEmail}
                   onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
-                  className="w-full border border-gray-300 p-3 rounded focus:outline-none focus:border-black transition"
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-black transition"
                   placeholder="seu@email.com"
+                  required
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-bold uppercase tracking-wider text-gray-500 mb-2">
-                  Telefone / WhatsApp *
-                </label>
+                <label className="block text-sm font-bold uppercase text-gray-500 mb-2">Telefone / WhatsApp *</label>
                 <input
                   type="tel"
-                  required
                   value={formData.clientPhone}
                   onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
-                  className="w-full border border-gray-300 p-3 rounded focus:outline-none focus:border-black transition"
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-black transition"
                   placeholder="(00) 00000-0000"
+                  required
                 />
               </div>
             </div>
           </div>
 
           {/* Localização do Projeto */}
-          <div className="mb-10">
-            <h2 className="text-2xl font-serif mb-6 pb-3 border-b border-gray-200 flex items-center gap-2">
-              <MapPin className="w-6 h-6" />
+          <div className="mb-12">
+            <h2 className="text-2xl font-serif mb-6 flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
               Localização do Projeto
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-bold uppercase tracking-wider text-gray-500 mb-2">
-                  Endereço Completo *
-                </label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-3">
+                <label className="block text-sm font-bold uppercase text-gray-500 mb-2">Endereço Completo *</label>
                 <input
                   type="text"
-                  required
                   value={formData.projectLocationFull}
                   onChange={(e) => setFormData({ ...formData, projectLocationFull: e.target.value })}
-                  className="w-full border border-gray-300 p-3 rounded focus:outline-none focus:border-black transition"
-                  placeholder="Rua, número, bairro"
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-black transition"
+                  placeholder="Rua, número, bairro..."
+                  required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-bold uppercase tracking-wider text-gray-500 mb-2">
-                  Cidade *
-                </label>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-bold uppercase text-gray-500 mb-2">Cidade *</label>
                 <input
                   type="text"
-                  required
                   value={formData.projectCity}
                   onChange={(e) => setFormData({ ...formData, projectCity: e.target.value })}
-                  className="w-full border border-gray-300 p-3 rounded focus:outline-none focus:border-black transition"
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-black transition"
                   placeholder="Cidade"
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold uppercase tracking-wider text-gray-500 mb-2">
-                  Estado *
-                </label>
-                <select
-                  required
+                <label className="block text-sm font-bold uppercase text-gray-500 mb-2">Estado *</label>
+                <input
+                  type="text"
                   value={formData.projectState}
                   onChange={(e) => setFormData({ ...formData, projectState: e.target.value })}
-                  className="w-full border border-gray-300 p-3 rounded focus:outline-none focus:border-black transition"
-                >
-                  <option value="">Selecione</option>
-                  <option value="AC">Acre</option>
-                  <option value="AL">Alagoas</option>
-                  <option value="AP">Amapá</option>
-                  <option value="AM">Amazonas</option>
-                  <option value="BA">Bahia</option>
-                  <option value="CE">Ceará</option>
-                  <option value="DF">Distrito Federal</option>
-                  <option value="ES">Espírito Santo</option>
-                  <option value="GO">Goiás</option>
-                  <option value="MA">Maranhão</option>
-                  <option value="MT">Mato Grosso</option>
-                  <option value="MS">Mato Grosso do Sul</option>
-                  <option value="MG">Minas Gerais</option>
-                  <option value="PA">Pará</option>
-                  <option value="PB">Paraíba</option>
-                  <option value="PR">Paraná</option>
-                  <option value="PE">Pernambuco</option>
-                  <option value="PI">Piauí</option>
-                  <option value="RJ">Rio de Janeiro</option>
-                  <option value="RN">Rio Grande do Norte</option>
-                  <option value="RS">Rio Grande do Sul</option>
-                  <option value="RO">Rondônia</option>
-                  <option value="RR">Roraima</option>
-                  <option value="SC">Santa Catarina</option>
-                  <option value="SP">São Paulo</option>
-                  <option value="SE">Sergipe</option>
-                  <option value="TO">Tocantins</option>
-                </select>
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-black transition"
+                  placeholder="UF"
+                  maxLength={2}
+                  required
+                />
               </div>
             </div>
           </div>
 
-          {/* Seleção de Serviços */}
-          <div className="mb-10">
-            <h2 className="text-2xl font-serif mb-6 pb-3 border-b border-gray-200">
-              Serviços Desejados *
-            </h2>
-            <p className="text-sm text-secondary mb-6">Selecione todos os serviços que você precisa:</p>
+          {/* Serviços */}
+          <div className="mb-12">
+            <h2 className="text-2xl font-serif mb-6">Serviços Desejados *</h2>
 
-            {Object.entries(SERVICE_CATEGORIES).map(([category, services]) => (
-              <div key={category} className="mb-8">
-                <h3 className="text-lg font-bold mb-4 text-black">{category}</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {services.map(service => (
-                    <label
-                      key={service}
-                      className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition transform hover:scale-[1.02] ${formData.selectedServices.includes(service)
-                        ? 'border-black bg-gray-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.selectedServices.includes(service)}
-                        onChange={() => handleServiceToggle(service)}
-                        className="w-5 h-5 text-black focus:ring-black focus:ring-2 rounded"
-                      />
-                      <span className="text-sm font-medium">{service}</span>
-                    </label>
-                  ))}
-                </div>
+            {loadingServices ? (
+              <div className="text-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-500">Carregando serviços...</p>
               </div>
-            ))}
+            ) : (
+              <div className="space-y-8">
+                {Object.entries(servicesByCategory).map(([category, categoryServices]) => (
+                  <div key={category}>
+                    <h3 className="font-bold text-lg mb-4 text-gray-700">{category}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {categoryServices.map(service => (
+                        <label
+                          key={service.id}
+                          className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition ${formData.selectedServices.includes(service.id)
+                              ? 'border-black bg-gray-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.selectedServices.includes(service.id)}
+                            onChange={() => handleServiceToggle(service.id)}
+                            className="w-5 h-5 text-black focus:ring-black rounded"
+                          />
+                          <span className="text-sm font-medium">{service.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Observações */}
-          <div className="mb-10">
-            <h2 className="text-2xl font-serif mb-6 pb-3 border-b border-gray-200">Observações</h2>
+          <div className="mb-8">
+            <h2 className="text-2xl font-serif mb-6">Observações</h2>
             <textarea
               value={formData.observations}
               onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-black transition resize-none"
               rows={5}
-              className="w-full border border-gray-300 p-4 rounded focus:outline-none focus:border-black transition resize-none"
               placeholder="Conte-nos mais sobre seu projeto, prazos, orçamento estimado ou qualquer detalhe relevante..."
             />
           </div>
 
-          {/* Submit Button */}
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <p className="text-sm text-secondary">
+          {/* Counter e Submit */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
+            <p className="text-sm text-gray-500">
               {formData.selectedServices.length} serviço(s) selecionado(s)
             </p>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full md:w-auto bg-black text-white px-12 py-4 rounded-full hover:bg-accent hover:text-black transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 duration-200"
+              className="w-full sm:w-auto bg-black text-white px-12 py-4 rounded-full font-bold text-sm hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Enviando...</span>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Enviando...
                 </>
               ) : (
-                <span className="font-bold uppercase tracking-wider">Solicitar Orçamento</span>
+                'SOLICITAR ORÇAMENTO'
               )}
             </button>
           </div>
