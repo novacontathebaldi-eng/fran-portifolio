@@ -10,6 +10,7 @@ export const ProjectDetails: React.FC = () => {
   const { id } = useParams();
   const { projects } = useProjects();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const project = projects.find(p => p.id === id);
 
@@ -86,6 +87,18 @@ export const ProjectDetails: React.FC = () => {
       document.body.style.overflow = 'unset';
     };
   }, [lightboxIndex]);
+
+  // Scroll detection for sticky title
+  useEffect(() => {
+    const handleScroll = () => {
+      // Hero section is approximately 60-75vh, trigger sticky after scrolling past it
+      const heroHeight = window.innerHeight * 0.65;
+      setIsScrolled(window.scrollY > heroHeight);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <div className="bg-white">
@@ -189,6 +202,23 @@ export const ProjectDetails: React.FC = () => {
           {/* Details Sidebar */}
           <div className="lg:w-1/4">
             <div className="lg:sticky lg:top-32 space-y-8 md:space-y-10 border-t border-black pt-8">
+              {/* Sticky Title - appears on scroll */}
+              <AnimatePresence>
+                {isScrolled && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="pb-6 mb-6 border-b border-gray-200"
+                  >
+                    <h2 className="text-2xl md:text-3xl font-serif text-black leading-tight">
+                      {project.title}
+                    </h2>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
