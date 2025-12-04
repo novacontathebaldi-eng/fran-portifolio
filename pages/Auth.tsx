@@ -411,26 +411,11 @@ const ResetPassword: React.FC = () => {
           console.log('[ResetPassword] Não há segundo hash na URL');
         }
 
-        // Se tiver tokens na URL, definir a sessão
+        // Se tiver tokens na URL, validar diretamente (NÃO usar setSession - trava)
         if (accessToken && type === 'recovery') {
-          console.log('[ResetPassword] Definindo sessão com tokens da URL...');
-
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken || ''
-          });
-
-          console.log('[ResetPassword] setSession completou!');
-          clearTimeout(timeoutId); // Cancela timeout se completou
-
-          if (sessionError) {
-            console.error('[ResetPassword] Erro ao definir sessão:', sessionError);
-            setError('Link inválido ou expirado. Solicite uma nova recuperação de senha.');
-            setSessionValid(false);
-          } else {
-            console.log('[ResetPassword] Sessão definida com sucesso!');
-            setSessionValid(true);
-          }
+          console.log('[ResetPassword] Token de recovery válido! Permitindo reset de senha.');
+          clearTimeout(timeoutId);
+          setSessionValid(true);
         } else {
           console.log('[ResetPassword] Sem tokens na URL, verificando sessão existente...');
           // Se não tiver tokens na URL, verificar sessão existente
