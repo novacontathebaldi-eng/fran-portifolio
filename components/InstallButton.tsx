@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Download, Smartphone } from 'lucide-react';
 import { isIOS, isAndroid, isStandalone, isMobile } from '../utils/deviceDetection';
 import IOSInstallModal from './IOSInstallModal';
+import DesktopInstallModal from './DesktopInstallModal';
 
 const InstallButton: React.FC = () => {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [showIOSModal, setShowIOSModal] = useState(false);
+    const [showDesktopModal, setShowDesktopModal] = useState(false);
     const [isInstallable, setIsInstallable] = useState(false);
 
     useEffect(() => {
@@ -50,8 +52,8 @@ const InstallButton: React.FC = () => {
             setDeferredPrompt(null);
             setIsInstallable(false);
         } else {
-            // Show instructions for manual installation
-            alert('Para instalar este app:\n\n1. Clique no ícone de instalação (📥) na barra de endereços\n   (ao lado do ícone de favoritos ⭐)\n2. Clique em "Instalar"\n\nO app será adicionado à sua área de trabalho!');
+            // Desktop - show visual instructions modal
+            setShowDesktopModal(true);
         }
     };
 
@@ -80,6 +82,11 @@ const InstallButton: React.FC = () => {
             <IOSInstallModal
                 isOpen={showIOSModal}
                 onClose={() => setShowIOSModal(false)}
+            />
+
+            <DesktopInstallModal
+                isOpen={showDesktopModal}
+                onClose={() => setShowDesktopModal(false)}
             />
         </>
     );
