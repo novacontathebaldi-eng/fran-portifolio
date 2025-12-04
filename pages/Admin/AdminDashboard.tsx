@@ -352,29 +352,10 @@ export const AdminDashboard: React.FC = () => {
       // History shows: Cancelled OR Past appointments
       return a.status === 'cancelled' || isPast(a.date);
     } else {
-      // Active shows: Future/Today AND Not Cancelled
-      return !isPast(a.date) && a.status !== 'cancelled';
-    }
-  });
-
-  // Handle Office Change
-  const handleOfficeChange = (field: keyof OfficeDetails, value: any) => {
-    setContentForm(prev => ({
-      ...prev,
-      office: {
-        ...prev.office,
-        [field]: value
-      }
-    }));
-  };
-
-  // --- Office Block Logic ---
-  const addOfficeBlock = (type: ContentBlock['type']) => {
-    const newBlock: ContentBlock = {
       id: Math.random().toString(36).substr(2, 9),
-      type,
-      content: '',
-      items: type === 'image-grid' ? ['', ''] : undefined,
+        type,
+        content: '',
+          items: type === 'image-grid' ? ['', ''] : undefined,
     };
     const currentBlocks = contentForm.office.blocks || [];
     handleOfficeChange('blocks', [...currentBlocks, newBlock]);
