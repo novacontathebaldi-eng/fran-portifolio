@@ -35,6 +35,12 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+    // Skip cross-origin requests and chrome-extension requests
+    const url = new URL(event.request.url);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then((response) => {
