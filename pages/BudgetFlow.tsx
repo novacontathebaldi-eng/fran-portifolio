@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useProjects } from '../context/ProjectContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, MapPin, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 interface Service {
@@ -24,6 +24,7 @@ interface FormData {
 
 export const BudgetFlow: React.FC = () => {
   const { showToast, currentUser } = useProjects();
+  const navigate = useNavigate();
 
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
@@ -87,6 +88,13 @@ export const BudgetFlow: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Verificar autenticação
+    if (!currentUser) {
+      showToast('Por favor, faça login para solicitar um orçamento.', 'error');
+      navigate('/login');
+      return;
+    }
 
     // Validação básica
     if (!formData.clientName || !formData.clientEmail || !formData.clientPhone) {
@@ -303,8 +311,8 @@ export const BudgetFlow: React.FC = () => {
                         <label
                           key={service.id}
                           className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition ${formData.selectedServices.includes(service.id)
-                              ? 'border-black bg-gray-50'
-                              : 'border-gray-200 hover:border-gray-300'
+                            ? 'border-black bg-gray-50'
+                            : 'border-gray-200 hover:border-gray-300'
                             }`}
                         >
                           <input
