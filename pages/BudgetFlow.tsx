@@ -92,7 +92,7 @@ export const BudgetFlow: React.FC = () => {
     // Verificar autenticação
     if (!currentUser) {
       showToast('Por favor, faça login para solicitar um orçamento.', 'error');
-      navigate('/login');
+      navigate('/auth');
       return;
     }
 
