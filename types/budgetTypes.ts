@@ -2,6 +2,8 @@
 // BUDGET SYSTEM TYPES - Sistema CRM de Orçamentos
 // ============================================================================
 
+import { FileText, RefreshCw, MessageSquare, Paperclip, Link, UserPlus, Info, LucideIcon } from 'lucide-react';
+
 export interface Service {
     id: string;
     category: string;
@@ -58,7 +60,7 @@ export interface BudgetNote {
 export interface BudgetHistoryEntry {
     id: string;
     budgetRequestId: string;
-    actionType: 'created' | 'status_changed' | 'note_added' | 'file_attached' | 'linked_to_client' | 'client_created' | 'other';
+    actionType: 'created' | 'status_changed' | 'note_added' | 'file_attached' | 'linked_to_client' | 'client_created' | 'revision_requested' | 'revision_approved' | 'revision_denied' | 'other';
     description: string;
     performedBy?: string;
     performedByName?: string;
@@ -85,12 +87,15 @@ export const BUDGET_STATUS_COLORS: Record<BudgetStatus, string> = {
     cancelled: 'bg-gray-100 text-gray-800'
 };
 
-export const ACTION_TYPE_ICONS: Record<BudgetHistoryEntry['actionType'], string> = {
-    created: '📝',
-    status_changed: '🔄',
-    note_added: '💬',
-    file_attached: '📎',
-    linked_to_client: '🔗',
-    client_created: '👤',
-    other: 'ℹ️'
+export const ACTION_TYPE_ICONS: Record<BudgetHistoryEntry['actionType'], LucideIcon> = {
+    created: FileText,
+    status_changed: RefreshCw,
+    note_added: MessageSquare,
+    file_attached: Paperclip,
+    linked_to_client: Link,
+    client_created: UserPlus,
+    revision_requested: MessageSquare,
+    revision_approved: FileText,
+    revision_denied: FileText,
+    other: Info
 };
