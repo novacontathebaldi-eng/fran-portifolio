@@ -3,6 +3,8 @@ import { useProjects } from '../context/ProjectContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, MapPin, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
+
 
 // Categorias de Serviços
 const SERVICE_CATEGORIES = {
@@ -114,19 +116,46 @@ export const BudgetFlow: React.FC = () => {
       // Scroll to top to show success message
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      // TODO: Implementar salvamento no banco via ProjectContext
-      // await createBudgetRequest({ ...formData, serviceIds: formData.selectedServices });
+      // 1. Criar o budget_request
+      const { data: budgetRequest, error: requestError } = await supabase
+        .from('budget_requests')
+        .insert({
+          client_id: currentUser?.id || null,
+          client_name: formData.name,
+          client_email: formData.email,
+          client_phone: formData.phone,
+          project_location_full: formData.projectLocationFull,
+          project_city: formData.projectCity,
+          project_state: formData.projectState,
+          observations: formData.observations || null,
+          status: 'pending'
+        })
+        .select()
+        .single();
 
-      // Simulação temporária
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (requestError) throw requestError;
+
+      // 2. Criar os budget_request_items (relação com serviços)
+      const items = formData.selectedServices.map(serviceId => ({
+        budget_request_id: budgetRequest.id,
+        service_id: serviceId
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('budget_request_items')
+        .insert(items);
+
+      if (itemsError) throw itemsError;
 
       setSubmitted(true);
       showToast('Solicitação enviada com sucesso! Entraremos em contato em breve.', 'success');
     } catch (error) {
+      console.error('Erro ao enviar solicitação:', error);
       showToast('Erro ao enviar solicitação. Tente novamente.', 'error');
     } finally {
       setIsSubmitting(false);
     }
+
   };
 
   if (submitted) {
