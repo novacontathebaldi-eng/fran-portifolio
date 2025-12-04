@@ -109,9 +109,9 @@ const DEFAULT_SCHEDULE_SETTINGS: ScheduleSettings = {
 
 const DEFAULT_SITE_CONTENT: SiteContent = {
   about: {
-    heroSubtitle: 'Quem Somos',
-    heroTitle: 'Arquitetura com alma e propósito.',
-    heroImage: 'https://picsum.photos/seed/architect_portrait/1920/1080',
+    heroSubtitle: 'Ateliê de Arquitetura',
+    heroTitle: 'Arquitetura que dialoga com o tempo, a memória e a paisagem',
+    heroImage: 'https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/fotoheroabout.png',
     profileImage: 'https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/378557752_597176842380637_7080388795805736658_n..jpg',
     bio: `Com mais de 15 anos de experiência no mercado de arquitetura de alto padrão, Fran Siller fundou seu escritório com uma premissa clara...`,
     stats: [
