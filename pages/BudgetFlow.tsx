@@ -121,9 +121,9 @@ export const BudgetFlow: React.FC = () => {
         .from('budget_requests')
         .insert({
           client_id: currentUser?.id || null,
-          client_name: formData.name,
-          client_email: formData.email,
-          client_phone: formData.phone,
+          client_name: formData.clientName,
+          client_email: formData.clientEmail,
+          client_phone: formData.clientPhone,
           project_location_full: formData.projectLocationFull,
           project_city: formData.projectCity,
           project_state: formData.projectState,
@@ -132,6 +132,7 @@ export const BudgetFlow: React.FC = () => {
         })
         .select()
         .single();
+
 
       if (requestError) throw requestError;
 
