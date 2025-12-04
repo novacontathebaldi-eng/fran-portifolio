@@ -138,6 +138,39 @@ export interface ServicePackage {
   features: string[];
 }
 
+// Budget System Types
+export interface Service {
+  id: string;
+  category: string;
+  name: string;
+  description?: string;
+  orderIndex: number;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface BudgetRequest {
+  id: string;
+  clientId?: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone: string;
+  projectLocationFull: string;
+  projectCity: string;
+  projectState: string;
+  observations?: string;
+  services: Service[];
+  status: 'pending' | 'analyzing' | 'quoted' | 'completed' | 'cancelled';
+  createdAt: string;
+}
+
+export interface BudgetRequestItem {
+  id: string;
+  budgetRequestId: string;
+  serviceId: string;
+  createdAt: string;
+}
+
 // Updated Interfaces for Dynamic Content
 export interface StatItem {
   id: string;
