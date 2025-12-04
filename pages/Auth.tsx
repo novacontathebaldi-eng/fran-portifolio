@@ -50,15 +50,15 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    
+
     try {
       const { user, error } = await login(email, password);
-      
+
       if (error) {
         setError(error.message);
       } else {
-         // Force redirect to profile with replace to clear history stack
-         navigate('/profile', { replace: true });
+        // Force redirect to profile with replace to clear history stack
+        navigate('/profile', { replace: true });
       }
     } catch (err) {
       setError('Ocorreu um erro inesperado.');
@@ -70,15 +70,13 @@ const Login: React.FC = () => {
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     setError('');
-    
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/#/profile`
-        }
+        provider: 'google'
+        // Note: redirectTo removed - Supabase will use configured callback URL
       });
-      
+
       if (error) {
         setError('Erro ao conectar com Google. Tente novamente.');
         setGoogleLoading(false);
@@ -99,7 +97,7 @@ const Login: React.FC = () => {
     <div className="max-w-md w-full mx-auto animate-fadeIn">
       <h2 className="text-3xl font-serif mb-2">Entrar</h2>
       <p className="text-secondary mb-8">Acesse o painel do seu projeto.</p>
-      
+
       {error && (
         <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm flex items-center gap-2 animate-fadeIn">
           <AlertCircle className="w-4 h-4" />
@@ -110,33 +108,33 @@ const Login: React.FC = () => {
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
           <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Email</label>
-          <input 
-            type="email" 
+          <input
+            type="email"
             value={email}
             onChange={(e) => handleInput(setEmail, e.target.value)}
-            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" 
-            placeholder="voce@exemplo.com.br" 
+            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
+            placeholder="voce@exemplo.com.br"
             required
           />
         </div>
         <div>
           <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Senha</label>
-          <input 
-            type="password" 
+          <input
+            type="password"
             value={password}
             onChange={(e) => handleInput(setPassword, e.target.value)}
-            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition" 
-            placeholder="••••••••" 
+            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
+            placeholder="••••••••"
             required
           />
         </div>
-        
+
         <div className="flex justify-end items-center text-sm">
           <Link to="/auth/recover" className="text-black underline">Esqueceu a senha?</Link>
         </div>
 
         <button disabled={loading} className="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-accent transition disabled:opacity-50 flex items-center justify-center">
-           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Entrar'}
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Entrar'}
         </button>
 
         <div className="relative my-6">
@@ -165,7 +163,7 @@ const Login: React.FC = () => {
           )}
         </button>
       </form>
-      
+
       <p className="mt-8 text-center text-sm text-gray-500">
         Não tem uma conta? <Link to="/auth/register" className="text-black font-bold">Cadastre-se</Link>
       </p>
@@ -225,7 +223,7 @@ const Register: React.FC = () => {
     <div className="max-w-md w-full mx-auto animate-fadeIn">
       <h2 className="text-3xl font-serif mb-2">Criar Conta</h2>
       <p className="text-secondary mb-8">Comece sua jornada com Fran Siller Arquitetura.</p>
-      
+
       {error && (
         <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm flex items-center gap-2 animate-fadeIn">
           <AlertCircle className="w-4 h-4" />
@@ -258,14 +256,14 @@ const Register: React.FC = () => {
         </div>
 
         <div className="text-xs text-gray-500">
-           Ao se registrar, você concorda com nossos <button type="button" className="underline">Termos de Serviço</button> e <button type="button" className="underline">Política de Privacidade</button>.
+          Ao se registrar, você concorda com nossos <button type="button" className="underline">Termos de Serviço</button> e <button type="button" className="underline">Política de Privacidade</button>.
         </div>
 
         <button disabled={loading} className="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-accent transition disabled:opacity-50 flex items-center justify-center">
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Criar Conta'}
         </button>
       </form>
-      
+
       <p className="mt-8 text-center text-sm text-gray-500">
         Já tem uma conta? <Link to="/auth/" className="text-black font-bold">Entrar</Link>
       </p>
@@ -291,7 +289,7 @@ const Recover: React.FC = () => {
     <div className="max-w-md w-full mx-auto animate-fadeIn">
       <h2 className="text-3xl font-serif mb-2">Recuperar Senha</h2>
       <p className="text-secondary mb-8">Digite seu email para receber instruções de recuperação.</p>
-      
+
       <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); setSent(true); }}>
         <div>
           <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Email</label>
@@ -299,7 +297,7 @@ const Recover: React.FC = () => {
         </div>
         <button className="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-accent transition">Enviar Instruções</button>
       </form>
-       <p className="mt-8 text-center text-sm">
+      <p className="mt-8 text-center text-sm">
         <Link to="/auth/" className="text-gray-500">Cancelar</Link>
       </p>
     </div>
