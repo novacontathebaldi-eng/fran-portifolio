@@ -111,6 +111,9 @@ export const BudgetFlow: React.FC = () => {
     setIsSubmitting(true);
 
     try {
+      // Scroll to top to show success message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
       // TODO: Implementar salvamento no banco via ProjectContext
       // await createBudgetRequest({ ...formData, serviceIds: formData.selectedServices });
 
@@ -119,21 +122,6 @@ export const BudgetFlow: React.FC = () => {
 
       setSubmitted(true);
       showToast('Solicitação enviada com sucesso! Entraremos em contato em breve.', 'success');
-
-      // Limpar formulário após 3 segundos
-      setTimeout(() => {
-        setFormData({
-          clientName: currentUser?.name || '',
-          clientEmail: currentUser?.email || '',
-          clientPhone: currentUser?.phone || '',
-          projectLocationFull: '',
-          projectCity: '',
-          projectState: '',
-          observations: '',
-          selectedServices: []
-        });
-        setSubmitted(false);
-      }, 3000);
     } catch (error) {
       showToast('Erro ao enviar solicitação. Tente novamente.', 'error');
     } finally {
@@ -327,8 +315,8 @@ export const BudgetFlow: React.FC = () => {
                     <label
                       key={service}
                       className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition transform hover:scale-[1.02] ${formData.selectedServices.includes(service)
-                          ? 'border-black bg-gray-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-black bg-gray-50'
+                        : 'border-gray-200 hover:border-gray-300'
                         }`}
                     >
                       <input
