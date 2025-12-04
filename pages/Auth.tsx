@@ -369,15 +369,38 @@ const ResetPassword: React.FC = () => {
   useEffect(() => {
     const verifySession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Primeiro, tentar processar tokens da URL (hash fragment)
+        const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
 
-        if (error || !session) {
-          setError('Link inválido ou expirado. Solicite uma nova recuperação de senha.');
-          setSessionValid(false);
+        // Se tiver tokens na URL, definir a sessão
+        if (accessToken && type === 'recovery') {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || ''
+          });
+
+          if (sessionError) {
+            setError('Link inválido ou expirado. Solicite uma nova recuperação de senha.');
+            setSessionValid(false);
+          } else {
+            setSessionValid(true);
+          }
         } else {
-          setSessionValid(true);
+          // Se não tiver tokens na URL, verificar sessão existente
+          const { data: { session }, error } = await supabase.auth.getSession();
+
+          if (error || !session) {
+            setError('Link inválido ou expirado. Solicite uma nova recuperação de senha.');
+            setSessionValid(false);
+          } else {
+            setSessionValid(true);
+          }
         }
       } catch (err) {
+        console.error('Erro ao verificar sessão:', err);
         setError('Erro ao verificar sessão. Tente novamente.');
         setSessionValid(false);
       } finally {
