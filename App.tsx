@@ -47,17 +47,17 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-white text-primary p-6 text-center animate-fadeIn">
           <div className="bg-gray-50 p-6 rounded-full mb-6">
-             <AlertCircle className="w-12 h-12 text-gray-400" />
+            <AlertCircle className="w-12 h-12 text-gray-400" />
           </div>
           <h2 className="text-3xl font-serif mb-4">Algo deu errado.</h2>
           <p className="text-gray-500 mb-8 max-w-md">
             Ocorreu um erro inesperado ao carregar a página. Isso pode ser uma instabilidade temporária.
           </p>
-          <button 
-            onClick={() => { 
-              this.setState({ hasError: false }); 
-              window.location.href = '/'; 
-            }} 
+          <button
+            onClick={() => {
+              this.setState({ hasError: false });
+              window.location.href = '/';
+            }}
             className="bg-black text-white px-8 py-3 rounded-full hover:bg-accent hover:text-black transition flex items-center space-x-2 shadow-lg"
           >
             <RefreshCw className="w-4 h-4" />
@@ -115,22 +115,22 @@ const GlobalToast = () => {
   return (
     <AnimatePresence>
       {toast.isVisible && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -50, x: '-50%' }}
           animate={{ opacity: 1, y: 0, x: '-50%' }}
           exit={{ opacity: 0, y: -50, x: '-50%' }}
           className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[200] flex items-center gap-3 px-6 py-4 rounded-full shadow-2xl backdrop-blur-md border border-white/20 min-w-[300px]"
           style={{
-            backgroundColor: toast.type === 'success' ? 'rgba(20, 20, 20, 0.95)' : 
-                            toast.type === 'error' ? 'rgba(153, 27, 27, 0.95)' : 'rgba(20, 20, 20, 0.95)'
+            backgroundColor: toast.type === 'success' ? 'rgba(20, 20, 20, 0.95)' :
+              toast.type === 'error' ? 'rgba(153, 27, 27, 0.95)' : 'rgba(20, 20, 20, 0.95)'
           }}
         >
           {toast.type === 'success' && <CheckCircle className="w-5 h-5 text-green-400" />}
           {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-red-400" />}
           {toast.type === 'info' && <Info className="w-5 h-5 text-blue-400" />}
-          
+
           <span className="text-white text-sm font-medium flex-grow">{toast.message}</span>
-          
+
           <button onClick={hideToast} className="text-white/50 hover:text-white transition">
             <X className="w-4 h-4" />
           </button>
@@ -185,18 +185,18 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/about" element={<Layout><About /></Layout>} />
         <Route path="/office" element={<Layout><Office /></Layout>} />
         <Route path="/contact" element={<Layout><Contact /></Layout>} />
-        
+
         {/* Auth Routes - NO LAYOUT/HEADER */}
         <Route path="/auth/*" element={<Auth />} />
 
         {/* Client Protected Routes */}
-        <Route 
-          path="/profile/*" 
+        <Route
+          path="/profile/*"
           element={
             <ProtectedRoute>
               <Layout><ClientArea /></Layout>
             </ProtectedRoute>
-          } 
+          }
         />
 
         {/* Shop/Budget Routes (Conditional) */}
@@ -208,46 +208,46 @@ const AnimatedRoutes: React.FC = () => {
         )}
 
         {/* Admin Routes */}
-        <Route 
-          path="/admin" 
+        <Route
+          path="/admin"
           element={
             <ProtectedRoute role="admin">
               <AdminDashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/project/new" 
+        <Route
+          path="/admin/project/new"
           element={
             <ProtectedRoute role="admin">
               <ProjectForm />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/project/edit/:id" 
+        <Route
+          path="/admin/project/edit/:id"
           element={
             <ProtectedRoute role="admin">
               <ProjectForm />
             </ProtectedRoute>
-          } 
+          }
         />
         {/* Cultural Admin Routes */}
-        <Route 
-          path="/admin/cultural/new" 
+        <Route
+          path="/admin/cultural/new"
           element={
             <ProtectedRoute role="admin">
               <CulturalProjectForm />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/cultural/edit/:id" 
+        <Route
+          path="/admin/cultural/edit/:id"
           element={
             <ProtectedRoute role="admin">
               <CulturalProjectForm />
             </ProtectedRoute>
-          } 
+          }
         />
 
         {/* Fallback */}
@@ -267,7 +267,12 @@ const App: React.FC = () => {
 
   return (
     <ProjectProvider>
-      <Router>
+      <Router
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <ErrorBoundary>
           <ScrollToTop />
           <GlobalToast />
