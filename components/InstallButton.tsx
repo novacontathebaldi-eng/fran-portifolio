@@ -65,15 +65,15 @@ const InstallButton: React.FC = () => {
         <>
             <button
                 onClick={handleInstallClick}
-                className="group flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full border border-white/20 transition-all duration-300 hover:scale-105"
+                className="group flex items-center justify-center gap-2 px-6 py-3 bg-accent hover:bg-accent/80 rounded-full transition-all duration-300 hover:scale-105 shadow-lg w-full md:w-auto"
                 aria-label="Instalar App"
             >
                 {isMobile() ? (
-                    <Smartphone className="w-4 h-4 text-white" />
+                    <Smartphone className="w-5 h-5 text-black" />
                 ) : (
-                    <Download className="w-4 h-4 text-white" />
+                    <Download className="w-5 h-5 text-black" />
                 )}
-                <span className="text-sm font-medium text-white hidden sm:inline">
+                <span className="text-sm font-bold text-black uppercase tracking-wide">
                     Instalar App
                 </span>
             </button>

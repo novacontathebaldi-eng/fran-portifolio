@@ -179,7 +179,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Desktop Icons */}
           <div className={`hidden md:flex items-center space-x-6 transition-colors duration-300 ${linkClasses}`}>
-            <InstallButton />
             <button onClick={() => setSearchOpen(true)} className="hover:scale-110 transition-transform"><Search className="w-5 h-5" /></button>
             <Link to={currentUser ? "/profile" : "/auth"} className="hover:scale-110 transition-transform"><User className="w-5 h-5" /></Link>
             {settings.enableShop && (
@@ -293,12 +292,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </ul>
             </div>
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-widest mb-8 text-accent">Newsletter</h4>
-              <p className="text-xs text-gray-500 mb-4">Receba atualizações e inspirações.</p>
-              <div className="flex border-b border-gray-600 pb-2">
-                <input type="email" placeholder="Seu email" className="bg-transparent w-full focus:outline-none text-sm text-white placeholder-gray-600" />
-                <button className="text-xs uppercase font-bold text-accent hover:text-white transition">Assinar</button>
-              </div>
+              <h4 className="text-xs font-bold uppercase tracking-widest mb-8 text-accent">Instalar App</h4>
+              <p className="text-xs text-gray-500 mb-4">Adicione à tela inicial do seu dispositivo.</p>
+              <InstallButton />
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
