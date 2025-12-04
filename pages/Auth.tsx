@@ -465,32 +465,40 @@ const ResetPassword: React.FC = () => {
     setLoading(true);
 
     try {
-      // Extrair token da URL e definir sessão antes de atualizar
       const hash = window.location.hash;
       const parts = hash.split('#');
 
+      let accessToken = null;
+
       if (parts.length > 2) {
         const tokenParams = new URLSearchParams(parts[2]);
-        const accessToken = tokenParams.get('access_token');
-        const refreshToken = tokenParams.get('refresh_token');
-
-        if (accessToken) {
-          console.log('[ResetPassword] Definindo sessão temporária para updateUser...');
-
-          // Definir sessão APENAS para este request
-          await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken || ''
-          });
-        }
+        accessToken = tokenParams.get('access_token');
       }
 
-      // Agora sim atualizar senha
-      const { error } = await supabase.auth.updateUser({ password });
+      if (!accessToken) {
+        setError('Token de recuperação não encontrado.');
+        return;
+      }
 
-      if (error) {
-        console.error('[ResetPassword] Erro ao atualizar senha:', error);
-        setError('Erro ao redefinir senha. Tente novamente.');
+      console.log('[ResetPassword] Atualizando senha com token via API...');
+
+      // Cham ada direta à API do Supabase (NÃO usar setSession - trava!)
+      const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'apikey': (import.meta as any).env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({ password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('[ResetPassword] Erro da API:', data);
+        setError('Erro ao redefinir senha. Verifique se o link ainda é válido.');
       } else {
         console.log('[ResetPassword] Senha atualizada com sucesso!');
         setSuccess(true);
