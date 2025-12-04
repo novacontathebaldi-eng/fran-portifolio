@@ -5,6 +5,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, LayoutDashboard } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
 import { Chatbot } from './Chatbot';
+import InstallButton from './InstallButton';
+
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,12 +17,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // State for Chatbot visibility controlled by Footer
   const [chatOpen, setChatOpen] = useState(false);
   const [hideChatButton, setHideChatButton] = useState(false);
   const footerRef = useRef<HTMLElement>(null);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, settings, siteContent } = useProjects();
@@ -81,11 +83,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Determine if the current page has a hero section that requires a transparent header
   const isOfficeWithHero = location.pathname === '/office' && siteContent?.office?.blocks?.[0]?.type === 'image-full';
-  
-  const isTransparentNavPage = 
-    location.pathname === '/' || 
-    location.pathname === '/about' || 
-    isOfficeWithHero || 
+
+  const isTransparentNavPage =
+    location.pathname === '/' ||
+    location.pathname === '/about' ||
+    isOfficeWithHero ||
     location.pathname.startsWith('/project/') ||
     location.pathname.startsWith('/cultural/'); // Assuming Cultural Details might want transparency too
 
@@ -94,22 +96,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   // 1. Scrolled: Compact (py-4), White/Blur, Shadow.
   // 2. Top + Transparent Page: Tall (py-8), Transparent Gradient, White Text.
   // 3. Top + Standard Page: Tall (py-8), White Background, Black Text.
-  
+
   const navClasses = isScrolled
-    ? 'bg-white/90 backdrop-blur-md shadow-sm py-4 text-primary' 
-    : isTransparentNavPage 
-      ? 'bg-gradient-to-b from-black/60 to-transparent py-8 text-white' 
+    ? 'bg-white/90 backdrop-blur-md shadow-sm py-4 text-primary'
+    : isTransparentNavPage
+      ? 'bg-gradient-to-b from-black/60 to-transparent py-8 text-white'
       : 'bg-white/95 py-8 text-primary';
 
   // Text color condition logic maintained for child elements
   const textColorCondition = isScrolled || !isTransparentNavPage;
 
-  const logoClasses = isMenuOpen 
-    ? 'text-primary' 
+  const logoClasses = isMenuOpen
+    ? 'text-primary'
     : textColorCondition ? 'text-primary' : 'text-white';
-    
+
   const linkClasses = textColorCondition
-    ? 'text-primary hover:text-accent' 
+    ? 'text-primary hover:text-accent'
     : 'text-white/90 hover:text-white';
 
   const iconClasses = isMenuOpen
@@ -127,15 +129,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
             <h2 className="text-2xl md:text-3xl font-serif mb-8 text-center text-gray-400">Buscar Projeto</h2>
-            <input 
+            <input
               autoFocus
-              type="text" 
-              placeholder="Digite..." 
+              type="text"
+              placeholder="Digite..."
               className="w-full text-4xl md:text-6xl font-serif text-center border-b-2 border-gray-100 py-4 md:py-8 focus:outline-none focus:border-black bg-transparent placeholder-gray-200"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            
+
             {showSuggestions && (
               <div className="mt-8 md:mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 animate-slideUp max-w-4xl mx-auto">
                 <div className="p-6 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition border border-gray-100">
@@ -151,7 +153,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Navigation Bar - Added transition-all duration-700 ease-in-out */}
       <nav className={`fixed w-full z-50 transition-all duration-700 ease-in-out ${isMenuOpen ? 'bg-transparent' : navClasses}`}>
         <div className="container mx-auto px-6 flex justify-between items-center relative">
-          
+
           {/* Logo */}
           <Link to="/" onClick={handleLinkClick} className={`text-xl md:text-2xl font-serif tracking-tight font-bold z-[60] relative uppercase transition-colors duration-300 pointer-events-auto ${logoClasses}`}>
             FRAN<span className="text-accent">.</span>
@@ -169,14 +171,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link to="/contact" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Contato</Link>
             {currentUser?.role === 'admin' && (
               <Link to="/admin" className="text-sm font-bold text-accent hover:text-white bg-black/80 px-3 py-1.5 rounded-full transition flex items-center space-x-1 backdrop-blur-sm">
-                 <LayoutDashboard className="w-3 h-3" />
-                 <span>Admin</span>
+                <LayoutDashboard className="w-3 h-3" />
+                <span>Admin</span>
               </Link>
             )}
           </div>
 
           {/* Desktop Icons */}
           <div className={`hidden md:flex items-center space-x-6 transition-colors duration-300 ${linkClasses}`}>
+            <InstallButton />
             <button onClick={() => setSearchOpen(true)} className="hover:scale-110 transition-transform"><Search className="w-5 h-5" /></button>
             <Link to={currentUser ? "/profile" : "/auth"} className="hover:scale-110 transition-transform"><User className="w-5 h-5" /></Link>
             {settings.enableShop && (
@@ -188,31 +191,28 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* Mobile Toggle Button (Animated X) */}
-          <button 
-            className={`md:hidden z-[60] relative w-12 h-12 flex items-center justify-center focus:outline-none transition-colors duration-300 pointer-events-auto ${isMenuOpen ? 'text-black' : iconClasses}`} 
+          <button
+            className={`md:hidden z-[60] relative w-12 h-12 flex items-center justify-center focus:outline-none transition-colors duration-300 pointer-events-auto ${isMenuOpen ? 'text-black' : iconClasses}`}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label={isMenuOpen ? "Fechar Menu" : "Abrir Menu"}
           >
             <div className="w-6 h-5 relative flex flex-col justify-between">
               {/* Top Line - Rotate to make one leg of X */}
-              <span 
-                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 ${
-                  isMenuOpen ? 'top-1/2 -translate-y-1/2 rotate-45' : 'top-0 rotate-0'
-                }`} 
+              <span
+                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 ${isMenuOpen ? 'top-1/2 -translate-y-1/2 rotate-45' : 'top-0 rotate-0'
+                  }`}
               />
-              
+
               {/* Middle Line - Fade out */}
-              <span 
-                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 top-1/2 -translate-y-1/2 ${
-                  isMenuOpen ? 'opacity-0' : 'opacity-100'
-                }`} 
+              <span
+                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 top-1/2 -translate-y-1/2 ${isMenuOpen ? 'opacity-0' : 'opacity-100'
+                  }`}
               />
-              
+
               {/* Bottom Line - Rotate to make other leg of X */}
-              <span 
-                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 ${
-                  isMenuOpen ? 'top-1/2 -translate-y-1/2 -rotate-45' : 'bottom-0 rotate-0'
-                }`} 
+              <span
+                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 ${isMenuOpen ? 'top-1/2 -translate-y-1/2 -rotate-45' : 'bottom-0 rotate-0'
+                  }`}
               />
             </div>
           </button>
@@ -234,7 +234,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Link to="/services" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Serviços</Link>
             )}
             <Link to="/contact" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Contato</Link>
-            
+
             <div className="pt-4 space-y-4">
               <Link to={currentUser ? "/profile" : "/auth"} onClick={handleLinkClick} className="flex items-center space-x-3 text-lg font-medium hover:text-accent transition">
                 <User className="w-5 h-5" />
@@ -255,7 +255,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
             </div>
           </div>
-          
+
           <div className="mt-8 text-xs text-gray-500 uppercase tracking-widest text-center">
             Fran Siller Arquitetura
           </div>
@@ -293,12 +293,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </ul>
             </div>
             <div>
-               <h4 className="text-xs font-bold uppercase tracking-widest mb-8 text-accent">Newsletter</h4>
-               <p className="text-xs text-gray-500 mb-4">Receba atualizações e inspirações.</p>
-               <div className="flex border-b border-gray-600 pb-2">
-                 <input type="email" placeholder="Seu email" className="bg-transparent w-full focus:outline-none text-sm text-white placeholder-gray-600" />
-                 <button className="text-xs uppercase font-bold text-accent hover:text-white transition">Assinar</button>
-               </div>
+              <h4 className="text-xs font-bold uppercase tracking-widest mb-8 text-accent">Newsletter</h4>
+              <p className="text-xs text-gray-500 mb-4">Receba atualizações e inspirações.</p>
+              <div className="flex border-b border-gray-600 pb-2">
+                <input type="email" placeholder="Seu email" className="bg-transparent w-full focus:outline-none text-sm text-white placeholder-gray-600" />
+                <button className="text-xs uppercase font-bold text-accent hover:text-white transition">Assinar</button>
+              </div>
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
