@@ -275,6 +275,24 @@ const App: React.FC = () => {
           });
       });
     }
+
+    // Console message
+    console.log(
+      '%c✨ Fran Siller Arquitetura ✨',
+      'font-size: 20px; font-weight: bold; color: #D4AF37; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);'
+    );
+    console.log(
+      '%cCriando espaços que inspiram, funcionam e perduram.',
+      'font-size: 12px; color: #666; font-style: italic;'
+    );
+    console.log(
+      '%c\n💼 Interessado em trabalhar conosco?\n📧 Entre em contato: https://fransiller.othebaldi.me/#/contact\n🌐 Portfólio: https://fransiller.othebaldi.me\n',
+      'font-size: 11px; color: #333; line-height: 1.8;'
+    );
+    console.log(
+      '%c🏛️ Desenvolvido com excelência por oTHEBALDI\n📧 Contato: suporte@othebaldi.me\n🌐 Site: https://othebaldi.me',
+      'font-size: 10px; color: #999;'
+    );
   }, []);
 
   if (loading) {
