@@ -11,6 +11,7 @@ export const CulturalDetails: React.FC = () => {
   const { culturalProjects } = useProjects();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
 
   const project = culturalProjects.find(p => p.id === id);
 
@@ -79,6 +80,18 @@ export const CulturalDetails: React.FC = () => {
       document.body.style.overflow = 'unset';
     };
   }, [lightboxIndex]);
+
+  // Screen size detection for sticky title (only on large screens)
+  useEffect(() => {
+    const checkScreenSize = () => {
+      // lg breakpoint in Tailwind is 1024px
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Scroll detection for sticky title
   useEffect(() => {
@@ -194,14 +207,19 @@ export const CulturalDetails: React.FC = () => {
           {/* Details Sidebar */}
           <div className="lg:w-1/4">
             <div className="lg:sticky lg:top-32 space-y-8 md:space-y-10 border-t border-black pt-8">
-              {/* Sticky Title - appears on scroll */}
+              {/* Sticky Title - appears on scroll (only on large screens) */}
               <AnimatePresence>
-                {isScrolled && (
+                {isScrolled && isLargeScreen && (
                   <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    initial={{ opacity: 0, y: -30, filter: "blur(10px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, y: -20, filter: "blur(8px)" }}
+                    transition={{
+                      duration: 0.8,
+                      ease: [0.25, 0.1, 0.25, 1],
+                      opacity: { duration: 0.6 },
+                      filter: { duration: 0.5 }
+                    }}
                     className="pb-6 mb-6 border-b border-gray-200"
                   >
                     <h2 className="text-2xl md:text-3xl font-serif text-black leading-tight">
