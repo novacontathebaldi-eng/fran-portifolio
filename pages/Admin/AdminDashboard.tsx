@@ -493,7 +493,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Sidebar */}
-            <aside className={`fixed md:relative z-40 w-64 h-screen bg-[#111] border-r border-gray-800 flex flex-col transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} pt-20 md:pt-0`}>
+            <aside className={`fixed md:relative z-40 w-64 min-h-screen bg-[#111] border-r border-gray-800 flex flex-col transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} pt-20 md:pt-0`}>
                 <div className="p-8 hidden md:block">
                     <h1 className="text-2xl font-serif font-bold tracking-wider">Fran Siller<span className="text-accent">.</span></h1>
                     <p className="text-xs text-gray-500 uppercase tracking-widest mt-2">Painel Administrativo</p>
