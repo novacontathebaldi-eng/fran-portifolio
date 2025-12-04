@@ -368,15 +368,17 @@ const ResetPassword: React.FC = () => {
   // Verificar se há uma sessão de recuperação válida
   useEffect(() => {
     const verifySession = async () => {
+      console.log('[ResetPassword] Iniciando verificação de sessão...');
+      console.log('[ResetPassword] URL completa:', window.location.href);
+      console.log('[ResetPassword] Hash:', window.location.hash);
+
       try {
         // window.location.hash = "#/auth/reset-password#access_token=...&type=recovery"
         // Precisamos pegar os parâmetros APÓS o segundo #
         const hash = window.location.hash;
         const parts = hash.split('#');
 
-        // parts[0] = ""
-        // parts[1] = "/auth/reset-password"
-        // parts[2] = "access_token=...&type=recovery&..."
+        console.log('[ResetPassword] Hash dividido em partes:', parts);
 
         let accessToken = null;
         let refreshToken = null;
@@ -384,29 +386,44 @@ const ResetPassword: React.FC = () => {
 
         if (parts.length > 2) {
           // Tem segundo hash - processar tokens
+          console.log('[ResetPassword] Encontrado segundo hash, parseando tokens...');
           const tokenParams = new URLSearchParams(parts[2]);
           accessToken = tokenParams.get('access_token');
           refreshToken = tokenParams.get('refresh_token');
           type = tokenParams.get('type');
+
+          console.log('[ResetPassword] Token extraído:', {
+            hasAccessToken: !!accessToken,
+            hasRefreshToken: !!refreshToken,
+            type
+          });
+        } else {
+          console.log('[ResetPassword] Não há segundo hash na URL');
         }
 
         // Se tiver tokens na URL, definir a sessão
         if (accessToken && type === 'recovery') {
+          console.log('[ResetPassword] Definindo sessão com tokens da URL...');
+
           const { error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken || ''
           });
 
           if (sessionError) {
-            console.error('Erro ao definir sessão:', sessionError);
+            console.error('[ResetPassword] Erro ao definir sessão:', sessionError);
             setError('Link inválido ou expirado. Solicite uma nova recuperação de senha.');
             setSessionValid(false);
           } else {
+            console.log('[ResetPassword] Sessão definida com sucesso!');
             setSessionValid(true);
           }
         } else {
+          console.log('[ResetPassword] Sem tokens na URL, verificando sessão existente...');
           // Se não tiver tokens na URL, verificar sessão existente
           const { data: { session }, error } = await supabase.auth.getSession();
+
+          console.log('[ResetPassword] Sessão existente:', { hasSession: !!session, error });
 
           if (error || !session) {
             setError('Link inválido ou expirado. Solicite uma nova recuperação de senha.');
@@ -416,10 +433,11 @@ const ResetPassword: React.FC = () => {
           }
         }
       } catch (err) {
-        console.error('Erro ao verificar sessão:', err);
+        console.error('[ResetPassword] Erro ao verificar sessão:', err);
         setError('Erro ao verificar sessão. Tente novamente.');
         setSessionValid(false);
       } finally {
+        console.log('[ResetPassword] Verificação concluída, setando verifying = false');
         setVerifying(false);
       }
     };
