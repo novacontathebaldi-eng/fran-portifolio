@@ -14,17 +14,13 @@ const InstallButton: React.FC = () => {
             return;
         }
 
-        // For iOS, always show the button (will open modal)
-        if (isIOS()) {
-            setIsInstallable(true);
-            return;
-        }
+        // Always show button (iOS, Android, PC)
+        setIsInstallable(true);
 
         // For Android/PC, listen for beforeinstallprompt event
         const handleBeforeInstallPrompt = (e: Event) => {
             e.preventDefault();
             setDeferredPrompt(e);
-            setIsInstallable(true);
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -53,6 +49,9 @@ const InstallButton: React.FC = () => {
 
             setDeferredPrompt(null);
             setIsInstallable(false);
+        } else {
+            // Show instructions for manual installation
+            alert('Para instalar este app:\n\n1. Clique no ícone de menu (⋮) no canto superior direito do navegador\n2. Selecione "Instalar app..." ou "Criar atalho..."\n3. Confirme a instalação\n\nO app será adicionado à sua área de trabalho!');
         }
     };
 
