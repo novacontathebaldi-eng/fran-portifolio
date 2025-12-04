@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
@@ -362,6 +362,31 @@ const ResetPassword: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [verifying, setVerifying] = useState(true);
+  const [sessionValid, setSessionValid] = useState(false);
+
+  // Verificar se há uma sessão de recuperação válida
+  useEffect(() => {
+    const verifySession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error || !session) {
+          setError('Link inválido ou expirado. Solicite uma nova recuperação de senha.');
+          setSessionValid(false);
+        } else {
+          setSessionValid(true);
+        }
+      } catch (err) {
+        setError('Erro ao verificar sessão. Tente novamente.');
+        setSessionValid(false);
+      } finally {
+        setVerifying(false);
+      }
+    };
+
+    verifySession();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -383,7 +408,7 @@ const ResetPassword: React.FC = () => {
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) {
-        setError('Erro ao redefinir senha. O link pode ter expirado.');
+        setError('Erro ao redefinir senha. Tente novamente.');
       } else {
         setSuccess(true);
         setTimeout(() => navigate('/auth'), 2000);
@@ -394,6 +419,16 @@ const ResetPassword: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Mostra loading enquanto verifica sessão
+  if (verifying) {
+    return (
+      <div className="max-w-md w-full mx-auto text-center animate-fadeIn">
+        <Loader2 className="w-12 h-12 animate-spin mx-auto mb-6 text-gray-400" />
+        <p className="text-secondary">Verificando link de recuperação...</p>
+      </div>
+    );
+  }
 
   if (success) {
     return (
@@ -419,43 +454,53 @@ const ResetPassword: React.FC = () => {
         </div>
       )}
 
-      <form className="space-y-6" onSubmit={handleSubmit}>
-        <div>
-          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Nova Senha</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              if (error) setError('');
-            }}
-            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
-            placeholder="••••••••"
-            required
-          />
+      {!sessionValid && (
+        <div className="mt-6 text-center">
+          <Link to="/auth/recover" className="text-black font-bold underline">
+            Solicitar Nova Recuperação
+          </Link>
         </div>
-        <div>
-          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Confirmar Senha</label>
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-              if (error) setError('');
-            }}
-            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
-            placeholder="••••••••"
-            required
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-accent transition disabled:opacity-50 flex items-center justify-center"
-        >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Redefinir Senha'}
-        </button>
-      </form>
+      )}
+
+      {sessionValid && (
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div>
+            <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Nova Senha</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (error) setError('');
+              }}
+              className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Confirmar Senha</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                if (error) setError('');
+              }}
+              className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-accent transition disabled:opacity-50 flex items-center justify-center"
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Redefinir Senha'}
+          </button>
+        </form>
+      )}
     </div>
   );
 };
