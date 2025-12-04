@@ -1,59 +1,80 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Calendar, ChevronDown, Eye, Archive, Download, FileText } from 'lucide-react';
-import { BudgetRequest, BudgetStatus, BUDGET_STATUS_LABELS, BUDGET_STATUS_COLORS } from '../../budgetTypes';
+import { Search, Calendar, ChevronDown, Eye, Archive, FileText, CheckSquare, Square } from 'lucide-react';
+import { BudgetRequest, BudgetStatus, BUDGET_STATUS_LABELS, BUDGET_STATUS_COLORS } from '../../types/budgetTypes';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { supabase } from '../../supabaseClient';
 
 interface BudgetRequestsDashboardProps {
     onViewDetails: (id: string) => void;
+    showToast?: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
-export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = ({ onViewDetails }) => {
-    // Mock data - será substituído por dados reais do Context
-    const [budgetRequests, setBudgetRequests] = useState<BudgetRequest[]>([
-        {
-            id: '1',
-            clientName: 'João Silva',
-            clientEmail: 'joao@email.com',
-            clientPhone: '(27) 99999-9999',
-            projectLocationFull: 'Rua Teste, 123, Bairro Centro',
-            projectCity: 'Vitória',
-            projectState: 'ES',
-            status: 'pending',
-            createdAt: new Date().toISOString(),
-        },
-        {
-            id: '2',
-            clientName: 'Maria Oliveira',
-            clientEmail: 'maria@email.com',
-            clientPhone: '(27) 98888-8888',
-            projectLocationFull: 'Av. Principal, 456, Jardim Camburi',
-            projectCity: 'Vitória',
-            projectState: 'ES',
-            status: 'analyzing',
-            createdAt: new Date(Date.now() - 86400000).toISOString(),
-        },
-    ]);
-
+export const BudgetRequestsDashboard: React.FC<Budget RequestsDashboardProps> = ({ onViewDetails, showToast }) => {
+    const [budgetRequests, setBudgetRequests] = useState<BudgetRequest[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<BudgetStatus | 'all'>('all');
     const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [showFilters, setShowFilters] = useState(false);
+    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+        'Hoje': true,
+        'Ontem': true,
+        'Últimos 7 dias': false,
+        'Mais antigos': false,
+    });
 
-    // Filtrar orçamentos
+    // Fetch real data from Supabase
+    useEffect(() => {
+        fetchBudgetRequests();
+    }, []);
+
+    const fetchBudgetRequests = async () => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('budget_requests')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            // Map snake_case to camelCase
+            const mapped: BudgetRequest[] = data.map(item => ({
+                id: item.id,
+                clientId: item.client_id,
+                clientName: item.client_name,
+                clientEmail: item.client_email,
+                clientPhone: item.client_phone,
+                projectLocationFull: item.project_location_full,
+                projectCity: item.project_city,
+                projectState: item.project_state,
+                observations: item.observations,
+                status: item.status,
+                createdAt: item.created_at,
+            }));
+
+            setBudgetRequests(mapped);
+        } catch (error) {
+            console.error('Erro ao carregar orçamentos:', error);
+            showToast?.('Erro ao carregar orçamentos', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Filter logic
     const filteredRequests = budgetRequests.filter(request => {
-        // Filtro de pesquisa
+        // Search
         const searchLower = searchTerm.toLowerCase();
         const matchesSearch =
             request.clientName.toLowerCase().includes(searchLower) ||
             request.clientEmail.toLowerCase().includes(searchLower) ||
             request.projectCity.toLowerCase().includes(searchLower);
 
-        // Filtro de status
+        // Status filter
         const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
 
-        // Filtro de data
+        // Date filter
         let matchesDate = true;
         if (dateFilter !== 'all') {
             const requestDate = new Date(request.createdAt);
@@ -72,7 +93,7 @@ export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = (
         return matchesSearch && matchesStatus && matchesDate;
     });
 
-    // Agrupar por data
+    // Group by date
     const groupedRequests = filteredRequests.reduce((groups, request) => {
         const date = new Date(request.createdAt);
         const today = new Date();
@@ -89,19 +110,10 @@ export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = (
             groupKey = 'Mais antigos';
         }
 
-        if (!groups[groupKey]) {
-            groups[groupKey] = [];
-        }
+        if (!groups[groupKey]) groups[groupKey] = [];
         groups[groupKey].push(request);
         return groups;
     }, {} as Record<string, BudgetRequest[]>);
-
-    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-        'Hoje': true,
-        'Ontem': true,
-        'Últimos 7 dias': false,
-        'Mais antigos': false,
-    });
 
     const toggleGroup = (group: string) => {
         setExpandedGroups(prev => ({ ...prev, [group]: !prev[group] }));
@@ -121,21 +133,36 @@ export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = (
         }
     };
 
-    const handleBulkAction = (action: 'analyzing' | 'archive') => {
+    const handleBulkStatusChange = async (newStatus: BudgetStatus) => {
         if (selectedIds.length === 0) return;
 
-        if (action === 'archive') {
-            if (confirm(`Arquivar ${selectedIds.length} solicitação(ões)?`)) {
-                // TODO: Implementar arquivamento
-                console.log('Arquivar:', selectedIds);
-                setSelectedIds([]);
-            }
-        } else {
-            // TODO: Implementar mudança de status em massa
-            console.log('Mudar status para', action, selectedIds);
+        try {
+            const { error } = await supabase
+                .from('budget_requests')
+                .update({ status: newStatus })
+                .in('id', selectedIds);
+
+            if (error) throw error;
+
+            showToast?.(`${selectedIds.length} orçamento(s) atualizado(s)`, 'success');
             setSelectedIds([]);
+            fetchBudgetRequests(); // Reload
+        } catch (error) {
+            console.error('Erro ao atualizar:', error);
+            showToast?.('Erro ao atualizar orçamentos', 'error');
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-500">Carregando orçamentos...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="animate-fadeIn">
@@ -153,20 +180,18 @@ export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = (
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
-                            className="flex gap-2"
+                            className="flex gap-2 flex-wrap"
                         >
                             <button
-                                onClick={() => handleBulkAction('analyzing')}
-                                className="bg-blue-50 text-blue-600 px-4 py-2 rounded-full font-bold text-xs hover:bg-blue-100 transition flex items-center gap-2"
+                                onClick={() => handleBulkStatusChange('analyzing')}
+                                className="bg-blue-50 text-blue-600 px-4 py-2 rounded-full font-bold text-xs hover:bg-blue-100 transition"
                             >
-                                <FileText className="w-3 h-3" />
                                 Marcar como Em Análise ({selectedIds.length})
                             </button>
                             <button
-                                onClick={() => handleBulkAction('archive')}
-                                className="bg-gray-50 text-gray-600 px-4 py-2 rounded-full font-bold text-xs hover:bg-gray-100 transition flex items-center gap-2"
+                                onClick={() => handleBulkStatusChange('cancelled')}
+                                className="bg-gray-50 text-gray-600 px-4 py-2 rounded-full font-bold text-xs hover:bg-gray-100 transition"
                             >
-                                <Archive className="w-3 h-3" />
                                 Arquivar ({selectedIds.length})
                             </button>
                         </motion.div>
@@ -272,12 +297,16 @@ export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = (
                                             className="p-4 hover:bg-gray-50 transition flex items-center gap-4"
                                         >
                                             {/* Checkbox */}
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedIds.includes(request.id)}
-                                                onChange={() => toggleSelect(request.id)}
-                                                className="w-4 h-4 rounded text-black focus:ring-black"
-                                            />
+                                            <button
+                                                onClick={() => toggleSelect(request.id)}
+                                                className="text-gray-400 hover:text-black"
+                                            >
+                                                {selectedIds.includes(request.id) ? (
+                                                    <CheckSquare className="w-5 h-5 text-black" />
+                                                ) : (
+                                                    <Square className="w-5 h-5" />
+                                                )}
+                                            </button>
 
                                             {/* Info */}
                                             <div className="flex-grow grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
@@ -285,8 +314,8 @@ export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = (
                                                     <h4 className="font-bold text-sm">{request.clientName}</h4>
                                                     <p className="text-xs text-gray-500">{request.clientEmail}</p>
                                                 </div>
-                                                <div className="text-sm text-gray-600">
-                                                    <Calendar className="w-3 h-3 inline mr-1" />
+                                                <div className="text-sm text-gray-600 flex items-center gap-1">
+                                                    <Calendar className="w-3 h-3" />
                                                     {new Date(request.createdAt).toLocaleDateString('pt-BR')}
                                                 </div>
                                                 <div className="text-sm text-gray-600">
@@ -302,7 +331,7 @@ export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = (
                                             {/* Actions */}
                                             <button
                                                 onClick={() => onViewDetails(request.id)}
-                                                className="bg-black text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-gray-800 transition flex items-center gap-1"
+                                                className="bg-black text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-gray-800 transition flex items-center gap-1 whitespace-nowrap"
                                             >
                                                 <Eye className="w-3 h-3" />
                                                 Ver Detalhes
@@ -317,7 +346,7 @@ export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = (
             </div>
 
             {/* Empty State */}
-            {filteredRequests.length === 0 && (
+            {filteredRequests.length === 0 && !loading && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
                     <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                     <h3 className="font-bold text-lg text-gray-600 mb-2">Nenhuma solicitação encontrada</h3>
