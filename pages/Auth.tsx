@@ -369,11 +369,26 @@ const ResetPassword: React.FC = () => {
   useEffect(() => {
     const verifySession = async () => {
       try {
-        // Primeiro, tentar processar tokens da URL (hash fragment)
-        const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-        const type = hashParams.get('type');
+        // window.location.hash = "#/auth/reset-password#access_token=...&type=recovery"
+        // Precisamos pegar os parâmetros APÓS o segundo #
+        const hash = window.location.hash;
+        const parts = hash.split('#');
+
+        // parts[0] = ""
+        // parts[1] = "/auth/reset-password"
+        // parts[2] = "access_token=...&type=recovery&..."
+
+        let accessToken = null;
+        let refreshToken = null;
+        let type = null;
+
+        if (parts.length > 2) {
+          // Tem segundo hash - processar tokens
+          const tokenParams = new URLSearchParams(parts[2]);
+          accessToken = tokenParams.get('access_token');
+          refreshToken = tokenParams.get('refresh_token');
+          type = tokenParams.get('type');
+        }
 
         // Se tiver tokens na URL, definir a sessão
         if (accessToken && type === 'recovery') {
@@ -383,6 +398,7 @@ const ResetPassword: React.FC = () => {
           });
 
           if (sessionError) {
+            console.error('Erro ao definir sessão:', sessionError);
             setError('Link inválido ou expirado. Solicite uma nova recuperação de senha.');
             setSessionValid(false);
           } else {
