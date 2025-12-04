@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { FcGoogle } from 'react-icons/fc';
 import { useProjects } from '../context/ProjectContext';
+import { supabase } from '../supabaseClient';
 
 export const Auth: React.FC = () => {
   return (
@@ -42,6 +44,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +64,29 @@ const Login: React.FC = () => {
       setError('Ocorreu um erro inesperado.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setError('');
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/#/profile`
+        }
+      });
+      
+      if (error) {
+        setError('Erro ao conectar com Google. Tente novamente.');
+        setGoogleLoading(false);
+      }
+      // Note: loading will persist during redirect
+    } catch (err) {
+      setError('Ocorreu um erro inesperado ao fazer login com Google.');
+      setGoogleLoading(false);
     }
   };
 
@@ -111,6 +137,32 @@ const Login: React.FC = () => {
 
         <button disabled={loading} className="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-accent transition disabled:opacity-50 flex items-center justify-center">
            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Entrar'}
+        </button>
+
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-white px-4 text-gray-500">ou</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={googleLoading || loading}
+          aria-label="Entrar com Google"
+          className="w-full border-2 border-black bg-white text-black py-4 rounded-full font-medium hover:bg-gray-50 transition disabled:opacity-50 flex items-center justify-center gap-3"
+        >
+          {googleLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <>
+              <FcGoogle className="w-5 h-5" />
+              <span>Continuar com Google</span>
+            </>
+          )}
         </button>
       </form>
       
