@@ -351,10 +351,10 @@ export const BudgetRequestDetail: React.FC<BudgetRequestDetailProps> = ({
                         value={request.status}
                         onChange={(e) => handleStatusChange(e.target.value)}
                         className={`px-4 py-2 rounded-full font-bold text-sm border-2 ${request.status === 'pending' ? 'border-yellow-300 bg-yellow-50' :
-                                request.status === 'analyzing' ? 'border-blue-300 bg-blue-50' :
-                                    request.status === 'quoted' ? 'border-purple-300 bg-purple-50' :
-                                        request.status === 'completed' ? 'border-green-300 bg-green-50' :
-                                            'border-gray-300 bg-gray-50'
+                            request.status === 'analyzing' ? 'border-blue-300 bg-blue-50' :
+                                request.status === 'quoted' ? 'border-purple-300 bg-purple-50' :
+                                    request.status === 'completed' ? 'border-green-300 bg-green-50' :
+                                        'border-gray-300 bg-gray-50'
                             }`}
                     >
                         <option value="pending">Pendente</option>
@@ -495,17 +495,23 @@ export const BudgetRequestDetail: React.FC<BudgetRequestDetailProps> = ({
                             Histórico
                         </h3>
                         <div className="space-y-4">
-                            {history.map(entry => (
-                                <div key={entry.id} className="flex gap-3">
-                                    <div className="text-lg">{ACTION_TYPE_ICONS[entry.actionType]}</div>
-                                    <div className="flex-grow">
-                                        <p className="text-sm font-medium">{entry.description}</p>
-                                        <p className="text-xs text-gray-500">
-                                            {entry.performedByName || 'Sistema'} • {new Date(entry.createdAt).toLocaleString('pt-BR')}
-                                        </p>
+                            {history.map(entry => {
+                                const IconComponent = ACTION_TYPE_ICONS[entry.actionType];
+                                return (
+                                    <div key={entry.id} className="flex gap-3">
+                                        <div className="text-gray-600">
+                                            <IconComponent className="w-5 h-5" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium">{entry.description}</p>
+                                            <p className="text-xs text-gray-400">
+                                                {new Date(entry.createdAt).toLocaleString('pt-BR')}
+                                                {entry.performedByName && ` • ${entry.performedByName}`}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                             {history.length === 0 && (
                                 <p className="text-gray-400 text-sm text-center py-4">Nenhum histórico</p>
                             )}
