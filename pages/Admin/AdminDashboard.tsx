@@ -1201,6 +1201,26 @@ export const AdminDashboard: React.FC = () => {
                                             placeholder="Olá {name}..."
                                         />
                                     </div>
+                                    <div className="pt-4 border-t mt-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label className="block text-xs font-bold uppercase text-gray-500">Atendimento Humano (Brevo)</label>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-xs font-bold ${settingsForm.chatbotConfig?.transferToHumanEnabled ? 'text-green-600' : 'text-gray-400'}`}>
+                                                    {settingsForm.chatbotConfig?.transferToHumanEnabled ? 'ATIVADO (ONLINE)' : 'DESATIVADO (OFFLINE)'}
+                                                </span>
+                                                <button
+                                                    onClick={() => handleSettingsChange('chatbotConfig.transferToHumanEnabled', !settingsForm.chatbotConfig?.transferToHumanEnabled)}
+                                                    className={`w-12 h-6 rounded-full transition-colors relative ${settingsForm.chatbotConfig?.transferToHumanEnabled ? 'bg-black' : 'bg-gray-200'}`}
+                                                >
+                                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${settingsForm.chatbotConfig?.transferToHumanEnabled ? 'left-7' : 'left-1'}`}></div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-gray-400">
+                                            Se ativado: IA aceita transferir para humano. <br />
+                                            Se desativado: IA informa indisponibilidade.
+                                        </p>
+                                    </div>
                                 </div>
                                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
                                     <div className="flex justify-between items-center border-b pb-2 mb-4">

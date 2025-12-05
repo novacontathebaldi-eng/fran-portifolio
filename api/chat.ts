@@ -296,6 +296,14 @@ export async function chatWithConcierge(
   - Se ONLINE: Pode transferir se o usuário solicitar ou se for crítico.`;
 
   let contents = [];
+  if (Array.isArray(message)) {
+    contents = message.map((msg: any) => ({
+      role: msg.role,
+      parts: [{ text: msg.text }]
+    }));
+  } else {
+    contents = [{ role: 'user', parts: [{ text: typeof message === 'string' ? message : '' }] }];
+  }
 
   try {
     const response = await ai.models.generateContent({
