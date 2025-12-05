@@ -82,6 +82,11 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
+    // Skip non-GET requests - Cache API only supports GET
+    if (request.method !== 'GET') {
+        return;
+    }
+
     // Skip non-HTTP requests (chrome-extension, etc.)
     if (!url.protocol.startsWith('http')) {
         return;
