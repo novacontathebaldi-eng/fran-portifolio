@@ -214,7 +214,7 @@ export const ClientArea: React.FC = () => {
         </div>
 
         {/* Barra de Abas - Estilo Portfólio Sticky */}
-        <div className="sticky top-20 md:top-16 z-40 bg-white/95 backdrop-blur-md border-y border-gray-100 mb-8 -mx-6 px-6 md:mx-0 md:px-0 shadow-sm w-[calc(100%+3rem)] md:w-full rounded-none transition-all duration-300">
+        <div className="sticky top-[80px] z-40 bg-white border-y border-gray-100 mb-8 -mx-6 px-6 md:mx-0 md:px-0 shadow-sm w-[calc(100%+3rem)] md:w-full">
           <nav className="flex items-center space-x-2 md:space-x-4 overflow-x-auto no-scrollbar py-3 md:py-4">
             <button onClick={() => setActiveTab('projects')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'projects' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
               <Package className="w-4 h-4" />

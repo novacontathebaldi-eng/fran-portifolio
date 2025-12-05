@@ -320,7 +320,7 @@ export const BudgetFlow: React.FC = () => {
                   <div key={category}>
                     <h3 className="font-bold text-lg mb-4 text-gray-700">{category}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {(categoryServices as Service[]).map(service => (
+                      {categoryServices.map(service => (
                         <label
                           key={service.id}
                           className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition ${formData.selectedServices.includes(service.id)

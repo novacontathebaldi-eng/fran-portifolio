@@ -418,7 +418,7 @@ export const BudgetRequestDetail: React.FC<BudgetRequestDetailProps> = ({
                             <div key={category} className="mb-4">
                                 <h4 className="font-bold text-sm text-gray-600 mb-2">{category}</h4>
                                 <div className="space-y-1">
-                                    {(categoryServices as Service[]).map(service => (
+                                    {categoryServices.map(service => (
                                         <div key={service.id} className="flex items-center gap-2 text-sm">
                                             <div className="w-1.5 h-1.5 bg-black rounded-full"></div>
                                             {service.name}

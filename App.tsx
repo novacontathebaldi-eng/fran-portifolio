@@ -1,29 +1,23 @@
-import React, { useState, useEffect, ReactNode, ErrorInfo, Suspense, Component } from 'react';
+import React, { useState, useEffect, ReactNode, ErrorInfo } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info, X, RefreshCw, Loader2 } from 'lucide-react';
 import { Layout } from './components/Layout';
-// Mantendo Home como import estático para LCP (Largest Contentful Paint) otimizado
 import { Home } from './pages/Home';
+import { Portfolio } from './pages/Portfolio';
+import { ProjectDetails } from './pages/ProjectDetails';
+import { Cultural } from './pages/Cultural';
+import { CulturalDetails } from './pages/CulturalDetails';
+import { About } from './pages/About';
+import { Office } from './pages/Office';
+import { Contact } from './pages/Contact';
+import { Auth } from './pages/Auth';
+import { ClientArea } from './pages/ClientArea';
+import { BudgetFlow } from './pages/BudgetFlow';
+import { AdminDashboard } from './pages/Admin/AdminDashboard';
+import { ProjectForm } from './pages/Admin/ProjectForm';
+import { CulturalProjectForm } from './pages/Admin/CulturalProjectForm';
 import { ProjectProvider, useProjects } from './context/ProjectContext';
-
-// --- Lazy Load de Páginas Secundárias ---
-// Usando adaptador para Named Exports: .then(module => ({ default: module.Componente }))
-const Portfolio = React.lazy(() => import('./pages/Portfolio').then(module => ({ default: module.Portfolio })));
-const ProjectDetails = React.lazy(() => import('./pages/ProjectDetails').then(module => ({ default: module.ProjectDetails })));
-const Cultural = React.lazy(() => import('./pages/Cultural').then(module => ({ default: module.Cultural })));
-const CulturalDetails = React.lazy(() => import('./pages/CulturalDetails').then(module => ({ default: module.CulturalDetails })));
-const About = React.lazy(() => import('./pages/About').then(module => ({ default: module.About })));
-const Office = React.lazy(() => import('./pages/Office').then(module => ({ default: module.Office })));
-const Contact = React.lazy(() => import('./pages/Contact').then(module => ({ default: module.Contact })));
-const Auth = React.lazy(() => import('./pages/Auth').then(module => ({ default: module.Auth })));
-const ClientArea = React.lazy(() => import('./pages/ClientArea').then(module => ({ default: module.ClientArea })));
-const BudgetFlow = React.lazy(() => import('./pages/BudgetFlow').then(module => ({ default: module.BudgetFlow })));
-
-// Admin Pages (Carregamento tardio crítico para segurança e performance)
-const AdminDashboard = React.lazy(() => import('./pages/Admin/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
-const ProjectForm = React.lazy(() => import('./pages/Admin/ProjectForm').then(module => ({ default: module.ProjectForm })));
-const CulturalProjectForm = React.lazy(() => import('./pages/Admin/CulturalProjectForm').then(module => ({ default: module.CulturalProjectForm })));
 
 // --- Error Boundary Component ---
 interface ErrorBoundaryProps {
@@ -34,8 +28,11 @@ interface ErrorBoundaryState {
   hasError: boolean;
 }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { hasError: false };
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
   static getDerivedStateFromError(_: Error): ErrorBoundaryState {
     return { hasError: true };
@@ -101,16 +98,6 @@ const Splash: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     </div>
   );
 };
-
-// Loading Fallback para Lazy Loading
-const LoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-white">
-    <div className="flex flex-col items-center">
-      <Loader2 className="w-8 h-8 animate-spin text-gray-300 mb-2" />
-      <span className="text-xs uppercase tracking-widest text-gray-400">Carregando...</span>
-    </div>
-  </div>
-);
 
 // ScrollToTop
 const ScrollToTop = () => {
@@ -188,87 +175,84 @@ const AnimatedRoutes: React.FC = () => {
 
   return (
     <AnimatePresence mode="wait">
-      {/* Suspense envolve as rotas para mostrar o loading enquanto baixa os chunks */}
-      <Suspense fallback={<LoadingFallback />}>
-        <Routes location={location} key={location.pathname}>
-          {/* Public Routes */}
-          <Route path="/" element={<Layout><Home /></Layout>} />
-          <Route path="/portfolio" element={<Layout><Portfolio /></Layout>} />
-          <Route path="/project/:id" element={<Layout><ProjectDetails /></Layout>} />
-          <Route path="/cultural" element={<Layout><Cultural /></Layout>} />
-          <Route path="/cultural/:id" element={<Layout><CulturalDetails /></Layout>} />
-          <Route path="/about" element={<Layout><About /></Layout>} />
-          <Route path="/office" element={<Layout><Office /></Layout>} />
-          <Route path="/contact" element={<Layout><Contact /></Layout>} />
+      <Routes location={location} key={location.pathname}>
+        {/* Public Routes */}
+        <Route path="/" element={<Layout><Home /></Layout>} />
+        <Route path="/portfolio" element={<Layout><Portfolio /></Layout>} />
+        <Route path="/project/:id" element={<Layout><ProjectDetails /></Layout>} />
+        <Route path="/cultural" element={<Layout><Cultural /></Layout>} />
+        <Route path="/cultural/:id" element={<Layout><CulturalDetails /></Layout>} />
+        <Route path="/about" element={<Layout><About /></Layout>} />
+        <Route path="/office" element={<Layout><Office /></Layout>} />
+        <Route path="/contact" element={<Layout><Contact /></Layout>} />
 
-          {/* Auth Routes - NO LAYOUT/HEADER */}
-          <Route path="/auth/*" element={<Auth />} />
+        {/* Auth Routes - NO LAYOUT/HEADER */}
+        <Route path="/auth/*" element={<Auth />} />
 
-          {/* Client Protected Routes */}
-          <Route
-            path="/profile/*"
-            element={
-              <ProtectedRoute>
-                <Layout><ClientArea /></Layout>
-              </ProtectedRoute>
-            }
-          />
+        {/* Client Protected Routes */}
+        <Route
+          path="/profile/*"
+          element={
+            <ProtectedRoute>
+              <Layout><ClientArea /></Layout>
+            </ProtectedRoute>
+          }
+        />
 
-          {/* Shop/Budget Routes (Conditional) */}
-          {settings.enableShop && (
-            <>
-              <Route path="/services" element={<Layout><BudgetFlow /></Layout>} />
-              <Route path="/budget" element={<Layout><BudgetFlow /></Layout>} />
-            </>
-          )}
+        {/* Shop/Budget Routes (Conditional) */}
+        {settings.enableShop && (
+          <>
+            <Route path="/services" element={<Layout><BudgetFlow /></Layout>} />
+            <Route path="/budget" element={<Layout><BudgetFlow /></Layout>} />
+          </>
+        )}
 
-          {/* Admin Routes */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute role="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/project/new"
-            element={
-              <ProtectedRoute role="admin">
-                <ProjectForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/project/edit/:id"
-            element={
-              <ProtectedRoute role="admin">
-                <ProjectForm />
-              </ProtectedRoute>
-            }
-          />
-          {/* Cultural Admin Routes */}
-          <Route
-            path="/admin/cultural/new"
-            element={
-              <ProtectedRoute role="admin">
-                <CulturalProjectForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/cultural/edit/:id"
-            element={
-              <ProtectedRoute role="admin">
-                <CulturalProjectForm />
-              </ProtectedRoute>
-            }
-          />
+        {/* Admin Routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/project/new"
+          element={
+            <ProtectedRoute role="admin">
+              <ProjectForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/project/edit/:id"
+          element={
+            <ProtectedRoute role="admin">
+              <ProjectForm />
+            </ProtectedRoute>
+          }
+        />
+        {/* Cultural Admin Routes */}
+        <Route
+          path="/admin/cultural/new"
+          element={
+            <ProtectedRoute role="admin">
+              <CulturalProjectForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/cultural/edit/:id"
+          element={
+            <ProtectedRoute role="admin">
+              <CulturalProjectForm />
+            </ProtectedRoute>
+          }
+        />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Suspense>
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
     </AnimatePresence>
   );
 };

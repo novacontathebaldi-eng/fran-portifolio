@@ -28,3 +28,6 @@ ARQUIVOS
 *.sw?
 *.sql
 debug-supabase.js
+
+# Arquivo .gitignore
+*.code-workspace
