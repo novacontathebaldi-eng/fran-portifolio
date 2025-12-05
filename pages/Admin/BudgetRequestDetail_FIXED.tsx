@@ -1,5 +1,5 @@
 // Quick fix patch: Replace lines 497-513 in BudgetRequestDetail.tsx with this code:
-
+/*
 <div className="space-y-4">
     {history.map(entry => {
         const IconComponent = ACTION_TYPE_ICONS[entry.actionType];
@@ -22,3 +22,5 @@
         <p className="text-gray-400 text-sm text-center py-4">Nenhum histórico</p>
     )}
 </div>
+*/
+export {};

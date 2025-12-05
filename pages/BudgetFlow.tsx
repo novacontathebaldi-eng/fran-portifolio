@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, MapPin, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { notifyNewBudgetRequest } from '../utils/emailService';
 
 interface Service {
   id: string;
@@ -149,6 +150,18 @@ export const BudgetFlow: React.FC = () => {
         .insert(items);
 
       if (itemsError) throw itemsError;
+
+      // 3. Enviar notificação por E-mail (Brevo)
+      // Resolvemos os nomes dos serviços para o e-mail
+      const serviceNames = services
+        .filter(s => formData.selectedServices.includes(s.id))
+        .map(s => s.name);
+
+      notifyNewBudgetRequest({
+        clientName: formData.clientName,
+        city: `${formData.projectCity}/${formData.projectState}`,
+        services: serviceNames
+      }).catch(err => console.error('[Brevo] Erro ao enviar email de orçamento:', err));
 
       setSubmitted(true);
       showToast('Solicitação enviada com sucesso! Entraremos em contato em breve.', 'success');

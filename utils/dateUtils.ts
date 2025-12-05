@@ -6,14 +6,14 @@
  * Without this, new Date("2025-12-08") would be interpreted as UTC midnight
  * which becomes the previous day in UTC-3 (Brazil)
  */
-export const parseDateLocal = (dateStr: string): Date =& gt; {
+export const parseDateLocal = (dateStr: string): Date => {
     return new Date(dateStr + 'T00:00:00');
 };
 
 /**
  * Format a Date object as YYYY-MM-DD using local timezone
  */
-export const formatDateLocal = (date: Date): string =& gt; {
+export const formatDateLocal = (date: Date): string => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -23,6 +23,6 @@ export const formatDateLocal = (date: Date): string =& gt; {
 /**
  * Format a date string for display in pt-BR locale
  */
-export const formatDateDisplay = (dateStr: string): string =& gt; {
+export const formatDateDisplay = (dateStr: string): string => {
     return parseDateLocal(dateStr).toLocaleDateString('pt-BR');
 };

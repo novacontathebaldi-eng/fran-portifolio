@@ -367,7 +367,7 @@ const ResetPassword: React.FC = () => {
 
   // Verificar se há uma sessão de recuperação válida
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const verifySession = async () => {
       console.log('[ResetPassword] Iniciando verificação de sessão...');

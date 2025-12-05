@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { User, ClientMemory, ChatMessage, OfficeDetails, Project, CulturalProject } from '../types';
+import { notifyNewChatbotNote } from '../utils/emailService';
 
 // Define tools for GenUI & Actions
 const tools = [
@@ -274,15 +275,27 @@ export async function chatWithConcierge(
           if (!responseData.text) responseData.text = "Aqui estão alguns projetos selecionados.";
         }
         else if (call.name === 'saveClientNote') {
+          const userName = call.args['name'] || (context.user ? context.user.name : 'Anônimo');
+          const userContact = call.args['contact'] || (context.user ? context.user.email : 'Não informado');
+          const noteMessage = call.args['message'];
+
           responseData.actions.push({
             type: 'saveNote',
             payload: {
-              userName: call.args['name'] || (context.user ? context.user.name : 'Anônimo'),
-              userContact: call.args['contact'] || (context.user ? context.user.email : 'Não informado'),
-              message: call.args['message'],
+              userName: userName,
+              userContact: userContact,
+              message: noteMessage,
               source: 'chatbot'
             }
           });
+
+          // Notificação de E-mail (Brevo) - Fire and forget
+          notifyNewChatbotNote({
+            userName: userName,
+            userContact: userContact,
+            message: noteMessage
+          }).catch(err => console.error('[Brevo] Erro chatbot note:', err));
+
           if (!responseData.text) responseData.text = "Recebido. Sua mensagem foi encaminhada.";
         }
         else if (call.name === 'autoNoteInterest') {

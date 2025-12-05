@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, ReactNode, useCallback, use
 import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address, CulturalProject, ChatSession } from '../types';
 import { chatWithConcierge } from '../api/chat';
 import { supabase } from '../supabaseClient';
+import { notifyNewAppointment } from '../utils/emailService';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -718,6 +719,15 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           setCurrentUser(prev => prev ? ({ ...prev, appointments: mappedUserAppts }) : null);
         }
       }
+
+      // Enviar e-mail de notificação (Brevo)
+      notifyNewAppointment({
+        clientName: appt.clientName,
+        date: appt.date,
+        time: appt.time,
+        type: appt.type
+      }).catch(err => console.error('[Brevo] Erro ao enviar email de agendamento:', err));
+
     } else {
       console.error("Error adding appointment:", error);
       showToast("Erro ao agendar compromisso.", "error");
