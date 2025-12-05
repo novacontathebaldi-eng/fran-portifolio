@@ -100,6 +100,11 @@ const tools = [
           },
           required: ['type']
         }
+      },
+      {
+        name: 'requestHumanAgent',
+        description: 'Transfers the conversation to a human support agent when the user explicitly requests it or when the AI cannot resolve the issue.',
+        parameters: { type: Type.OBJECT, properties: {} }
       }
     ]
   }
@@ -138,7 +143,14 @@ VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA.
 1. VISITA TÉCNICA (ir até a obra do cliente):
    - Usuário pede visita → Você TEM o endereço da obra?
    - NÃO: Pergunte o endereço (NÃO chame tool ainda)
+   - NÃO: Pergunte o endereço (NÃO chame tool ainda)
    - SIM: CHAME 'scheduleMeeting' com type='visit' e address='Endereço'
+
+## TRANSFERÊNCIA PARA HUMANO
+- Se o usuário pedir para falar com um atendente/humano/pessoa real:
+- CHAME IMEDIATAMENTE a função 'requestHumanAgent'.
+- Não tente convencer o usuário do contrário.
+- Responda: "Estou transferindo você para um de nossos especialistas."
 
 2. REUNIÃO (conversa/alinhamento):
    - Usuário pede reunião → Você sabe se é Online ou Presencial?
@@ -372,6 +384,13 @@ export async function chatWithConcierge(
           });
           if (!responseData.text) responseData.text = `Redirecionando para ${call.args['path']}...`;
         }
+        else if (call.name === 'requestHumanAgent') {
+          responseData.actions.push({
+            type: 'requestHuman',
+            payload: {}
+          });
+          responseData.text = "Estou transferindo você para um de nossos arquitetos especializados. Aguarde um momento...";
+        }
         else if (call.name === 'scheduleMeeting') {
           const widgetData = { ...call.args };
 
@@ -400,16 +419,18 @@ export async function chatWithConcierge(
       }
     }
 
-    // CRÍTICO: Garantir que SEMPRE há texto de resposta (fallback final)
-    if (!responseData.text || responseData.text.trim() === '') {
-      // Fallback inteligente baseado no contexto
-      if (responseData.uiComponent?.type === 'CalendarWidget') {
-        responseData.text = "Verifiquei nossa agenda. Por favor, selecione abaixo o melhor dia e horário para você.";
-      } else if (responseData.uiComponent?.type === 'SocialLinks') {
-        responseData.text = "Aqui estão nossos canais de contato direto:";
-      } else if (responseData.uiComponent?.type === 'ProjectCarousel') {
-        responseData.text = "Aqui estão alguns projetos selecionados para você:";
-      } else if (responseData.actions?.some((a: any) => a.type === 'saveNote')) {
+    // CRÍTICO: Override de Texto para Widgets de UI (Garante instrução correta e ignora "Entendido")
+    if (responseData.uiComponent?.type === 'CalendarWidget') {
+      responseData.text = "Verifiquei nossa agenda. Por favor, selecione abaixo o melhor dia e horário para você.";
+    } else if (responseData.uiComponent?.type === 'SocialLinks') {
+      responseData.text = "Aqui estão nossos canais de contato direto:";
+    } else if (responseData.uiComponent?.type === 'ProjectCarousel') {
+      responseData.text = "Aqui estão alguns projetos selecionados para você:";
+    }
+
+    // Fallback para mensagens vazias (casos sem UI widget específico)
+    else if (!responseData.text || responseData.text.trim() === '') {
+      if (responseData.actions?.some((a: any) => a.type === 'saveNote')) {
         responseData.text = "✓ Anotado! Sua mensagem foi encaminhada para nossa equipe e em breve entraremos em contato.";
       } else if (responseData.actions?.some((a: any) => a.type === 'learnMemory')) {
         responseData.text = "Entendido! Vou lembrar dessa informação para melhor atendê-lo.";

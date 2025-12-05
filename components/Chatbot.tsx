@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../context/ProjectContext';
 import { ChatMessage, Project } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
+import { loadBrevoConversations, openBrevoChat } from '../utils/brevoConversations';
+
 
 // --- Helper for Markdown ---
 const renderFormattedText = (text: string) => {
@@ -442,6 +444,14 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   // Safe display list avoiding crashes if array is undefined during transitions
   const displayMessages = (currentChatMessages && currentChatMessages.length > 0) ? currentChatMessages : defaultMessages;
 
+  // Load Brevo Script on Mount if ID is present
+  useEffect(() => {
+    const brevoId = import.meta.env.VITE_BREVO_CONVERSATIONS_APP_ID;
+    if (brevoId) {
+      loadBrevoConversations(brevoId);
+    }
+  }, []);
+
   useEffect(() => {
     if (isOpen && !showHistory && lastMessageRef.current) {
       setTimeout(() => {
@@ -476,9 +486,12 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
               showToast("Preferência registrada com sucesso!", "success");
             }
           }
+          else if (action.type === 'requestHuman') {
+            openBrevoChat();
+            showToast("Abrindo chat com especialista...", "info");
+          }
         }
       }
-
     } catch (err) {
       console.error(err);
     } finally {

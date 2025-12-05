@@ -326,7 +326,7 @@ export interface ChatMessage {
     data: any;
   };
   actions?: {
-    type: 'navigate' | 'saveNote' | 'scheduleMeeting';
+    type: 'navigate' | 'saveNote' | 'scheduleMeeting' | 'learnMemory' | 'requestHuman';
     payload: any;
   }[];
   feedback?: 'like' | 'dislike'; // UI State
