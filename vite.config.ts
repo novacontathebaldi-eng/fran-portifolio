@@ -22,6 +22,18 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+              'vendor-ui': ['framer-motion', 'lucide-react', 'react-icons'],
+              'vendor-db': ['@supabase/supabase-js', '@google/genai'],
+            }
+          }
+        },
+        chunkSizeWarningLimit: 1000 // Aumenta limite de aviso para 1MB (opcional, apenas para limpar console)
       }
     };
 });

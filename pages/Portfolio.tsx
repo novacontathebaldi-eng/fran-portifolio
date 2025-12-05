@@ -133,7 +133,7 @@ export const Portfolio: React.FC = () => {
                 >
                   Todos
                 </button>
-                {uniqueCategories.slice(0, 5).map(cat => (
+                {uniqueCategories.slice(0, 5).map((cat: string) => (
                   <button
                     key={cat}
                     onClick={() => toggleCategory(cat)}
