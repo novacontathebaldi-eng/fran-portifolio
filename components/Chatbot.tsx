@@ -5,6 +5,7 @@ import { useProjects } from '../context/ProjectContext';
 import { ChatMessage, Project } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
 import { loadBrevoConversations, openBrevoChat } from '../utils/brevoConversations';
+import ServiceRedirectWidget from './ServiceRedirectWidget';
 
 
 // --- Helper for Markdown ---
@@ -639,6 +640,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                       {msg.uiComponent?.type === 'SocialLinks' && <SocialLinks />}
                       {msg.uiComponent?.type === 'CalendarWidget' && <CalendarWidget data={msg.uiComponent.data} messageId={msg.id} closeChat={() => setIsOpen(false)} />}
                       {msg.uiComponent?.type === 'BookingSuccess' && <BookingSuccess data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} />}
+                      {msg.uiComponent?.type === 'ServiceRedirect' && <ServiceRedirectWidget data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} />}
                     </div>
 
                     {msg.role === 'model' && (

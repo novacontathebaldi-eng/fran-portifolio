@@ -239,13 +239,16 @@ export const AdminDashboard: React.FC = () => {
             const parts = field.split('.');
             if (parts.length === 2) {
                 const [parent, child] = parts;
-                setSettingsForm(prev => ({
-                    ...prev,
-                    [parent]: {
-                        ...(prev as any)[parent],
-                        [child]: value
-                    }
-                }));
+                setSettingsForm(prev => {
+                    const parentObj = (prev as any)[parent] || {};
+                    return {
+                        ...prev,
+                        [parent]: {
+                            ...parentObj,
+                            [child]: value
+                        }
+                    };
+                });
             }
         } else {
             setSettingsForm(prev => ({ ...prev, [field]: value }));

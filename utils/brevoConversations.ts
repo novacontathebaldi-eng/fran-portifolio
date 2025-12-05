@@ -1,14 +1,7 @@
 export const loadBrevoConversations = (conversationsId: string) => {
     if (window.BrevoConversations) return;
 
-    // Inject CSS to hide widget initially
-    const style = document.createElement('style');
-    style.id = 'brevo-hide-style';
-    style.innerHTML = `
-        #brevo-root { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
-        body.brevo-visible #brevo-root { display: block !important; opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; }
-    `;
-    document.head.appendChild(style);
+
 
     // @ts-ignore
     window.BrevoConversationsID = conversationsId;

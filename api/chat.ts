@@ -105,6 +105,11 @@ const tools = [
         name: 'requestHumanAgent',
         description: 'Transfers the conversation to a human support agent when the user explicitly requests it or when the AI cannot resolve the issue.',
         parameters: { type: Type.OBJECT, properties: {} }
+      },
+      {
+        name: 'showBudgetOptions',
+        description: 'Displays budget and service options to the user. Use when user asks for a quote, price, budget, or cost estimate.',
+        parameters: { type: Type.OBJECT, properties: {} }
       }
     ]
   }
@@ -135,7 +140,8 @@ VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA.
 
 3. **PROTOCOLO DE ORÇAMENTO**:
    - NUNCA forneça valores exatos sem autorização.
-   - Sempre direcione para a página de orçamento: [Solicitar Orçamento](/budget-flow)
+   - Sempre que o usuário pedir orçamento, preço ou valores: CHAME A TOOL 'showBudgetOptions'.
+   - Isso mostrará um cartão com link para a página de serviços.
    - Colete informações básicas: tipo de projeto, localização, metragem estimada.
 
 ## PROTOCOLO DE AGENDAMENTO (CRÍTICO - SIGA EXATAMENTE)
@@ -346,7 +352,6 @@ export async function chatWithConcierge(
             }
           });
 
-          // Notificação de E-mail (Brevo) - Fire and forget
           notifyNewChatbotNote({
             userName: userName,
             userContact: userContact,
@@ -375,9 +380,8 @@ export async function chatWithConcierge(
               type: 'system_detected'
             }
           });
-          // Ensure a response text exists - fallback if AI didn't provide one
           if (!responseData.text || responseData.text.trim() === '') {
-            responseData.text = "Entendido! Vou registrar essa preferência para melhor atendê-lo.";
+            responseData.text = "Entendido! Vou lembrar dessa informação para melhor atendê-lo.";
           }
         }
         else if (call.name === 'getSocialLinks') {
@@ -400,8 +404,6 @@ export async function chatWithConcierge(
         }
         else if (call.name === 'scheduleMeeting') {
           const widgetData = { ...call.args };
-
-          // Check Required Fields
           const isVisit = widgetData.type === 'visit';
           const hasAddress = isVisit ? (widgetData.address && widgetData.address.length > 5) : true;
           const isMeeting = widgetData.type === 'meeting';
@@ -409,24 +411,24 @@ export async function chatWithConcierge(
 
           if (isVisit && !hasAddress) {
             responseData.text = "Para agendar a visita técnica, preciso saber o endereço completo da obra.";
-            // No UI component implies asking again
           } else if (isMeeting && !hasModality) {
             responseData.text = "Para a reunião, você prefere que seja online ou presencial?";
-            // No UI component implies asking again
           } else {
-            // Success - Show Calendar
             if (widgetData.modality === 'online') {
               widgetData.location = 'Online (Google Meet)';
             }
-            // Always show widget to pick date, even if user hallucinated a date in text
             responseData.uiComponent = { type: 'CalendarWidget', data: widgetData };
             if (!responseData.text) responseData.text = "Verifiquei nossa agenda. Por favor, selecione abaixo o melhor dia e horário para você.";
           }
         }
+        else if (call.name === 'showBudgetOptions') {
+          responseData.uiComponent = { type: 'ServiceRedirect', data: {} };
+          if (!responseData.text) responseData.text = "Para orçamentos, veja nossas opções de serviços.";
+        }
       }
     }
 
-    // CRÍTICO: Override de Texto para Widgets de UI (Garante instrução correta e ignora "Entendido")
+    // Override de Texto para Widgets de UI
     if (responseData.uiComponent?.type === 'CalendarWidget') {
       responseData.text = "Verifiquei nossa agenda. Por favor, selecione abaixo o melhor dia e horário para você.";
     } else if (responseData.uiComponent?.type === 'SocialLinks') {
@@ -435,7 +437,7 @@ export async function chatWithConcierge(
       responseData.text = "Aqui estão alguns projetos selecionados para você:";
     }
 
-    // Fallback para mensagens vazias (casos sem UI widget específico)
+    // Fallback message logic
     else if (!responseData.text || responseData.text.trim() === '') {
       if (responseData.actions?.some((a: any) => a.type === 'saveNote')) {
         responseData.text = "✓ Anotado! Sua mensagem foi encaminhada para nossa equipe e em breve entraremos em contato.";
@@ -444,9 +446,9 @@ export async function chatWithConcierge(
       } else if (responseData.actions?.some((a: any) => a.type === 'navigate')) {
         const navAction = responseData.actions.find((a: any) => a.type === 'navigate');
         responseData.text = `Estou redirecionando você para ${navAction?.payload?.path || 'a página solicitada'}...`;
+      } else if (responseData.uiComponent?.type === 'ServiceRedirect') {
+        responseData.text = "Anotei seu interesse. Para um orçamento preciso, recomendo visualizar nossa página de serviços abaixo:";
       } else {
-        // Fallback genérico final - MUDANÇA: Evitar "Entendido"
-        // Se a IA não gerou texto e não tem ação, pede para reformular
         responseData.text = "Desculpe, não entendi completamente. Poderia reformular ou dar mais detalhes?";
       }
     }

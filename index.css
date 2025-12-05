@@ -114,3 +114,18 @@
     background: #bfa094;
   }
 }
+
+/* Brevo Widget Control - Hidden by default */
+#brevo-root {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.brevo-visible #brevo-root {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
