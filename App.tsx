@@ -277,10 +277,11 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // Register service worker for PWA with update detection
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', async () => {
+    const registerSW = async () => {
+      if ('serviceWorker' in navigator) {
         try {
           const registration = await navigator.serviceWorker.register('/service-worker.js');
+          console.log('[App] Service Worker registered successfully');
 
           // Check for updates periodically
           setInterval(() => {
@@ -302,15 +303,18 @@ const App: React.FC = () => {
         } catch (error) {
           console.error('[App] Service Worker registration failed:', error);
         }
-      });
 
-      // Listen for messages from Service Worker
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'SW_UPDATED') {
-          console.log('[App] Service Worker updated:', event.data.message);
-        }
-      });
-    }
+        // Listen for messages from Service Worker
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'SW_UPDATED') {
+            console.log('[App] Service Worker updated:', event.data.message);
+          }
+        });
+      }
+    };
+
+    // Register immediately - don't wait for load event (it already fired)
+    registerSW();
 
     // Console message
     console.log(
