@@ -187,9 +187,10 @@ const AnimatedRoutes: React.FC = () => {
   const { currentUser, settings } = useProjects();
 
   return (
-    <AnimatePresence mode="wait">
-      {/* Suspense envolve as rotas para mostrar o loading enquanto baixa os chunks */}
-      <Suspense fallback={<LoadingFallback />}>
+    // FIX: Invertemos a ordem. Suspense por fora garante que o carregamento ocorra antes
+    // da tentativa de animação, evitando o "congelamento" da rota antiga.
+    <Suspense fallback={<LoadingFallback />}>
+      <AnimatePresence mode="wait" initial={false}>
         <Routes location={location} key={location.pathname}>
           {/* Public Routes */}
           <Route path="/" element={<Layout><Home /></Layout>} />
@@ -268,8 +269,8 @@ const AnimatedRoutes: React.FC = () => {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
-      </Suspense>
-    </AnimatePresence>
+      </AnimatePresence>
+    </Suspense>
   );
 };
 

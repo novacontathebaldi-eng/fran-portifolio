@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fran-siller-v1';
+const CACHE_NAME = 'fran-siller-v2';
 const urlsToCache = [
     '/',
     '/index.html',
