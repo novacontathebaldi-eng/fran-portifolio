@@ -185,6 +185,25 @@ export interface PillarItem {
   icon?: string; // Optional icon identifier
 }
 
+// FAQ Item for Contact Page
+export interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+// Contact Message from Form Submissions
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+  status: 'unread' | 'read' | 'replied';
+  createdAt: string;
+}
+
 export interface OfficeDetails {
   // Address Info
   address: string; // Full string for display
@@ -203,6 +222,17 @@ export interface OfficeDetails {
   // Contact Info (New Global Settings)
   email: string;
   phone: string;
+
+  // Social Media Links
+  instagram?: string;        // Instagram profile URL
+  whatsapp?: string;         // WhatsApp number (international format, e.g., 5527996670426)
+  linkedin?: string;         // LinkedIn profile URL
+
+  // FAQ Section (Editable from Admin)
+  faqItems?: FaqItem[];
+
+  // Contact Form Subjects (Editable from Admin)
+  contactSubjects?: string[];
 
   // New Block System for Office Page
   blocks: ContentBlock[];

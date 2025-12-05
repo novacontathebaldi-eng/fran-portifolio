@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History } from 'lucide-react';
-import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory } from '../../types';
+import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory, FaqItem } from '../../types';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import { BudgetRequestsDashboard } from './BudgetRequestsDashboard';
@@ -982,6 +982,102 @@ export const AdminDashboard: React.FC = () => {
                                     <input value={contentForm.office.hoursDescription} onChange={e => handleOfficeChange('hoursDescription', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" />
                                 </div>
                             </div>
+
+                            {/* Social Links Section */}
+                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6 mt-8">
+                                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2"><LinkIcon className="w-5 h-5" /> Redes Sociais</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">Instagram URL</label>
+                                        <input value={contentForm.office.instagram || ''} onChange={e => handleOfficeChange('instagram', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://instagram.com/fransiller" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">WhatsApp (Número)</label>
+                                        <input value={contentForm.office.whatsapp || ''} onChange={e => handleOfficeChange('whatsapp', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="5527996670426" />
+                                        <p className="text-[10px] text-gray-400 mt-1">Formato internacional sem + ou espaços</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">LinkedIn URL</label>
+                                        <input value={contentForm.office.linkedin || ''} onChange={e => handleOfficeChange('linkedin', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://linkedin.com/in/fransiller" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Contact Form Subjects */}
+                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6 mt-8">
+                                <div className="flex justify-between items-center border-b pb-2">
+                                    <h3 className="font-bold text-lg flex items-center gap-2 text-black"><MessageSquare className="w-5 h-5" /> Assuntos do Formulário</h3>
+                                    <button onClick={() => {
+                                        const newSubjects = [...(contentForm.office.contactSubjects || ['Orçamento de Projeto', 'Dúvidas Gerais', 'Imprensa / Mídia', 'Parcerias']), 'Novo Assunto'];
+                                        handleOfficeChange('contactSubjects', newSubjects);
+                                    }} className="text-xs bg-black text-white px-3 py-1 rounded-full flex items-center gap-1 hover:bg-accent hover:text-black transition"><Plus className="w-3 h-3" /> Adicionar</button>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {(contentForm.office.contactSubjects || ['Orçamento de Projeto', 'Dúvidas Gerais', 'Imprensa / Mídia', 'Parcerias']).map((subject, idx) => (
+                                        <div key={idx} className="flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1 group">
+                                            <input
+                                                value={subject}
+                                                onChange={(e) => {
+                                                    const newSubjects = [...(contentForm.office.contactSubjects || ['Orçamento de Projeto', 'Dúvidas Gerais', 'Imprensa / Mídia', 'Parcerias'])];
+                                                    newSubjects[idx] = e.target.value;
+                                                    handleOfficeChange('contactSubjects', newSubjects);
+                                                }}
+                                                className="bg-transparent text-sm w-auto min-w-[100px] focus:outline-none"
+                                            />
+                                            <button onClick={() => {
+                                                const newSubjects = (contentForm.office.contactSubjects || []).filter((_, i) => i !== idx);
+                                                handleOfficeChange('contactSubjects', newSubjects);
+                                            }} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* FAQ Section */}
+                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6 mt-8">
+                                <div className="flex justify-between items-center border-b pb-2">
+                                    <h3 className="font-bold text-lg flex items-center gap-2 text-black"><Info className="w-5 h-5" /> FAQ - Perguntas Frequentes</h3>
+                                    <button onClick={() => {
+                                        const newFaq = { id: Date.now().toString(), question: 'Nova pergunta?', answer: 'Resposta...' };
+                                        const currentFaq = contentForm.office.faqItems || [];
+                                        handleOfficeChange('faqItems', [...currentFaq, newFaq]);
+                                    }} className="text-xs bg-black text-white px-3 py-1 rounded-full flex items-center gap-1 hover:bg-accent hover:text-black transition"><Plus className="w-3 h-3" /> Adicionar</button>
+                                </div>
+                                <div className="space-y-4">
+                                    {(contentForm.office.faqItems || []).length === 0 && (
+                                        <p className="text-center text-gray-400 py-8">Nenhuma FAQ cadastrada. Adicione perguntas frequentes para a página de contato.</p>
+                                    )}
+                                    {(contentForm.office.faqItems || []).map((faq, idx) => (
+                                        <div key={faq.id} className="p-4 bg-gray-50 rounded-xl relative group border border-gray-100">
+                                            <input
+                                                value={faq.question}
+                                                onChange={(e) => {
+                                                    const newFaq = [...(contentForm.office.faqItems || [])];
+                                                    newFaq[idx] = { ...newFaq[idx], question: e.target.value };
+                                                    handleOfficeChange('faqItems', newFaq);
+                                                }}
+                                                className="w-full font-bold text-lg bg-transparent focus:outline-none mb-2"
+                                                placeholder="Pergunta?"
+                                            />
+                                            <textarea
+                                                value={faq.answer}
+                                                onChange={(e) => {
+                                                    const newFaq = [...(contentForm.office.faqItems || [])];
+                                                    newFaq[idx] = { ...newFaq[idx], answer: e.target.value };
+                                                    handleOfficeChange('faqItems', newFaq);
+                                                }}
+                                                className="w-full text-sm text-gray-600 bg-transparent focus:outline-none h-20 resize-none"
+                                                placeholder="Resposta..."
+                                            />
+                                            <button onClick={() => {
+                                                const newFaq = (contentForm.office.faqItems || []).filter(f => f.id !== faq.id);
+                                                handleOfficeChange('faqItems', newFaq);
+                                            }} className="absolute top-2 right-2 p-1 text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><Trash2 className="w-4 h-4" /></button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
                             <div className="mt-8">
                                 <button onClick={saveSettings} disabled={saving} className="w-full bg-black text-white px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2 disabled:opacity-50">
                                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}

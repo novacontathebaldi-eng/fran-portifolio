@@ -197,3 +197,44 @@ export const notifyNewAppointment = async (data: { clientName: string; date: str
     tags: ['list_8', 'new_appointment']
   });
 };
+
+/**
+ * Notificar nova mensagem de contato (Fale Conosco)
+ */
+export const notifyNewContactMessage = async (data: {
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+}) => {
+  const html = getBaseTemplate(
+    'Nova Mensagem de Contato',
+    '#3B82F6', // Azul
+    `
+    <p>Alguém entrou em contato através do formulário "Fale Conosco".</p>
+    <div class="info-box">
+      <span class="label">Nome</span>
+      <span class="value">${data.name}</span>
+      
+      <span class="label">E-mail</span>
+      <span class="value"><a href="mailto:${data.email}" style="color: #3B82F6;">${data.email}</a></span>
+      
+      ${data.phone ? `<span class="label">Telefone</span><span class="value">${data.phone}</span>` : ''}
+      
+      <span class="label">Assunto</span>
+      <span class="value">${data.subject}</span>
+      
+      <span class="label">Mensagem</span>
+      <span class="value" style="white-space: pre-wrap;">${data.message}</span>
+    </div>
+    <p>Responda diretamente pelo e-mail do cliente ou acesse o painel para gerenciar mensagens.</p>
+    `
+  );
+
+  return sendBrevoEmail({
+    subject: `📬 Contato: ${data.subject} - ${data.name}`,
+    htmlContent: html,
+    tags: ['contact_form', 'fale_conosco']
+  });
+};
