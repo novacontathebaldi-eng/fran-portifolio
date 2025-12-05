@@ -551,7 +551,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       phone: updatedUser.phone,
       bio: updatedUser.bio,
       avatar: updatedUser.avatar,
-      addresses: updatedUser.addresses,
+      // addresses: updatedUser.addresses, // Removed as column does not exist in profiles table
       cpf: updatedUser.cpf,
       birth_date: updatedUser.birthDate,
       chats: updatedUser.chats
