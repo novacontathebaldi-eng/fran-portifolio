@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail } from 'lucide-react';
-import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory, FaqItem } from '../../types';
+import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory, FaqItem, SocialLink } from '../../types';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import { BudgetRequestsDashboard } from './BudgetRequestsDashboard';
@@ -1000,24 +1000,72 @@ export const AdminDashboard: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Social Links Section */}
+                            {/* Social Links Section - Dynamic */}
                             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6 mt-8">
-                                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2"><LinkIcon className="w-5 h-5" /> Redes Sociais</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">Instagram URL</label>
-                                        <input value={contentForm.office.instagram || ''} onChange={e => handleOfficeChange('instagram', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://instagram.com/fransiller" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">WhatsApp (Número)</label>
-                                        <input value={contentForm.office.whatsapp || ''} onChange={e => handleOfficeChange('whatsapp', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="5527996670426" />
-                                        <p className="text-[10px] text-gray-400 mt-1">Formato internacional sem + ou espaços</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">LinkedIn URL</label>
-                                        <input value={contentForm.office.linkedin || ''} onChange={e => handleOfficeChange('linkedin', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://linkedin.com/in/fransiller" />
-                                    </div>
+                                <div className="flex justify-between items-center border-b pb-2">
+                                    <h3 className="font-bold text-lg flex items-center gap-2 text-black"><LinkIcon className="w-5 h-5" /> Redes Sociais</h3>
+                                    <button onClick={() => {
+                                        const newLink: SocialLink = { id: Date.now().toString(), platform: 'instagram', url: '' };
+                                        const currentLinks = contentForm.office.socialLinks || [];
+                                        handleOfficeChange('socialLinks', [...currentLinks, newLink]);
+                                    }} className="text-xs bg-black text-white px-3 py-1 rounded-full flex items-center gap-1 hover:bg-accent hover:text-black transition"><Plus className="w-3 h-3" /> Adicionar Rede</button>
                                 </div>
+                                <div className="space-y-3">
+                                    {(contentForm.office.socialLinks || []).length === 0 && (
+                                        <p className="text-center text-gray-400 py-4">Nenhuma rede social cadastrada. Adicione suas redes sociais para aparecer na página de contato.</p>
+                                    )}
+                                    {(contentForm.office.socialLinks || []).map((social, idx) => (
+                                        <div key={social.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl group">
+                                            <select
+                                                value={social.platform}
+                                                onChange={(e) => {
+                                                    const newLinks = [...(contentForm.office.socialLinks || [])];
+                                                    newLinks[idx] = { ...newLinks[idx], platform: e.target.value as SocialLink['platform'] };
+                                                    handleOfficeChange('socialLinks', newLinks);
+                                                }}
+                                                className="border rounded p-2 text-sm bg-white min-w-[130px]"
+                                            >
+                                                <option value="instagram">Instagram</option>
+                                                <option value="linkedin">LinkedIn</option>
+                                                <option value="facebook">Facebook</option>
+                                                <option value="youtube">YouTube</option>
+                                                <option value="twitter">Twitter/X</option>
+                                                <option value="tiktok">TikTok</option>
+                                                <option value="pinterest">Pinterest</option>
+                                                <option value="whatsapp">WhatsApp</option>
+                                                <option value="telegram">Telegram</option>
+                                                <option value="other">Outro</option>
+                                            </select>
+                                            <input
+                                                value={social.url}
+                                                onChange={(e) => {
+                                                    const newLinks = [...(contentForm.office.socialLinks || [])];
+                                                    newLinks[idx] = { ...newLinks[idx], url: e.target.value };
+                                                    handleOfficeChange('socialLinks', newLinks);
+                                                }}
+                                                className="flex-grow border p-2 rounded bg-white text-sm"
+                                                placeholder={social.platform === 'whatsapp' ? '5527999999999' : 'https://...'}
+                                            />
+                                            {social.platform === 'other' && (
+                                                <input
+                                                    value={social.label || ''}
+                                                    onChange={(e) => {
+                                                        const newLinks = [...(contentForm.office.socialLinks || [])];
+                                                        newLinks[idx] = { ...newLinks[idx], label: e.target.value };
+                                                        handleOfficeChange('socialLinks', newLinks);
+                                                    }}
+                                                    className="w-28 border p-2 rounded bg-white text-sm"
+                                                    placeholder="Nome"
+                                                />
+                                            )}
+                                            <button onClick={() => {
+                                                const newLinks = (contentForm.office.socialLinks || []).filter(s => s.id !== social.id);
+                                                handleOfficeChange('socialLinks', newLinks);
+                                            }} className="p-2 text-gray-400 hover:text-red-500 transition"><Trash2 className="w-4 h-4" /></button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-gray-400">As redes sociais serão exibidas automaticamente na página de contato após salvar.</p>
                             </div>
 
                             {/* Contact Form Subjects */}

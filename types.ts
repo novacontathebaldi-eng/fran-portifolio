@@ -204,6 +204,14 @@ export interface ContactMessage {
   createdAt: string;
 }
 
+// Dynamic Social Link - Stored in database
+export interface SocialLink {
+  id: string;
+  platform: 'instagram' | 'facebook' | 'linkedin' | 'twitter' | 'youtube' | 'tiktok' | 'pinterest' | 'whatsapp' | 'telegram' | 'other';
+  url: string;
+  label?: string; // Optional custom label for 'other' type
+}
+
 export interface OfficeDetails {
   // Address Info
   address: string; // Full string for display
@@ -223,10 +231,13 @@ export interface OfficeDetails {
   email: string;
   phone: string;
 
-  // Social Media Links
-  instagram?: string;        // Instagram profile URL
-  whatsapp?: string;         // WhatsApp number (international format, e.g., 5527996670426)
-  linkedin?: string;         // LinkedIn profile URL
+  // Social Media Links - Dynamic array stored in database
+  socialLinks?: SocialLink[];
+
+  // Legacy fields (deprecated - use socialLinks instead)
+  instagram?: string;
+  whatsapp?: string;
+  linkedin?: string;
 
   // FAQ Section (Editable from Admin)
   faqItems?: FaqItem[];

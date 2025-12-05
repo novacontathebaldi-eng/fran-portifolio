@@ -97,17 +97,49 @@ export const Contact: React.FC = () => {
     return `https://${trimmed}`;
   };
 
-  // WhatsApp link generator
+  // WhatsApp link generator - from socialLinks or fallback to phone
   const getWhatsAppLink = () => {
-    const number = office.whatsapp || office.phone?.replace(/\D/g, '') || '';
+    // First try to find WhatsApp in socialLinks
+    const whatsappLink = office.socialLinks?.find(s => s.platform === 'whatsapp');
+    const number = whatsappLink?.url || office.whatsapp || office.phone?.replace(/\D/g, '') || '';
     const cleanNumber = number.replace(/\D/g, '');
     const message = encodeURIComponent('Olá! Vim pelo site e gostaria de mais informações.');
     return `https://wa.me/${cleanNumber}?text=${message}`;
   };
 
-  // Normalized social URLs
-  const instagramUrl = normalizeUrl(office.instagram);
-  const linkedinUrl = normalizeUrl(office.linkedin);
+  // Get icon component for platform
+  const getSocialIcon = (platform: string) => {
+    switch (platform) {
+      case 'instagram': return <Instagram className="w-5 h-5" />;
+      case 'linkedin': return <Linkedin className="w-5 h-5" />;
+      case 'whatsapp': return <MessageCircle className="w-5 h-5" />;
+      case 'facebook': return <span className="w-5 h-5 font-bold text-sm">f</span>;
+      case 'youtube': return <span className="w-5 h-5 text-xs">▶</span>;
+      case 'twitter': return <span className="w-5 h-5 font-bold text-sm">𝕏</span>;
+      case 'tiktok': return <span className="w-5 h-5 font-bold text-sm">♪</span>;
+      case 'telegram': return <Send className="w-5 h-5" />;
+      default: return <ExternalLink className="w-5 h-5" />;
+    }
+  };
+
+  // Get hover class for platform
+  const getSocialHoverClass = (platform: string) => {
+    switch (platform) {
+      case 'instagram': return 'hover:bg-gradient-to-tr hover:from-purple-500 hover:via-pink-500 hover:to-orange-400 hover:text-white hover:border-transparent';
+      case 'linkedin': return 'hover:bg-blue-600 hover:text-white hover:border-transparent';
+      case 'whatsapp': return 'hover:bg-green-500 hover:text-white hover:border-transparent';
+      case 'facebook': return 'hover:bg-blue-700 hover:text-white hover:border-transparent';
+      case 'youtube': return 'hover:bg-red-600 hover:text-white hover:border-transparent';
+      case 'twitter': return 'hover:bg-black hover:text-white hover:border-transparent';
+      case 'tiktok': return 'hover:bg-black hover:text-white hover:border-transparent';
+      case 'telegram': return 'hover:bg-sky-500 hover:text-white hover:border-transparent';
+      default: return 'hover:bg-gray-800 hover:text-white hover:border-transparent';
+    }
+  };
+
+  // Get social links from database or use default WhatsApp with phone
+  const socialLinks = office.socialLinks || [];
+  const hasWhatsApp = socialLinks.some(s => s.platform === 'whatsapp');
 
   return (
     <div className="min-h-screen pt-44 pb-24">
@@ -198,40 +230,37 @@ export const Contact: React.FC = () => {
               </a>
             </div>
 
-            {/* Social Links */}
-            <div className="pt-8 border-t border-gray-100">
-              <h3 className="font-bold text-sm uppercase tracking-wide mb-4">Siga-nos</h3>
-              <div className="flex space-x-3">
-                {instagramUrl && (
+            {/* Social Links - Dynamic from Database */}
+            {(socialLinks.length > 0 || office.phone) && (
+              <div className="pt-8 border-t border-gray-100">
+                <h3 className="font-bold text-sm uppercase tracking-wide mb-4">Siga-nos</h3>
+                <div className="flex flex-wrap gap-3">
+                  {/* Render all social links from database */}
+                  {socialLinks.filter(link => link.platform !== 'whatsapp').map((link) => (
+                    <a
+                      key={link.id}
+                      href={normalizeUrl(link.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={link.label || link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
+                      className={`p-3 border border-gray-200 rounded-full transition-all active:scale-95 ${getSocialHoverClass(link.platform)}`}
+                    >
+                      {getSocialIcon(link.platform)}
+                    </a>
+                  ))}
+                  {/* WhatsApp button - always show if in socialLinks or has phone */}
                   <a
-                    href={instagramUrl}
+                    href={getWhatsAppLink()}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-3 border border-gray-200 rounded-full hover:bg-gradient-to-tr hover:from-purple-500 hover:via-pink-500 hover:to-orange-400 hover:text-white hover:border-transparent transition-all active:scale-95"
+                    title="WhatsApp"
+                    className="p-3 border border-gray-200 rounded-full hover:bg-green-500 hover:text-white hover:border-transparent transition-all active:scale-95"
                   >
-                    <Instagram className="w-5 h-5" />
+                    <MessageCircle className="w-5 h-5" />
                   </a>
-                )}
-                {linkedinUrl && (
-                  <a
-                    href={linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-3 border border-gray-200 rounded-full hover:bg-blue-600 hover:text-white hover:border-transparent transition-all active:scale-95"
-                  >
-                    <Linkedin className="w-5 h-5" />
-                  </a>
-                )}
-                <a
-                  href={getWhatsAppLink()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-3 border border-gray-200 rounded-full hover:bg-green-500 hover:text-white hover:border-transparent transition-all active:scale-95"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                </a>
+                </div>
               </div>
-            </div>
+            )}
           </motion.div>
 
           {/* Form Side */}

@@ -141,10 +141,8 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     email: 'contato@fransiller.com.br',
     phone: '+55 (27) 99667-0426',
     blocks: [],
-    // Social links
-    instagram: '',
-    whatsapp: '',
-    linkedin: '',
+    // Dynamic social links array - stored in database
+    socialLinks: [],
     // Contact page config
     faqItems: [],
     contactSubjects: ['Orçamento de Projeto', 'Dúvidas Gerais', 'Imprensa / Mídia', 'Parcerias']
