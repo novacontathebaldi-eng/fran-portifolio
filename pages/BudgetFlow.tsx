@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, MapPin, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { notifyNewBudgetRequest } from '../src/utils/emailService';
 
 interface Service {
   id: string;
@@ -150,25 +149,6 @@ export const BudgetFlow: React.FC = () => {
         .insert(items);
 
       if (itemsError) throw itemsError;
-
-      // Send email notification to admin (Lista 7)
-      notifyNewBudgetRequest({
-        clientName: formData.clientName,
-        clientEmail: formData.clientEmail,
-        services: formData.selectedServices.map(id => {
-          const service = services.find(s => s.id === id);
-          return service?.name || 'Serviço não encontrado';
-        }),
-        projectDescription: formData.observations || 'Não informada',
-        date: new Date().toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        })
-      }).catch(error => {
-        console.error('[Brevo] Erro ao enviar email de orçamento:', error);
-        // Não interrompe o fluxo se o e-mail falhar
-      });
 
       setSubmitted(true);
       showToast('Solicitação enviada com sucesso! Entraremos em contato em breve.', 'success');
