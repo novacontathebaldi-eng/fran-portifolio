@@ -140,7 +140,14 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     hoursDescription: 'Segunda a Sexta, 09h às 17h',
     email: 'contato@fransiller.com.br',
     phone: '+55 (27) 99667-0426',
-    blocks: []
+    blocks: [],
+    // Social links
+    instagram: '',
+    whatsapp: '',
+    linkedin: '',
+    // Contact page config
+    faqItems: [],
+    contactSubjects: ['Orçamento de Projeto', 'Dúvidas Gerais', 'Imprensa / Mídia', 'Parcerias']
   }
 };
 

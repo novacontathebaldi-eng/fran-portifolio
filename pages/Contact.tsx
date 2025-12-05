@@ -87,6 +87,16 @@ export const Contact: React.FC = () => {
     setSubmitted(false);
   };
 
+  // Helper to ensure URL has protocol
+  const normalizeUrl = (url: string | undefined): string => {
+    if (!url || url.trim() === '') return '';
+    const trimmed = url.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    return `https://${trimmed}`;
+  };
+
   // WhatsApp link generator
   const getWhatsAppLink = () => {
     const number = office.whatsapp || office.phone?.replace(/\D/g, '') || '';
@@ -94,6 +104,10 @@ export const Contact: React.FC = () => {
     const message = encodeURIComponent('Olá! Vim pelo site e gostaria de mais informações.');
     return `https://wa.me/${cleanNumber}?text=${message}`;
   };
+
+  // Normalized social URLs
+  const instagramUrl = normalizeUrl(office.instagram);
+  const linkedinUrl = normalizeUrl(office.linkedin);
 
   return (
     <div className="min-h-screen pt-44 pb-24">
@@ -188,9 +202,9 @@ export const Contact: React.FC = () => {
             <div className="pt-8 border-t border-gray-100">
               <h3 className="font-bold text-sm uppercase tracking-wide mb-4">Siga-nos</h3>
               <div className="flex space-x-3">
-                {office.instagram && (
+                {instagramUrl && (
                   <a
-                    href={office.instagram}
+                    href={instagramUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-3 border border-gray-200 rounded-full hover:bg-gradient-to-tr hover:from-purple-500 hover:via-pink-500 hover:to-orange-400 hover:text-white hover:border-transparent transition-all active:scale-95"
@@ -198,9 +212,9 @@ export const Contact: React.FC = () => {
                     <Instagram className="w-5 h-5" />
                   </a>
                 )}
-                {office.linkedin && (
+                {linkedinUrl && (
                   <a
-                    href={office.linkedin}
+                    href={linkedinUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-3 border border-gray-200 rounded-full hover:bg-blue-600 hover:text-white hover:border-transparent transition-all active:scale-95"

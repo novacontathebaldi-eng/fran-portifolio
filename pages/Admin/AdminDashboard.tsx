@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History } from 'lucide-react';
+import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail } from 'lucide-react';
 import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory, FaqItem } from '../../types';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
@@ -35,7 +35,23 @@ export const AdminDashboard: React.FC = () => {
     const navigate = useNavigate();
 
     // TABS: Added 'cultural'
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'clients' | 'agenda' | 'office' | 'budgets'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'contact-messages' | 'clients' | 'agenda' | 'office' | 'budgets'>('dashboard');
+
+    // Contact Messages State
+    const [contactMessages, setContactMessages] = useState<any[]>([]);
+    const [loadingContactMessages, setLoadingContactMessages] = useState(false);
+
+    // Fetch Contact Messages when tab is active
+    useEffect(() => {
+        if (activeTab === 'contact-messages') {
+            setLoadingContactMessages(true);
+            supabase.from('contact_messages').select('*').order('created_at', { ascending: false })
+                .then(({ data }) => {
+                    setContactMessages(data || []);
+                    setLoadingContactMessages(false);
+                });
+        }
+    }, [activeTab]);
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [selectedBudgetRequestId, setSelectedBudgetRequestId] = useState<string | null>(null);
@@ -508,6 +524,7 @@ export const AdminDashboard: React.FC = () => {
                     <NavItem id="ai-config" icon={Brain} label="Inteligência Artificial" />
                     <NavItem id="budgets" icon={Receipt} label="Orçamentos" />
                     <NavItem id="messages" icon={MessageSquare} label="Recados" count={unreadNotesCount} />
+                    <NavItem id="contact-messages" icon={Mail} label="Contatos" />
                     <NavItem id="office" icon={MapPin} label="Escritório (Site)" />
                     <NavItem id="content" icon={FileText} label="Conteúdo Site" />
                     <NavItem id="settings" icon={Settings} label="Configurações" />
@@ -1317,6 +1334,106 @@ export const AdminDashboard: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'contact-messages' && (
+                        <div className="animate-fadeIn">
+                            <div className="flex justify-between items-center mb-8">
+                                <h2 className="text-3xl font-serif font-bold text-black">Mensagens de Contato</h2>
+                                <button
+                                    onClick={() => {
+                                        setLoadingContactMessages(true);
+                                        supabase.from('contact_messages').select('*').order('created_at', { ascending: false })
+                                            .then(({ data }) => {
+                                                setContactMessages(data || []);
+                                                setLoadingContactMessages(false);
+                                            });
+                                    }}
+                                    className="bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-xs font-bold hover:bg-gray-200 transition flex items-center gap-2"
+                                >
+                                    <RefreshCw className={`w-4 h-4 ${loadingContactMessages ? 'animate-spin' : ''}`} />
+                                    Atualizar
+                                </button>
+                            </div>
+
+                            {loadingContactMessages ? (
+                                <div className="flex justify-center py-20">
+                                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                                </div>
+                            ) : contactMessages.length === 0 ? (
+                                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                                    <Mail className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                                    <p className="text-gray-400">Nenhuma mensagem recebida ainda.</p>
+                                    <p className="text-sm text-gray-300 mt-2">Mensagens enviadas pelo formulário de contato aparecerão aqui.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {contactMessages.map((msg) => (
+                                        <div key={msg.id} className={`bg-white rounded-xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition ${msg.status === 'unread' ? 'border-l-4 border-l-blue-500' : ''}`}>
+                                            <div className="flex flex-col md:flex-row justify-between gap-4">
+                                                <div className="flex-grow">
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <span className="font-bold text-lg">{msg.name}</span>
+                                                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${msg.status === 'unread' ? 'bg-blue-100 text-blue-700' : msg.status === 'read' ? 'bg-gray-100 text-gray-500' : 'bg-green-100 text-green-700'}`}>
+                                                            {msg.status === 'unread' ? 'Nova' : msg.status === 'read' ? 'Lida' : 'Respondida'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-3">
+                                                        <a href={`mailto:${msg.email}`} className="hover:text-blue-600 flex items-center gap-1">
+                                                            <Mail className="w-3 h-3" /> {msg.email}
+                                                        </a>
+                                                        {msg.phone && <span className="flex items-center gap-1">📞 {msg.phone}</span>}
+                                                    </div>
+                                                    <div className="bg-gray-50 p-3 rounded-lg mb-3">
+                                                        <span className="text-xs font-bold uppercase text-gray-400 block mb-1">Assunto: {msg.subject}</span>
+                                                        <p className="text-gray-700 whitespace-pre-wrap">{msg.message}</p>
+                                                    </div>
+                                                    <span className="text-xs text-gray-400">{new Date(msg.created_at).toLocaleString('pt-BR')}</span>
+                                                </div>
+                                                <div className="flex md:flex-col gap-2 justify-end">
+                                                    {msg.status === 'unread' && (
+                                                        <button
+                                                            onClick={async () => {
+                                                                await supabase.from('contact_messages').update({ status: 'read' }).eq('id', msg.id);
+                                                                setContactMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'read' } : m));
+                                                            }}
+                                                            className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition"
+                                                            title="Marcar como lida"
+                                                        >
+                                                            <Check className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                    <a
+                                                        href={`mailto:${msg.email}?subject=Re: ${msg.subject}`}
+                                                        onClick={async () => {
+                                                            await supabase.from('contact_messages').update({ status: 'replied' }).eq('id', msg.id);
+                                                            setContactMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'replied' } : m));
+                                                        }}
+                                                        className="p-2 bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition"
+                                                        title="Responder por e-mail"
+                                                    >
+                                                        <Mail className="w-4 h-4" />
+                                                    </a>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (confirm('Excluir esta mensagem permanentemente?')) {
+                                                                await supabase.from('contact_messages').delete().eq('id', msg.id);
+                                                                setContactMessages(prev => prev.filter(m => m.id !== msg.id));
+                                                                showToast('Mensagem excluída.', 'info');
+                                                            }
+                                                        }}
+                                                        className="p-2 bg-gray-100 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-500 transition"
+                                                        title="Excluir"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
