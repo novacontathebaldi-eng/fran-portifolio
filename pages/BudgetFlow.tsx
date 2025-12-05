@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, MapPin, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { notifyNewBudgetRequest } from '../utils/emailService';
+import { notifyNewBudgetRequest } from '../src/utils/emailService';
 
 interface Service {
   id: string;

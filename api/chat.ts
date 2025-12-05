@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { User, ClientMemory, ChatMessage, OfficeDetails, Project, CulturalProject } from '../types';
-import { notifyNewChatbotNote } from '../utils/emailService';
+import { notifyNewChatbotNote } from '../src/utils/emailService';
 
 // Define tools for GenUI & Actions
 const tools = [
