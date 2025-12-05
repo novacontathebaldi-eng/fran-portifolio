@@ -18,7 +18,7 @@ export const Portfolio: React.FC = () => {
 
   // 1. Extract Unique Categories & Years dynamically
   const uniqueCategories = Array.from(new Set(projects.map(p => p.category).filter((c): c is string => !!c))).sort();
-  const uniqueYears = Array.from(new Set(projects.map(p => p.year).filter((y): y is number => !!y))).sort((a, b) => b - a);
+  const uniqueYears = Array.from(new Set(projects.map(p => p.year).filter((y): y is number => !!y))).sort((a: number, b: number) => b - a);
 
   // 2. Filter Logic
   const filteredProjects = projects.filter(p => {
@@ -187,7 +187,7 @@ export const Portfolio: React.FC = () => {
                   <div>
                     <h4 className="font-bold text-sm mb-3">Categoria</h4>
                     <div className="space-y-2 text-sm text-secondary max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                      {uniqueCategories.map(cat => (
+                      {uniqueCategories.map((cat: string) => (
                         <label key={cat} className="flex items-center space-x-2 cursor-pointer hover:text-black transition">
                           <input
                             type="checkbox"
@@ -203,7 +203,7 @@ export const Portfolio: React.FC = () => {
                   <div>
                     <h4 className="font-bold text-sm mb-3">Ano</h4>
                     <div className="space-y-2 text-sm text-secondary max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                      {uniqueYears.map(year => (
+                      {uniqueYears.map((year: number) => (
                         <label key={year} className="flex items-center space-x-2 cursor-pointer hover:text-black transition">
                           <input
                             type="checkbox"

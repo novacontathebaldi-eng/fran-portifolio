@@ -278,7 +278,7 @@ export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = (
                                         }`}
                                 />
                                 <span className="font-bold text-sm uppercase text-gray-600">{groupName}</span>
-                                <span className="text-xs text-gray-400">({requests.length})</span>
+                                <span className="text-xs text-gray-400">({(requests as BudgetRequest[]).length})</span>
                             </div>
                         </button>
 
@@ -291,7 +291,7 @@ export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = (
                                     exit={{ height: 0, opacity: 0 }}
                                     className="divide-y divide-gray-100"
                                 >
-                                    {requests.map(request => (
+                                    {(requests as BudgetRequest[]).map(request => (
                                         <div
                                             key={request.id}
                                             className="p-4 hover:bg-gray-50 transition flex items-center gap-4"
