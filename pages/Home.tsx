@@ -67,7 +67,7 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Featured Scroll */}
-      <section className="py-20 md:py-32 bg-white">
+      <section className="pt-20 pb-8 md:pt-32 md:pb-12 bg-white">
         <div className="container mx-auto px-6 mb-12 md:mb-16 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
