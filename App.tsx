@@ -281,7 +281,6 @@ const App: React.FC = () => {
       if ('serviceWorker' in navigator) {
         try {
           const registration = await navigator.serviceWorker.register('/service-worker.js');
-          console.log('[App] Service Worker registered successfully');
 
           // Check for updates periodically
           setInterval(() => {
@@ -294,21 +293,18 @@ const App: React.FC = () => {
             if (newWorker) {
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New content available, show refresh prompt
-                  console.log('[App] New content available, refresh to update');
+                  // New content available - could show refresh prompt to user
                 }
               });
             }
           });
-        } catch (error) {
-          console.error('[App] Service Worker registration failed:', error);
+        } catch {
+          // SW registration failed silently
         }
 
         // Listen for messages from Service Worker
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.type === 'SW_UPDATED') {
-            console.log('[App] Service Worker updated:', event.data.message);
-          }
+        navigator.serviceWorker.addEventListener('message', () => {
+          // Handle SW messages silently
         });
       }
     };

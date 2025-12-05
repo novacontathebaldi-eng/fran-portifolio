@@ -22,20 +22,18 @@ const SUPABASE_STORAGE_PATTERN = 'pycvlkcxgfwsquzolkzw.supabase.co/storage';
 // INSTALL EVENT - Pre-cache essential static assets
 // ====================================================================
 self.addEventListener('install', (event) => {
-    console.log('[SW] Installing Service Worker...');
 
     event.waitUntil(
         caches.open(CACHE_STATIC)
             .then((cache) => {
-                console.log('[SW] Pre-caching static assets');
                 return cache.addAll(STATIC_ASSETS);
             })
             .then(() => {
                 // Skip waiting to activate immediately
                 return self.skipWaiting();
             })
-            .catch((error) => {
-                console.error('[SW] Pre-cache failed:', error);
+            .catch(() => {
+                // Pre-cache failed silently
             })
     );
 });
@@ -44,7 +42,6 @@ self.addEventListener('install', (event) => {
 // ACTIVATE EVENT - Clean up old caches and take control
 // ====================================================================
 self.addEventListener('activate', (event) => {
-    console.log('[SW] Activating Service Worker...');
 
     const currentCaches = [CACHE_STATIC, CACHE_IMAGES, CACHE_DYNAMIC];
 
@@ -55,14 +52,12 @@ self.addEventListener('activate', (event) => {
                     cacheNames.map((cacheName) => {
                         // Delete any cache that's not in our current list
                         if (!currentCaches.includes(cacheName)) {
-                            console.log('[SW] Deleting old cache:', cacheName);
                             return caches.delete(cacheName);
                         }
                     })
                 );
             })
             .then(() => {
-                console.log('[SW] Service Worker activated, taking control...');
                 // Take control of all clients immediately
                 return self.clients.claim();
             })
@@ -245,8 +240,6 @@ self.addEventListener('message', (event) => {
                 return Promise.all(
                     cacheNames.map((cacheName) => caches.delete(cacheName))
                 );
-            }).then(() => {
-                console.log('[SW] All caches cleared');
             })
         );
     }
@@ -263,11 +256,8 @@ self.addEventListener('periodicsync', (event) => {
 
 async function checkForUpdates() {
     try {
-        const response = await fetch('/manifest.json', { cache: 'no-store' });
-        if (response.ok) {
-            console.log('[SW] Checked for updates');
-        }
-    } catch (error) {
-        console.log('[SW] Update check failed:', error);
+        await fetch('/manifest.json', { cache: 'no-store' });
+    } catch {
+        // Update check failed silently
     }
 }
