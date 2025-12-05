@@ -1,6 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { User, ClientMemory, ChatMessage, OfficeDetails, Project, CulturalProject } from '../types';
-import { notifyNewChatbotNote } from '../utils/emailService';
 
 // Define tools for GenUI & Actions
 const tools = [
@@ -275,35 +274,15 @@ export async function chatWithConcierge(
           if (!responseData.text) responseData.text = "Aqui estão alguns projetos selecionados.";
         }
         else if (call.name === 'saveClientNote') {
-          const notePayload = {
-            userName: call.args['name'] || (context.user ? context.user.name : 'Anônimo'),
-            userContact: call.args['contact'] || (context.user ? context.user.email : 'Não informado'),
-            message: call.args['message'],
-            source: 'chatbot'
-          };
-
           responseData.actions.push({
             type: 'saveNote',
-            payload: notePayload
+            payload: {
+              userName: call.args['name'] || (context.user ? context.user.name : 'Anônimo'),
+              userContact: call.args['contact'] || (context.user ? context.user.email : 'Não informado'),
+              message: call.args['message'],
+              source: 'chatbot'
+            }
           });
-
-          // Send email notification to admin (Lista 6)
-          notifyNewChatbotNote({
-            userName: notePayload.userName,
-            userContact: notePayload.userContact,
-            message: notePayload.message,
-            date: new Date().toLocaleDateString('pt-BR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          }).catch(error => {
-            console.error('[Brevo] Erro ao enviar email de recado:', error);
-            // Não interrompe o fluxo se o e-mail falhar
-          });
-
           if (!responseData.text) responseData.text = "Recebido. Sua mensagem foi encaminhada.";
         }
         else if (call.name === 'autoNoteInterest') {

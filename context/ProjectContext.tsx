@@ -2,7 +2,6 @@ import React, { createContext, useState, useContext, ReactNode, useCallback, use
 import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address, CulturalProject, ChatSession } from '../types';
 import { chatWithConcierge } from '../api/chat';
 import { supabase } from '../supabaseClient';
-import { notifyNewAppointment } from '../utils/emailService';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -704,26 +703,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     const { data, error } = await supabase.from('appointments').insert(payload).select().single();
 
     if (data && !error) {
-      // Send email notification to admin (Lista 8)
-      notifyNewAppointment({
-        clientName: appt.clientName || 'Cliente não identificado',
-        clientEmail: currentUser?.email || '',
-        clientPhone: currentUser?.phone || '',
-        type: appt.type,
-        date: new Date(appt.date).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          weekday: 'long'
-        }),
-        time: appt.time,
-        location: appt.location,
-        notes: appt.notes
-      }).catch(error => {
-        console.error('[Brevo] Erro ao enviar email de agendamento:', error);
-        // Não interrompe o fluxo se o e-mail falhar
-      });
-
       // Refetch all to stay strictly synced
       const { data: aptData } = await supabase.from('appointments').select('*');
       if (aptData) {
