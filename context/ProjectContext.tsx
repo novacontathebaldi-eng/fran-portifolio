@@ -304,7 +304,16 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       const savedBundle = settingsRow.settings || {};
 
       if (savedBundle.global) {
-        setSettings({ ...DEFAULT_SETTINGS, ...savedBundle.global });
+        // Deep merge to preserve nested properties like chatbotConfig and aiConfig
+        setSettings({
+          ...DEFAULT_SETTINGS,
+          ...savedBundle.global,
+          aiConfig: {
+            ...DEFAULT_SETTINGS.aiConfig,
+            ...(savedBundle.global.aiConfig || {})
+          },
+          chatbotConfig: savedBundle.global.chatbotConfig || DEFAULT_SETTINGS.chatbotConfig
+        });
       }
       if (savedBundle.schedule) {
         setScheduleSettings({ ...DEFAULT_SCHEDULE_SETTINGS, ...savedBundle.schedule });
