@@ -24,8 +24,13 @@ export default defineConfig(({ mode }) => {
       }
     },
     build: {
+      // Add content hash to filenames for proper cache busting
       rollupOptions: {
         output: {
+          // Ensures cache invalidation when content changes
+          entryFileNames: 'assets/[name]-[hash].js',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash][extname]',
           manualChunks: {
             // Separate vendor chunks for better caching
             'vendor-react': ['react', 'react-dom'],
