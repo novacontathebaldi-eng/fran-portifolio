@@ -283,20 +283,19 @@ export async function chatWithConcierge(
     }
   }
 
+
+
   const modelName = aiConfig?.model || 'gemini-2.5-flash';
 
-  let contents = [];
-  if (Array.isArray(message)) {
-    contents = message.map((msg: any) => ({
-      role: msg.role,
-      parts: [{ text: msg.text }]
-    }));
-  } else {
-    contents = [{ role: 'user', parts: [{ text: typeof message === 'string' ? message : '' }] }];
-  }
+  // Inject Human Availability Status
+  const isHumanOnline = aiConfig?.chatbotConfig?.transferToHumanEnabled;
+  const humanStatus = isHumanOnline ? "ONLINE (Disponível)" : "OFFLINE (Indisponível - Fora do horário)";
 
-  // Filter out system messages or non-standard roles
-  contents = contents.filter(c => c.role === 'user' || c.role === 'model');
+  systemInstruction += `\n\n[STATUS ATENDIMENTO HUMANO]: ${humanStatus}
+  - Se OFFLINE: NUNCA chame 'requestHumanAgent'. Explique que não há atendentes no momento e ofereça registrar um recado para retorno posterior.
+  - Se ONLINE: Pode transferir se o usuário solicitar ou se for crítico.`;
+
+  let contents = [];
 
   try {
     const response = await ai.models.generateContent({
@@ -438,8 +437,9 @@ export async function chatWithConcierge(
         const navAction = responseData.actions.find((a: any) => a.type === 'navigate');
         responseData.text = `Estou redirecionando você para ${navAction?.payload?.path || 'a página solicitada'}...`;
       } else {
-        // Fallback genérico final
-        responseData.text = "Entendido. Como posso ajudar mais?";
+        // Fallback genérico final - MUDANÇA: Evitar "Entendido"
+        // Se a IA não gerou texto e não tem ação, pede para reformular
+        responseData.text = "Desculpe, não entendi completamente. Poderia reformular ou dar mais detalhes?";
       }
     }
 

@@ -942,7 +942,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         office: siteContent.office,
         projects: projects,
         culturalProjects: culturalProjects
-      }, settings.aiConfig);
+      }, {
+        ...settings.aiConfig,
+        chatbotConfig: settings.chatbotConfig
+      });
 
       const botMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),

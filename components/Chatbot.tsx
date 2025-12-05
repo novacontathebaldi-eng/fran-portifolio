@@ -658,6 +658,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                     <div className="flex flex-wrap gap-2 justify-center">
                       {settings.chatbotConfig.quickActions
                         .filter(qa => qa.active)
+                        .filter(qa => !qa.label.includes('Atendente') || settings.chatbotConfig?.transferToHumanEnabled)
                         .sort((a, b) => a.order - b.order)
                         .map((action) => (
                           <button
