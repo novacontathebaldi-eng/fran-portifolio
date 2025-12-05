@@ -268,6 +268,25 @@ export interface SiteContent {
   office: OfficeDetails; // Centralized Office Data (Source of Truth)
 }
 
+// Quick Action Button for Chatbot (configurable via Admin Panel)
+export interface ChatQuickAction {
+  id: string;
+  label: string;        // Texto exibido no botão
+  message: string;      // Mensagem enviada ao clicar
+  icon?: string;        // Ícone opcional (nome do lucide-react)
+  order: number;        // Ordem de exibição
+  active: boolean;      // Ativo/Inativo
+}
+
+// Chatbot Configuration (managed via Admin Panel)
+export interface ChatbotConfig {
+  quickActions: ChatQuickAction[];
+  welcomeMessage: string;
+  transferToHumanEnabled: boolean;
+  fallbackMessage: string;
+  showQuickActionsOnOpen: boolean;
+}
+
 export interface GlobalSettings {
   enableShop: boolean;
   aiConfig: {
@@ -277,6 +296,7 @@ export interface GlobalSettings {
     defaultGreeting: string; // New: Editable Welcome Message
     temperature: number;
   };
+  chatbotConfig?: ChatbotConfig; // NEW: Chatbot configuration
 }
 
 export interface AdminNote {

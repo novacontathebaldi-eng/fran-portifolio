@@ -85,36 +85,88 @@ const ProjectCarousel = ({ data }: { data: any }) => {
   );
 };
 
-const SocialLinks = () => (
-  <div className="mt-4 space-y-3">
-    <a
-      href="https://wa.me/5527996670426?text=Ol%C3%A1%2C%20vim%20pelo%20site%20e%20gostaria%20de%20saber%20mais."
-      target="_blank"
-      rel="noreferrer"
-      className="flex items-center justify-between bg-[#25D366] text-white p-3 rounded-lg hover:brightness-105 transition shadow-sm w-full"
-    >
-      <div className="flex items-center gap-3">
-        <Phone className="w-5 h-5 fill-current" />
-        <div className="text-left">
-          <span className="font-bold text-sm block">WhatsApp Direto</span>
-          <span className="text-[10px] opacity-90 block">Resposta rápida</span>
-        </div>
+// Dynamic Social Links Component - reads from database
+const SocialLinks = () => {
+  const { siteContent } = useProjects();
+  const socialLinks = siteContent.office.socialLinks || [];
+
+  // Platform configurations with icons, colors, and URL formatters
+  const platformConfig: Record<string, { icon: any; color: string; gradient?: string; urlFormatter?: (url: string) => string; label: string }> = {
+    whatsapp: {
+      icon: Phone,
+      color: '#25D366',
+      urlFormatter: (url) => url.startsWith('http') ? url : `https://wa.me/${url.replace(/\D/g, '')}?text=Ol%C3%A1%2C%20vim%20pelo%20site%20e%20gostaria%20de%20saber%20mais.`,
+      label: 'WhatsApp'
+    },
+    instagram: {
+      icon: Instagram,
+      gradient: 'from-yellow-500 via-red-500 to-purple-600',
+      color: '',
+      urlFormatter: (url) => url.startsWith('http') ? url : `https://instagram.com/${url.replace('@', '')}`,
+      label: 'Instagram'
+    },
+    facebook: {
+      icon: Facebook,
+      color: '#1877F2',
+      urlFormatter: (url) => url.startsWith('http') ? url : `https://facebook.com/${url}`,
+      label: 'Facebook'
+    },
+    linkedin: {
+      icon: ExternalLink,
+      color: '#0A66C2',
+      urlFormatter: (url) => url.startsWith('http') ? url : `https://linkedin.com/in/${url}`,
+      label: 'LinkedIn'
+    },
+    telegram: {
+      icon: Send,
+      color: '#0088CC',
+      urlFormatter: (url) => url.startsWith('http') ? url : `https://t.me/${url}`,
+      label: 'Telegram'
+    },
+  };
+
+  // Fallback if no social links configured
+  if (socialLinks.length === 0) {
+    return (
+      <div className="mt-4 p-4 bg-gray-50 rounded-lg text-center">
+        <p className="text-sm text-gray-500">Nenhum canal de contato configurado.</p>
       </div>
-      <ExternalLink className="w-4 h-4 opacity-50" />
-    </a>
-    <div className="flex gap-2">
-      <a
-        href="https://instagram.com/othebaldi"
-        target="_blank"
-        rel="noreferrer"
-        className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-tr from-yellow-500 via-red-500 to-purple-600 text-white p-3 rounded-lg hover:opacity-90 transition shadow-sm"
-      >
-        <Instagram className="w-5 h-5" />
-        <span className="text-xs font-bold">@othebaldi</span>
-      </a>
+    );
+  }
+
+  return (
+    <div className="mt-4 space-y-3">
+      {socialLinks.map((link) => {
+        const config = platformConfig[link.platform] || { icon: ExternalLink, color: '#666', label: link.platform, gradient: undefined, urlFormatter: undefined };
+        const Icon = config.icon;
+        const finalUrl = config.urlFormatter ? config.urlFormatter(link.url) : link.url;
+
+        return (
+          <a
+            key={link.id}
+            href={finalUrl}
+            target="_blank"
+            rel="noreferrer"
+            className={`flex items-center justify-between text-white p-3 rounded-lg hover:brightness-105 transition shadow-sm w-full ${config.gradient ? `bg-gradient-to-tr ${config.gradient}` : ''
+              }`}
+            style={!config.gradient ? { backgroundColor: config.color } : undefined}
+          >
+            <div className="flex items-center gap-3">
+              <Icon className="w-5 h-5" />
+              <div className="text-left">
+                <span className="font-bold text-sm block">{link.label || config.label}</span>
+                <span className="text-[10px] opacity-90 block">
+                  {link.platform === 'whatsapp' ? 'Resposta rápida' : 'Clique para acessar'}
+                </span>
+              </div>
+            </div>
+            <ExternalLink className="w-4 h-4 opacity-50" />
+          </a>
+        );
+      })}
     </div>
-  </div>
-);
+  );
+};
 
 // New Success Component
 const BookingSuccess = ({ data, closeChat }: { data: any, closeChat: () => void }) => {
@@ -333,6 +385,7 @@ interface ChatbotProps {
 export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onToggle, hideButton = false }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(true); // NEW: Show quick action buttons
 
   const isControlled = externalIsOpen !== undefined && onToggle !== undefined;
   const isOpen = isControlled ? externalIsOpen : internalIsOpen;
@@ -437,6 +490,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     e.preventDefault();
     const text = input;
     setInput('');
+    setShowQuickActions(false); // Hide quick actions when user sends a message
     processUserMessage(text);
   };
 
@@ -584,6 +638,30 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                     )}
                   </div>
                 ))}
+                {/* Quick Action Buttons - Show only when config allows and no interaction yet */}
+                {showQuickActions && settings.chatbotConfig?.showQuickActionsOnOpen && displayMessages.length <= 1 && !isLoading && (
+                  <div className="mt-2 mb-4 animate-fadeIn">
+                    <p className="text-[10px] uppercase font-bold text-gray-400 mb-3 text-center">Sugestões Rápidas</p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {settings.chatbotConfig.quickActions
+                        .filter(qa => qa.active)
+                        .sort((a, b) => a.order - b.order)
+                        .map((action) => (
+                          <button
+                            key={action.id}
+                            onClick={() => {
+                              setShowQuickActions(false); // Hide buttons after click
+                              processUserMessage(action.message);
+                            }}
+                            className="px-4 py-2 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-700 hover:bg-black hover:text-white hover:border-black transition-all shadow-sm active:scale-95"
+                          >
+                            {action.label}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
                 {isLoading && (
                   <div className="flex justify-start">
                     <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none p-4 flex items-center gap-2 shadow-sm">

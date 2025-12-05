@@ -236,14 +236,17 @@ export const AdminDashboard: React.FC = () => {
 
     const handleSettingsChange = (field: string, value: any) => {
         if (field.includes('.')) {
-            const [parent, child] = field.split('.');
-            setSettingsForm(prev => ({
-                ...prev,
-                [parent]: {
-                    ...(prev as any)[parent],
-                    [child]: value
-                }
-            }));
+            const parts = field.split('.');
+            if (parts.length === 2) {
+                const [parent, child] = parts;
+                setSettingsForm(prev => ({
+                    ...prev,
+                    [parent]: {
+                        ...(prev as any)[parent],
+                        [child]: value
+                    }
+                }));
+            }
         } else {
             setSettingsForm(prev => ({ ...prev, [field]: value }));
         }
@@ -1242,6 +1245,140 @@ export const AdminDashboard: React.FC = () => {
                                     <div className="text-center py-8 text-gray-400">Nenhum feedback negativo registrado.</div>
                                 )}
                             </div>
+
+                            {/* Quick Actions Configuration */}
+                            <div className="mt-8 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                                <div className="flex justify-between items-center border-b pb-4 mb-6">
+                                    <h3 className="font-bold text-lg flex items-center gap-2 text-black"><MessageSquare className="w-5 h-5" /> Botões de Ação Rápida</h3>
+                                    <button
+                                        onClick={() => {
+                                            const newAction = {
+                                                id: Date.now().toString(),
+                                                label: 'Novo Botão',
+                                                message: 'Mensagem enviada ao clicar',
+                                                icon: 'MessageSquare',
+                                                order: (settingsForm.chatbotConfig?.quickActions?.length || 0) + 1,
+                                                active: true
+                                            };
+                                            const currentActions = settingsForm.chatbotConfig?.quickActions || [];
+                                            handleSettingsChange('chatbotConfig.quickActions', [...currentActions, newAction]);
+                                        }}
+                                        className="text-xs bg-black text-white px-3 py-1.5 rounded-full flex items-center gap-1 hover:bg-accent hover:text-black transition"
+                                    ><Plus className="w-3 h-3" /> Adicionar Botão</button>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={settingsForm.chatbotConfig?.showQuickActionsOnOpen ?? true}
+                                            onChange={(e) => handleSettingsChange('chatbotConfig.showQuickActionsOnOpen', e.target.checked)}
+                                            className="w-4 h-4 accent-black"
+                                        />
+                                        <span className="text-sm">Mostrar botões ao abrir o chat</span>
+                                    </label>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {(!settingsForm.chatbotConfig?.quickActions || settingsForm.chatbotConfig.quickActions.length === 0) && (
+                                        <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
+                                            Nenhum botão configurado. Adicione botões de ação rápida para o chatbot.
+                                        </div>
+                                    )}
+                                    {settingsForm.chatbotConfig?.quickActions?.sort((a, b) => a.order - b.order).map((action, idx) => (
+                                        <div key={action.id} className={`flex items-center gap-4 p-4 rounded-xl border transition ${action.active ? 'bg-gray-50 border-gray-200' : 'bg-gray-100 border-gray-300 opacity-60'}`}>
+                                            <div className="flex flex-col gap-1">
+                                                <button
+                                                    onClick={() => {
+                                                        if (idx > 0) {
+                                                            const newActions = [...(settingsForm.chatbotConfig?.quickActions || [])];
+                                                            const temp = newActions[idx].order;
+                                                            newActions[idx].order = newActions[idx - 1].order;
+                                                            newActions[idx - 1].order = temp;
+                                                            handleSettingsChange('chatbotConfig.quickActions', newActions);
+                                                        }
+                                                    }}
+                                                    disabled={idx === 0}
+                                                    className="p-1 hover:bg-white rounded disabled:opacity-30"
+                                                ><ArrowUp className="w-3 h-3" /></button>
+                                                <button
+                                                    onClick={() => {
+                                                        const actions = settingsForm.chatbotConfig?.quickActions || [];
+                                                        if (idx < actions.length - 1) {
+                                                            const newActions = [...actions];
+                                                            const temp = newActions[idx].order;
+                                                            newActions[idx].order = newActions[idx + 1].order;
+                                                            newActions[idx + 1].order = temp;
+                                                            handleSettingsChange('chatbotConfig.quickActions', newActions);
+                                                        }
+                                                    }}
+                                                    disabled={idx === (settingsForm.chatbotConfig?.quickActions?.length || 0) - 1}
+                                                    className="p-1 hover:bg-white rounded disabled:opacity-30"
+                                                ><ArrowDown className="w-3 h-3" /></button>
+                                            </div>
+                                            <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="text-[10px] font-bold uppercase text-gray-500 block mb-1">Texto do Botão</label>
+                                                    <input
+                                                        value={action.label}
+                                                        onChange={(e) => {
+                                                            const newActions = [...(settingsForm.chatbotConfig?.quickActions || [])];
+                                                            const actionIdx = newActions.findIndex(a => a.id === action.id);
+                                                            if (actionIdx !== -1) {
+                                                                newActions[actionIdx] = { ...newActions[actionIdx], label: e.target.value };
+                                                                handleSettingsChange('chatbotConfig.quickActions', newActions);
+                                                            }
+                                                        }}
+                                                        className="w-full border p-2 rounded bg-white text-sm focus:outline-none focus:border-black"
+                                                        placeholder="Agendar Reunião"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-bold uppercase text-gray-500 block mb-1">Mensagem Enviada</label>
+                                                    <input
+                                                        value={action.message}
+                                                        onChange={(e) => {
+                                                            const newActions = [...(settingsForm.chatbotConfig?.quickActions || [])];
+                                                            const actionIdx = newActions.findIndex(a => a.id === action.id);
+                                                            if (actionIdx !== -1) {
+                                                                newActions[actionIdx] = { ...newActions[actionIdx], message: e.target.value };
+                                                                handleSettingsChange('chatbotConfig.quickActions', newActions);
+                                                            }
+                                                        }}
+                                                        className="w-full border p-2 rounded bg-white text-sm focus:outline-none focus:border-black"
+                                                        placeholder="Gostaria de agendar uma reunião"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => {
+                                                        const newActions = [...(settingsForm.chatbotConfig?.quickActions || [])];
+                                                        const actionIdx = newActions.findIndex(a => a.id === action.id);
+                                                        if (actionIdx !== -1) {
+                                                            newActions[actionIdx] = { ...newActions[actionIdx], active: !newActions[actionIdx].active };
+                                                            handleSettingsChange('chatbotConfig.quickActions', newActions);
+                                                        }
+                                                    }}
+                                                    className={`p-2 rounded-full transition ${action.active ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-400'}`}
+                                                    title={action.active ? 'Desativar' : 'Ativar'}
+                                                >
+                                                    {action.active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        const newActions = (settingsForm.chatbotConfig?.quickActions || []).filter(a => a.id !== action.id);
+                                                        handleSettingsChange('chatbotConfig.quickActions', newActions);
+                                                    }}
+                                                    className="p-2 text-gray-400 hover:text-red-500 transition"
+                                                ><Trash2 className="w-4 h-4" /></button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-gray-400 mt-4">Os botões aparecem no início da conversa e desaparecem após o usuário interagir.</p>
+                            </div>
+
                             <div className="mt-8">
                                 <button onClick={saveSettings} disabled={saving} className="w-full bg-black text-white px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2 disabled:opacity-50">
                                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}

@@ -96,6 +96,18 @@ const DEFAULT_SETTINGS: GlobalSettings = {
     systemInstruction: `VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA...`,
     defaultGreeting: "Olá {name}. Sou o Concierge Digital Fran Siller. Como posso tornar seu dia melhor?",
     temperature: 0.7
+  },
+  chatbotConfig: {
+    quickActions: [
+      { id: '1', label: 'Agendar Reunião', message: 'Olá! Gostaria de agendar uma reunião para conhecer melhor o escritório.', icon: 'Calendar', order: 1, active: true },
+      { id: '2', label: 'Solicitar Orçamento', message: 'Olá! Preciso de um orçamento para um projeto de arquitetura.', icon: 'Receipt', order: 2, active: true },
+      { id: '3', label: 'Ver Portfólio', message: 'Gostaria de ver alguns projetos do portfólio.', icon: 'Folder', order: 3, active: true },
+      { id: '4', label: 'Falar com Atendente', message: 'Gostaria de falar com um atendente humano, por favor.', icon: 'User', order: 4, active: true }
+    ],
+    welcomeMessage: 'Olá! Como posso ajudar você hoje?',
+    transferToHumanEnabled: false,
+    fallbackMessage: 'Desculpe, não consegui entender. Posso te ajudar de outra forma?',
+    showQuickActionsOnOpen: true
   }
 };
 
