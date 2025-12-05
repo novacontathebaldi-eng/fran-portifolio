@@ -301,7 +301,7 @@ const App: React.FC = () => {
 
   return (
     <ProjectProvider>
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ErrorBoundary>
           <ScrollToTop />
           <GlobalToast />
