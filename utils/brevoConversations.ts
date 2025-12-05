@@ -1,6 +1,15 @@
 export const loadBrevoConversations = (conversationsId: string) => {
     if (window.BrevoConversations) return;
 
+    // Inject CSS to hide widget initially
+    const style = document.createElement('style');
+    style.id = 'brevo-hide-style';
+    style.innerHTML = `
+        #brevo-root { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
+        body.brevo-visible #brevo-root { display: block !important; opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; }
+    `;
+    document.head.appendChild(style);
+
     // @ts-ignore
     window.BrevoConversationsID = conversationsId;
     // @ts-ignore
@@ -19,6 +28,7 @@ export const loadBrevoConversations = (conversationsId: string) => {
 };
 
 export const openBrevoChat = () => {
+    document.body.classList.add('brevo-visible');
     if (window.BrevoConversations) {
         // @ts-ignore
         window.BrevoConversations('openChat', true);
@@ -31,9 +41,11 @@ export const closeBrevoChat = () => {
     if (window.BrevoConversations) {
         // @ts-ignore
         window.BrevoConversations('minimize', true);
-        // @ts-ignore
-        window.BrevoConversations('hide', true);
     }
+    // Remove visibility class after generic delay
+    setTimeout(() => {
+        document.body.classList.remove('brevo-visible');
+    }, 300);
 };
 
 declare global {
