@@ -193,6 +193,28 @@ Quando mencionar páginas, SEMPRE inclua link markdown E chame 'navigateSite':
 4. Mantenha respostas concisas mas completas.
 5. Seja proativo em oferecer ajuda adicional.
 
+## NATURALIDADE E HUMANIZAÇÃO (MUITO IMPORTANTE)
+1. **NUNCA repita a mesma frase duas vezes seguidas** - varie sempre suas respostas.
+2. **Evite respostas genéricas** como:
+   - "Entendido", "Como posso ajudar?", "Claro!", "Certo!"
+   - "Desculpe, não entendi" (reformule de forma criativa)
+   - Qualquer frase que soe robótica ou automatizada
+3. **Varie saudações e despedidas**:
+   - Em vez de sempre "Olá", use: "E aí!", "Opa!", "Que bom te ver!", "Fala!"
+   - Em vez de sempre "Posso ajudar?", diga algo específico ao contexto
+4. **Use linguagem conversacional**:
+   - Contrações naturais: "tá", "né", "pra" (moderadamente)
+   - Expressões coloquiais quando apropriado
+   - Evite formalidade excessiva
+5. **Responda de forma contextual**:
+   - Se o usuário disse algo interessante, comente sobre isso
+   - Faça conexões com informações anteriores da conversa
+   - Demonstre interesse genuíno, não respostas automáticas
+6. **Tom de conversa**:
+   - Seja como um amigo arquiteto que genuinamente quer ajudar
+   - Use humor leve quando apropriado
+   - Mostre entusiasmo genuíno sobre arquitetura
+
 ## FLUXO DE CONVERSA
 1. SE CLIENTE LOGADO:
    - Trate pelo primeiro nome.
@@ -437,19 +459,62 @@ export async function chatWithConcierge(
       responseData.text = "Aqui estão alguns projetos selecionados para você:";
     }
 
-    // Fallback message logic
-    else if (!responseData.text || responseData.text.trim() === '') {
+    // Fallback message arrays for variety
+    const fallbackMessages = {
+      notUnderstood: [
+        "Hmm, acho que me perdi um pouco aí. Pode explicar de outro jeito?",
+        "Opa, não captei bem. Me conta mais sobre o que você precisa?",
+        "Eita, essa eu não peguei! Pode dar mais contexto?",
+        "Me ajuda aqui: o que exatamente você tá buscando?",
+        "Interessante! Mas me explica melhor pra eu poder te ajudar direitinho.",
+        "Quase lá! Só preciso entender melhor o que você quer dizer.",
+        "Hm, fiquei na dúvida. Pode reformular de outra forma?"
+      ],
+      noteSaved: [
+        "✓ Pronto! Sua mensagem já tá com a equipe. Logo entram em contato!",
+        "✓ Anotado! Já repassei pra galera e em breve te retornam.",
+        "✓ Beleza! Encaminhei sua mensagem. Fique tranquilo que vão te responder.",
+        "✓ Feito! A equipe já recebeu e logo volta pra você.",
+        "✓ Recado anotado! Nossa equipe vai te contatar em breve."
+      ],
+      memoryLearned: [
+        "Show! Vou guardar essa info pra te atender ainda melhor.",
+        "Boa! Anotei aqui. Isso vai ajudar nas nossas próximas conversas.",
+        "Legal saber disso! Guardei pra referência futura.",
+        "Entendi! Essa informação vai ser útil.",
+        "Perfeito, vou lembrar disso!"
+      ],
+      navigating: [
+        "Vou te levar pra lá agora mesmo!",
+        "Bora! Te redirecionando...",
+        "Já tô te levando pra essa página!",
+        "Em um segundo você tá lá!"
+      ],
+      budgetInterest: [
+        "Ótimo que você tá interessado! Dá uma olhada nos nossos serviços aqui:",
+        "Show! Pra ter uma ideia de valores, confere nossa página de serviços:",
+        "Legal! Preparei aqui as opções de serviços pra você dar uma olhada:"
+      ]
+    };
+
+    // Helper function to get random fallback
+    const getRandomFallback = (array: string[]): string => {
+      return array[Math.floor(Math.random() * array.length)];
+    };
+
+    // Fallback message logic with variety
+    if (!responseData.text || responseData.text.trim() === '') {
       if (responseData.actions?.some((a: any) => a.type === 'saveNote')) {
-        responseData.text = "✓ Anotado! Sua mensagem foi encaminhada para nossa equipe e em breve entraremos em contato.";
+        responseData.text = getRandomFallback(fallbackMessages.noteSaved);
       } else if (responseData.actions?.some((a: any) => a.type === 'learnMemory')) {
-        responseData.text = "Entendido! Vou lembrar dessa informação para melhor atendê-lo.";
+        responseData.text = getRandomFallback(fallbackMessages.memoryLearned);
       } else if (responseData.actions?.some((a: any) => a.type === 'navigate')) {
         const navAction = responseData.actions.find((a: any) => a.type === 'navigate');
-        responseData.text = `Estou redirecionando você para ${navAction?.payload?.path || 'a página solicitada'}...`;
+        responseData.text = `${getRandomFallback(fallbackMessages.navigating)} (${navAction?.payload?.path || 'página solicitada'})`;
       } else if (responseData.uiComponent?.type === 'ServiceRedirect') {
-        responseData.text = "Anotei seu interesse. Para um orçamento preciso, recomendo visualizar nossa página de serviços abaixo:";
+        responseData.text = getRandomFallback(fallbackMessages.budgetInterest);
       } else {
-        responseData.text = "Desculpe, não entendi completamente. Poderia reformular ou dar mais detalhes?";
+        responseData.text = getRandomFallback(fallbackMessages.notUnderstood);
       }
     }
 
