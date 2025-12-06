@@ -97,6 +97,7 @@ export const AdminDashboard: React.FC = () => {
     const [showBlockModal, setShowBlockModal] = useState(false);
     const [showEditDashboardModal, setShowEditDashboardModal] = useState(false); // Dashboard customization modal
     const [selectedWidgetsToAdd, setSelectedWidgetsToAdd] = useState<string[]>([]); // Multi-select for adding widgets
+    const [localEditingWidgets, setLocalEditingWidgets] = useState<DashboardWidget[]>([]); // Local copy for editing before save
     const [blockForm, setBlockForm] = useState({ date: '', time: '' });
     const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
 
@@ -623,13 +624,9 @@ export const AdminDashboard: React.FC = () => {
                             handleSettingsChange('dashboardWidgets', newWidgets);
                         };
 
-                        // Remove widget handler
-                        const handleRemoveWidget = (widgetId: string) => {
-                            console.log('🗑️ handleRemoveWidget called with ID:', widgetId);
-                            console.log('Current widgets:', widgets);
-                            const newWidgets = widgets.filter(w => w.id !== widgetId);
-                            console.log('New widgets after filter:', newWidgets);
-                            handleSettingsChange('dashboardWidgets', newWidgets);
+                        // Remove widget handler - now updates LOCAL state only (no save)
+                        const handleLocalRemoveWidget = (widgetId: string) => {
+                            setLocalEditingWidgets(prev => prev.filter(w => w.id !== widgetId));
                         };
 
                         // Toggle widget selection for multi-select
@@ -641,25 +638,34 @@ export const AdminDashboard: React.FC = () => {
                             );
                         };
 
-                        // Add all selected widgets at once
-                        const handleAddSelectedWidgets = () => {
-                            const itemsToAdd = sidebarItems.filter(item => selectedWidgetsToAdd.includes(item.id));
-                            let newWidgets = [...widgets];
-                            itemsToAdd.forEach((item, idx) => {
-                                const newWidget: DashboardWidget = {
-                                    id: Date.now().toString() + idx,
-                                    tabId: item.id,
-                                    label: item.label,
-                                    icon: item.icon,
-                                    bgColor: item.bgColor,
-                                    order: newWidgets.length + 1,
-                                    showCount: !!item.countKey,
-                                    countKey: item.countKey as any,
-                                };
-                                newWidgets.push(newWidget);
+                        // Add selected widgets to LOCAL state (no save)
+                        const handleLocalAddSelectedWidgets = () => {
+                            const itemsToAdd = sidebarItems.filter(item => selectedWidgetsToAdd.includes(item.id) && !localEditingWidgets.some(w => w.tabId === item.id));
+                            setLocalEditingWidgets(prev => {
+                                let newWidgets = [...prev];
+                                itemsToAdd.forEach((item, idx) => {
+                                    const newWidget: DashboardWidget = {
+                                        id: Date.now().toString() + idx,
+                                        tabId: item.id,
+                                        label: item.label,
+                                        icon: item.icon,
+                                        bgColor: item.bgColor,
+                                        order: newWidgets.length + 1,
+                                        showCount: !!item.countKey,
+                                        countKey: item.countKey as any,
+                                    };
+                                    newWidgets.push(newWidget);
+                                });
+                                return newWidgets;
                             });
-                            handleSettingsChange('dashboardWidgets', newWidgets);
                             setSelectedWidgetsToAdd([]); // Clear selection after adding
+                        };
+
+                        // Save all changes at once
+                        const handleSaveAllChanges = () => {
+                            handleSettingsChange('dashboardWidgets', localEditingWidgets);
+                            saveSettings();
+                            setShowEditDashboardModal(false);
                         };
 
                         // Get badge info for pending items
@@ -678,7 +684,7 @@ export const AdminDashboard: React.FC = () => {
                                 <div className="flex justify-between items-center mb-8">
                                     <h2 className="text-3xl font-serif font-bold text-black">Bem-vinda, Fran.</h2>
                                     <button
-                                        onClick={() => setShowEditDashboardModal(true)}
+                                        onClick={() => { setLocalEditingWidgets([...widgets]); setSelectedWidgetsToAdd([]); setShowEditDashboardModal(true); }}
                                         className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium text-gray-700 transition"
                                     >
                                         <Edit2 className="w-4 h-4" />
@@ -739,10 +745,10 @@ export const AdminDashboard: React.FC = () => {
                                                 <div className="mb-6">
                                                     <h4 className="text-sm font-bold uppercase text-gray-500 mb-3">Widgets Ativos</h4>
                                                     <div className="space-y-2">
-                                                        {widgets.length === 0 ? (
+                                                        {localEditingWidgets.length === 0 ? (
                                                             <p className="text-gray-400 text-sm text-center py-4">Nenhum widget ativo. Adicione abaixo.</p>
                                                         ) : (
-                                                            widgets.sort((a, b) => a.order - b.order).map(widget => {
+                                                            [...localEditingWidgets].sort((a, b) => a.order - b.order).map(widget => {
                                                                 const IconComponent = iconMap[widget.icon] || LayoutDashboard;
                                                                 return (
                                                                     <div key={widget.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
@@ -754,7 +760,7 @@ export const AdminDashboard: React.FC = () => {
                                                                         </div>
                                                                         <button
                                                                             type="button"
-                                                                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRemoveWidget(widget.id); }}
+                                                                            onClick={() => handleLocalRemoveWidget(widget.id)}
                                                                             className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition cursor-pointer"
                                                                         >
                                                                             <Trash2 className="w-4 h-4" />
@@ -772,7 +778,8 @@ export const AdminDashboard: React.FC = () => {
                                                         <h4 className="text-sm font-bold uppercase text-gray-500">Adicionar Widget</h4>
                                                         {selectedWidgetsToAdd.length > 0 && (
                                                             <button
-                                                                onClick={handleAddSelectedWidgets}
+                                                                type="button"
+                                                                onClick={handleLocalAddSelectedWidgets}
                                                                 className="text-xs bg-black text-white px-3 py-1.5 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-1"
                                                             >
                                                                 <Plus className="w-3 h-3" />
@@ -782,7 +789,7 @@ export const AdminDashboard: React.FC = () => {
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {sidebarItems
-                                                            .filter(item => !widgets.some(w => w.tabId === item.id))
+                                                            .filter(item => !localEditingWidgets.some(w => w.tabId === item.id))
                                                             .map(item => {
                                                                 const IconComponent = iconMap[item.icon] || LayoutDashboard;
                                                                 const isSelected = selectedWidgetsToAdd.includes(item.id);
@@ -810,7 +817,7 @@ export const AdminDashboard: React.FC = () => {
                                                                 );
                                                             })}
                                                     </div>
-                                                    {sidebarItems.filter(item => !widgets.some(w => w.tabId === item.id)).length === 0 && (
+                                                    {sidebarItems.filter(item => !localEditingWidgets.some(w => w.tabId === item.id)).length === 0 && (
                                                         <p className="text-gray-400 text-sm text-center py-4">Todos os widgets já foram adicionados.</p>
                                                     )}
                                                 </div>
@@ -818,7 +825,8 @@ export const AdminDashboard: React.FC = () => {
                                                 {/* Save Button */}
                                                 <div className="mt-6 pt-4 border-t border-gray-100">
                                                     <button
-                                                        onClick={() => { saveSettings(); setShowEditDashboardModal(false); }}
+                                                        type="button"
+                                                        onClick={handleSaveAllChanges}
                                                         className="w-full bg-black text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2"
                                                     >
                                                         <Save className="w-4 h-4" />
