@@ -625,7 +625,10 @@ export const AdminDashboard: React.FC = () => {
 
                         // Remove widget handler
                         const handleRemoveWidget = (widgetId: string) => {
+                            console.log('🗑️ handleRemoveWidget called with ID:', widgetId);
+                            console.log('Current widgets:', widgets);
                             const newWidgets = widgets.filter(w => w.id !== widgetId);
+                            console.log('New widgets after filter:', newWidgets);
                             handleSettingsChange('dashboardWidgets', newWidgets);
                         };
 
