@@ -551,10 +551,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       phone: updatedUser.phone,
       bio: updatedUser.bio,
       avatar: updatedUser.avatar,
-      // addresses: updatedUser.addresses, // Removed as column does not exist in profiles table
+      // addresses: updatedUser.addresses, // Removed - column does not exist
       cpf: updatedUser.cpf,
-      birth_date: updatedUser.birthDate,
-      chats: updatedUser.chats
+      birth_date: updatedUser.birthDate
+      // chats: updatedUser.chats // Removed - column does not exist
     }).eq('id', updatedUser.id);
 
     if (!error) {

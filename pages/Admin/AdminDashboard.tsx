@@ -69,10 +69,12 @@ export const AdminDashboard: React.FC = () => {
         }
     }, [siteContent]);
 
-    // Sync settingsForm with settings when it loads from DB
+    // Sync settingsForm with settings when it loads from DB (ONLY on initial load)
+    const settingsInitialized = React.useRef(false);
     useEffect(() => {
-        if (settings) {
+        if (settings && !settingsInitialized.current) {
             setSettingsForm(settings);
+            settingsInitialized.current = true;
         }
     }, [settings]);
 
