@@ -277,7 +277,22 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // Register service worker for PWA with update detection
+    // ONLY in production to avoid cache conflicts during development
     const registerSW = async () => {
+      // Skip SW in development mode
+      if (import.meta.env.DEV) {
+        console.log('[SW] Service Worker skipped in development mode');
+        // Unregister any existing SW in dev mode to clear stale cache
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const registration of registrations) {
+            await registration.unregister();
+            console.log('[SW] Unregistered existing service worker');
+          }
+        }
+        return;
+      }
+
       if ('serviceWorker' in navigator) {
         try {
           const registration = await navigator.serviceWorker.register('/service-worker.js');
