@@ -112,6 +112,19 @@ export const AdminDashboard: React.FC = () => {
         }
     }, [users]); // Trigger whenever users list changes in context
 
+    // Lock body scroll when mobile menu is open
+    useEffect(() => {
+        if (mobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        // Cleanup on unmount
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [mobileMenuOpen]);
+
     const handleDelete = (id: string) => {
         if (confirm('Tem certeza que deseja excluir este projeto?')) {
             deleteProject(id);
@@ -524,6 +537,15 @@ export const AdminDashboard: React.FC = () => {
                     {mobileMenuOpen ? <X /> : <Menu />}
                 </button>
             </div>
+
+            {/* Mobile Overlay - Click to close sidebar */}
+            {mobileMenuOpen && (
+                <div
+                    className="md:hidden fixed inset-0 bg-black/50 z-30"
+                    onClick={() => setMobileMenuOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
 
             {/* Sidebar */}
             <aside className={`fixed md:relative z-40 w-64 h-screen bg-[#111] border-r border-gray-800 flex flex-col transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} pt-16 md:pt-0`}>
