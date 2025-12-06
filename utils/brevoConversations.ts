@@ -21,6 +21,24 @@ export const loadBrevoConversations = (conversationsId: string) => {
 };
 
 export const openBrevoChat = () => {
+    const brevoId = import.meta.env.VITE_BREVO_CONVERSATIONS_APP_ID;
+
+    // Load script on-demand if not already loaded
+    if (!window.BrevoConversations && brevoId) {
+        loadBrevoConversations(brevoId);
+        // Wait for script to load before opening
+        setTimeout(() => {
+            document.body.classList.add('brevo-visible');
+            if (window.BrevoConversations) {
+                // @ts-ignore
+                window.BrevoConversations('openChat', true);
+                // @ts-ignore
+                window.BrevoConversations('show', true);
+            }
+        }, 1000);
+        return;
+    }
+
     document.body.classList.add('brevo-visible');
     if (window.BrevoConversations) {
         // @ts-ignore
