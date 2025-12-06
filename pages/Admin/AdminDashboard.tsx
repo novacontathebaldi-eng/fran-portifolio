@@ -624,48 +624,41 @@ export const AdminDashboard: React.FC = () => {
                             handleSettingsChange('dashboardWidgets', newWidgets);
                         };
 
-                        // Remove widget handler - now updates LOCAL state only (no save)
+                        // Remove widget handler - moves widget from active to available
                         const handleLocalRemoveWidget = (widgetId: string) => {
                             setLocalEditingWidgets(prev => prev.filter(w => w.id !== widgetId));
                         };
 
-                        // Toggle widget selection for multi-select
-                        const toggleWidgetSelection = (itemId: string) => {
-                            setSelectedWidgetsToAdd(prev =>
-                                prev.includes(itemId)
-                                    ? prev.filter(id => id !== itemId)
-                                    : [...prev, itemId]
-                            );
-                        };
+                        // Add widget immediately (no selection needed)
+                        const handleLocalAddWidget = (item: typeof sidebarItems[0]) => {
+                            // Check if already exists
+                            if (localEditingWidgets.some(w => w.tabId === item.id)) return;
 
-                        // Add selected widgets to LOCAL state (no save)
-                        const handleLocalAddSelectedWidgets = () => {
-                            const itemsToAdd = sidebarItems.filter(item => selectedWidgetsToAdd.includes(item.id) && !localEditingWidgets.some(w => w.tabId === item.id));
-                            setLocalEditingWidgets(prev => {
-                                let newWidgets = [...prev];
-                                itemsToAdd.forEach((item, idx) => {
-                                    const newWidget: DashboardWidget = {
-                                        id: Date.now().toString() + idx,
-                                        tabId: item.id,
-                                        label: item.label,
-                                        icon: item.icon,
-                                        bgColor: item.bgColor,
-                                        order: newWidgets.length + 1,
-                                        showCount: !!item.countKey,
-                                        countKey: item.countKey as any,
-                                    };
-                                    newWidgets.push(newWidget);
-                                });
-                                return newWidgets;
-                            });
-                            setSelectedWidgetsToAdd([]); // Clear selection after adding
+                            const newWidget: DashboardWidget = {
+                                id: Date.now().toString(),
+                                tabId: item.id,
+                                label: item.label,
+                                icon: item.icon,
+                                bgColor: item.bgColor,
+                                order: localEditingWidgets.length + 1,
+                                showCount: !!item.countKey,
+                                countKey: item.countKey as any,
+                            };
+                            setLocalEditingWidgets(prev => [...prev, newWidget]);
                         };
 
                         // Save all changes at once
-                        const handleSaveAllChanges = () => {
-                            handleSettingsChange('dashboardWidgets', localEditingWidgets);
-                            saveSettings();
-                            setShowEditDashboardModal(false);
+                        const handleSaveAllChanges = async () => {
+                            const widgetsToSave = [...localEditingWidgets];
+                            // Update settings with new widgets
+                            const newSettings = { ...settings, dashboardWidgets: widgetsToSave };
+                            const success = await updateSettings(newSettings);
+                            if (success) {
+                                setShowEditDashboardModal(false);
+                                showToast('Widgets salvos com sucesso!', 'success');
+                            } else {
+                                showToast('Erro ao salvar widgets', 'error');
+                            }
                         };
 
                         // Get badge info for pending items
@@ -772,47 +765,26 @@ export const AdminDashboard: React.FC = () => {
                                                     </div>
                                                 </div>
 
-                                                {/* Available Items - Multi-select with checkboxes */}
+                                                {/* Available Items - Click to add immediately */}
                                                 <div>
-                                                    <div className="flex justify-between items-center mb-3">
-                                                        <h4 className="text-sm font-bold uppercase text-gray-500">Adicionar Widget</h4>
-                                                        {selectedWidgetsToAdd.length > 0 && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={handleLocalAddSelectedWidgets}
-                                                                className="text-xs bg-black text-white px-3 py-1.5 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-1"
-                                                            >
-                                                                <Plus className="w-3 h-3" />
-                                                                Adicionar {selectedWidgetsToAdd.length} selecionado{selectedWidgetsToAdd.length > 1 ? 's' : ''}
-                                                            </button>
-                                                        )}
-                                                    </div>
+                                                    <h4 className="text-sm font-bold uppercase text-gray-500 mb-3">Adicionar Widget</h4>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {sidebarItems
                                                             .filter(item => !localEditingWidgets.some(w => w.tabId === item.id))
                                                             .map(item => {
                                                                 const IconComponent = iconMap[item.icon] || LayoutDashboard;
-                                                                const isSelected = selectedWidgetsToAdd.includes(item.id);
                                                                 return (
                                                                     <button
+                                                                        type="button"
                                                                         key={item.id}
-                                                                        onClick={() => toggleWidgetSelection(item.id)}
-                                                                        className={`flex items-center gap-2 p-3 border-2 rounded-xl transition text-left relative ${isSelected
-                                                                            ? 'border-black bg-gray-50 ring-2 ring-black/10'
-                                                                            : 'border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50'
-                                                                            }`}
+                                                                        onClick={() => handleLocalAddWidget(item)}
+                                                                        className="flex items-center gap-2 p-3 border-2 border-dashed border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 transition text-left group"
                                                                     >
-                                                                        {/* Checkbox indicator */}
-                                                                        <div className={`absolute top-2 right-2 w-5 h-5 rounded-md border-2 flex items-center justify-center transition ${isSelected
-                                                                            ? 'bg-black border-black'
-                                                                            : 'border-gray-300 bg-white'
-                                                                            }`}>
-                                                                            {isSelected && <Check className="w-3 h-3 text-white" />}
-                                                                        </div>
-                                                                        <div className={`p-2 ${item.bgColor} text-white rounded-lg`}>
+                                                                        <div className={`p-2 ${item.bgColor} text-white rounded-lg group-hover:scale-105 transition-transform`}>
                                                                             <IconComponent className="w-4 h-4" />
                                                                         </div>
-                                                                        <span className="text-sm font-medium text-gray-600">{item.label}</span>
+                                                                        <span className="text-sm font-medium text-gray-600 group-hover:text-green-700">{item.label}</span>
+                                                                        <Plus className="w-4 h-4 ml-auto text-gray-300 group-hover:text-green-500 transition" />
                                                                     </button>
                                                                 );
                                                             })}
