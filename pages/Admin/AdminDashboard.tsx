@@ -31,7 +31,7 @@ const uploadToSupabase = async (file: File): Promise<string> => {
 };
 
 export const AdminDashboard: React.FC = () => {
-    const { projects, deleteProject, culturalProjects, deleteCulturalProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, adminNotes, markNoteAsRead, deleteAdminNote, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, updateAppointment, deleteAppointmentPermanently, currentUser } = useProjects();
+    const { projects, deleteProject, culturalProjects, deleteCulturalProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, adminNotes, markNoteAsRead, deleteAdminNote, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, updateAppointment, deleteAppointmentPermanently, currentUser, isLoadingData } = useProjects();
     const navigate = useNavigate();
 
     // TABS: Added 'cultural'
@@ -69,14 +69,15 @@ export const AdminDashboard: React.FC = () => {
         }
     }, [siteContent]);
 
-    // Sync settingsForm with settings when it loads from DB (ONLY on initial load)
+    // Sync settingsForm with settings when it loads from DB (ONLY after data is loaded)
     const settingsInitialized = React.useRef(false);
     useEffect(() => {
-        if (settings && !settingsInitialized.current) {
+        // Wait for data to load from DB before syncing
+        if (settings && !isLoadingData && !settingsInitialized.current) {
             setSettingsForm(settings);
             settingsInitialized.current = true;
         }
-    }, [settings]);
+    }, [settings, isLoadingData]);
 
     // Client Details View
     const [selectedClient, setSelectedClient] = useState<User | null>(null);
