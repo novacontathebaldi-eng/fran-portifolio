@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address, CulturalProject, ChatSession } from '../types';
+import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address, CulturalProject, ChatSession, ShopProduct, ShopOrder, ShopOrderItem } from '../types';
 import { chatWithConcierge } from '../api/chat';
 import { supabase } from '../supabaseClient';
 import { notifyNewAppointment } from '../utils/emailService';
@@ -81,6 +81,17 @@ interface ProjectContextType {
   toast: ToastState;
   showToast: (message: string, type?: ToastType) => void;
   hideToast: () => void;
+
+  // Shop / E-Commerce
+  shopProducts: ShopProduct[];
+  shopOrders: ShopOrder[];
+  fetchShopProducts: () => Promise<void>;
+  addShopProduct: (product: Omit<ShopProduct, 'id' | 'created_at' | 'updated_at'>) => Promise<ShopProduct | null>;
+  updateShopProduct: (product: ShopProduct) => Promise<boolean>;
+  deleteShopProduct: (id: string) => Promise<boolean>;
+  fetchShopOrders: () => Promise<void>;
+  updateShopOrderStatus: (orderId: string, status: ShopOrder['status']) => Promise<boolean>;
+  createShopOrder: (order: Omit<ShopOrder, 'id' | 'created_at' | 'updated_at'>, items: { productId: string; quantity: number; unitPrice: number }[]) => Promise<ShopOrder | null>;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -217,6 +228,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   // Settings & Content
   const [settings, setSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS);
   const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+
+  // Shop / E-commerce State
+  const [shopProducts, setShopProducts] = useState<ShopProduct[]>([]);
+  const [shopOrders, setShopOrders] = useState<ShopOrder[]>([]);
 
   // --- PERSISTENCE EFFECT FOR CHAT ---
   useEffect(() => {
@@ -930,6 +945,267 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setCurrentChatMessages(messages);
   };
 
+  // ==================== SHOP / E-COMMERCE FUNCTIONS ====================
+
+  const fetchShopProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('shop_products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Map DB format to app format
+      const products: ShopProduct[] = (data || []).map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        description: p.description || '',
+        price: parseFloat(p.price) || 0,
+        images: p.images || [],
+        stock: p.stock || 0,
+        category: p.category || '',
+        status: p.status || 'draft',
+        created_at: p.created_at,
+        updated_at: p.updated_at
+      }));
+
+      setShopProducts(products);
+    } catch (error) {
+      console.error('Error fetching shop products:', error);
+    }
+  };
+
+  const addShopProduct = async (product: Omit<ShopProduct, 'id' | 'created_at' | 'updated_at'>): Promise<ShopProduct | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('shop_products')
+        .insert({
+          title: product.title,
+          description: product.description,
+          price: product.price,
+          images: product.images,
+          stock: product.stock,
+          category: product.category,
+          status: product.status
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newProduct: ShopProduct = {
+        id: data.id,
+        title: data.title,
+        description: data.description || '',
+        price: parseFloat(data.price) || 0,
+        images: data.images || [],
+        stock: data.stock || 0,
+        category: data.category || '',
+        status: data.status || 'draft',
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+
+      setShopProducts(prev => [newProduct, ...prev]);
+      showToast('Produto criado com sucesso!', 'success');
+      return newProduct;
+    } catch (error) {
+      console.error('Error adding shop product:', error);
+      showToast('Erro ao criar produto.', 'error');
+      return null;
+    }
+  };
+
+  const updateShopProduct = async (product: ShopProduct): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('shop_products')
+        .update({
+          title: product.title,
+          description: product.description,
+          price: product.price,
+          images: product.images,
+          stock: product.stock,
+          category: product.category,
+          status: product.status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', product.id);
+
+      if (error) throw error;
+
+      setShopProducts(prev => prev.map(p => p.id === product.id ? product : p));
+      showToast('Produto atualizado!', 'success');
+      return true;
+    } catch (error) {
+      console.error('Error updating shop product:', error);
+      showToast('Erro ao atualizar produto.', 'error');
+      return false;
+    }
+  };
+
+  const deleteShopProduct = async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('shop_products')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setShopProducts(prev => prev.filter(p => p.id !== id));
+      showToast('Produto excluído.', 'info');
+      return true;
+    } catch (error) {
+      console.error('Error deleting shop product:', error);
+      showToast('Erro ao excluir produto.', 'error');
+      return false;
+    }
+  };
+
+  const fetchShopOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('shop_orders')
+        .select(`
+          *,
+          items:shop_order_items(
+            *,
+            product:shop_products(*)
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const orders: ShopOrder[] = (data || []).map((o: any) => ({
+        id: o.id,
+        userId: o.user_id,
+        status: o.status,
+        total: parseFloat(o.total) || 0,
+        shippingAddress: o.shipping_address || {},
+        paymentMethod: o.payment_method || '',
+        notes: o.notes,
+        items: (o.items || []).map((item: any) => ({
+          id: item.id,
+          orderId: item.order_id,
+          productId: item.product_id,
+          quantity: item.quantity,
+          unitPrice: parseFloat(item.unit_price) || 0,
+          product: item.product ? {
+            id: item.product.id,
+            title: item.product.title,
+            description: item.product.description || '',
+            price: parseFloat(item.product.price) || 0,
+            images: item.product.images || [],
+            stock: item.product.stock || 0,
+            category: item.product.category || '',
+            status: item.product.status || 'draft'
+          } : undefined
+        })),
+        created_at: o.created_at,
+        updated_at: o.updated_at
+      }));
+
+      setShopOrders(orders);
+    } catch (error) {
+      console.error('Error fetching shop orders:', error);
+    }
+  };
+
+  const updateShopOrderStatus = async (orderId: string, status: ShopOrder['status']): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('shop_orders')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      setShopOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+      showToast('Status do pedido atualizado!', 'success');
+      return true;
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      showToast('Erro ao atualizar status do pedido.', 'error');
+      return false;
+    }
+  };
+
+  const createShopOrder = async (
+    order: Omit<ShopOrder, 'id' | 'created_at' | 'updated_at'>,
+    items: { productId: string; quantity: number; unitPrice: number }[]
+  ): Promise<ShopOrder | null> => {
+    try {
+      // 1. Create the order
+      const { data: orderData, error: orderError } = await supabase
+        .from('shop_orders')
+        .insert({
+          user_id: order.userId,
+          status: order.status || 'pending',
+          total: order.total,
+          shipping_address: order.shippingAddress,
+          payment_method: order.paymentMethod,
+          notes: order.notes
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // 2. Create order items
+      const orderItems = items.map(item => ({
+        order_id: orderData.id,
+        product_id: item.productId,
+        quantity: item.quantity,
+        unit_price: item.unitPrice
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('shop_order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // 3. Decrement stock for each product
+      for (const item of items) {
+        const product = shopProducts.find(p => p.id === item.productId);
+        if (product) {
+          await supabase
+            .from('shop_products')
+            .update({ stock: Math.max(0, product.stock - item.quantity) })
+            .eq('id', item.productId);
+        }
+      }
+
+      // 4. Refresh products to get updated stock
+      await fetchShopProducts();
+
+      const newOrder: ShopOrder = {
+        id: orderData.id,
+        userId: orderData.user_id,
+        status: orderData.status,
+        total: parseFloat(orderData.total) || 0,
+        shippingAddress: orderData.shipping_address || {},
+        paymentMethod: orderData.payment_method || '',
+        notes: orderData.notes,
+        created_at: orderData.created_at,
+        updated_at: orderData.updated_at
+      };
+
+      setShopOrders(prev => [newOrder, ...prev]);
+      showToast('Pedido criado com sucesso!', 'success');
+      return newOrder;
+    } catch (error) {
+      console.error('Error creating shop order:', error);
+      showToast('Erro ao criar pedido.', 'error');
+      return null;
+    }
+  };
+
+  // ==================== END SHOP FUNCTIONS ====================
+
   const logAiFeedback = (item: Omit<AiFeedbackItem, 'id' | 'createdAt'>) => {
     const newItem: AiFeedbackItem = {
       ...item,
@@ -1071,7 +1347,18 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       checkAvailability,
       toast,
       showToast,
-      hideToast
+      hideToast,
+
+      // Shop / E-commerce
+      shopProducts,
+      shopOrders,
+      fetchShopProducts,
+      addShopProduct,
+      updateShopProduct,
+      deleteShopProduct,
+      fetchShopOrders,
+      updateShopOrderStatus,
+      createShopOrder
     }}>
       {children}
     </ProjectContext.Provider>

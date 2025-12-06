@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info, X, RefreshCw, Loader2 } from 'lucide-react';
 import { Layout } from './components/Layout';
 import { ProjectProvider, useProjects } from './context/ProjectContext';
+import { CartProvider } from './context/CartContext';
 
 // Lazy load all pages for code-splitting
 const Home = lazy(() => import('./pages/Home').then(module => ({ default: module.Home })));
@@ -20,6 +21,12 @@ const BudgetFlow = lazy(() => import('./pages/BudgetFlow').then(module => ({ def
 const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const ProjectForm = lazy(() => import('./pages/Admin/ProjectForm').then(module => ({ default: module.ProjectForm })));
 const CulturalProjectForm = lazy(() => import('./pages/Admin/CulturalProjectForm').then(module => ({ default: module.CulturalProjectForm })));
+
+// Shop Pages (Lazy loaded)
+const Shop = lazy(() => import('./pages/Shop/Shop').then(module => ({ default: module.Shop })));
+const ProductDetails = lazy(() => import('./pages/Shop/ProductDetails').then(module => ({ default: module.ProductDetails })));
+const Cart = lazy(() => import('./pages/Shop/Cart').then(module => ({ default: module.Cart })));
+const Checkout = lazy(() => import('./pages/Shop/Checkout').then(module => ({ default: module.Checkout })));
 
 // --- Error Boundary Component ---
 interface ErrorBoundaryProps {
@@ -217,6 +224,26 @@ const AnimatedRoutes: React.FC = () => {
             <>
               <Route path="/services" element={<Layout><BudgetFlow /></Layout>} />
               <Route path="/budget" element={<Layout><BudgetFlow /></Layout>} />
+              <Route path="/shop" element={<Layout><Shop /></Layout>} />
+              <Route path="/shop/product/:id" element={<Layout><ProductDetails /></Layout>} />
+              <Route path="/cart" element={<Layout><Cart /></Layout>} />
+              <Route
+                path="/checkout"
+                element={
+                  <ProtectedRoute>
+                    <Layout><Checkout /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+            </>
+          )}
+
+          {/* Redirect shop routes when disabled */}
+          {!settings.enableShop && (
+            <>
+              <Route path="/shop/*" element={<Navigate to="/" replace />} />
+              <Route path="/cart" element={<Navigate to="/" replace />} />
+              <Route path="/checkout" element={<Navigate to="/" replace />} />
             </>
           )}
 
@@ -352,13 +379,15 @@ const App: React.FC = () => {
 
   return (
     <ProjectProvider>
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <ErrorBoundary>
-          <ScrollToTop />
-          <GlobalToast />
-          <AnimatedRoutes />
-        </ErrorBoundary>
-      </Router>
+      <CartProvider>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <ErrorBoundary>
+            <ScrollToTop />
+            <GlobalToast />
+            <AnimatedRoutes />
+          </ErrorBoundary>
+        </Router>
+      </CartProvider>
     </ProjectProvider>
   );
 };

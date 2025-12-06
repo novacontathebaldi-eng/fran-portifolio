@@ -39,6 +39,54 @@ export interface CulturalProject {
   created_at?: string;
 }
 
+// ==================== SHOP / E-COMMERCE TYPES ====================
+
+export type ShopProductStatus = 'draft' | 'active';
+export type ShopOrderStatus = 'pending' | 'paid' | 'shipped' | 'completed' | 'cancelled';
+
+export interface ShopProduct {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  images: string[]; // Array of image URLs stored as JSONB
+  stock: number;
+  category: string;
+  status: ShopProductStatus;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ShopOrderItem {
+  id: string;
+  orderId: string;
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  product?: ShopProduct; // Joined data for display
+}
+
+export interface ShopOrder {
+  id: string;
+  userId: string;
+  status: ShopOrderStatus;
+  total: number;
+  shippingAddress: Address;
+  paymentMethod: string;
+  notes?: string;
+  items?: ShopOrderItem[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Cart Item (client-side only, not persisted to DB)
+export interface CartItem {
+  product: ShopProduct;
+  quantity: number;
+}
+
+// ==================== END SHOP TYPES ====================
+
 export type UserRole = 'admin' | 'client';
 
 export interface ClientMemory {

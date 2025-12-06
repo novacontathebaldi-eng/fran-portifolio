@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, LayoutDashboard } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
+import { useCart } from '../context/CartContext';
 import { Chatbot } from './Chatbot';
 import InstallButton from './InstallButton';
 
@@ -26,6 +27,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, settings, siteContent } = useProjects();
+  const { cartCount } = useCart();
 
   useEffect(() => {
     // Increased threshold to 50px for a more deliberate transition
@@ -166,7 +168,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link to="/portfolio" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Portfólio</Link>
             <Link to="/cultural" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Cultura</Link>
             {settings.enableShop && (
-              <Link to="/services" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Serviços</Link>
+              <>
+                <Link to="/shop" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Loja</Link>
+                <Link to="/services" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Serviços</Link>
+              </>
             )}
             <Link to="/contact" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Contato</Link>
             {currentUser?.role === 'admin' && (
@@ -182,9 +187,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <button onClick={() => setSearchOpen(true)} className="hover:scale-110 transition-transform"><Search className="w-5 h-5" /></button>
             <Link to={currentUser ? "/profile" : "/auth"} className="hover:scale-110 transition-transform"><User className="w-5 h-5" /></Link>
             {settings.enableShop && (
-              <Link to="/budget" className="hover:scale-110 transition-transform relative">
+              <Link to="/cart" className="hover:scale-110 transition-transform relative">
                 <ShoppingBag className="w-5 h-5" />
-                {currentUser?.role === 'client' && <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full ring-2 ring-white"></span>}
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-accent text-black text-xs font-bold rounded-full flex items-center justify-center ring-2 ring-white">
+                    {cartCount > 9 ? '9+' : cartCount}
+                  </span>
+                )}
               </Link>
             )}
           </div>
@@ -216,50 +225,60 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </button>
         </div>
-      </nav>
+      </nav >
 
       {/* Mobile Menu Overlay */}
       {/* FIXED: Z-Index lowered to 45 so it sits BELOW the Nav (z-50) but ABOVE content. 
           This ensures the close button inside Nav is clickable and visible. */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 bg-white/40 backdrop-blur-xl z-[45] flex flex-col pt-24 pb-8 px-6 animate-fadeIn text-primary md:hidden overflow-y-auto pointer-events-auto">
-          <div className="flex flex-col space-y-6 flex-grow">
-            <Link to="/" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Início</Link>
-            <Link to="/about" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Sobre</Link>
-            <Link to="/office" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">O Escritório</Link>
-            <Link to="/portfolio" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Portfólio</Link>
-            <Link to="/cultural" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Cultura</Link>
-            {settings.enableShop && (
-              <Link to="/services" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Serviços</Link>
-            )}
-            <Link to="/contact" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Contato</Link>
-
-            <div className="pt-4 space-y-4">
-              <Link to={currentUser ? "/profile" : "/auth"} onClick={handleLinkClick} className="flex items-center space-x-3 text-lg font-medium hover:text-accent transition">
-                <User className="w-5 h-5" />
-                <span>Minha Conta</span>
-              </Link>
-              <button onClick={() => { setIsMenuOpen(false); setSearchOpen(true); }} className="flex items-center space-x-3 text-lg font-medium hover:text-accent transition w-full text-left">
-                <Search className="w-5 h-5" />
-                <span>Buscar</span>
-              </button>
+      {
+        isMenuOpen && (
+          <div className="fixed inset-0 bg-white/40 backdrop-blur-xl z-[45] flex flex-col pt-24 pb-8 px-6 animate-fadeIn text-primary md:hidden overflow-y-auto pointer-events-auto">
+            <div className="flex flex-col space-y-6 flex-grow">
+              <Link to="/" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Início</Link>
+              <Link to="/about" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Sobre</Link>
+              <Link to="/office" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">O Escritório</Link>
+              <Link to="/portfolio" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Portfólio</Link>
+              <Link to="/cultural" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Cultura</Link>
               {settings.enableShop && (
-                <Link to="/budget" onClick={handleLinkClick} className="flex items-center space-x-3 text-lg font-medium hover:text-accent transition">
-                  <ShoppingBag className="w-5 h-5" />
-                  <span>Orçamento</span>
+                <>
+                  <Link to="/shop" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Loja</Link>
+                  <Link to="/services" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Serviços</Link>
+                </>
+              )}
+              <Link to="/contact" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Contato</Link>
+
+              <div className="pt-4 space-y-4">
+                <Link to={currentUser ? "/profile" : "/auth"} onClick={handleLinkClick} className="flex items-center space-x-3 text-lg font-medium hover:text-accent transition">
+                  <User className="w-5 h-5" />
+                  <span>Minha Conta</span>
                 </Link>
-              )}
-              {currentUser?.role === 'admin' && (
-                <Link to="/admin" onClick={handleLinkClick} className="text-lg font-bold text-accent pt-2 block">Acessar Admin</Link>
-              )}
+                <button onClick={() => { setIsMenuOpen(false); setSearchOpen(true); }} className="flex items-center space-x-3 text-lg font-medium hover:text-accent transition w-full text-left">
+                  <Search className="w-5 h-5" />
+                  <span>Buscar</span>
+                </button>
+                {settings.enableShop && (
+                  <Link to="/cart" onClick={handleLinkClick} className="flex items-center space-x-3 text-lg font-medium hover:text-accent transition relative">
+                    <ShoppingBag className="w-5 h-5" />
+                    <span>Carrinho</span>
+                    {cartCount > 0 && (
+                      <span className="ml-2 bg-accent text-black text-xs font-bold px-2 py-0.5 rounded-full">
+                        {cartCount}
+                      </span>
+                    )}
+                  </Link>
+                )}
+                {currentUser?.role === 'admin' && (
+                  <Link to="/admin" onClick={handleLinkClick} className="text-lg font-bold text-accent pt-2 block">Acessar Admin</Link>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-8 text-xs text-gray-500 uppercase tracking-widest text-center">
+              Fran Siller Arquitetura
             </div>
           </div>
-
-          <div className="mt-8 text-xs text-gray-500 uppercase tracking-widest text-center">
-            Fran Siller Arquitetura
-          </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Main Content */}
       <main className="flex-grow">
@@ -307,6 +326,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </div>
       </footer>
-    </div>
+    </div >
   );
 };

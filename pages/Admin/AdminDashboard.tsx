@@ -8,6 +8,7 @@ import { supabase } from '../../supabaseClient';
 import { BudgetRequestsDashboard } from './BudgetRequestsDashboard';
 import { BudgetRequestDetail } from './BudgetRequestDetail';
 import { Receipt } from 'lucide-react';
+import { ShopManagement } from './ShopManagement';
 
 // Real Supabase Upload
 const uploadToSupabase = async (file: File): Promise<string> => {
@@ -34,8 +35,8 @@ export const AdminDashboard: React.FC = () => {
     const { projects, deleteProject, culturalProjects, deleteCulturalProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, persistAllSettings, adminNotes, markNoteAsRead, deleteAdminNote, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, updateAppointment, deleteAppointmentPermanently, currentUser, isLoadingData } = useProjects();
     const navigate = useNavigate();
 
-    // TABS: Added 'cultural'
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'contact-messages' | 'clients' | 'agenda' | 'office' | 'budgets'>('dashboard');
+    // TABS: Added 'cultural' and 'shop'
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'contact-messages' | 'clients' | 'agenda' | 'office' | 'budgets' | 'shop'>('dashboard');
 
     // Contact Messages State
     const [contactMessages, setContactMessages] = useState<any[]>([]);
@@ -562,6 +563,7 @@ export const AdminDashboard: React.FC = () => {
                     <NavItem id="clients" icon={Users} label="Clientes & Arquivos" />
                     <NavItem id="ai-config" icon={Brain} label="Inteligência Artificial" />
                     <NavItem id="budgets" icon={Receipt} label="Orçamentos" />
+                    <NavItem id="shop" icon={ShoppingBag} label="Loja" />
                     <NavItem id="messages" icon={MessageSquare} label="Recados" count={unreadNotesCount} />
                     <NavItem id="contact-messages" icon={Mail} label="Contatos" />
                     <NavItem id="office" icon={MapPin} label="Escritório (Site)" />
@@ -997,6 +999,13 @@ export const AdminDashboard: React.FC = () => {
                                     showToast={showToast}
                                 />
                             )}
+                        </div>
+                    )}
+
+                    {/* Shop Management View */}
+                    {activeTab === 'shop' && (
+                        <div className="animate-fadeIn">
+                            <ShopManagement onShowToast={showToast} />
                         </div>
                     )}
 
