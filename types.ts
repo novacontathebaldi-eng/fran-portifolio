@@ -287,6 +287,20 @@ export interface ChatbotConfig {
   showQuickActionsOnOpen: boolean;
 }
 
+// Dashboard Widget for Customizable Admin Overview
+export type DashboardTabId = 'dashboard' | 'agenda' | 'projects' | 'cultural' | 'clients' | 'ai-config' | 'budgets' | 'messages' | 'contact-messages' | 'office' | 'content' | 'settings';
+
+export interface DashboardWidget {
+  id: string;
+  tabId: DashboardTabId;
+  label: string;
+  icon: string;     // lucide-react icon name
+  bgColor: string;  // Tailwind color class (e.g., 'bg-black', 'bg-red-600')
+  order: number;
+  showCount?: boolean;
+  countKey?: 'projects' | 'culturalProjects' | 'appointments' | 'messages' | 'contactMessages' | 'budgets';
+}
+
 export interface GlobalSettings {
   enableShop: boolean;
   aiConfig: {
@@ -297,6 +311,7 @@ export interface GlobalSettings {
     temperature: number;
   };
   chatbotConfig?: ChatbotConfig; // NEW: Chatbot configuration
+  dashboardWidgets?: DashboardWidget[]; // Customizable dashboard widgets
 }
 
 export interface AdminNote {

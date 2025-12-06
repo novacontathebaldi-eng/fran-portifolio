@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail } from 'lucide-react';
-import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory, FaqItem, SocialLink } from '../../types';
+import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory, FaqItem, SocialLink, DashboardWidget, DashboardTabId } from '../../types';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import { BudgetRequestsDashboard } from './BudgetRequestsDashboard';
@@ -95,6 +95,7 @@ export const AdminDashboard: React.FC = () => {
     // AGENDA STATES
     const [showHistory, setShowHistory] = useState(false);
     const [showBlockModal, setShowBlockModal] = useState(false);
+    const [showEditDashboardModal, setShowEditDashboardModal] = useState(false); // Dashboard customization modal
     const [blockForm, setBlockForm] = useState({ date: '', time: '' });
     const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
 
@@ -561,47 +562,216 @@ export const AdminDashboard: React.FC = () => {
                 <div className="p-6 md:p-10 max-w-7xl mx-auto min-h-screen">
 
                     {/* Dashboard View */}
-                    {activeTab === 'dashboard' && (
-                        <div className="animate-fadeIn">
-                            <h2 className="text-3xl font-serif font-bold mb-8 text-black">Bem-vinda, Fran.</h2>
+                    {activeTab === 'dashboard' && (() => {
+                        // Icon map for dynamic rendering
+                        const iconMap: Record<string, React.ElementType> = {
+                            LayoutDashboard, FolderOpen, Landmark, Calendar, Users, Brain, Receipt, MessageSquare, Mail, MapPin, FileText, Settings
+                        };
 
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="p-3 bg-black text-white rounded-xl"><FolderOpen className="w-6 h-6" /></div>
-                                    </div>
-                                    <h3 className="text-4xl font-serif font-bold mb-1 text-black">{projects.length}</h3>
-                                    <p className="text-gray-500 text-sm">Projetos Publicados</p>
+                        // Default widgets configuration
+                        const defaultWidgets: DashboardWidget[] = [
+                            { id: '1', tabId: 'projects', label: 'Projetos Publicados', icon: 'FolderOpen', bgColor: 'bg-black', order: 1, showCount: true, countKey: 'projects' },
+                            { id: '2', tabId: 'cultural', label: 'Projetos Culturais', icon: 'Landmark', bgColor: 'bg-red-600', order: 2, showCount: true, countKey: 'culturalProjects' },
+                            { id: '3', tabId: 'agenda', label: 'Agendamentos Ativos', icon: 'Calendar', bgColor: 'bg-purple-600', order: 3, showCount: true, countKey: 'appointments' },
+                            { id: '4', tabId: 'messages', label: 'Mensagens', icon: 'MessageSquare', bgColor: 'bg-accent', order: 4, showCount: true, countKey: 'messages' },
+                        ];
+
+                        // Get widgets from settings or use defaults
+                        const widgets = (settings.dashboardWidgets && settings.dashboardWidgets.length > 0)
+                            ? settings.dashboardWidgets
+                            : defaultWidgets;
+
+                        // Count values mapping
+                        const countValues: Record<string, number> = {
+                            projects: projects.length,
+                            culturalProjects: culturalProjects.length,
+                            appointments: appointments.filter(a => a.status !== 'cancelled').length,
+                            messages: adminNotes.length,
+                            contactMessages: contactMessages.length,
+                            budgets: 0, // Would need to fetch budget count
+                        };
+
+                        // Available sidebar items for adding widgets
+                        const sidebarItems: { id: DashboardTabId; label: string; icon: string; bgColor: string; countKey?: string }[] = [
+                            { id: 'projects', label: 'Projetos Publicados', icon: 'FolderOpen', bgColor: 'bg-black', countKey: 'projects' },
+                            { id: 'cultural', label: 'Projetos Culturais', icon: 'Landmark', bgColor: 'bg-red-600', countKey: 'culturalProjects' },
+                            { id: 'agenda', label: 'Agendamentos', icon: 'Calendar', bgColor: 'bg-purple-600', countKey: 'appointments' },
+                            { id: 'messages', label: 'Recados', icon: 'MessageSquare', bgColor: 'bg-accent', countKey: 'messages' },
+                            { id: 'contact-messages', label: 'Contatos', icon: 'Mail', bgColor: 'bg-blue-600', countKey: 'contactMessages' },
+                            { id: 'budgets', label: 'Orçamentos', icon: 'Receipt', bgColor: 'bg-green-600', countKey: 'budgets' },
+                            { id: 'clients', label: 'Clientes & Arquivos', icon: 'Users', bgColor: 'bg-indigo-600' },
+                            { id: 'ai-config', label: 'Inteligência Artificial', icon: 'Brain', bgColor: 'bg-pink-600' },
+                            { id: 'office', label: 'Escritório', icon: 'MapPin', bgColor: 'bg-orange-600' },
+                            { id: 'content', label: 'Conteúdo Site', icon: 'FileText', bgColor: 'bg-teal-600' },
+                            { id: 'settings', label: 'Configurações', icon: 'Settings', bgColor: 'bg-gray-600' },
+                        ];
+
+                        // Add widget handler
+                        const handleAddWidget = (item: typeof sidebarItems[0]) => {
+                            const newWidget: DashboardWidget = {
+                                id: Date.now().toString(),
+                                tabId: item.id,
+                                label: item.label,
+                                icon: item.icon,
+                                bgColor: item.bgColor,
+                                order: widgets.length + 1,
+                                showCount: !!item.countKey,
+                                countKey: item.countKey as any,
+                            };
+                            const newWidgets = [...widgets, newWidget];
+                            handleSettingsChange('dashboardWidgets', newWidgets);
+                        };
+
+                        // Remove widget handler
+                        const handleRemoveWidget = (widgetId: string) => {
+                            const newWidgets = widgets.filter(w => w.id !== widgetId);
+                            handleSettingsChange('dashboardWidgets', newWidgets);
+                        };
+
+                        // Get badge info for pending items
+                        const getBadge = (widget: DashboardWidget) => {
+                            if (widget.tabId === 'agenda' && pendingAppointmentsCount > 0) {
+                                return { text: 'Pendente', bgColor: 'bg-yellow-100', textColor: 'text-yellow-800' };
+                            }
+                            if (widget.tabId === 'messages' && unreadNotesCount > 0) {
+                                return { text: 'Novas', bgColor: 'bg-red-100', textColor: 'text-red-800' };
+                            }
+                            return null;
+                        };
+
+                        return (
+                            <div className="animate-fadeIn">
+                                <div className="flex justify-between items-center mb-8">
+                                    <h2 className="text-3xl font-serif font-bold text-black">Bem-vinda, Fran.</h2>
+                                    <button
+                                        onClick={() => setShowEditDashboardModal(true)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium text-gray-700 transition"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                        Personalizar
+                                    </button>
                                 </div>
 
-                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="p-3 bg-red-600 text-white rounded-xl"><Landmark className="w-6 h-6" /></div>
-                                    </div>
-                                    <h3 className="text-4xl font-serif font-bold mb-1 text-black">{culturalProjects.length}</h3>
-                                    <p className="text-gray-500 text-sm">Projetos Culturais</p>
+                                {/* Widgets Grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                                    {widgets.sort((a, b) => a.order - b.order).map(widget => {
+                                        const IconComponent = iconMap[widget.icon] || LayoutDashboard;
+                                        const badge = getBadge(widget);
+                                        const count = widget.showCount && widget.countKey ? countValues[widget.countKey] : null;
+
+                                        return (
+                                            <button
+                                                key={widget.id}
+                                                onClick={() => setActiveTab(widget.tabId)}
+                                                className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-200 text-left group cursor-pointer"
+                                            >
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div className={`p-3 ${widget.bgColor} text-white rounded-xl group-hover:scale-105 transition-transform`}>
+                                                        <IconComponent className="w-6 h-6" />
+                                                    </div>
+                                                    {badge && (
+                                                        <span className={`text-xs font-bold ${badge.bgColor} ${badge.textColor} px-2 py-1 rounded`}>
+                                                            {badge.text}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <h3 className="text-4xl font-serif font-bold mb-1 text-black">
+                                                    {count !== null ? count : '—'}
+                                                </h3>
+                                                <p className="text-gray-500 text-sm">{widget.label}</p>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
 
-                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="p-3 bg-purple-600 text-white rounded-xl"><Calendar className="w-6 h-6" /></div>
-                                        {pendingAppointmentsCount > 0 && <span className="text-xs font-bold bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pendente</span>}
-                                    </div>
-                                    <h3 className="text-4xl font-serif font-bold mb-1 text-black">{appointments.filter(a => a.status !== 'cancelled').length}</h3>
-                                    <p className="text-gray-500 text-sm">Agendamentos Ativos</p>
-                                </div>
+                                {/* Edit Modal */}
+                                <AnimatePresence>
+                                    {showEditDashboardModal && (
+                                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                                            <motion.div
+                                                initial={{ scale: 0.9, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                exit={{ scale: 0.9, opacity: 0 }}
+                                                className="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto"
+                                            >
+                                                <div className="flex justify-between items-center mb-6">
+                                                    <h3 className="font-bold text-xl">Personalizar Dashboard</h3>
+                                                    <button onClick={() => setShowEditDashboardModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                                                        <X className="w-5 h-5" />
+                                                    </button>
+                                                </div>
 
-                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="p-3 bg-accent text-black rounded-xl"><MessageSquare className="w-6 h-6" /></div>
-                                        {unreadNotesCount > 0 && <span className="text-xs font-bold bg-red-100 text-red-800 px-2 py-1 rounded">Novas</span>}
-                                    </div>
-                                    <h3 className="text-4xl font-serif font-bold mb-1 text-black">{adminNotes.length}</h3>
-                                    <p className="text-gray-500 text-sm">Mensagens</p>
-                                </div>
+                                                {/* Current Widgets */}
+                                                <div className="mb-6">
+                                                    <h4 className="text-sm font-bold uppercase text-gray-500 mb-3">Widgets Ativos</h4>
+                                                    <div className="space-y-2">
+                                                        {widgets.length === 0 ? (
+                                                            <p className="text-gray-400 text-sm text-center py-4">Nenhum widget ativo. Adicione abaixo.</p>
+                                                        ) : (
+                                                            widgets.sort((a, b) => a.order - b.order).map(widget => {
+                                                                const IconComponent = iconMap[widget.icon] || LayoutDashboard;
+                                                                return (
+                                                                    <div key={widget.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className={`p-2 ${widget.bgColor} text-white rounded-lg`}>
+                                                                                <IconComponent className="w-4 h-4" />
+                                                                            </div>
+                                                                            <span className="font-medium">{widget.label}</span>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => handleRemoveWidget(widget.id)}
+                                                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                        </button>
+                                                                    </div>
+                                                                );
+                                                            })
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Available Items */}
+                                                <div>
+                                                    <h4 className="text-sm font-bold uppercase text-gray-500 mb-3">Adicionar Widget</h4>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {sidebarItems
+                                                            .filter(item => !widgets.some(w => w.tabId === item.id))
+                                                            .map(item => {
+                                                                const IconComponent = iconMap[item.icon] || LayoutDashboard;
+                                                                return (
+                                                                    <button
+                                                                        key={item.id}
+                                                                        onClick={() => handleAddWidget(item)}
+                                                                        className="flex items-center gap-2 p-3 border border-dashed border-gray-200 rounded-xl hover:border-gray-400 hover:bg-gray-50 transition text-left"
+                                                                    >
+                                                                        <div className={`p-2 ${item.bgColor} text-white rounded-lg`}>
+                                                                            <IconComponent className="w-4 h-4" />
+                                                                        </div>
+                                                                        <span className="text-sm font-medium text-gray-600">{item.label}</span>
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                    </div>
+                                                </div>
+
+                                                {/* Save Button */}
+                                                <div className="mt-6 pt-4 border-t border-gray-100">
+                                                    <button
+                                                        onClick={() => { saveSettings(); setShowEditDashboardModal(false); }}
+                                                        className="w-full bg-black text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2"
+                                                    >
+                                                        <Save className="w-4 h-4" />
+                                                        Salvar Alterações
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        </div>
+                                    )}
+                                </AnimatePresence>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     {/* ... (Clients, Settings, AI Config, Projects, Cultural, Messages, Content, Office Views - Unchanged) ... */}
                     {/* I'm keeping the structure but focusing on the changed Agenda view below */}
