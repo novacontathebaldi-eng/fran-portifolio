@@ -445,15 +445,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   // Safe display list avoiding crashes if array is undefined during transitions
   const displayMessages = (currentChatMessages && currentChatMessages.length > 0) ? currentChatMessages : defaultMessages;
 
-  // Load Brevo Script on Mount if ID is present and Human Transfer is ENABLED
-  useEffect(() => {
-    const brevoId = import.meta.env.VITE_BREVO_CONVERSATIONS_APP_ID;
-    const isHumanTransferEnabled = settings?.chatbotConfig?.transferToHumanEnabled;
-
-    if (brevoId && isHumanTransferEnabled) {
-      loadBrevoConversations(brevoId);
-    }
-  }, [settings.chatbotConfig?.transferToHumanEnabled]);
+  // NOTE: Brevo script is loaded ON-DEMAND via openBrevoChat() when user requests human agent
+  // This prevents the floating button from appearing before it's needed
 
   useEffect(() => {
     if (isOpen && !showHistory && lastMessageRef.current) {
