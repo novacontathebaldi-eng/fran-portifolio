@@ -275,11 +275,16 @@ export const AdminDashboard: React.FC = () => {
     const saveSettings = async () => {
         setSaving(true);
         try {
-            updateSettings(settingsForm);
-            // Atualiza também o conteúdo caso tenha sido modificado
-            updateSiteContent(contentForm);
-            showToast('Configurações salvas.', 'success');
+            const settingsSuccess = await updateSettings(settingsForm);
+            const contentSuccess = await updateSiteContent(contentForm);
+
+            if (settingsSuccess && contentSuccess) {
+                showToast('Configurações salvas com sucesso!', 'success');
+            } else {
+                showToast('Erro ao salvar algumas configurações. Tente novamente.', 'error');
+            }
         } catch (err) {
+            console.error('Error saving settings:', err);
             showToast('Erro ao salvar configurações.', 'error');
         } finally {
             setSaving(false);

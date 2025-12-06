@@ -460,7 +460,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   // --- SETTINGS PERSISTENCE (FIXED) ---
-  const persistSettings = async (newContent?: SiteContent, newSettings?: GlobalSettings, newSchedule?: ScheduleSettings) => {
+  const persistSettings = async (newContent?: SiteContent, newSettings?: GlobalSettings, newSchedule?: ScheduleSettings): Promise<boolean> => {
     // 1. Determine final state
     const finalContent = newContent || siteContent;
     const finalSettings = newSettings || settings;
@@ -489,9 +489,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     if (error) {
       console.error("Error saving settings to DB:", error);
-      showToast("Erro ao salvar alterações no banco de dados.", "error");
-      // Optional: Revert local state if critical
+      return false;
     }
+    return true;
   };
 
   const addProject = async (project: Project) => {
@@ -532,16 +532,16 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (!error) setCulturalProjects(prev => prev.filter(p => p.id !== id));
   };
 
-  const updateSiteContent = (content: SiteContent) => {
-    persistSettings(content, undefined, undefined);
+  const updateSiteContent = async (content: SiteContent): Promise<boolean> => {
+    return await persistSettings(content, undefined, undefined);
   };
 
-  const updateSettings = (newSettings: GlobalSettings) => {
-    persistSettings(undefined, newSettings, undefined);
+  const updateSettings = async (newSettings: GlobalSettings): Promise<boolean> => {
+    return await persistSettings(undefined, newSettings, undefined);
   };
 
-  const updateScheduleSettings = (newSettings: ScheduleSettings) => {
-    persistSettings(undefined, undefined, newSettings);
+  const updateScheduleSettings = async (newSettings: ScheduleSettings): Promise<boolean> => {
+    return await persistSettings(undefined, undefined, newSettings);
   };
 
   // UPDATED: Now returns boolean status to caller
