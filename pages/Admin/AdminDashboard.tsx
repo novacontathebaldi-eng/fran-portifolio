@@ -526,13 +526,13 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Sidebar */}
-            <aside className={`fixed md:relative z-40 w-64 min-h-screen bg-[#111] border-r border-gray-800 flex flex-col transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} pt-20 md:pt-0`}>
-                <div className="p-8 hidden md:block">
+            <aside className={`fixed md:relative z-40 w-64 h-screen bg-[#111] border-r border-gray-800 flex flex-col transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} pt-16 md:pt-0`}>
+                <div className="p-8 hidden md:block shrink-0">
                     <h1 className="text-2xl font-serif font-bold tracking-wider">Fran Siller<span className="text-accent">.</span></h1>
                     <p className="text-xs text-gray-500 uppercase tracking-widest mt-2">Painel Administrativo</p>
                 </div>
 
-                <nav className="flex-grow px-4 space-y-2">
+                <nav className="flex-grow px-4 space-y-2 overflow-y-auto pb-4">
                     <NavItem id="dashboard" icon={LayoutDashboard} label="Visão Geral" />
                     <NavItem id="agenda" icon={Calendar} label="Agenda" count={pendingAppointmentsCount} />
                     <NavItem id="projects" icon={FolderOpen} label="Projetos" />
@@ -547,7 +547,7 @@ export const AdminDashboard: React.FC = () => {
                     <NavItem id="settings" icon={Settings} label="Configurações" />
                 </nav>
 
-                <div className="p-4 border-t border-gray-800">
+                <div className="p-4 border-t border-gray-800 shrink-0">
                     <Link to="/" className="flex items-center space-x-3 w-full p-4 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition mb-1">
                         <ArrowLeft className="w-5 h-5" />
                         <span>Voltar ao Site</span>
