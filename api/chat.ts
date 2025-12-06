@@ -152,11 +152,25 @@ VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA.
    - NÃO: Pergunte o endereço (NÃO chame tool ainda)
    - SIM: CHAME 'scheduleMeeting' com type='visit' e address='Endereço'
 
-## TRANSFERÊNCIA PARA HUMANO
-- Se o usuário pedir para falar com um atendente/humano/pessoa real:
-- CHAME IMEDIATAMENTE a função 'requestHumanAgent'.
-- Não tente convencer o usuário do contrário.
-- Responda: "Estou transferindo você para um de nossos especialistas."
+## TRANSFERÊNCIA PARA HUMANO (PRIORIDADE MÁXIMA)
+Quando o usuário expressar QUALQUER desejo de falar com humano, você DEVE:
+1. CHAMAR IMEDIATAMENTE a função 'requestHumanAgent'
+2. NUNCA tentar resolver ou convencer o contrário
+3. NUNCA ignorar o pedido
+
+Frases que SEMPRE exigem transferência:
+- "falar com atendente/humano/pessoa real/alguém"
+- "quero um humano/pessoa de verdade"
+- "transferir para atendente"
+- "preciso de ajuda humana"
+- "falar com alguém de verdade"
+- "atendimento humano"
+- "não quero falar com robô/bot/IA"
+- "me transfira"
+- "chamar atendente"
+- Qualquer variação similar
+
+Resposta obrigatória: "Claro! Estou te transferindo para um de nossos especialistas agora."
 
 2. REUNIÃO (conversa/alinhamento):
    - Usuário pede reunião → Você sabe se é Online ou Presencial?
@@ -322,6 +336,53 @@ export async function chatWithConcierge(
   systemInstruction += `\n\n[STATUS ATENDIMENTO HUMANO]: ${humanStatus}
   - Se OFFLINE: NUNCA chame 'requestHumanAgent'. Explique que não há atendentes no momento e ofereça registrar um recado para retorno posterior.
   - Se ONLINE: Pode transferir se o usuário solicitar ou se for crítico.`;
+
+  // DETECÇÃO PROGRAMÁTICA DE PEDIDO DE ATENDENTE HUMANO
+  // Verifica ANTES de enviar ao modelo para garantir que não seja ignorado
+  const humanRequestPatterns = [
+    /falar\s*(com)?\s*(um)?\s*(atendente|humano|pessoa|algu[eé]m)/i,
+    /quero\s*(um)?\s*(atendente|humano|pessoa)/i,
+    /transferir\s*(para)?\s*(atendente|humano)/i,
+    /atendimento\s*humano/i,
+    /pessoa\s*(real|de verdade)/i,
+    /n[aã]o\s*quero\s*(falar\s*com)?\s*(rob[oô]|bot|ia|intelig[eê]ncia)/i,
+    /me\s*transfere/i,
+    /chamar?\s*(um)?\s*atendente/i,
+    /preciso\s*(de)?\s*(ajuda)?\s*humana/i,
+    /falar\s*com\s*gente\s*de\s*verdade/i,
+    /atendente\s*humano/i,
+    /quero\s*falar\s*com\s*algu[eé]m/i
+  ];
+
+  // Pega a última mensagem do usuário
+  let lastUserMessage = '';
+  if (Array.isArray(message)) {
+    const lastMsg = message.filter((m: any) => m.role === 'user').pop();
+    lastUserMessage = lastMsg?.text || '';
+  } else {
+    lastUserMessage = typeof message === 'string' ? message : '';
+  }
+
+  // Verifica se o usuário pediu atendente humano
+  const isHumanRequest = humanRequestPatterns.some(pattern => pattern.test(lastUserMessage));
+
+  if (isHumanRequest && isHumanOnline) {
+    // Retorna IMEDIATAMENTE sem passar pelo modelo
+    console.log('[Chat] Detectado pedido de atendente humano:', lastUserMessage);
+    return {
+      role: 'model',
+      text: 'Claro! Estou te transferindo para um de nossos especialistas agora. Aguarde um momento...',
+      actions: [{ type: 'requestHuman', payload: {} }]
+    };
+  } else if (isHumanRequest && !isHumanOnline) {
+    // Atendente offline - oferece alternativa
+    console.log('[Chat] Pedido de atendente detectado, mas offline');
+    return {
+      role: 'model',
+      text: 'Puxa, nossos atendentes não estão disponíveis agora. Mas posso anotar um recado pra eles te retornarem assim que possível! Qual seu nome e contato?',
+      actions: []
+    };
+  }
 
   let contents = [];
   if (Array.isArray(message)) {
