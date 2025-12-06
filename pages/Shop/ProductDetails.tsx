@@ -25,29 +25,51 @@ export const ProductDetails: React.FC = () => {
         }
     }, [settings.enableShop, isLoadingData, navigate]);
 
-    // Fetch products and find current one
+    const [fetchAttempted, setFetchAttempted] = useState(false);
+
+    // Fetch products with timeout protection
     useEffect(() => {
+        let timeoutId: ReturnType<typeof setTimeout>;
+
         const loadProduct = async () => {
-            if (shopProducts.length === 0) {
-                await fetchShopProducts();
+            try {
+                if (shopProducts.length === 0) {
+                    await fetchShopProducts();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar produtos:', error);
+            } finally {
+                setFetchAttempted(true);
+                setLoading(false);
             }
-            setLoading(false);
         };
+
+        // Safety timeout - ensure loading ends after 5 seconds max
+        timeoutId = setTimeout(() => {
+            if (loading) {
+                console.warn('[ProductDetails] Timeout: Forçando fim do loading');
+                setFetchAttempted(true);
+                setLoading(false);
+            }
+        }, 5000);
+
         loadProduct();
+
+        return () => clearTimeout(timeoutId);
     }, []);
 
-    // Find product when products are loaded
+    // Find product when products are loaded - only after fetch was attempted
     useEffect(() => {
-        if (!loading && id) {
+        if (!loading && fetchAttempted && id) {
             const found = shopProducts.find(p => p.id === id);
             if (found && found.status === 'active') {
                 setProduct(found);
-            } else {
-                // Product not found or inactive
+            } else if (shopProducts.length > 0 || fetchAttempted) {
+                // Product not found or inactive - only redirect after we confirmed fetch completed
                 navigate('/shop', { replace: true });
             }
         }
-    }, [loading, shopProducts, id, navigate]);
+    }, [loading, fetchAttempted, shopProducts, id, navigate]);
 
     const handleAddToCart = () => {
         if (product && product.stock > 0) {
@@ -235,10 +257,10 @@ export const ProductDetails: React.FC = () => {
                             onClick={handleAddToCart}
                             disabled={product.stock === 0 || maxAddable <= 0}
                             className={`w-full py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-3 ${addedToCart
-                                    ? 'bg-green-500 text-white'
-                                    : product.stock === 0 || maxAddable <= 0
-                                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                        : 'bg-black text-white hover:bg-accent hover:text-black'
+                                ? 'bg-green-500 text-white'
+                                : product.stock === 0 || maxAddable <= 0
+                                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                    : 'bg-black text-white hover:bg-accent hover:text-black'
                                 }`}
                         >
                             {addedToCart ? (

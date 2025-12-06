@@ -16,9 +16,21 @@ export const ClientBudgetsView: React.FC<ClientBudgetsViewProps> = ({ onViewDeta
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<BudgetStatus | 'all'>('all');
 
-    // Buscar orçamentos do cliente
+    // Buscar orçamentos do cliente com timeout de segurança
     useEffect(() => {
+        let timeoutId: ReturnType<typeof setTimeout>;
+
+        // Safety timeout - ensure loading ends after 10 seconds max
+        timeoutId = setTimeout(() => {
+            if (loading) {
+                console.warn('[ClientBudgetsView] Timeout: Forçando fim do loading');
+                setLoading(false);
+            }
+        }, 10000);
+
         fetchClientBudgets();
+
+        return () => clearTimeout(timeoutId);
     }, [clientId]);
 
     const fetchClientBudgets = async () => {

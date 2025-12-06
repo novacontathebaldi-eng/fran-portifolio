@@ -22,13 +22,31 @@ export const Shop: React.FC = () => {
         }
     }, [settings.enableShop, isLoadingData, navigate]);
 
-    // Fetch products on mount
+    // Fetch products on mount with timeout protection
     useEffect(() => {
+        let timeoutId: ReturnType<typeof setTimeout>;
+
         const loadProducts = async () => {
-            await fetchShopProducts();
-            setLoading(false);
+            try {
+                await fetchShopProducts();
+            } catch (error) {
+                console.error('Erro ao carregar produtos:', error);
+            } finally {
+                setLoading(false);
+            }
         };
+
+        // Safety timeout - ensure loading ends after 5 seconds max
+        timeoutId = setTimeout(() => {
+            if (loading) {
+                console.warn('[Shop] Timeout: Forçando fim do loading');
+                setLoading(false);
+            }
+        }, 5000);
+
         loadProducts();
+
+        return () => clearTimeout(timeoutId);
     }, []);
 
     // Get only active products
@@ -111,8 +129,8 @@ export const Shop: React.FC = () => {
                                 key={cat}
                                 onClick={() => setSelectedCategory(cat)}
                                 className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition ${selectedCategory === cat
-                                        ? 'bg-black text-white'
-                                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                                    ? 'bg-black text-white'
+                                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                                     }`}
                             >
                                 {cat === 'all' ? 'Todos' : cat}
@@ -195,8 +213,8 @@ export const Shop: React.FC = () => {
                                                 onClick={(e) => handleAddToCart(product, e)}
                                                 disabled={product.stock === 0}
                                                 className={`p-2 rounded-full transition ${product.stock > 0
-                                                        ? 'bg-black text-white hover:bg-accent hover:text-black'
-                                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                    ? 'bg-black text-white hover:bg-accent hover:text-black'
+                                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                                                     }`}
                                             >
                                                 <ShoppingBag className="w-5 h-5" />

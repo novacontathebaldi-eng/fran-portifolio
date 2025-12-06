@@ -23,9 +23,21 @@ export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = (
         'Mais antigos': false,
     });
 
-    // Fetch real data from Supabase
+    // Fetch real data from Supabase with timeout protection
     useEffect(() => {
+        let timeoutId: ReturnType<typeof setTimeout>;
+
+        // Safety timeout - ensure loading ends after 10 seconds max
+        timeoutId = setTimeout(() => {
+            if (loading) {
+                console.warn('[BudgetRequestsDashboard] Timeout: Forçando fim do loading');
+                setLoading(false);
+            }
+        }, 10000);
+
         fetchBudgetRequests();
+
+        return () => clearTimeout(timeoutId);
     }, []);
 
     const fetchBudgetRequests = async () => {

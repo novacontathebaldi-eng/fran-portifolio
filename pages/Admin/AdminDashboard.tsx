@@ -42,26 +42,56 @@ export const AdminDashboard: React.FC = () => {
     const [contactMessages, setContactMessages] = useState<any[]>([]);
     const [loadingContactMessages, setLoadingContactMessages] = useState(false);
 
-    // Fetch Contact Messages when tab is active
-    useEffect(() => {
-        if (activeTab === 'contact-messages') {
-            setLoadingContactMessages(true);
-            supabase.from('contact_messages').select('*').order('created_at', { ascending: false })
-                .then(({ data }) => {
-                    setContactMessages(data || []);
-                    setLoadingContactMessages(false);
-                });
-        }
-    }, [activeTab]);
-
+    // Mobile Menu State
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [selectedBudgetRequestId, setSelectedBudgetRequestId] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const [saving, setSaving] = useState(false);
 
+    // Fetch Contact Messages when tab is active - with timeout protection
+    useEffect(() => {
+        if (activeTab === 'contact-messages') {
+            let timeoutId: ReturnType<typeof setTimeout>;
+
+            const fetchMessages = async () => {
+                setLoadingContactMessages(true);
+
+                // Safety timeout - ensure loading ends after 10 seconds max
+                timeoutId = setTimeout(() => {
+                    console.warn('[AdminDashboard] Contact messages timeout');
+                    setLoadingContactMessages(false);
+                }, 10000);
+
+                try {
+                    const { data, error } = await supabase
+                        .from('contact_messages')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    clearTimeout(timeoutId);
+
+                    if (error) {
+                        console.error('Erro ao carregar mensagens:', error);
+                    }
+                    setContactMessages(data || []);
+                } catch (err) {
+                    console.error('Erro crítico ao carregar mensagens:', err);
+                } finally {
+                    clearTimeout(timeoutId);
+                    setLoadingContactMessages(false);
+                }
+            };
+
+            fetchMessages();
+
+            return () => clearTimeout(timeoutId);
+        }
+    }, [activeTab]);
+
     // Local forms
     const [contentForm, setContentForm] = useState<SiteContent>(siteContent);
     const [settingsForm, setSettingsForm] = useState<GlobalSettings>(settings);
+
 
     // Sync contentForm with siteContent when it loads from DB
     useEffect(() => {
