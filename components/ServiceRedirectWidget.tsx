@@ -14,7 +14,7 @@ const ServiceRedirectWidget: React.FC<ServiceRedirectProps> = ({ closeChat, data
     const navigate = useNavigate();
 
     const handleRedirect = () => {
-        navigate('/servicos'); // Adjust path as needed based on routes
+        navigate('/services'); // Correct route for services page
         closeChat();
     };
 

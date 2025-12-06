@@ -216,11 +216,13 @@ export async function chatWithConcierge(
   },
   aiConfig: any
 ) {
-  const apiKey = process.env.API_KEY;
+  // Vite uses import.meta.env for environment variables
+  const apiKey = import.meta.env.VITE_GOOGLE_AI_KEY || import.meta.env.VITE_API_KEY;
 
   if (!apiKey) {
+    console.error('API Key not configured. Please set VITE_GOOGLE_AI_KEY in .env file.');
     return {
-      text: "O sistema de IA está em modo de demonstração (Sem API Key).",
+      text: "Desculpe, o sistema de IA não está configurado corretamente. Por favor, contate o administrador.",
       role: 'model'
     };
   }
