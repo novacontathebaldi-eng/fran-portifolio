@@ -1,12 +1,13 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useProjects } from '../context/ProjectContext';
-import { Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Lock, Receipt } from 'lucide-react';
+import { Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Lock, Receipt, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Project, ClientMemory, ClientFolder, Address, User, Appointment } from '../types';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { ClientBudgetsView } from './Client/ClientBudgetsView';
 import { ClientBudgetDetail } from './Client/ClientBudgetDetail';
+import { ClientOrdersView } from './Client/ClientOrdersView';
 
 // Real Supabase Upload
 const uploadToSupabase = async (file: File): Promise<string> => {
@@ -30,8 +31,8 @@ const uploadToSupabase = async (file: File): Promise<string> => {
 };
 
 export const ClientArea: React.FC = () => {
-  const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory, appointments, updateAppointmentStatus, updateAppointment, updateUser, showToast, siteContent, checkAvailability } = useProjects();
-  const [activeTab, setActiveTab] = useState<'profile' | 'projects' | 'docs' | 'settings' | 'favs' | 'memories' | 'schedule' | 'budgets'>('projects');
+  const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory, appointments, updateAppointmentStatus, updateAppointment, updateUser, showToast, siteContent, checkAvailability, settings } = useProjects();
+  const [activeTab, setActiveTab] = useState<'profile' | 'projects' | 'docs' | 'settings' | 'favs' | 'memories' | 'schedule' | 'budgets' | 'orders'>('projects');
 
   const navigate = useNavigate();
 
@@ -236,6 +237,12 @@ export const ClientArea: React.FC = () => {
               <Receipt className="w-4 h-4" />
               <span className="whitespace-nowrap">Orçamentos</span>
             </button>
+            {settings.enableShop && (
+              <button onClick={() => setActiveTab('orders')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'orders' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+                <ShoppingBag className="w-4 h-4" />
+                <span className="whitespace-nowrap">Pedidos</span>
+              </button>
+            )}
             <button onClick={() => setActiveTab('profile')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'profile' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
               <UserCircle className="w-4 h-4" />
               <span className="whitespace-nowrap">Perfil</span>
@@ -553,6 +560,16 @@ export const ClientArea: React.FC = () => {
                     clientId={currentUser.id}
                   />
                 )}
+              </div>
+            )}
+
+            {/* ORDERS TAB */}
+            {activeTab === 'orders' && settings.enableShop && (
+              <div className="animate-fadeIn">
+                <ClientOrdersView
+                  showToast={showToast}
+                  clientId={currentUser.id}
+                />
               </div>
             )}
 
