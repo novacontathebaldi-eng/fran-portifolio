@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Filter, Search, Loader2 } from 'lucide-react';
+import { ShoppingBag, Filter, Search, Loader2, Grid, List, Plus } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useCart } from '../../context/CartContext';
 import { ShopProduct } from '../../types';
@@ -14,6 +14,7 @@ export const Shop: React.FC = () => {
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
     // Redirect if shop is disabled
     useEffect(() => {
@@ -80,87 +81,140 @@ export const Shop: React.FC = () => {
 
     if (loading || isLoadingData) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-white">
                 <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Hero Section */}
-            <div className="bg-[#1a1a1a] text-white pt-32 pb-16">
-                <div className="container mx-auto px-6">
+        <div className="min-h-screen bg-white">
+            {/* Hero Section - Premium Style with Background Image */}
+            <section className="relative pt-32 pb-20 overflow-hidden">
+                {/* Background Image with Overlay */}
+                <div className="absolute inset-0">
+                    <img
+                        src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920&q=80"
+                        alt=""
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-white/85 backdrop-blur-sm" />
+                </div>
+
+                <div className="container mx-auto px-6 relative z-10">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
+                        className="max-w-2xl"
                     >
-                        <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">
-                            Loja
+                        <h1 className="text-4xl md:text-6xl font-serif mb-4">
+                            <span className="italic">Curadoria</span> & Design
                         </h1>
-                        <p className="text-gray-400 max-w-xl">
-                            Produtos selecionados com o mesmo cuidado e atenção aos detalhes que aplicamos em nossos projetos de arquitetura.
+                        <p className="text-gray-600 text-lg leading-relaxed">
+                            Produtos selecionados com o mesmo cuidado e atenção aos detalhes que
+                            aplicamos em nossos projetos de arquitetura.
                         </p>
                     </motion.div>
                 </div>
-            </div>
+            </section>
 
-            <div className="container mx-auto px-6 py-12">
-                {/* Filters */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                    {/* Search */}
-                    <div className="relative w-full md:w-80">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Buscar produtos..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/10"
-                        />
-                    </div>
-
-                    {/* Category Filter */}
-                    <div className="flex items-center gap-2 overflow-x-auto pb-2 w-full md:w-auto">
-                        <Filter className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                        {categories.map(cat => (
-                            <button
-                                key={cat}
-                                onClick={() => setSelectedCategory(cat)}
-                                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition ${selectedCategory === cat
-                                    ? 'bg-black text-white'
-                                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                                    }`}
-                            >
-                                {cat === 'all' ? 'Todos' : cat}
+            {/* Filter Bar - Style like Cultura page */}
+            <section className="sticky top-[72px] bg-white border-b border-gray-100 z-30">
+                <div className="container mx-auto px-6 py-4">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        {/* Left: Filter Button + Categories */}
+                        <div className="flex items-center gap-3 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
+                            <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-full text-sm font-medium text-gray-600 hover:border-black transition shrink-0">
+                                <Filter className="w-4 h-4" />
+                                <span>Filtrar</span>
                             </button>
-                        ))}
-                    </div>
 
-                    {/* Cart Link */}
-                    <Link
-                        to="/cart"
-                        className="flex items-center gap-2 px-4 py-2 bg-accent text-black font-bold rounded-full hover:bg-accent/80 transition"
-                    >
-                        <ShoppingBag className="w-5 h-5" />
-                        <span>Carrinho ({cartCount})</span>
-                    </Link>
+                            {/* Ordering placeholder - matches Cultura style */}
+                            <div className="hidden md:flex items-center gap-2 text-sm text-gray-500 shrink-0">
+                                <span>Ordenar:</span>
+                                <span className="font-medium text-black">Mais recentes</span>
+                            </div>
+
+                            {/* Category Pills */}
+                            {categories.map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition shrink-0 ${selectedCategory === cat
+                                            ? 'bg-black text-white'
+                                            : 'text-gray-600 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    {cat === 'all' ? 'Todos' : cat}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Right: Search + View Mode + Cart */}
+                        <div className="flex items-center gap-3">
+                            {/* Search */}
+                            <div className="relative flex-1 lg:w-64">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar produtos..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-full focus:outline-none focus:border-black transition"
+                                />
+                            </div>
+
+                            {/* View Mode Toggle */}
+                            <div className="hidden md:flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                                <button
+                                    onClick={() => setViewMode('grid')}
+                                    className={`p-2 transition ${viewMode === 'grid' ? 'bg-black text-white' : 'text-gray-400 hover:text-black'}`}
+                                >
+                                    <Grid className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('list')}
+                                    className={`p-2 transition ${viewMode === 'list' ? 'bg-black text-white' : 'text-gray-400 hover:text-black'}`}
+                                >
+                                    <List className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            {/* Cart Link */}
+                            <Link
+                                to="/cart"
+                                className="flex items-center gap-2 px-4 py-2 bg-black text-white font-medium rounded-full hover:bg-accent hover:text-black transition text-sm"
+                            >
+                                <ShoppingBag className="w-4 h-4" />
+                                <span className="hidden sm:inline">Carrinho</span>
+                                <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">{cartCount}</span>
+                            </Link>
+                        </div>
+                    </div>
                 </div>
+            </section>
+
+            {/* Products Section */}
+            <section className="container mx-auto px-6 py-12">
+                {/* Results Count */}
+                <p className="text-sm text-gray-500 mb-6">
+                    Mostrando {filteredProducts.length} produto{filteredProducts.length !== 1 ? 's' : ''}
+                </p>
 
                 {/* Products Grid */}
                 {filteredProducts.length === 0 ? (
                     <div className="text-center py-20">
-                        <ShoppingBag className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                        <h2 className="text-2xl font-serif text-gray-600 mb-2">Nenhum produto encontrado</h2>
-                        <p className="text-gray-400">Tente ajustar os filtros ou volte mais tarde.</p>
+                        <ShoppingBag className="w-16 h-16 mx-auto text-gray-200 mb-4" />
+                        <h2 className="text-2xl font-serif text-gray-800 mb-2">Nenhum produto encontrado</h2>
+                        <p className="text-gray-500">Tente ajustar os filtros ou volte mais tarde.</p>
                     </div>
-                ) : (
+                ) : viewMode === 'grid' ? (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.4 }}
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
                     >
                         {filteredProducts.map((product, index) => (
                             <motion.div
@@ -171,24 +225,39 @@ export const Shop: React.FC = () => {
                             >
                                 <Link
                                     to={`/shop/product/${product.id}`}
-                                    className="group block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100"
+                                    className="group block"
                                 >
                                     {/* Product Image */}
-                                    <div className="aspect-square overflow-hidden bg-gray-100 relative">
+                                    <div className="aspect-[4/5] overflow-hidden bg-gray-100 relative mb-4">
                                         {product.images && product.images[0] ? (
                                             <img
                                                 src={product.images[0]}
                                                 alt={product.title}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
                                                 <ShoppingBag className="w-16 h-16 text-gray-300" />
                                             </div>
                                         )}
+
+                                        {/* Overlay on Hover */}
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+
+                                        {/* Quick Add Button */}
+                                        {product.stock > 0 && (
+                                            <button
+                                                onClick={(e) => handleAddToCart(product, e)}
+                                                className="absolute bottom-4 right-4 p-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-black hover:text-white"
+                                            >
+                                                <Plus className="w-5 h-5" />
+                                            </button>
+                                        )}
+
+                                        {/* Out of Stock Badge */}
                                         {product.stock === 0 && (
-                                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                                <span className="bg-white text-black px-4 py-2 rounded-full font-bold text-sm">
+                                            <div className="absolute top-4 left-4">
+                                                <span className="bg-black text-white px-3 py-1 text-xs font-medium">
                                                     Esgotado
                                                 </span>
                                             </div>
@@ -196,32 +265,20 @@ export const Shop: React.FC = () => {
                                     </div>
 
                                     {/* Product Info */}
-                                    <div className="p-4">
+                                    <div>
                                         {product.category && (
-                                            <span className="text-xs text-gray-500 uppercase tracking-wider">
+                                            <span className="text-xs text-gray-400 uppercase tracking-widest">
                                                 {product.category}
                                             </span>
                                         )}
-                                        <h3 className="font-serif text-lg font-bold text-gray-900 mt-1 group-hover:text-accent transition-colors">
+                                        <h3 className="font-serif text-lg mt-1 group-hover:text-accent transition-colors">
                                             {product.title}
                                         </h3>
-                                        <div className="flex items-center justify-between mt-3">
-                                            <span className="text-xl font-bold text-black">
-                                                {formatPrice(product.price)}
-                                            </span>
-                                            <button
-                                                onClick={(e) => handleAddToCart(product, e)}
-                                                disabled={product.stock === 0}
-                                                className={`p-2 rounded-full transition ${product.stock > 0
-                                                    ? 'bg-black text-white hover:bg-accent hover:text-black'
-                                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                                    }`}
-                                            >
-                                                <ShoppingBag className="w-5 h-5" />
-                                            </button>
-                                        </div>
+                                        <p className="text-gray-900 font-medium mt-2">
+                                            {formatPrice(product.price)}
+                                        </p>
                                         {product.stock > 0 && product.stock <= 5 && (
-                                            <p className="text-xs text-red-500 mt-2">
+                                            <p className="text-xs text-orange-600 mt-1">
                                                 Apenas {product.stock} em estoque
                                             </p>
                                         )}
@@ -230,8 +287,70 @@ export const Shop: React.FC = () => {
                             </motion.div>
                         ))}
                     </motion.div>
+                ) : (
+                    // List View
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="space-y-6"
+                    >
+                        {filteredProducts.map((product, index) => (
+                            <motion.div
+                                key={product.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.03 }}
+                            >
+                                <Link
+                                    to={`/shop/product/${product.id}`}
+                                    className="group flex gap-6 p-4 border border-gray-100 rounded-xl hover:shadow-lg transition-shadow"
+                                >
+                                    {/* Image */}
+                                    <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                                        {product.images?.[0] ? (
+                                            <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <ShoppingBag className="w-8 h-8 text-gray-300" />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Info */}
+                                    <div className="flex-1 flex flex-col justify-center">
+                                        {product.category && (
+                                            <span className="text-xs text-gray-400 uppercase tracking-widest">
+                                                {product.category}
+                                            </span>
+                                        )}
+                                        <h3 className="font-serif text-xl group-hover:text-accent transition-colors">
+                                            {product.title}
+                                        </h3>
+                                        <p className="text-gray-500 text-sm mt-1 line-clamp-2">
+                                            {product.description}
+                                        </p>
+                                    </div>
+
+                                    {/* Price & Action */}
+                                    <div className="flex flex-col items-end justify-center gap-2">
+                                        <span className="text-xl font-medium">{formatPrice(product.price)}</span>
+                                        {product.stock > 0 ? (
+                                            <button
+                                                onClick={(e) => handleAddToCart(product, e)}
+                                                className="px-4 py-2 bg-black text-white text-sm rounded-full hover:bg-accent hover:text-black transition"
+                                            >
+                                                Adicionar
+                                            </button>
+                                        ) : (
+                                            <span className="text-gray-400 text-sm">Esgotado</span>
+                                        )}
+                                    </div>
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </motion.div>
                 )}
-            </div>
+            </section>
         </div>
     );
 };
