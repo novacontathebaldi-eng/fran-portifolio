@@ -96,6 +96,7 @@ export const AdminDashboard: React.FC = () => {
     const [showHistory, setShowHistory] = useState(false);
     const [showBlockModal, setShowBlockModal] = useState(false);
     const [showEditDashboardModal, setShowEditDashboardModal] = useState(false); // Dashboard customization modal
+    const [selectedWidgetsToAdd, setSelectedWidgetsToAdd] = useState<string[]>([]); // Multi-select for adding widgets
     const [blockForm, setBlockForm] = useState({ date: '', time: '' });
     const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
 
@@ -628,6 +629,36 @@ export const AdminDashboard: React.FC = () => {
                             handleSettingsChange('dashboardWidgets', newWidgets);
                         };
 
+                        // Toggle widget selection for multi-select
+                        const toggleWidgetSelection = (itemId: string) => {
+                            setSelectedWidgetsToAdd(prev =>
+                                prev.includes(itemId)
+                                    ? prev.filter(id => id !== itemId)
+                                    : [...prev, itemId]
+                            );
+                        };
+
+                        // Add all selected widgets at once
+                        const handleAddSelectedWidgets = () => {
+                            const itemsToAdd = sidebarItems.filter(item => selectedWidgetsToAdd.includes(item.id));
+                            let newWidgets = [...widgets];
+                            itemsToAdd.forEach((item, idx) => {
+                                const newWidget: DashboardWidget = {
+                                    id: Date.now().toString() + idx,
+                                    tabId: item.id,
+                                    label: item.label,
+                                    icon: item.icon,
+                                    bgColor: item.bgColor,
+                                    order: newWidgets.length + 1,
+                                    showCount: !!item.countKey,
+                                    countKey: item.countKey as any,
+                                };
+                                newWidgets.push(newWidget);
+                            });
+                            handleSettingsChange('dashboardWidgets', newWidgets);
+                            setSelectedWidgetsToAdd([]); // Clear selection after adding
+                        };
+
                         // Get badge info for pending items
                         const getBadge = (widget: DashboardWidget) => {
                             if (widget.tabId === 'agenda' && pendingAppointmentsCount > 0) {
@@ -731,20 +762,42 @@ export const AdminDashboard: React.FC = () => {
                                                     </div>
                                                 </div>
 
-                                                {/* Available Items */}
+                                                {/* Available Items - Multi-select with checkboxes */}
                                                 <div>
-                                                    <h4 className="text-sm font-bold uppercase text-gray-500 mb-3">Adicionar Widget</h4>
+                                                    <div className="flex justify-between items-center mb-3">
+                                                        <h4 className="text-sm font-bold uppercase text-gray-500">Adicionar Widget</h4>
+                                                        {selectedWidgetsToAdd.length > 0 && (
+                                                            <button
+                                                                onClick={handleAddSelectedWidgets}
+                                                                className="text-xs bg-black text-white px-3 py-1.5 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-1"
+                                                            >
+                                                                <Plus className="w-3 h-3" />
+                                                                Adicionar {selectedWidgetsToAdd.length} selecionado{selectedWidgetsToAdd.length > 1 ? 's' : ''}
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {sidebarItems
                                                             .filter(item => !widgets.some(w => w.tabId === item.id))
                                                             .map(item => {
                                                                 const IconComponent = iconMap[item.icon] || LayoutDashboard;
+                                                                const isSelected = selectedWidgetsToAdd.includes(item.id);
                                                                 return (
                                                                     <button
                                                                         key={item.id}
-                                                                        onClick={() => handleAddWidget(item)}
-                                                                        className="flex items-center gap-2 p-3 border border-dashed border-gray-200 rounded-xl hover:border-gray-400 hover:bg-gray-50 transition text-left"
+                                                                        onClick={() => toggleWidgetSelection(item.id)}
+                                                                        className={`flex items-center gap-2 p-3 border-2 rounded-xl transition text-left relative ${isSelected
+                                                                                ? 'border-black bg-gray-50 ring-2 ring-black/10'
+                                                                                : 'border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                                                                            }`}
                                                                     >
+                                                                        {/* Checkbox indicator */}
+                                                                        <div className={`absolute top-2 right-2 w-5 h-5 rounded-md border-2 flex items-center justify-center transition ${isSelected
+                                                                                ? 'bg-black border-black'
+                                                                                : 'border-gray-300 bg-white'
+                                                                            }`}>
+                                                                            {isSelected && <Check className="w-3 h-3 text-white" />}
+                                                                        </div>
                                                                         <div className={`p-2 ${item.bgColor} text-white rounded-lg`}>
                                                                             <IconComponent className="w-4 h-4" />
                                                                         </div>
@@ -753,6 +806,9 @@ export const AdminDashboard: React.FC = () => {
                                                                 );
                                                             })}
                                                     </div>
+                                                    {sidebarItems.filter(item => !widgets.some(w => w.tabId === item.id)).length === 0 && (
+                                                        <p className="text-gray-400 text-sm text-center py-4">Todos os widgets já foram adicionados.</p>
+                                                    )}
                                                 </div>
 
                                                 {/* Save Button */}
