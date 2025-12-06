@@ -170,7 +170,7 @@ Frases que SEMPRE exigem transferência:
 - "chamar atendente"
 - Qualquer variação similar
 
-Resposta obrigatória: "Claro! Estou te transferindo para um de nossos especialistas agora."
+Resposta obrigatória: "Claro! Estou te transferindo para um de nossos especialistas agora." ou algo nesse sentido.
 
 2. REUNIÃO (conversa/alinhamento):
    - Usuário pede reunião → Você sabe se é Online ou Presencial?

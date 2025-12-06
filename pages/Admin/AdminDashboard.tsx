@@ -606,40 +606,7 @@ export const AdminDashboard: React.FC = () => {
                             { id: 'settings', label: 'Configurações', icon: 'Settings', bgColor: 'bg-gray-600' },
                         ];
 
-                        // State for selected widgets to add (multi-select)
-                        const [selectedWidgetsToAdd, setSelectedWidgetsToAdd] = React.useState<string[]>([]);
-
-                        // Toggle widget selection
-                        const toggleWidgetSelection = (itemId: string) => {
-                            setSelectedWidgetsToAdd(prev =>
-                                prev.includes(itemId)
-                                    ? prev.filter(id => id !== itemId)
-                                    : [...prev, itemId]
-                            );
-                        };
-
-                        // Add all selected widgets
-                        const handleAddSelectedWidgets = () => {
-                            const itemsToAdd = sidebarItems.filter(item => selectedWidgetsToAdd.includes(item.id));
-                            let newWidgets = [...widgets];
-                            itemsToAdd.forEach((item, idx) => {
-                                const newWidget: DashboardWidget = {
-                                    id: Date.now().toString() + idx,
-                                    tabId: item.id,
-                                    label: item.label,
-                                    icon: item.icon,
-                                    bgColor: item.bgColor,
-                                    order: newWidgets.length + 1,
-                                    showCount: !!item.countKey,
-                                    countKey: item.countKey as any,
-                                };
-                                newWidgets.push(newWidget);
-                            });
-                            handleSettingsChange('dashboardWidgets', newWidgets);
-                            setSelectedWidgetsToAdd([]); // Clear selection after adding
-                        };
-
-                        // Add single widget handler (kept for backwards compatibility)
+                        // Add widget handler
                         const handleAddWidget = (item: typeof sidebarItems[0]) => {
                             const newWidget: DashboardWidget = {
                                 id: Date.now().toString(),
@@ -764,42 +731,20 @@ export const AdminDashboard: React.FC = () => {
                                                     </div>
                                                 </div>
 
-                                                {/* Available Items - Multi-select with checkboxes */}
+                                                {/* Available Items */}
                                                 <div>
-                                                    <div className="flex justify-between items-center mb-3">
-                                                        <h4 className="text-sm font-bold uppercase text-gray-500">Adicionar Widget</h4>
-                                                        {selectedWidgetsToAdd.length > 0 && (
-                                                            <button
-                                                                onClick={handleAddSelectedWidgets}
-                                                                className="text-xs bg-black text-white px-3 py-1.5 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-1"
-                                                            >
-                                                                <Plus className="w-3 h-3" />
-                                                                Adicionar {selectedWidgetsToAdd.length} selecionado{selectedWidgetsToAdd.length > 1 ? 's' : ''}
-                                                            </button>
-                                                        )}
-                                                    </div>
+                                                    <h4 className="text-sm font-bold uppercase text-gray-500 mb-3">Adicionar Widget</h4>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {sidebarItems
                                                             .filter(item => !widgets.some(w => w.tabId === item.id))
                                                             .map(item => {
                                                                 const IconComponent = iconMap[item.icon] || LayoutDashboard;
-                                                                const isSelected = selectedWidgetsToAdd.includes(item.id);
                                                                 return (
                                                                     <button
                                                                         key={item.id}
-                                                                        onClick={() => toggleWidgetSelection(item.id)}
-                                                                        className={`flex items-center gap-2 p-3 border-2 rounded-xl transition text-left relative ${isSelected
-                                                                            ? 'border-black bg-gray-50 ring-2 ring-black/10'
-                                                                            : 'border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50'
-                                                                            }`}
+                                                                        onClick={() => handleAddWidget(item)}
+                                                                        className="flex items-center gap-2 p-3 border border-dashed border-gray-200 rounded-xl hover:border-gray-400 hover:bg-gray-50 transition text-left"
                                                                     >
-                                                                        {/* Checkbox indicator */}
-                                                                        <div className={`absolute top-2 right-2 w-5 h-5 rounded-md border-2 flex items-center justify-center transition ${isSelected
-                                                                            ? 'bg-black border-black'
-                                                                            : 'border-gray-300 bg-white'
-                                                                            }`}>
-                                                                            {isSelected && <Check className="w-3 h-3 text-white" />}
-                                                                        </div>
                                                                         <div className={`p-2 ${item.bgColor} text-white rounded-lg`}>
                                                                             <IconComponent className="w-4 h-4" />
                                                                         </div>
@@ -808,9 +753,6 @@ export const AdminDashboard: React.FC = () => {
                                                                 );
                                                             })}
                                                     </div>
-                                                    {sidebarItems.filter(item => !widgets.some(w => w.tabId === item.id)).length === 0 && (
-                                                        <p className="text-gray-400 text-sm text-center py-4">Todos os widgets já foram adicionados.</p>
-                                                    )}
                                                 </div>
 
                                                 {/* Save Button */}
@@ -1989,7 +1931,7 @@ export const AdminDashboard: React.FC = () => {
                                                     <div className="flex gap-1">
                                                         <button onClick={() => moveOfficeBlock(idx, 'up')} disabled={idx === 0} className="p-1 hover:bg-white rounded disabled:opacity-30"><ArrowUp className="w-4 h-4" /></button>
                                                         <button onClick={() => moveOfficeBlock(idx, 'down')} disabled={idx === (contentForm.office.blocks?.length || 0) - 1} className="p-1 hover:bg-white rounded disabled:opacity-30"><ArrowDown className="w-4 h-4" /></button>
-                                                        <button onClick={() => removeOfficeBlock(block.id)} className="p-2 hover:bg-red-50 text-red-400 rounded relative z-10"><Trash2 className="w-4 h-4" /></button>
+                                                        <button onClick={() => removeOfficeBlock(block.id)} className="p-1 hover:bg-red-50 text-red-400 rounded"><Trash2 className="w-4 h-4" /></button>
                                                     </div>
                                                 </div>
                                                 {block.type === 'heading' && (
