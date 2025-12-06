@@ -51,10 +51,12 @@ const InstallButton: React.FC = () => {
 
             setDeferredPrompt(null);
             setIsInstallable(false);
-        } else {
-            // Desktop - show visual instructions modal
+        } else if (!isAndroid()) {
+            // Desktop only - show visual instructions modal
+            // Android should not show modal, installation happens via deferredPrompt
             setShowDesktopModal(true);
         }
+        // On Android without deferredPrompt, do nothing (user may need to refresh or browser doesn't support PWA)
     };
 
     // Don't render if not installable or already installed

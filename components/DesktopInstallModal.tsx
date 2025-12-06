@@ -15,17 +15,17 @@ const DesktopInstallModal: React.FC<DesktopInstallModalProps> = ({ isOpen, onClo
             onClick={onClose}
         >
             <div
-                className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg mx-4 p-8 animate-slide-up shadow-2xl"
+                className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md mx-4 p-5 animate-slide-up shadow-2xl max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center">
-                            <Download className="w-6 h-6 text-black" />
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center">
+                            <Download className="w-5 h-5 text-black" />
                         </div>
                         <div>
-                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                                 Instalar App
                             </h3>
                             <p className="text-sm text-gray-500">Para Desktop</p>
@@ -41,23 +41,23 @@ const DesktopInstallModal: React.FC<DesktopInstallModalProps> = ({ isOpen, onClo
                 </div>
 
                 {/* Instructions */}
-                <div className="space-y-6 mb-8">
-                    <p className="text-gray-700 dark:text-gray-300">
+                <div className="space-y-3 mb-4">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                         Para instalar este app no seu computador, siga os passos:
                     </p>
 
                     {/* Step 1 */}
-                    <div className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold text-lg">
+                    <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold text-sm">
                             1
                         </div>
                         <div className="flex-1">
-                            <p className="text-gray-900 dark:text-white font-medium mb-3">
+                            <p className="text-sm text-gray-900 dark:text-white font-medium mb-2">
                                 Localize o ícone de instalação na barra de endereços
                             </p>
 
                             {/* Visual representation */}
-                            <div className="bg-white dark:bg-gray-900 rounded-lg p-4 border-2 border-gray-200 dark:border-gray-700">
+                            <div className="bg-white dark:bg-gray-900 rounded-lg p-2 border-2 border-gray-200 dark:border-gray-700">
                                 <div className="flex items-center gap-2">
                                     <div className="flex items-center gap-1 text-xs text-gray-400 flex-1">
                                         <span>🔒</span>
@@ -73,61 +73,61 @@ const DesktopInstallModal: React.FC<DesktopInstallModalProps> = ({ isOpen, onClo
                                 </div>
                             </div>
 
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                                 O ícone fica ao lado do ícone de favoritos (⭐)
                             </p>
                         </div>
                     </div>
 
                     {/* Step 2 */}
-                    <div className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold text-lg">
+                    <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold text-sm">
                             2
                         </div>
                         <div className="flex-1">
-                            <p className="text-gray-900 dark:text-white font-medium mb-3">
+                            <p className="text-sm text-gray-900 dark:text-white font-medium mb-2">
                                 Clique no ícone de instalação
                             </p>
 
                             {/* Visual button */}
-                            <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border-2 border-gray-200 dark:border-gray-700 inline-flex items-center gap-2">
+                            <div className="bg-white dark:bg-gray-900 rounded-lg p-2 border-2 border-gray-200 dark:border-gray-700 inline-flex items-center gap-2">
                                 <Download className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                                 <span className="text-sm font-medium text-gray-900 dark:text-white">Instalar</span>
                             </div>
 
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
                                 Uma janela de confirmação irá aparecer
                             </p>
                         </div>
                     </div>
 
                     {/* Step 3 */}
-                    <div className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold text-lg">
+                    <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold text-sm">
                             3
                         </div>
                         <div className="flex-1">
-                            <p className="text-gray-900 dark:text-white font-medium mb-3">
+                            <p className="text-sm text-gray-900 dark:text-white font-medium mb-2">
                                 Confirme a instalação
                             </p>
 
                             {/* Confirm button */}
-                            <div className="bg-accent rounded-lg p-3 inline-flex items-center justify-center shadow-lg">
+                            <div className="bg-accent rounded-lg p-2 inline-flex items-center justify-center shadow-lg">
                                 <span className="text-sm font-bold text-black">Instalar</span>
                             </div>
 
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
                                 O app será adicionado à sua área de trabalho!
                             </p>
                         </div>
                     </div>
 
                     {/* Alternative method */}
-                    <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
-                        <div className="flex items-start gap-3">
-                            <Menu className="w-5 h-5 text-blue-700 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-start gap-2">
+                            <Menu className="w-4 h-4 text-blue-700 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                             <div>
-                                <p className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">
+                                <p className="text-xs font-medium text-blue-900 dark:text-blue-200 mb-0.5">
                                     Alternativa: Via menu do navegador
                                 </p>
                                 <p className="text-xs text-blue-700 dark:text-blue-300">
