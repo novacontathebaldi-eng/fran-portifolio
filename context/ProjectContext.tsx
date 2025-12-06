@@ -39,6 +39,7 @@ interface ProjectContextType {
 
   updateSiteContent: (content: SiteContent) => void;
   updateSettings: (settings: GlobalSettings) => void;
+  persistAllSettings: (content: SiteContent, settings: GlobalSettings, schedule: ScheduleSettings) => Promise<boolean>;
 
   sendMessageToAI: (message: string) => Promise<any>;
   addMessageToChat: (message: ChatMessage) => void;
@@ -544,6 +545,40 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     return await persistSettings(undefined, undefined, newSettings);
   };
 
+  // New unified persist function that takes ALL values explicitly to avoid race conditions
+  const persistAllSettings = async (
+    content: SiteContent,
+    globalSettings: GlobalSettings,
+    schedule: ScheduleSettings
+  ): Promise<boolean> => {
+    // Update local state immediately (optimistic UI)
+    setSiteContent(content);
+    setSettings(globalSettings);
+    setScheduleSettings(schedule);
+
+    // Prepare DB Payload
+    const payload = {
+      id: SETTINGS_ID,
+      about: content.about,
+      office: content.office,
+      settings: {
+        global: globalSettings,
+        schedule: schedule
+      }
+    };
+
+    // Send to Supabase
+    const { error } = await supabase
+      .from('site_settings')
+      .upsert(payload, { onConflict: 'id' });
+
+    if (error) {
+      console.error("Error saving all settings to DB:", error);
+      return false;
+    }
+    return true;
+  };
+
   // UPDATED: Now returns boolean status to caller
   const updateUser = async (updatedUser: User): Promise<boolean> => {
     const { error } = await supabase.from('profiles').update({
@@ -1002,6 +1037,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       deleteCulturalProject,
       updateSiteContent,
       updateSettings,
+      persistAllSettings,
       sendMessageToAI,
       addMessageToChat,
       updateMessageUI,

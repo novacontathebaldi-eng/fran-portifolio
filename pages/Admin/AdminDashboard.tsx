@@ -31,7 +31,7 @@ const uploadToSupabase = async (file: File): Promise<string> => {
 };
 
 export const AdminDashboard: React.FC = () => {
-    const { projects, deleteProject, culturalProjects, deleteCulturalProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, adminNotes, markNoteAsRead, deleteAdminNote, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, updateAppointment, deleteAppointmentPermanently, currentUser, isLoadingData } = useProjects();
+    const { projects, deleteProject, culturalProjects, deleteCulturalProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, persistAllSettings, adminNotes, markNoteAsRead, deleteAdminNote, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, updateAppointment, deleteAppointmentPermanently, currentUser, isLoadingData } = useProjects();
     const navigate = useNavigate();
 
     // TABS: Added 'cultural'
@@ -275,10 +275,10 @@ export const AdminDashboard: React.FC = () => {
     const saveSettings = async () => {
         setSaving(true);
         try {
-            const settingsSuccess = await updateSettings(settingsForm);
-            const contentSuccess = await updateSiteContent(contentForm);
+            // Use unified persist function with all local form values to avoid race condition
+            const success = await persistAllSettings(contentForm, settingsForm, scheduleSettings);
 
-            if (settingsSuccess && contentSuccess) {
+            if (success) {
                 showToast('Configurações salvas com sucesso!', 'success');
             } else {
                 showToast('Erro ao salvar algumas configurações. Tente novamente.', 'error');
