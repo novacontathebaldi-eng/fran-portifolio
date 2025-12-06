@@ -750,8 +750,9 @@ export const AdminDashboard: React.FC = () => {
                                                                             <span className="font-medium">{widget.label}</span>
                                                                         </div>
                                                                         <button
-                                                                            onClick={() => handleRemoveWidget(widget.id)}
-                                                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                                                                            type="button"
+                                                                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRemoveWidget(widget.id); }}
+                                                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition cursor-pointer"
                                                                         >
                                                                             <Trash2 className="w-4 h-4" />
                                                                         </button>
@@ -787,14 +788,14 @@ export const AdminDashboard: React.FC = () => {
                                                                         key={item.id}
                                                                         onClick={() => toggleWidgetSelection(item.id)}
                                                                         className={`flex items-center gap-2 p-3 border-2 rounded-xl transition text-left relative ${isSelected
-                                                                                ? 'border-black bg-gray-50 ring-2 ring-black/10'
-                                                                                : 'border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                                                                            ? 'border-black bg-gray-50 ring-2 ring-black/10'
+                                                                            : 'border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50'
                                                                             }`}
                                                                     >
                                                                         {/* Checkbox indicator */}
                                                                         <div className={`absolute top-2 right-2 w-5 h-5 rounded-md border-2 flex items-center justify-center transition ${isSelected
-                                                                                ? 'bg-black border-black'
-                                                                                : 'border-gray-300 bg-white'
+                                                                            ? 'bg-black border-black'
+                                                                            : 'border-gray-300 bg-white'
                                                                             }`}>
                                                                             {isSelected && <Check className="w-3 h-3 text-white" />}
                                                                         </div>
