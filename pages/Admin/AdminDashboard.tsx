@@ -621,7 +621,7 @@ export const AdminDashboard: React.FC = () => {
                     {activeTab === 'dashboard' && (() => {
                         // Icon map for dynamic rendering
                         const iconMap: Record<string, React.ElementType> = {
-                            LayoutDashboard, FolderOpen, Landmark, Calendar, Users, Brain, Receipt, MessageSquare, Mail, MapPin, FileText, Settings
+                            LayoutDashboard, FolderOpen, Landmark, Calendar, Users, Brain, Receipt, MessageSquare, Mail, MapPin, FileText, Settings, ShoppingBag
                         };
 
                         // Default widgets configuration
@@ -655,6 +655,7 @@ export const AdminDashboard: React.FC = () => {
                             { id: 'messages', label: 'Recados', icon: 'MessageSquare', bgColor: 'bg-accent', countKey: 'messages' },
                             { id: 'contact-messages', label: 'Contatos', icon: 'Mail', bgColor: 'bg-blue-600', countKey: 'contactMessages' },
                             { id: 'budgets', label: 'Orçamentos', icon: 'Receipt', bgColor: 'bg-green-600', countKey: 'budgets' },
+                            { id: 'shop', label: 'Loja', icon: 'ShoppingBag', bgColor: 'bg-amber-600' },
                             { id: 'clients', label: 'Clientes & Arquivos', icon: 'Users', bgColor: 'bg-indigo-600' },
                             { id: 'ai-config', label: 'Inteligência Artificial', icon: 'Brain', bgColor: 'bg-pink-600' },
                             { id: 'office', label: 'Escritório', icon: 'MapPin', bgColor: 'bg-orange-600' },
