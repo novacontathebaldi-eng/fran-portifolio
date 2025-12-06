@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Download, Smartphone } from 'lucide-react';
-import { isIOS, isAndroid, isStandalone, isMobile } from '../utils/deviceDetection';
+import { isIOS, isIOSChrome, isAndroid, isStandalone, isMobile } from '../utils/deviceDetection';
 import IOSInstallModal from './IOSInstallModal';
+import IOSChromeInstallModal from './IOSChromeInstallModal';
 import DesktopInstallModal from './DesktopInstallModal';
 
 const InstallButton: React.FC = () => {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [showIOSModal, setShowIOSModal] = useState(false);
+    const [showIOSChromeModal, setShowIOSChromeModal] = useState(false);
     const [showDesktopModal, setShowDesktopModal] = useState(false);
     const [isInstallable, setIsInstallable] = useState(false);
 
@@ -33,9 +35,13 @@ const InstallButton: React.FC = () => {
     }, []);
 
     const handleInstallClick = async () => {
-        // iOS - show instructions modal
+        // iOS - show appropriate modal based on browser
         if (isIOS()) {
-            setShowIOSModal(true);
+            if (isIOSChrome()) {
+                setShowIOSChromeModal(true);
+            } else {
+                setShowIOSModal(true);
+            }
             return;
         }
 
@@ -84,6 +90,11 @@ const InstallButton: React.FC = () => {
             <IOSInstallModal
                 isOpen={showIOSModal}
                 onClose={() => setShowIOSModal(false)}
+            />
+
+            <IOSChromeInstallModal
+                isOpen={showIOSChromeModal}
+                onClose={() => setShowIOSChromeModal(false)}
             />
 
             <DesktopInstallModal
