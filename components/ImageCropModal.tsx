@@ -128,7 +128,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
             const croppedBlob = await getCroppedImg(image, croppedAreaPixels, rotation);
             const fileName = originalFile?.name || 'cropped-image.webp';
             const croppedFile = blobToFile(croppedBlob, fileName.replace(/\.[^/.]+$/, '.webp'));
-            const optimizedFile = await optimizeImage(croppedFile, preset);
+            const optimizedFile = await optimizeImage(croppedFile, preset as ImagePreset);
             onCropComplete(optimizedFile);
             onClose();
         } catch (error) {
@@ -142,7 +142,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         if (!originalFile) return;
         setIsProcessing(true);
         try {
-            const optimizedFile = await optimizeImage(originalFile, preset);
+            const optimizedFile = await optimizeImage(originalFile, preset as ImagePreset);
             onCropComplete(optimizedFile);
             onClose();
         } catch (error) {
@@ -160,8 +160,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
     return (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 md:p-4">
             <div className={`bg-white w-full max-h-[calc(100vh-16px)] md:rounded-xl overflow-hidden shadow-2xl flex flex-col ${isAvatarMode
-                    ? 'md:max-h-[80vh] md:max-w-sm'
-                    : 'md:max-h-[90vh] md:max-w-lg'
+                ? 'md:max-h-[80vh] md:max-w-sm'
+                : 'md:max-h-[90vh] md:max-w-lg'
                 }`}>
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
@@ -179,8 +179,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                 <div className="flex-1 overflow-y-auto overscroll-contain">
                     {/* Cropper Area - Smaller on desktop for avatar */}
                     <div className={`relative bg-gray-900 ${isAvatarMode
-                            ? 'aspect-square md:h-[280px] md:aspect-auto'
-                            : 'aspect-square'
+                        ? 'aspect-square md:h-[280px] md:aspect-auto'
+                        : 'aspect-square'
                         }`}>
                         <Cropper
                             image={image}

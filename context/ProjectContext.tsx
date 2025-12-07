@@ -761,11 +761,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       name: updatedUser.name,
       phone: updatedUser.phone,
       bio: updatedUser.bio,
-      avatar: updatedUser.avatar,
-      // addresses: updatedUser.addresses, // Removed - column does not exist
+      avatar_url: updatedUser.avatar, // DB column is avatar_url, not avatar
       cpf: updatedUser.cpf,
       birth_date: updatedUser.birthDate
-      // chats: updatedUser.chats // Removed - column does not exist
     }).eq('id', updatedUser.id);
 
     if (!error) {
