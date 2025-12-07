@@ -38,6 +38,7 @@ export default defineConfig(({ mode }) => {
             'vendor-animation': ['framer-motion'],
             'vendor-supabase': ['@supabase/supabase-js'],
             'vendor-icons': ['lucide-react'],
+            'vendor-genai': ['@google/genai'],
           }
         }
       }
