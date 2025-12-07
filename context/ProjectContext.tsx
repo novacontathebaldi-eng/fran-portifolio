@@ -295,12 +295,16 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // --- INITIAL DATA FETCHING ---
   const fetchGlobalData = async () => {
+    console.log('[Data] Starting fetchGlobalData...');
+
     // 1. Projects
-    const { data: projectsData } = await supabase.from('projects').select('*').order('year', { ascending: false });
+    const { data: projectsData, error: projectsError } = await supabase.from('projects').select('*').order('year', { ascending: false });
+    console.log('[Data] Projects:', projectsData?.length || 0, projectsError ? `Error: ${projectsError.message}` : '');
     if (projectsData) setProjects(projectsData);
 
     // 2. Cultural Projects
-    const { data: cultData } = await supabase.from('cultural_projects').select('*').order('year', { ascending: false });
+    const { data: cultData, error: cultError } = await supabase.from('cultural_projects').select('*').order('year', { ascending: false });
+    console.log('[Data] Cultural Projects:', cultData?.length || 0, cultError ? `Error: ${cultError.message}` : '');
     if (cultData) setCulturalProjects(cultData);
 
     // 3. Settings & Content - USING UUID AND 3 COLUMNS
@@ -345,11 +349,14 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       setAppointments(mapped);
     }
 
+    console.log('[Data] fetchGlobalData complete!');
     setIsLoadingData(false);
   };
 
-  // Guard to prevent multiple simultaneous auth processing (multi-tab race condition fix)
+  // Guard and tracking refs for multi-tab race condition prevention
   const isProcessingAuthRef = React.useRef(false);
+  const lastProcessedUserIdRef = React.useRef<string | null>(null);
+  const authDebounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -357,6 +364,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
+        lastProcessedUserIdRef.current = session.user.id;
         const user = await fetchFullUserProfile(session.user.id);
         if (user) setCurrentUser(user);
       }
@@ -365,18 +373,18 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     init();
 
-    // MULTI-TAB FIX: Handle auth state changes properly across tabs
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // MULTI-TAB FIX: Handle auth state changes with debounce to prevent rapid duplicate events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[Auth] Event:', event, 'Session:', session?.user?.id);
 
-      // Skip if already processing to prevent race conditions between tabs
-      if (isProcessingAuthRef.current) {
-        console.log('[Auth] Skipping - already processing');
-        return;
+      // Clear any pending debounce timer
+      if (authDebounceTimerRef.current) {
+        clearTimeout(authDebounceTimerRef.current);
       }
 
-      // Handle SIGNED_OUT explicitly - clear user immediately
+      // Handle SIGNED_OUT immediately - no debounce needed
       if (event === 'SIGNED_OUT') {
+        lastProcessedUserIdRef.current = null;
         setCurrentUser(null);
         setIsLoadingAuth(false);
         return;
@@ -389,25 +397,56 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         return;
       }
 
-      // For SIGNED_IN and INITIAL_SESSION, fetch user profile
-      if (session?.user?.id && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-        isProcessingAuthRef.current = true;
-        try {
-          const user = await fetchFullUserProfile(session.user.id);
-          if (user) setCurrentUser(user);
-        } catch (error) {
-          console.error('[Auth] Error fetching user profile:', error);
-        } finally {
-          isProcessingAuthRef.current = false;
-        }
-      } else if (!session) {
-        setCurrentUser(null);
+      // Skip if same user already processed (prevents duplicate SIGNED_IN events across tabs)
+      const userId = session?.user?.id;
+      if (userId && userId === lastProcessedUserIdRef.current && !isProcessingAuthRef.current) {
+        console.log('[Auth] Same user already processed, skipping');
+        setIsLoadingAuth(false);
+        return;
       }
 
-      setIsLoadingAuth(false);
+      // Skip if currently processing
+      if (isProcessingAuthRef.current) {
+        console.log('[Auth] Skipping - already processing');
+        return;
+      }
+
+      // Debounce: wait 100ms before processing to batch rapid events
+      authDebounceTimerRef.current = setTimeout(async () => {
+        if (isProcessingAuthRef.current) {
+          console.log('[Auth] Debounced but already processing');
+          return;
+        }
+
+        if (session?.user?.id && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+          isProcessingAuthRef.current = true;
+          try {
+            console.log('[Auth] Processing user:', session.user.id);
+            const user = await fetchFullUserProfile(session.user.id);
+            if (user) {
+              setCurrentUser(user);
+              lastProcessedUserIdRef.current = session.user.id;
+            }
+          } catch (error) {
+            console.error('[Auth] Error fetching user profile:', error);
+          } finally {
+            isProcessingAuthRef.current = false;
+          }
+        } else if (!session) {
+          setCurrentUser(null);
+          lastProcessedUserIdRef.current = null;
+        }
+
+        setIsLoadingAuth(false);
+      }, 100);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      if (authDebounceTimerRef.current) {
+        clearTimeout(authDebounceTimerRef.current);
+      }
+      subscription.unsubscribe();
+    };
   }, []);
 
   // --- Admin: Fetch All Users ---
@@ -981,6 +1020,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   // ==================== SHOP / E-COMMERCE FUNCTIONS ====================
 
   const fetchShopProducts = async () => {
+    console.log('[Shop] Starting fetchShopProducts...');
     try {
       const { data, error } = await supabase
         .from('shop_products')
@@ -988,6 +1028,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      console.log('[Shop] Products fetched:', data?.length || 0);
 
       // Map DB format to app format
       const products: ShopProduct[] = (data || []).map((p: any) => ({
@@ -1004,8 +1046,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       }));
 
       setShopProducts(products);
+      console.log('[Shop] fetchShopProducts complete!');
     } catch (error) {
-      console.error('Error fetching shop products:', error);
+      console.error('[Shop] Error fetching shop products:', error);
     }
   };
 
