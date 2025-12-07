@@ -93,6 +93,8 @@ interface ProjectContextType {
   updateShopOrderStatus: (orderId: string, status: ShopOrder['status']) => Promise<boolean>;
   createShopOrder: (order: Omit<ShopOrder, 'id' | 'created_at' | 'updated_at'>, items: { productId: string; quantity: number; unitPrice: number }[]) => Promise<ShopOrder | null>;
   subscribeToShopProducts: () => (() => void) | undefined;
+  subscribeToProjects: () => (() => void) | undefined;
+  subscribeToCulturalProjects: () => (() => void) | undefined;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -295,16 +297,16 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // --- INITIAL DATA FETCHING ---
   const fetchGlobalData = async () => {
-    console.log('[Data] Starting fetchGlobalData...');
+    if ((import.meta as any).env?.DEV) console.log('[Data] Starting fetchGlobalData...');
 
     // 1. Projects
     const { data: projectsData, error: projectsError } = await supabase.from('projects').select('*').order('year', { ascending: false });
-    console.log('[Data] Projects:', projectsData?.length || 0, projectsError ? `Error: ${projectsError.message}` : '');
+    if ((import.meta as any).env?.DEV) console.log('[Data] Projects:', projectsData?.length || 0, projectsError ? `Error: ${projectsError.message}` : '');
     if (projectsData) setProjects(projectsData);
 
     // 2. Cultural Projects
     const { data: cultData, error: cultError } = await supabase.from('cultural_projects').select('*').order('year', { ascending: false });
-    console.log('[Data] Cultural Projects:', cultData?.length || 0, cultError ? `Error: ${cultError.message}` : '');
+    if ((import.meta as any).env?.DEV) console.log('[Data] Cultural Projects:', cultData?.length || 0, cultError ? `Error: ${cultError.message}` : '');
     if (cultData) setCulturalProjects(cultData);
 
     // 3. Settings & Content - USING UUID AND 3 COLUMNS
@@ -349,7 +351,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       setAppointments(mapped);
     }
 
-    console.log('[Data] fetchGlobalData complete!');
+    if ((import.meta as any).env?.DEV) console.log('[Data] fetchGlobalData complete!');
     setIsLoadingData(false);
   };
 
@@ -358,7 +360,17 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const lastProcessedUserIdRef = React.useRef<string | null>(null);
   const authDebounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Guard against double initialization (React StrictMode, HMR, etc.)
+  const hasInitializedRef = React.useRef(false);
+
   useEffect(() => {
+    // Prevent double initialization in React StrictMode
+    if (hasInitializedRef.current) {
+      if ((import.meta as any).env?.DEV) console.log('[Init] Skipping duplicate initialization');
+      return;
+    }
+    hasInitializedRef.current = true;
+
     const init = async () => {
       await fetchGlobalData();
 
@@ -375,7 +387,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     // MULTI-TAB FIX: Handle auth state changes with debounce to prevent rapid duplicate events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[Auth] Event:', event, 'Session:', session?.user?.id);
+      if ((import.meta as any).env?.DEV) console.log('[Auth] Event:', event, 'Session:', session?.user?.id);
 
       // Clear any pending debounce timer
       if (authDebounceTimerRef.current) {
@@ -392,7 +404,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       // TOKEN_REFRESHED doesn't need user refetch
       if (event === 'TOKEN_REFRESHED') {
-        console.log('[Auth] Token refreshed - no action needed');
+        if ((import.meta as any).env?.DEV) console.log('[Auth] Token refreshed - no action needed');
         setIsLoadingAuth(false);
         return;
       }
@@ -400,28 +412,28 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       // Skip if same user already processed (prevents duplicate SIGNED_IN events across tabs)
       const userId = session?.user?.id;
       if (userId && userId === lastProcessedUserIdRef.current && !isProcessingAuthRef.current) {
-        console.log('[Auth] Same user already processed, skipping');
+        if ((import.meta as any).env?.DEV) console.log('[Auth] Same user already processed, skipping');
         setIsLoadingAuth(false);
         return;
       }
 
       // Skip if currently processing
       if (isProcessingAuthRef.current) {
-        console.log('[Auth] Skipping - already processing');
+        if ((import.meta as any).env?.DEV) console.log('[Auth] Skipping - already processing');
         return;
       }
 
       // Debounce: wait 100ms before processing to batch rapid events
       authDebounceTimerRef.current = setTimeout(async () => {
         if (isProcessingAuthRef.current) {
-          console.log('[Auth] Debounced but already processing');
+          if ((import.meta as any).env?.DEV) console.log('[Auth] Debounced but already processing');
           return;
         }
 
         if (session?.user?.id && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
           isProcessingAuthRef.current = true;
           try {
-            console.log('[Auth] Processing user:', session.user.id);
+            if ((import.meta as any).env?.DEV) console.log('[Auth] Processing user:', session.user.id);
             const user = await fetchFullUserProfile(session.user.id);
             if (user) {
               setCurrentUser(user);
@@ -1020,7 +1032,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   // ==================== SHOP / E-COMMERCE FUNCTIONS ====================
 
   const fetchShopProducts = async () => {
-    console.log('[Shop] Starting fetchShopProducts...');
+    if ((import.meta as any).env?.DEV) console.log('[Shop] Starting fetchShopProducts...');
     try {
       const { data, error } = await supabase
         .from('shop_products')
@@ -1029,7 +1041,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       if (error) throw error;
 
-      console.log('[Shop] Products fetched:', data?.length || 0);
+      if ((import.meta as any).env?.DEV) console.log('[Shop] Products fetched:', data?.length || 0);
 
       // Map DB format to app format
       const products: ShopProduct[] = (data || []).map((p: any) => ({
@@ -1046,7 +1058,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       }));
 
       setShopProducts(products);
-      console.log('[Shop] fetchShopProducts complete!');
+      if ((import.meta as any).env?.DEV) console.log('[Shop] fetchShopProducts complete!');
     } catch (error) {
       console.error('[Shop] Error fetching shop products:', error);
     }
@@ -1110,6 +1122,75 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Subscribe to realtime changes on projects table (Portfolio)
+  const subscribeToProjects = useCallback(() => {
+    const channel = supabase
+      .channel('projects_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'projects'
+        },
+        (payload) => {
+          if ((import.meta as any).env?.DEV) {
+            console.log('[Realtime] Projects change:', payload.eventType);
+          }
+
+          if (payload.eventType === 'INSERT') {
+            setProjects(prev => [payload.new as Project, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setProjects(prev => prev.map(p =>
+              p.id === payload.new.id ? payload.new as Project : p
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setProjects(prev => prev.filter(p => p.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Subscribe to realtime changes on cultural_projects table
+  const subscribeToCulturalProjects = useCallback(() => {
+    const channel = supabase
+      .channel('cultural_projects_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cultural_projects'
+        },
+        (payload) => {
+          if ((import.meta as any).env?.DEV) {
+            console.log('[Realtime] Cultural Projects change:', payload.eventType);
+          }
+
+          if (payload.eventType === 'INSERT') {
+            setCulturalProjects(prev => [payload.new as CulturalProject, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setCulturalProjects(prev => prev.map(p =>
+              p.id === payload.new.id ? payload.new as CulturalProject : p
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setCulturalProjects(prev => prev.filter(p => p.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
 
   const addShopProduct = async (product: Omit<ShopProduct, 'id' | 'created_at' | 'updated_at'>): Promise<ShopProduct | null> => {
     try {
@@ -1494,7 +1575,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       fetchShopOrders,
       updateShopOrderStatus,
       createShopOrder,
-      subscribeToShopProducts
+      subscribeToShopProducts,
+      subscribeToProjects,
+      subscribeToCulturalProjects
     }}>
       {children}
     </ProjectContext.Provider>

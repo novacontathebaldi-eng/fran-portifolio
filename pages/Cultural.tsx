@@ -1,15 +1,25 @@
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useProjects } from '../context/ProjectContext';
 import { Grid, List, ChevronDown, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const Cultural: React.FC = () => {
-  const { culturalProjects } = useProjects();
+  const { culturalProjects, subscribeToCulturalProjects } = useProjects();
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [filterOpen, setFilterOpen] = useState(false);
+
+  // Subscribe to realtime updates for cultural projects
+  useEffect(() => {
+    if (subscribeToCulturalProjects) {
+      const unsubscribe = subscribeToCulturalProjects();
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
+  }, [subscribeToCulturalProjects]);
 
   // Sorting State
   const [sortBy, setSortBy] = useState('Mais recentes');
