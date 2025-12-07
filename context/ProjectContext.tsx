@@ -1766,7 +1766,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       subscribeToShopProducts,
       subscribeToProjects,
       subscribeToCulturalProjects,
-
+      subscribeToMessages,
       subscribeToSiteSettings
     }}>
       {children}
