@@ -1805,7 +1805,7 @@ export const AdminDashboard: React.FC = () => {
                                                                 <span className="font-bold text-lg text-black">{note.userName}</span>
                                                                 <span className="text-sm text-gray-500 ml-2">({note.userContact})</span>
                                                             </div>
-                                                            <span className="text-xs text-gray-400 bg-white border border-gray-200 px-2 py-1 rounded">{new Date(note.date + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                                                            <span className="text-xs text-gray-400 bg-white border border-gray-200 px-2 py-1 rounded">{note.date ? new Date(note.date).toLocaleDateString('pt-BR') : '-'}</span>
                                                         </div>
                                                         <p className="text-gray-700 leading-relaxed">{note.message}</p>
                                                         <span className="text-xs text-gray-400 mt-2 block uppercase tracking-wide">Via {note.source === 'chatbot' ? 'Assistente Virtual' : 'Formulário'}</span>

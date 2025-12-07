@@ -354,21 +354,42 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
 
     // 5. Admin Notes (Chatbot messages/recados)
-    const { data: notesData } = await supabase
-      .from('admin_notes')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (notesData) {
-      const mappedNotes: AdminNote[] = notesData.map((n: any) => ({
-        id: n.id,
-        userName: n.user_name,
-        userContact: n.user_contact,
-        message: n.message,
-        date: n.created_at,
-        status: n.status || 'new',
-        source: n.source || 'chatbot'
-      }));
-      setAdminNotes(mappedNotes);
+    try {
+      const { data: notesData, error: notesError } = await supabase
+        .from('admin_notes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (notesError) {
+        // If created_at column doesn't exist, try without ordering
+        if ((import.meta as any).env?.DEV) console.log('[Data] Admin Notes error, trying without order:', notesError.message);
+        const { data: fallbackNotes } = await supabase.from('admin_notes').select('*');
+        if (fallbackNotes) {
+          const mappedNotes: AdminNote[] = fallbackNotes.map((n: any) => ({
+            id: n.id,
+            userName: n.user_name,
+            userContact: n.user_contact,
+            message: n.message,
+            date: n.created_at || new Date().toISOString(),
+            status: n.status || 'new',
+            source: n.source || 'chatbot'
+          }));
+          setAdminNotes(mappedNotes);
+        }
+      } else if (notesData) {
+        const mappedNotes: AdminNote[] = notesData.map((n: any) => ({
+          id: n.id,
+          userName: n.user_name,
+          userContact: n.user_contact,
+          message: n.message,
+          date: n.created_at,
+          status: n.status || 'new',
+          source: n.source || 'chatbot'
+        }));
+        setAdminNotes(mappedNotes);
+      }
+    } catch (err) {
+      if ((import.meta as any).env?.DEV) console.error('[Data] Admin Notes fetch error:', err);
     }
 
     if ((import.meta as any).env?.DEV) console.log('[Data] fetchGlobalData complete!');
