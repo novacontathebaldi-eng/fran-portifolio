@@ -38,22 +38,6 @@ export const CulturalDetails: React.FC = () => {
     }
   }, [project]);
 
-  // Show loading while data is being fetched
-  // Also show loading if culturalProjects array is empty but we're looking for a specific project
-  // This handles the race condition where isLoadingData becomes false before culturalProjects state updates
-  if (isLoadingData || (culturalProjects.length === 0 && id)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-      </div>
-    );
-  }
-
-  // Only show not found AFTER data has loaded AND culturalProjects array is populated
-  if (!project) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-500">Projeto Cultural não encontrado.</div>;
-  }
-
   const openLightbox = (index: number) => setLightboxIndex(index);
   const closeLightbox = () => setLightboxIndex(null);
 
@@ -70,6 +54,9 @@ export const CulturalDetails: React.FC = () => {
       setLightboxIndex((lightboxIndex - 1 + allImages.length) % allImages.length);
     }
   };
+
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  // This is a React rule - hooks must be called in the same order every render
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -116,6 +103,21 @@ export const CulturalDetails: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // CONDITIONAL RETURNS - AFTER all hooks have been called
+  // Show loading while data is being fetched
+  if (isLoadingData || (culturalProjects.length === 0 && id)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  // Only show not found AFTER data has loaded AND culturalProjects array is populated
+  if (!project) {
+    return <div className="min-h-screen flex items-center justify-center text-gray-500">Projeto Cultural não encontrado.</div>;
+  }
 
   return (
     <div className="bg-white">
