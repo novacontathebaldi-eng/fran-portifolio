@@ -741,7 +741,7 @@ export const AdminDashboard: React.FC = () => {
                                 </div>
 
                                 {/* Widgets Grid */}
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
                                     {widgets.sort((a, b) => a.order - b.order).map(widget => {
                                         const IconComponent = iconMap[widget.icon] || LayoutDashboard;
                                         const badge = getBadge(widget);
