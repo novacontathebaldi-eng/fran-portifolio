@@ -112,14 +112,14 @@ export const ProductDetails: React.FC = () => {
     return (
         <div className="min-h-screen bg-white pt-20">
             <div className="container mx-auto px-6 py-8">
-                {/* Back Button */}
-                <Link
-                    to="/shop"
+                {/* Back Button - uses navigate(-1) to preserve scroll */}
+                <button
+                    onClick={() => navigate(-1)}
                     className="inline-flex items-center gap-2 text-gray-600 hover:text-black transition mb-8"
                 >
                     <ArrowLeft className="w-5 h-5" />
                     <span>Voltar à Loja</span>
-                </Link>
+                </button>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     {/* Image Gallery */}

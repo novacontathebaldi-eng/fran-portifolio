@@ -1,20 +1,42 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ShoppingBag, Filter, Search, Loader2, Grid, List, Plus } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ShoppingBag, Filter, Search, Loader2, Grid, List, Plus, Check } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useCart } from '../../context/CartContext';
 import { ShopProduct } from '../../types';
 
+// Session storage keys for state preservation
+const SHOP_STATE_KEY = 'shop_state';
+
 export const Shop: React.FC = () => {
     const navigate = useNavigate();
-    const { shopProducts, fetchShopProducts, settings, isLoadingData } = useProjects();
+    const location = useLocation();
+    const { shopProducts, fetchShopProducts, settings, isLoadingData, subscribeToShopProducts } = useProjects();
     const { addToCart, cartCount } = useCart();
+    const containerRef = useRef<HTMLDivElement>(null);
 
-    const [selectedCategory, setSelectedCategory] = useState<string>('all');
-    const [searchQuery, setSearchQuery] = useState('');
+    // Restore state from session storage or use defaults
+    const getSavedState = () => {
+        try {
+            const saved = sessionStorage.getItem(SHOP_STATE_KEY);
+            if (saved) {
+                return JSON.parse(saved);
+            }
+        } catch (e) { }
+        return { category: 'all', search: '', viewMode: 'grid', scrollY: 0 };
+    };
+
+    const savedState = getSavedState();
+    const [selectedCategory, setSelectedCategory] = useState<string>(savedState.category);
+    const [searchQuery, setSearchQuery] = useState(savedState.search);
     const [loading, setLoading] = useState(true);
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>(savedState.viewMode);
+
+    // Visual feedback for add to cart
+    const [addedProductId, setAddedProductId] = useState<string | null>(null);
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
 
     // Redirect if shop is disabled
     useEffect(() => {
@@ -50,6 +72,53 @@ export const Shop: React.FC = () => {
         return () => clearTimeout(timeoutId);
     }, []);
 
+    // Subscribe to realtime updates
+    useEffect(() => {
+        if (subscribeToShopProducts) {
+            const unsubscribe = subscribeToShopProducts();
+            return () => {
+                if (unsubscribe) unsubscribe();
+            };
+        }
+    }, [subscribeToShopProducts]);
+
+    // Save state to session storage when it changes
+    useEffect(() => {
+        const state = {
+            category: selectedCategory,
+            search: searchQuery,
+            viewMode: viewMode,
+            scrollY: window.scrollY
+        };
+        sessionStorage.setItem(SHOP_STATE_KEY, JSON.stringify(state));
+    }, [selectedCategory, searchQuery, viewMode]);
+
+    // Restore scroll position after products load
+    useEffect(() => {
+        if (!loading && savedState.scrollY > 0) {
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                window.scrollTo(0, savedState.scrollY);
+            }, 100);
+        }
+    }, [loading]);
+
+    // Save scroll position before navigating away
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            const state = {
+                category: selectedCategory,
+                search: searchQuery,
+                viewMode: viewMode,
+                scrollY: window.scrollY
+            };
+            sessionStorage.setItem(SHOP_STATE_KEY, JSON.stringify(state));
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [selectedCategory, searchQuery, viewMode]);
+
     // Get only active products
     const activeProducts = shopProducts.filter(p => p.status === 'active');
 
@@ -64,13 +133,38 @@ export const Shop: React.FC = () => {
         return matchesCategory && matchesSearch;
     });
 
-    const handleAddToCart = (product: ShopProduct, e: React.MouseEvent) => {
+    const handleAddToCart = useCallback((product: ShopProduct, e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
         if (product.stock > 0) {
             addToCart(product, 1);
+
+            // Visual feedback
+            setAddedProductId(product.id);
+            setToastMessage(`${product.title} adicionado ao carrinho!`);
+            setShowToast(true);
+
+            // Reset after animation
+            setTimeout(() => {
+                setAddedProductId(null);
+            }, 1500);
+
+            setTimeout(() => {
+                setShowToast(false);
+            }, 3000);
         }
-    };
+    }, [addToCart]);
+
+    // Save scroll before navigating to product
+    const handleProductClick = useCallback(() => {
+        const state = {
+            category: selectedCategory,
+            search: searchQuery,
+            viewMode: viewMode,
+            scrollY: window.scrollY
+        };
+        sessionStorage.setItem(SHOP_STATE_KEY, JSON.stringify(state));
+    }, [selectedCategory, searchQuery, viewMode]);
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('pt-BR', {
@@ -88,7 +182,22 @@ export const Shop: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-white" ref={containerRef}>
+            {/* Toast Notification */}
+            <AnimatePresence>
+                {showToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -50, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: -50, x: '-50%' }}
+                        className="fixed top-24 left-1/2 z-50 bg-black text-white px-6 py-3 rounded-full shadow-xl flex items-center gap-3"
+                    >
+                        <Check className="w-5 h-5 text-green-400" />
+                        <span className="font-medium">{toastMessage}</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Hero Section - Premium Style with Background Image */}
             <section className="relative pt-32 pb-20 overflow-hidden">
                 {/* Background Image with Overlay */}
@@ -225,6 +334,7 @@ export const Shop: React.FC = () => {
                             >
                                 <Link
                                     to={`/shop/product/${product.id}`}
+                                    onClick={handleProductClick}
                                     className="group block"
                                 >
                                     {/* Product Image */}
@@ -244,14 +354,39 @@ export const Shop: React.FC = () => {
                                         {/* Overlay on Hover */}
                                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
 
-                                        {/* Quick Add Button */}
+                                        {/* Quick Add Button with Feedback */}
                                         {product.stock > 0 && (
-                                            <button
+                                            <motion.button
                                                 onClick={(e) => handleAddToCart(product, e)}
-                                                className="absolute bottom-4 right-4 p-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-black hover:text-white"
+                                                className={`absolute bottom-4 right-4 p-3 rounded-full shadow-lg transition-all duration-300 ${addedProductId === product.id
+                                                        ? 'bg-green-500 text-white scale-110'
+                                                        : 'bg-white opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 hover:bg-black hover:text-white'
+                                                    }`}
+                                                whileTap={{ scale: 0.9 }}
                                             >
-                                                <Plus className="w-5 h-5" />
-                                            </button>
+                                                <AnimatePresence mode="wait">
+                                                    {addedProductId === product.id ? (
+                                                        <motion.div
+                                                            key="check"
+                                                            initial={{ scale: 0, rotate: -180 }}
+                                                            animate={{ scale: 1, rotate: 0 }}
+                                                            exit={{ scale: 0 }}
+                                                            transition={{ type: 'spring', stiffness: 300 }}
+                                                        >
+                                                            <Check className="w-5 h-5" />
+                                                        </motion.div>
+                                                    ) : (
+                                                        <motion.div
+                                                            key="plus"
+                                                            initial={{ scale: 0 }}
+                                                            animate={{ scale: 1 }}
+                                                            exit={{ scale: 0 }}
+                                                        >
+                                                            <Plus className="w-5 h-5" />
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </motion.button>
                                         )}
 
                                         {/* Out of Stock Badge */}
@@ -303,6 +438,7 @@ export const Shop: React.FC = () => {
                             >
                                 <Link
                                     to={`/shop/product/${product.id}`}
+                                    onClick={handleProductClick}
                                     className="group flex gap-6 p-4 border border-gray-100 rounded-xl hover:shadow-lg transition-shadow"
                                 >
                                     {/* Image */}
@@ -337,9 +473,19 @@ export const Shop: React.FC = () => {
                                         {product.stock > 0 ? (
                                             <button
                                                 onClick={(e) => handleAddToCart(product, e)}
-                                                className="px-4 py-2 bg-black text-white text-sm rounded-full hover:bg-accent hover:text-black transition"
+                                                className={`px-4 py-2 text-sm rounded-full transition flex items-center gap-2 ${addedProductId === product.id
+                                                        ? 'bg-green-500 text-white'
+                                                        : 'bg-black text-white hover:bg-accent hover:text-black'
+                                                    }`}
                                             >
-                                                Adicionar
+                                                {addedProductId === product.id ? (
+                                                    <>
+                                                        <Check className="w-4 h-4" />
+                                                        Adicionado!
+                                                    </>
+                                                ) : (
+                                                    'Adicionar'
+                                                )}
                                             </button>
                                         ) : (
                                             <span className="text-gray-400 text-sm">Esgotado</span>

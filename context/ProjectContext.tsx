@@ -92,6 +92,7 @@ interface ProjectContextType {
   fetchShopOrders: () => Promise<void>;
   updateShopOrderStatus: (orderId: string, status: ShopOrder['status']) => Promise<boolean>;
   createShopOrder: (order: Omit<ShopOrder, 'id' | 'created_at' | 'updated_at'>, items: { productId: string; quantity: number; unitPrice: number }[]) => Promise<ShopOrder | null>;
+  subscribeToShopProducts: () => (() => void) | undefined;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -976,6 +977,65 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  // Subscribe to realtime changes on shop_products table
+  const subscribeToShopProducts = useCallback(() => {
+    const channel = supabase
+      .channel('shop_products_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'shop_products'
+        },
+        (payload) => {
+          console.log('[Realtime] Shop products change:', payload.eventType);
+
+          if (payload.eventType === 'INSERT') {
+            const newProduct: ShopProduct = {
+              id: payload.new.id,
+              title: payload.new.title,
+              description: payload.new.description || '',
+              price: parseFloat(payload.new.price) || 0,
+              images: payload.new.images || [],
+              stock: payload.new.stock || 0,
+              category: payload.new.category || '',
+              status: payload.new.status || 'draft',
+              created_at: payload.new.created_at,
+              updated_at: payload.new.updated_at
+            };
+            setShopProducts(prev => [newProduct, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setShopProducts(prev => prev.map(p => {
+              if (p.id === payload.new.id) {
+                return {
+                  id: payload.new.id,
+                  title: payload.new.title,
+                  description: payload.new.description || '',
+                  price: parseFloat(payload.new.price) || 0,
+                  images: payload.new.images || [],
+                  stock: payload.new.stock || 0,
+                  category: payload.new.category || '',
+                  status: payload.new.status || 'draft',
+                  created_at: payload.new.created_at,
+                  updated_at: payload.new.updated_at
+                };
+              }
+              return p;
+            }));
+          } else if (payload.eventType === 'DELETE') {
+            setShopProducts(prev => prev.filter(p => p.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    // Return cleanup function
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const addShopProduct = async (product: Omit<ShopProduct, 'id' | 'created_at' | 'updated_at'>): Promise<ShopProduct | null> => {
     try {
       const { data, error } = await supabase
@@ -1358,7 +1418,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       deleteShopProduct,
       fetchShopOrders,
       updateShopOrderStatus,
-      createShopOrder
+      createShopOrder,
+      subscribeToShopProducts
     }}>
       {children}
     </ProjectContext.Provider>
