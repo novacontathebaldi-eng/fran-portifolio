@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Filter, Search, Loader2, Grid, List, Plus, Check } from 'lucide-react';
+import { ShoppingBag, Filter, Search, Grid, List, Plus, Check } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useCart } from '../../context/CartContext';
 import { ShopProduct } from '../../types';
+import { LoadingScreen } from '../../components/loading';
 
 // Session storage keys for state preservation
 const SHOP_STATE_KEY = 'shop_state';
@@ -174,11 +175,7 @@ export const Shop: React.FC = () => {
     };
 
     if (loading || isLoadingData) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-white">
-                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-            </div>
-        );
+        return <LoadingScreen message="Carregando produtos..." />;
     }
 
     return (
@@ -251,8 +248,8 @@ export const Shop: React.FC = () => {
                                     key={cat}
                                     onClick={() => setSelectedCategory(cat)}
                                     className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition shrink-0 ${selectedCategory === cat
-                                            ? 'bg-black text-white'
-                                            : 'text-gray-600 hover:bg-gray-100'
+                                        ? 'bg-black text-white'
+                                        : 'text-gray-600 hover:bg-gray-100'
                                         }`}
                                 >
                                     {cat === 'all' ? 'Todos' : cat}
@@ -359,8 +356,8 @@ export const Shop: React.FC = () => {
                                             <motion.button
                                                 onClick={(e) => handleAddToCart(product, e)}
                                                 className={`absolute bottom-4 right-4 p-3 rounded-full shadow-lg transition-all duration-300 ${addedProductId === product.id
-                                                        ? 'bg-green-500 text-white scale-110'
-                                                        : 'bg-white opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 hover:bg-black hover:text-white'
+                                                    ? 'bg-green-500 text-white scale-110'
+                                                    : 'bg-white opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 hover:bg-black hover:text-white'
                                                     }`}
                                                 whileTap={{ scale: 0.9 }}
                                             >
@@ -474,8 +471,8 @@ export const Shop: React.FC = () => {
                                             <button
                                                 onClick={(e) => handleAddToCart(product, e)}
                                                 className={`px-4 py-2 text-sm rounded-full transition flex items-center gap-2 ${addedProductId === product.id
-                                                        ? 'bg-green-500 text-white'
-                                                        : 'bg-black text-white hover:bg-accent hover:text-black'
+                                                    ? 'bg-green-500 text-white'
+                                                    : 'bg-black text-white hover:bg-accent hover:text-black'
                                                     }`}
                                             >
                                                 {addedProductId === product.id ? (

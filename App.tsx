@@ -5,6 +5,7 @@ import { CheckCircle, AlertCircle, Info, X, RefreshCw, Loader2 } from 'lucide-re
 import { Layout } from './components/Layout';
 import { ProjectProvider, useProjects } from './context/ProjectContext';
 import { CartProvider } from './context/CartContext';
+import { LoadingScreen } from './components/loading';
 
 // Lazy load all pages for code-splitting
 const Home = lazy(() => import('./pages/Home').then(module => ({ default: module.Home })));
@@ -87,13 +88,24 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
-// Splash Screen Component
+// Splash Screen Component - Main Loading Screen
 const PRELOAD_IMAGES = [
   "https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/fundo-home.png",
   "https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/img-sobre-home.png"
 ];
 
-const Splash: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+const MIN_SPLASH_TIME = 1500; // Minimum time to show splash (1.5s)
+const MAX_SPLASH_TIME = 8000; // Maximum time before forcing completion (8s safety)
+
+interface SplashProps {
+  isDataReady: boolean;
+  onComplete: () => void;
+}
+
+const Splash: React.FC<SplashProps> = ({ isDataReady, onComplete }) => {
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+
   useEffect(() => {
     // Preload images
     PRELOAD_IMAGES.forEach((src) => {
@@ -101,16 +113,52 @@ const Splash: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       img.src = src;
     });
 
-    const timer = setTimeout(onComplete, 2500);
-    return () => clearTimeout(timer);
+    // Minimum display time
+    const minTimer = setTimeout(() => setMinTimeElapsed(true), MIN_SPLASH_TIME);
+
+    // Safety timeout - force complete after MAX_SPLASH_TIME
+    const maxTimer = setTimeout(() => {
+      console.warn('[Splash] Force completing due to timeout');
+      setIsExiting(true);
+      setTimeout(onComplete, 500);
+    }, MAX_SPLASH_TIME);
+
+    return () => {
+      clearTimeout(minTimer);
+      clearTimeout(maxTimer);
+    };
   }, [onComplete]);
 
+  // Complete when both conditions are met
+  useEffect(() => {
+    if (minTimeElapsed && isDataReady && !isExiting) {
+      setIsExiting(true);
+      // Smooth fade out before completing
+      setTimeout(onComplete, 500);
+    }
+  }, [minTimeElapsed, isDataReady, isExiting, onComplete]);
+
   return (
-    <div className="fixed inset-0 bg-[#1a1a1a] flex items-center justify-center z-[100] text-white">
-      <div className="text-center animate-pulse">
-        <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">Fran Siller</h1>
+    <div
+      className={`fixed inset-0 bg-[#1a1a1a] flex items-center justify-center z-[100] text-white transition-opacity duration-500 ${isExiting ? 'opacity-0' : 'opacity-100'}`}
+      role="status"
+      aria-live="polite"
+      aria-label="Carregando site Fran Siller Arquitetura"
+    >
+      <div className="text-center">
+        <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase animate-pulse">Fran Siller</h1>
         <div className="h-0.5 w-16 bg-accent mx-auto"></div>
         <p className="text-xs uppercase tracking-widest mt-4 text-gray-400">Arquitetura & Design</p>
+
+        {/* Elegant loading bar */}
+        <div className="mt-8 w-48 mx-auto">
+          <div className="h-[2px] bg-white/10 rounded-full overflow-hidden">
+            <div
+              className={`h-full bg-accent rounded-full transition-all duration-1000 ease-out ${isDataReady ? 'w-full' : 'w-3/4 animate-pulse'
+                }`}
+            ></div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -167,11 +215,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
   const { currentUser, isLoadingAuth } = useProjects();
 
   if (isLoadingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-      </div>
-    );
+    return <LoadingScreen message="Verificando acesso..." />;
   }
 
   if (!currentUser) {
@@ -187,12 +231,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
 
 // Loading fallback component for Suspense
 const PageLoader: React.FC = () => (
-  <div className="min-h-screen flex items-center justify-center bg-white">
-    <div className="text-center">
-      <Loader2 className="w-8 h-8 animate-spin text-gray-400 mx-auto mb-4" />
-      <p className="text-sm text-gray-500">Carregando...</p>
-    </div>
-  </div>
+  <LoadingScreen message="Carregando página..." />
 );
 
 // Wrapper for Routes to allow useLocation hook
@@ -308,8 +347,6 @@ const AnimatedRoutes: React.FC = () => {
 
 // Main App Component with Providers
 const App: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     // Register service worker for PWA with update detection
     // ONLY in production to avoid cache conflicts during development
@@ -381,22 +418,37 @@ const App: React.FC = () => {
     );
   }, []);
 
-  if (loading) {
-    return <Splash onComplete={() => setLoading(false)} />;
-  }
-
   return (
     <ProjectProvider>
       <CartProvider>
-        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <ErrorBoundary>
-            <ScrollToTop />
-            <GlobalToast />
-            <AnimatedRoutes />
-          </ErrorBoundary>
-        </Router>
+        <AppContent />
       </CartProvider>
     </ProjectProvider>
+  );
+};
+
+// AppContent - Has access to ProjectContext for Splash loading state
+const AppContent: React.FC = () => {
+  const { isLoadingData } = useProjects();
+  const [showSplash, setShowSplash] = useState(true);
+
+  if (showSplash) {
+    return (
+      <Splash
+        isDataReady={!isLoadingData}
+        onComplete={() => setShowSplash(false)}
+      />
+    );
+  }
+
+  return (
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <ErrorBoundary>
+        <ScrollToTop />
+        <GlobalToast />
+        <AnimatedRoutes />
+      </ErrorBoundary>
+    </Router>
   );
 };
 

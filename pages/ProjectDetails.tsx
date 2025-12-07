@@ -3,8 +3,9 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import { useProjects } from '../context/ProjectContext';
-import { Heart, ArrowLeft, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Heart, ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LoadingScreen } from '../components/loading';
 
 export const ProjectDetails: React.FC = () => {
   const { id } = useParams();
@@ -115,11 +116,7 @@ export const ProjectDetails: React.FC = () => {
   // CONDITIONAL RETURNS - AFTER all hooks have been called
   // Show loading while data is being fetched
   if (isLoadingData || (projects.length === 0 && id)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-      </div>
-    );
+    return <LoadingScreen message="Carregando projeto..." />;
   }
 
   // Only show not found AFTER data has loaded AND projects array is populated
