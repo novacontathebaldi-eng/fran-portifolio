@@ -155,10 +155,14 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
     if (!isOpen) return null;
 
     const shouldShowAspectSelector = showAspectSelector && !requireCrop;
+    const isAvatarMode = requireCrop && cropShape === 'round';
 
     return (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 md:p-4">
-            <div className="bg-white w-full max-h-[calc(100vh-16px)] md:max-h-[90vh] md:rounded-xl md:w-full md:max-w-lg overflow-hidden shadow-2xl flex flex-col">
+            <div className={`bg-white w-full max-h-[calc(100vh-16px)] md:rounded-xl overflow-hidden shadow-2xl flex flex-col ${isAvatarMode
+                    ? 'md:max-h-[80vh] md:max-w-sm'
+                    : 'md:max-h-[90vh] md:max-w-lg'
+                }`}>
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
                     <h3 className="text-base font-bold">{title}</h3>
@@ -173,8 +177,11 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
 
                 {/* Scrollable Content Area */}
                 <div className="flex-1 overflow-y-auto overscroll-contain">
-                    {/* Cropper Area - Square aspect, larger on mobile */}
-                    <div className="relative aspect-square bg-gray-900">
+                    {/* Cropper Area - Smaller on desktop for avatar */}
+                    <div className={`relative bg-gray-900 ${isAvatarMode
+                            ? 'aspect-square md:h-[280px] md:aspect-auto'
+                            : 'aspect-square'
+                        }`}>
                         <Cropper
                             image={image}
                             crop={crop}
@@ -270,8 +277,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                                                 type="button"
                                                 onClick={() => setSelectedAspect(ratio.value)}
                                                 className={`py-1.5 px-1 rounded border transition-all flex flex-col items-center justify-center gap-0.5 ${isSelected
-                                                        ? 'border-black bg-black text-white'
-                                                        : 'border-gray-200 hover:border-gray-400 text-gray-600'
+                                                    ? 'border-black bg-black text-white'
+                                                    : 'border-gray-200 hover:border-gray-400 text-gray-600'
                                                     }`}
                                             >
                                                 <div className="flex items-center justify-center h-4">
