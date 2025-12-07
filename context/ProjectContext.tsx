@@ -508,6 +508,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (currentUser?.role === 'admin') {
       const fetchAllUsers = async () => {
         try {
+          // 1. Fetch Users & Profiles
           const { data: profiles, error } = await supabase.from('profiles').select('*');
           if (error || !profiles) return;
 
@@ -535,8 +536,35 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           }));
 
           setUsers(mapped);
+
+          // 2. Re-fetch Admin Data (Messages & Appointments) ensures validity after Auth
+          // This fixes the "empty on first load" issue caused by RLS blocking the initial public fetch
+          const { data: msgData } = await supabase.from('messages').select('*').order('created_at', { ascending: false });
+          if (msgData) {
+            const mappedMsgs: Message[] = msgData.map((m: any) => ({
+              id: m.id,
+              name: m.name,
+              email: m.email,
+              phone: m.phone,
+              subject: m.subject,
+              message: m.message,
+              source: m.source,
+              status: m.status,
+              createdAt: m.created_at
+            }));
+            setMessages(mappedMsgs);
+          }
+
+          const { data: aptData } = await supabase.from('appointments').select('*');
+          if (aptData) {
+            setAppointments(aptData.map(mapAppointment));
+          }
+
+          // 3. Fetch Shop Orders (Admin View)
+          fetchShopOrders();
+
         } catch (err) {
-          console.error("Critical error in Admin User Fetch:", err);
+          console.error("Critical error in Admin Data Fetch:", err);
         }
       };
 
