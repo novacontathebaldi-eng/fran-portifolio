@@ -63,27 +63,96 @@ const renderFormattedText = (text: string) => {
 
 const ProjectCarousel = ({ data }: { data: any }) => {
   const { projects } = useProjects();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
   const category = data?.category;
   const filtered = category
     ? projects.filter(p => p.category.toLowerCase().includes(category.toLowerCase())).slice(0, 3)
     : projects.slice(0, 3);
 
+  // Detect touch device on mount
+  useEffect(() => {
+    const checkTouch = () => {
+      setIsTouchDevice(
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        window.matchMedia('(pointer: coarse)').matches
+      );
+    };
+    checkTouch();
+  }, []);
+
+  // Update scroll button visibility
+  const updateScrollButtons = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
+    }
+  };
+
+  useEffect(() => {
+    updateScrollButtons();
+  }, [filtered]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 220; // Slightly more than card width
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+      setTimeout(updateScrollButtons, 300);
+    }
+  };
+
   if (filtered.length === 0) return <div className="text-xs text-gray-500 mt-2">Nenhum projeto encontrado.</div>;
 
   return (
-    <div className="mt-4 flex gap-4 overflow-x-auto pb-2 no-scrollbar pl-1">
-      {filtered.map(p => (
-        <Link to={`/project/${p.id}`} key={p.id} className="min-w-[200px] bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden block hover:border-accent transition group">
-          <div className="relative">
-            <img src={p.image} className="w-full h-24 object-cover" />
-            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition"></div>
-          </div>
-          <div className="p-3">
-            <h4 className="font-serif font-bold text-sm truncate">{p.title}</h4>
-            <p className="text-xs text-gray-500">{p.category}</p>
-          </div>
-        </Link>
-      ))}
+    <div className="mt-4 relative">
+      {/* Left scroll button - Desktop only */}
+      {!isTouchDevice && canScrollLeft && (
+        <button
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all -ml-2"
+          aria-label="Rolar para esquerda"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+      )}
+
+      <div
+        ref={scrollRef}
+        onScroll={updateScrollButtons}
+        className="flex gap-4 overflow-x-auto pb-2 no-scrollbar pl-1 pr-1"
+      >
+        {filtered.map(p => (
+          <Link to={`/project/${p.id}`} key={p.id} className="min-w-[200px] bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden block hover:border-accent transition group">
+            <div className="relative">
+              <img src={p.image} className="w-full h-24 object-cover" />
+              <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition"></div>
+            </div>
+            <div className="p-3">
+              <h4 className="font-serif font-bold text-sm truncate">{p.title}</h4>
+              <p className="text-xs text-gray-500">{p.category}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Right scroll button - Desktop only */}
+      {!isTouchDevice && canScrollRight && (
+        <button
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all -mr-2"
+          aria-label="Rolar para direita"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 };
