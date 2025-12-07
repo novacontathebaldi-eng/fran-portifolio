@@ -135,6 +135,8 @@ export const ProductDetails: React.FC = () => {
                                     src={product.images[selectedImageIndex]}
                                     alt={product.title}
                                     className="w-full h-full object-cover"
+                                    loading="lazy"
+                                    decoding="async"
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
@@ -171,7 +173,7 @@ export const ProductDetails: React.FC = () => {
                                         className={`w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 transition ${selectedImageIndex === index ? 'border-black' : 'border-transparent'
                                             }`}
                                     >
-                                        <img src={img} alt="" className="w-full h-full object-cover" />
+                                        <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                                     </button>
                                 ))}
                             </div>

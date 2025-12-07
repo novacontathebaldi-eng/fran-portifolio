@@ -24,7 +24,9 @@ export const Shop: React.FC = () => {
             if (saved) {
                 return JSON.parse(saved);
             }
-        } catch (e) { }
+        } catch (e) {
+            if ((import.meta as any).env.DEV) console.warn('Erro ao restaurar state:', e);
+        }
         return { category: 'all', search: '', viewMode: 'grid', scrollY: 0 };
     };
 
@@ -341,6 +343,8 @@ export const Shop: React.FC = () => {
                                                 src={product.images[0]}
                                                 alt={product.title}
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                                loading="lazy"
+                                                decoding="async"
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
@@ -441,7 +445,7 @@ export const Shop: React.FC = () => {
                                     {/* Image */}
                                     <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden shrink-0">
                                         {product.images?.[0] ? (
-                                            <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
+                                            <img src={product.images[0]} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
                                                 <ShoppingBag className="w-8 h-8 text-gray-300" />

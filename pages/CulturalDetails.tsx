@@ -179,6 +179,8 @@ export const CulturalDetails: React.FC = () => {
           transition={{ duration: 2, ease: "easeOut" }}
           src={project.image}
           className="w-full h-full object-cover"
+          loading="lazy"
+          decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end pb-12 md:pb-20 px-6 md:px-12">
           <div className="container mx-auto relative z-10">
@@ -323,6 +325,8 @@ export const CulturalDetails: React.FC = () => {
                           src={block.content}
                           className="w-full h-auto transition-transform duration-1000 ease-in-out hover:scale-105"
                           alt="Project detail"
+                          loading="lazy"
+                          decoding="async"
                         />
                       </div>
                       {block.caption && <p className="text-xs text-gray-400 mt-2 text-center">{block.caption}</p>}
@@ -344,6 +348,8 @@ export const CulturalDetails: React.FC = () => {
                             src={url}
                             className="w-full h-64 md:h-96 object-cover transition-transform duration-1000 ease-in-out hover:scale-110"
                             alt="Grid detail"
+                            loading="lazy"
+                            decoding="async"
                           />
                         </div>
                       ))}
@@ -374,6 +380,7 @@ export const CulturalDetails: React.FC = () => {
                       src={img}
                       className="w-full h-auto object-cover transition-transform duration-1000 ease-in-out group-hover:scale-105"
                       loading="lazy"
+                      decoding="async"
                     />
                   </motion.div>
                 ))}
