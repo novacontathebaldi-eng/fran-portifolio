@@ -5,6 +5,8 @@ import { Project, ContentBlock } from '../../types';
 import { ArrowLeft, Save, Upload, Type, Image as ImageIcon, LayoutGrid, Quote, Trash2, ArrowUp, ArrowDown, GripVertical, Plus, Heading } from 'lucide-react';
 import { motion, Reorder } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
+import { ImageCropModal, useImageCropModal } from '../../components/ImageCropModal';
+import { optimizeImage } from '../../utils/imageOptimizer';
 
 // Real Supabase Upload
 const uploadToSupabase = async (file: File): Promise<string> => {
@@ -35,6 +37,14 @@ export const ProjectForm: React.FC = () => {
   const isEditing = Boolean(id);
   const existingProject = projects.find(p => p.id === id);
   const [uploading, setUploading] = useState(false);
+
+  // Crop Modal States
+  const coverCropModal = useImageCropModal();
+  const [blockCropModalOpen, setBlockCropModalOpen] = useState(false);
+  const [blockCropImage, setBlockCropImage] = useState('');
+  const [blockCropFile, setBlockCropFile] = useState<File | null>(null);
+  const [pendingBlockId, setPendingBlockId] = useState<string | null>(null);
+  const [pendingGridIndex, setPendingGridIndex] = useState<number | null>(null);
 
   const [formData, setFormData] = useState<Partial<Project>>({
     title: '',
@@ -78,14 +88,20 @@ export const ProjectForm: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Image Upload for Main Cover
+  // Image Upload for Main Cover - Opens crop modal
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
+    coverCropModal.openCropModal(e.target.files[0]);
+    e.target.value = '';
+  };
+
+  // Handle cropped cover image upload
+  const handleCroppedCoverUpload = async (file: File) => {
     setUploading(true);
     try {
-      const url = await uploadToSupabase(e.target.files[0]);
+      const url = await uploadToSupabase(file);
       setFormData(prev => ({ ...prev, image: url }));
-      showToast('Capa atualizada.', 'success');
+      showToast('Capa atualizada e otimizada!', 'success');
     } catch (err) {
       showToast('Erro ao fazer upload da capa.', 'error');
       console.error(err);
@@ -125,25 +141,55 @@ export const ProjectForm: React.FC = () => {
     }));
   };
 
-  // Block Image Upload
+  // Block Image Upload - Opens crop modal
   const handleBlockImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockId: string) => {
     if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    const dataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+    setBlockCropImage(dataUrl);
+    setBlockCropFile(file);
+    setPendingBlockId(blockId);
+    setPendingGridIndex(null);
+    setBlockCropModalOpen(true);
+    e.target.value = '';
+  };
+
+  // Handle cropped block image
+  const handleCroppedBlockImage = async (file: File) => {
     try {
-      const url = await uploadToSupabase(e.target.files[0]);
-      updateBlock(blockId, 'content', url);
+      const url = await uploadToSupabase(file);
+      if (pendingBlockId && pendingGridIndex === null) {
+        updateBlock(pendingBlockId, 'content', url);
+      } else if (pendingBlockId && pendingGridIndex !== null) {
+        updateGridItem(pendingBlockId, pendingGridIndex, url);
+      }
+      showToast('Imagem otimizada e enviada!', 'success');
     } catch (err) {
       showToast('Erro ao enviar imagem', 'error');
     }
+    setBlockCropModalOpen(false);
+    setPendingBlockId(null);
+    setPendingGridIndex(null);
   };
 
   const handleGridImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockId: string, index: number) => {
     if (!e.target.files || e.target.files.length === 0) return;
-    try {
-      const url = await uploadToSupabase(e.target.files[0]);
-      updateGridItem(blockId, index, url);
-    } catch (err) {
-      showToast('Erro ao enviar imagem', 'error');
-    }
+    const file = e.target.files[0];
+    const dataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+    setBlockCropImage(dataUrl);
+    setBlockCropFile(file);
+    setPendingBlockId(blockId);
+    setPendingGridIndex(index);
+    setBlockCropModalOpen(true);
+    e.target.value = '';
   };
 
   const removeBlock = (id: string) => {
@@ -428,6 +474,38 @@ export const ProjectForm: React.FC = () => {
             </div>
           </div>
         </form>
+
+        {/* Cover Crop Modal */}
+        <ImageCropModal
+          image={coverCropModal.imageSource}
+          originalFile={coverCropModal.selectedFile || undefined}
+          isOpen={coverCropModal.isOpen}
+          onClose={coverCropModal.closeCropModal}
+          onCropComplete={handleCroppedCoverUpload}
+          aspect={16 / 9}
+          preset="projectHero"
+          requireCrop={false}
+          showAspectSelector={true}
+          title="Ajustar Capa do Projeto"
+        />
+
+        {/* Block/Grid Crop Modal */}
+        <ImageCropModal
+          image={blockCropImage}
+          originalFile={blockCropFile || undefined}
+          isOpen={blockCropModalOpen}
+          onClose={() => {
+            setBlockCropModalOpen(false);
+            setPendingBlockId(null);
+            setPendingGridIndex(null);
+          }}
+          onCropComplete={handleCroppedBlockImage}
+          aspect={null}
+          preset="projectGallery"
+          requireCrop={false}
+          showAspectSelector={true}
+          title="Ajustar Imagem"
+        />
       </div>
     </div>
   );

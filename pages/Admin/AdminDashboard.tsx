@@ -10,6 +10,7 @@ import { BudgetRequestDetail } from './BudgetRequestDetail';
 import { Receipt } from 'lucide-react';
 import { MessagesDashboard } from './MessagesDashboard';
 import { ShopManagement } from './ShopManagement';
+import { ImageCropModal, useImageCropModal } from '../../components/ImageCropModal';
 
 // Real Supabase Upload
 const uploadToSupabase = async (file: File): Promise<string> => {
@@ -92,6 +93,13 @@ export const AdminDashboard: React.FC = () => {
     const [localEditingWidgets, setLocalEditingWidgets] = useState<DashboardWidget[]>([]); // Local copy for editing before save
     const [blockForm, setBlockForm] = useState({ date: '', time: '' });
     const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+
+    // Office Crop Modal States
+    const [officeCropModalOpen, setOfficeCropModalOpen] = useState(false);
+    const [officeCropImage, setOfficeCropImage] = useState('');
+    const [officeCropFile, setOfficeCropFile] = useState<File | null>(null);
+    const [pendingOfficeBlockId, setPendingOfficeBlockId] = useState<string | null>(null);
+    const [pendingOfficeGridIndex, setPendingOfficeGridIndex] = useState<number | null>(null);
 
     // SYNC SELECTED CLIENT WITH GLOBAL USERS STATE
     // This ensures that when a folder is created/deleted/renamed via Context, the local view updates immediately.
@@ -456,22 +464,51 @@ export const AdminDashboard: React.FC = () => {
 
     const handleBlockImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockId: string) => {
         if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+        });
+        setOfficeCropImage(dataUrl);
+        setOfficeCropFile(file);
+        setPendingOfficeBlockId(blockId);
+        setPendingOfficeGridIndex(null);
+        setOfficeCropModalOpen(true);
+        e.target.value = '';
+    };
+
+    const handleCroppedOfficeImage = async (file: File) => {
         try {
-            const url = await uploadToSupabase(e.target.files[0]);
-            updateOfficeBlock(blockId, 'content', url);
+            const url = await uploadToSupabase(file);
+            if (pendingOfficeBlockId && pendingOfficeGridIndex === null) {
+                updateOfficeBlock(pendingOfficeBlockId, 'content', url);
+            } else if (pendingOfficeBlockId && pendingOfficeGridIndex !== null) {
+                updateOfficeGridItem(pendingOfficeBlockId, pendingOfficeGridIndex, url);
+            }
+            showToast('Imagem otimizada e enviada!', 'success');
         } catch (err) {
             showToast('Erro ao enviar imagem', 'error');
         }
+        setOfficeCropModalOpen(false);
+        setPendingOfficeBlockId(null);
+        setPendingOfficeGridIndex(null);
     };
 
     const handleGridImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockId: string, index: number) => {
         if (!e.target.files || e.target.files.length === 0) return;
-        try {
-            const url = await uploadToSupabase(e.target.files[0]);
-            updateOfficeGridItem(blockId, index, url);
-        } catch (err) {
-            showToast('Erro ao enviar imagem', 'error');
-        }
+        const file = e.target.files[0];
+        const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+        });
+        setOfficeCropImage(dataUrl);
+        setOfficeCropFile(file);
+        setPendingOfficeBlockId(blockId);
+        setPendingOfficeGridIndex(index);
+        setOfficeCropModalOpen(true);
+        e.target.value = '';
     };
 
     // --- Blocking Logic ---
@@ -1930,6 +1967,24 @@ export const AdminDashboard: React.FC = () => {
 
                 </div>
             </main>
+
+            {/* Office Crop Modal */}
+            <ImageCropModal
+                image={officeCropImage}
+                originalFile={officeCropFile || undefined}
+                isOpen={officeCropModalOpen}
+                onClose={() => {
+                    setOfficeCropModalOpen(false);
+                    setPendingOfficeBlockId(null);
+                    setPendingOfficeGridIndex(null);
+                }}
+                onCropComplete={handleCroppedOfficeImage}
+                aspect={null}
+                preset="projectGallery"
+                requireCrop={false}
+                showAspectSelector={true}
+                title="Ajustar Imagem do Escritório"
+            />
         </div>
     );
 };

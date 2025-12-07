@@ -847,6 +847,21 @@ export const ClientArea: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Avatar Crop Modal - Mandatory 1:1 circular crop */}
+      <ImageCropModal
+        image={avatarCropModal.imageSource}
+        originalFile={avatarCropModal.selectedFile || undefined}
+        isOpen={avatarCropModal.isOpen}
+        onClose={avatarCropModal.closeCropModal}
+        onCropComplete={handleCroppedAvatarUpload}
+        aspect={1}
+        cropShape="round"
+        preset="avatar"
+        requireCrop={true}
+        showAspectSelector={false}
+        title="Ajustar Foto de Perfil"
+      />
     </div>
   );
 };
