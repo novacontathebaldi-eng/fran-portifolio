@@ -3,6 +3,7 @@ import { Package, ShoppingBag, Plus, Edit2, Trash2, Eye, X, Upload, Loader2, Che
 import { useProjects } from '../../context/ProjectContext';
 import { ShopProduct, ShopOrder } from '../../types';
 import { supabase } from '../../supabaseClient';
+import { ImageCropModal, useImageCropModal } from '../../components/ImageCropModal';
 
 // Upload helper - uses storage-Fran bucket (same as rest of project)
 const uploadProductImage = async (file: File): Promise<string> => {
@@ -44,6 +45,9 @@ export const ShopManagement: React.FC<ShopManagementProps> = ({ onShowToast }) =
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [togglingShop, setTogglingShop] = useState(false);
+
+    // Image crop modal state for product images
+    const productCropModal = useImageCropModal();
 
     // Product form
     const [productForm, setProductForm] = useState({
@@ -154,26 +158,29 @@ export const ShopManagement: React.FC<ShopManagementProps> = ({ onShowToast }) =
         }
     };
 
-    // Handle image upload
+    // Handle image upload - opens crop modal
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files?.length) return;
 
-        setUploading(true);
-        const newImages: string[] = [];
+        // Open crop modal for the first image
+        productCropModal.openCropModal(files[0]);
+        // Reset input to allow selecting same file again
+        e.target.value = '';
+    };
 
+    // Handle cropped image from modal
+    const handleCroppedImageUpload = async (file: File) => {
+        setUploading(true);
         try {
-            for (let i = 0; i < files.length; i++) {
-                const url = await uploadProductImage(files[i]);
-                newImages.push(url);
-            }
+            const url = await uploadProductImage(file);
             setProductForm(prev => ({
                 ...prev,
-                images: [...prev.images, ...newImages]
+                images: [...prev.images, url]
             }));
-            onShowToast('Imagens enviadas!', 'success');
+            onShowToast('Imagem otimizada e enviada!', 'success');
         } catch (e) {
-            onShowToast('Erro ao enviar imagens.', 'error');
+            onShowToast('Erro ao enviar imagem.', 'error');
         } finally {
             setUploading(false);
         }
@@ -646,6 +653,20 @@ export const ShopManagement: React.FC<ShopManagementProps> = ({ onShowToast }) =
                     </div>
                 </div>
             )}
+
+            {/* Product Image Crop Modal */}
+            <ImageCropModal
+                image={productCropModal.imageSource}
+                originalFile={productCropModal.selectedFile || undefined}
+                isOpen={productCropModal.isOpen}
+                onClose={productCropModal.closeCropModal}
+                onCropComplete={handleCroppedImageUpload}
+                aspect={1}
+                cropShape="rect"
+                preset="product"
+                requireCrop={false}
+                title="Ajustar Imagem do Produto"
+            />
         </div>
     );
 };

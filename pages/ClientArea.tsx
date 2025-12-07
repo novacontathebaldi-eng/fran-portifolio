@@ -8,6 +8,7 @@ import { supabase } from '../supabaseClient';
 import { ClientBudgetsView } from './Client/ClientBudgetsView';
 import { ClientBudgetDetail } from './Client/ClientBudgetDetail';
 import { ClientOrdersView } from './Client/ClientOrdersView';
+import { ImageCropModal, useImageCropModal } from '../components/ImageCropModal';
 
 // Real Supabase Upload
 const uploadToSupabase = async (file: File): Promise<string> => {
@@ -59,6 +60,9 @@ export const ClientArea: React.FC = () => {
   // Budget Navigation State
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null);
 
+  // Image Crop Modal State for Avatar
+  const avatarCropModal = useImageCropModal();
+
 
   if (!currentUser) {
     return <Navigate to="/auth" replace />;
@@ -90,11 +94,20 @@ export const ClientArea: React.FC = () => {
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0] || !currentUser) return;
+    // Open crop modal instead of direct upload
+    avatarCropModal.openCropModal(e.target.files[0]);
+    // Reset input to allow selecting same file again
+    e.target.value = '';
+  };
+
+  // Handle cropped avatar upload
+  const handleCroppedAvatarUpload = async (file: File) => {
+    if (!currentUser) return;
     setUploadingAvatar(true);
     try {
-      const url = await uploadToSupabase(e.target.files[0]);
+      const url = await uploadToSupabase(file);
       updateUser({ ...currentUser, avatar: url });
-      showToast('Foto de perfil atualizada.', 'success');
+      showToast('Foto de perfil atualizada e otimizada!', 'success');
     } catch (err) {
       showToast('Erro ao atualizar foto.', 'error');
     } finally {
@@ -274,6 +287,20 @@ export const ClientArea: React.FC = () => {
               <div className="text-xs bg-black text-white px-3 py-1 rounded-full uppercase font-bold tracking-wider">Cliente VIP</div>
             </div>
           </div>
+
+          {/* Avatar Crop Modal */}
+          <ImageCropModal
+            image={avatarCropModal.imageSource}
+            originalFile={avatarCropModal.selectedFile || undefined}
+            isOpen={avatarCropModal.isOpen}
+            onClose={avatarCropModal.closeCropModal}
+            onCropComplete={handleCroppedAvatarUpload}
+            aspect={1}
+            cropShape="round"
+            preset="avatar"
+            requireCrop={true}
+            title="Ajustar Foto de Perfil"
+          />
 
           {/* Content Area */}
           <div className="w-full lg:w-3/4 bg-white rounded-xl shadow-sm p-6 md:p-8 min-h-[500px]">
