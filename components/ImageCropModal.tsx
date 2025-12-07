@@ -6,7 +6,8 @@
  * - 15 aspect ratio presets + free crop + original
  * - Responsive grid (3/4/5 columns)
  * - Touch-friendly (44px min button size)
- * - Fullscreen on mobile
+ * - Compact design with internal scroll
+ * - Body scroll lock when open
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -67,6 +68,16 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
     const [isProcessing, setIsProcessing] = useState(false);
     const [selectedAspect, setSelectedAspect] = useState<number | null | 'original'>(initialAspect);
     const [originalAspect, setOriginalAspect] = useState<number>(1);
+
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
 
     useEffect(() => {
         if (originalFile && isOpen) {
@@ -133,115 +144,117 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
     const shouldShowAspectSelector = showAspectSelector && !requireCrop;
 
     return (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-0 md:p-4">
-            <div className="bg-white w-full h-full md:h-auto md:max-h-[95vh] md:rounded-2xl md:w-full md:max-w-2xl overflow-hidden shadow-2xl flex flex-col">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b shrink-0">
-                    <h3 className="text-lg font-bold">{title}</h3>
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 md:p-4">
+            <div className="bg-white w-full max-h-[calc(100vh-16px)] md:max-h-[85vh] md:rounded-xl md:w-full md:max-w-lg overflow-hidden shadow-2xl flex flex-col">
+                {/* Header - Compact */}
+                <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
+                    <h3 className="text-base font-bold">{title}</h3>
                     <button
                         onClick={onClose}
                         disabled={isProcessing}
-                        className="p-2 hover:bg-gray-100 rounded-full transition min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        className="p-1.5 hover:bg-gray-100 rounded-full transition"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                {/* Cropper Area */}
-                <div className="relative flex-1 min-h-[250px] md:min-h-[320px] bg-gray-900">
-                    <Cropper
-                        image={image}
-                        crop={crop}
-                        zoom={zoom}
-                        aspect={getActualAspect()}
-                        cropShape={cropShape}
-                        onCropChange={setCrop}
-                        onZoomChange={setZoom}
-                        onCropComplete={onCropAreaChange}
-                        showGrid={true}
-                    />
-                </div>
-
-                {/* Zoom Controls */}
-                <div className="p-3 md:p-4 bg-gray-50 border-b shrink-0">
-                    <div className="flex items-center gap-3 md:gap-4">
-                        <ZoomOut className="w-5 h-5 text-gray-400 shrink-0" />
-                        <input
-                            type="range"
-                            min={1}
-                            max={3}
-                            step={0.05}
-                            value={zoom}
-                            onChange={(e) => setZoom(parseFloat(e.target.value))}
-                            className="flex-grow h-3 md:h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black touch-pan-x"
+                {/* Scrollable Content Area */}
+                <div className="flex-1 overflow-y-auto overscroll-contain">
+                    {/* Cropper Area - Reduced height */}
+                    <div className="relative h-[200px] md:h-[240px] bg-gray-900">
+                        <Cropper
+                            image={image}
+                            crop={crop}
+                            zoom={zoom}
+                            aspect={getActualAspect()}
+                            cropShape={cropShape}
+                            onCropChange={setCrop}
+                            onZoomChange={setZoom}
+                            onCropComplete={onCropAreaChange}
+                            showGrid={true}
                         />
-                        <ZoomIn className="w-5 h-5 text-gray-400 shrink-0" />
                     </div>
-                    {originalFile && (
-                        <p className="text-xs text-gray-500 mt-2 text-center">
-                            Original: {formatFileSize(originalFile.size)} • Será otimizada para WebP
-                        </p>
+
+                    {/* Zoom Controls - Compact */}
+                    <div className="px-4 py-2 bg-gray-50 border-b">
+                        <div className="flex items-center gap-3">
+                            <ZoomOut className="w-4 h-4 text-gray-400 shrink-0" />
+                            <input
+                                type="range"
+                                min={1}
+                                max={3}
+                                step={0.05}
+                                value={zoom}
+                                onChange={(e) => setZoom(parseFloat(e.target.value))}
+                                className="flex-grow h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                            />
+                            <ZoomIn className="w-4 h-4 text-gray-400 shrink-0" />
+                        </div>
+                        {originalFile && (
+                            <p className="text-[10px] text-gray-400 mt-1 text-center">
+                                Original: {formatFileSize(originalFile.size)} • WebP
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Aspect Ratio Selector - Compact */}
+                    {shouldShowAspectSelector && (
+                        <div className="px-3 py-2 border-b">
+                            <div className="grid grid-cols-5 gap-1.5">
+                                {ASPECT_RATIOS.map((ratio) => {
+                                    const isSelected = selectedAspect === ratio.value;
+                                    return (
+                                        <button
+                                            key={ratio.name}
+                                            type="button"
+                                            onClick={() => setSelectedAspect(ratio.value)}
+                                            className={`py-1.5 px-1 rounded border transition-all flex flex-col items-center justify-center gap-0.5 ${isSelected
+                                                    ? 'border-black bg-black text-white'
+                                                    : 'border-gray-200 hover:border-gray-400 text-gray-600'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-center h-4">
+                                                {ratio.value === null ? (
+                                                    <span className="text-xs">⬜</span>
+                                                ) : ratio.value === 'original' ? (
+                                                    <span className="text-xs">📷</span>
+                                                ) : (
+                                                    <div
+                                                        className={`border rounded-sm ${isSelected ? 'border-white' : 'border-current'} ${ratio.vertical ? 'w-2 h-3' : ratio.value === 1 ? 'w-3 h-3' : 'w-4 h-2'
+                                                            }`}
+                                                    />
+                                                )}
+                                            </div>
+                                            <span className="text-[9px] font-medium leading-none">{ratio.name}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     )}
                 </div>
 
-                {/* Aspect Ratio Selector */}
-                {shouldShowAspectSelector && (
-                    <div className="p-3 md:p-4 border-b shrink-0 overflow-x-auto">
-                        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-                            {ASPECT_RATIOS.map((ratio) => {
-                                const isSelected = selectedAspect === ratio.value;
-                                return (
-                                    <button
-                                        key={ratio.name}
-                                        type="button"
-                                        onClick={() => setSelectedAspect(ratio.value)}
-                                        className={`min-h-[44px] p-2 rounded-lg border-2 transition-all flex flex-col items-center justify-center gap-1 ${isSelected
-                                                ? 'border-black bg-black text-white'
-                                                : 'border-gray-200 hover:border-gray-400 text-gray-600'
-                                            }`}
-                                    >
-                                        <div className="flex items-center justify-center">
-                                            {ratio.value === null ? (
-                                                <span className="text-lg">⬜</span>
-                                            ) : ratio.value === 'original' ? (
-                                                <span className="text-lg">📷</span>
-                                            ) : (
-                                                <div
-                                                    className={`border-2 rounded-sm ${isSelected ? 'border-white' : 'border-current'} ${ratio.vertical ? 'w-3 h-5' : ratio.value === 1 ? 'w-4 h-4' : 'w-5 h-3'
-                                                        }`}
-                                                />
-                                            )}
-                                        </div>
-                                        <span className="text-[10px] md:text-xs font-medium">{ratio.name}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="p-4 flex gap-3 justify-end shrink-0 bg-white">
+                {/* Action Buttons - Fixed at bottom */}
+                <div className="px-4 py-3 flex gap-2 justify-end shrink-0 bg-white border-t">
                     {!requireCrop && originalFile && (
                         <button
                             onClick={handleSkipCrop}
                             disabled={isProcessing}
-                            className="flex items-center justify-center gap-2 px-4 md:px-5 py-3 text-gray-700 font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition disabled:opacity-50 min-h-[44px]"
+                            className="flex items-center justify-center gap-1.5 px-3 py-2 text-gray-600 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition disabled:opacity-50"
                         >
                             <SkipForward className="w-4 h-4" />
-                            <span className="hidden sm:inline">Pular Recorte</span>
-                            <span className="sm:hidden">Pular</span>
+                            Pular
                         </button>
                     )}
                     <button
                         onClick={handleCropConfirm}
                         disabled={isProcessing || !croppedAreaPixels}
-                        className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition disabled:opacity-50 min-h-[44px] flex-1 sm:flex-initial"
+                        className="flex items-center justify-center gap-1.5 px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition disabled:opacity-50"
                     >
                         {isProcessing ? (
                             <>
                                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                <span className="hidden sm:inline">Processando...</span>
+                                <span>...</span>
                             </>
                         ) : (
                             <>
