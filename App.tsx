@@ -94,15 +94,16 @@ const PRELOAD_IMAGES = [
   "https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/img-sobre-home.png"
 ];
 
-const MIN_SPLASH_TIME = 1500; // Minimum time to show splash (1.5s)
-const MAX_SPLASH_TIME = 8000; // Maximum time before forcing completion (8s safety)
+const MIN_SPLASH_TIME = 2000; // Minimum time to show splash (2s)
+const MAX_SPLASH_TIME = 10000; // Maximum time before forcing completion (10s safety)
 
 interface SplashProps {
   isDataReady: boolean;
+  areComponentsReady: boolean;
   onComplete: () => void;
 }
 
-const Splash: React.FC<SplashProps> = ({ isDataReady, onComplete }) => {
+const Splash: React.FC<SplashProps> = ({ isDataReady, areComponentsReady, onComplete }) => {
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
@@ -129,14 +130,14 @@ const Splash: React.FC<SplashProps> = ({ isDataReady, onComplete }) => {
     };
   }, [onComplete]);
 
-  // Complete when both conditions are met
+  // Complete when ALL conditions are met: data ready + components ready + min time passed
   useEffect(() => {
-    if (minTimeElapsed && isDataReady && !isExiting) {
+    if (minTimeElapsed && isDataReady && areComponentsReady && !isExiting) {
       setIsExiting(true);
       // Smooth fade out before completing
       setTimeout(onComplete, 500);
     }
-  }, [minTimeElapsed, isDataReady, isExiting, onComplete]);
+  }, [minTimeElapsed, isDataReady, areComponentsReady, isExiting, onComplete]);
 
   return (
     <div
@@ -145,20 +146,10 @@ const Splash: React.FC<SplashProps> = ({ isDataReady, onComplete }) => {
       aria-live="polite"
       aria-label="Carregando site Fran Siller Arquitetura"
     >
-      <div className="text-center">
-        <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase animate-pulse">Fran Siller</h1>
+      <div className="text-center animate-pulse">
+        <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">Fran Siller</h1>
         <div className="h-0.5 w-16 bg-accent mx-auto"></div>
         <p className="text-xs uppercase tracking-widest mt-4 text-gray-400">Arquitetura & Design</p>
-
-        {/* Elegant loading bar */}
-        <div className="mt-8 w-48 mx-auto">
-          <div className="h-[2px] bg-white/10 rounded-full overflow-hidden">
-            <div
-              className={`h-full bg-accent rounded-full transition-all duration-1000 ease-out ${isDataReady ? 'w-full' : 'w-3/4 animate-pulse'
-                }`}
-            ></div>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -431,11 +422,34 @@ const App: React.FC = () => {
 const AppContent: React.FC = () => {
   const { isLoadingData } = useProjects();
   const [showSplash, setShowSplash] = useState(true);
+  const [componentsReady, setComponentsReady] = useState(false);
+
+  // Preload the main page components during splash
+  useEffect(() => {
+    const preloadComponents = async () => {
+      try {
+        // Preload only the essential initial pages
+        await Promise.all([
+          import('./pages/Home'),
+          import('./pages/Portfolio'),
+          import('./components/Layout'),
+        ]);
+        setComponentsReady(true);
+      } catch (error) {
+        console.error('[Preload] Error preloading components:', error);
+        // Even on error, mark as ready to avoid infinite loading
+        setComponentsReady(true);
+      }
+    };
+
+    preloadComponents();
+  }, []);
 
   if (showSplash) {
     return (
       <Splash
         isDataReady={!isLoadingData}
+        areComponentsReady={componentsReady}
         onComplete={() => setShowSplash(false)}
       />
     );
