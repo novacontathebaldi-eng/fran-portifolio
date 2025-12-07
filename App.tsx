@@ -50,8 +50,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("ErrorBoundary caught an error", error, errorInfo);
-    console.error("Error stack:", error.stack);
+    console.error('💥 CRITICAL ERROR:', { error: error.message, stack: error.stack, componentStack: errorInfo.componentStack, timestamp: new Date().toISOString() });
   }
 
   render() {
@@ -160,6 +159,17 @@ const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
+
+// RouteLogger - Logs navigation events for security audit
+const RouteLogger = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    if ((import.meta as any).env?.DEV) {
+      console.log('🧭 ROUTE: User navigated to', { path: pathname, timestamp: new Date().toISOString() });
+    }
   }, [pathname]);
   return null;
 };
@@ -467,6 +477,7 @@ const AppContent: React.FC = () => {
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ErrorBoundary>
           <ScrollToTop />
+          <RouteLogger />
           <GlobalToast />
           <AnimatedRoutes />
         </ErrorBoundary>

@@ -299,16 +299,16 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // --- INITIAL DATA FETCHING ---
   const fetchGlobalData = async () => {
-    if ((import.meta as any).env?.DEV) console.log('[Data] Starting fetchGlobalData...');
+    if ((import.meta as any).env?.DEV) console.log('📊 DB: Query executed', { operation: 'fetchGlobalData', timestamp: new Date().toISOString() });
 
     // 1. Projects
     const { data: projectsData, error: projectsError } = await supabase.from('projects').select('*').order('year', { ascending: false });
-    if ((import.meta as any).env?.DEV) console.log('[Data] Projects:', projectsData?.length || 0, projectsError ? `Error: ${projectsError.message}` : '');
+    if ((import.meta as any).env?.DEV) console.log('📊 DB: Query result', { table: 'projects', count: projectsData?.length || 0, error: projectsError?.message, timestamp: new Date().toISOString() });
     if (projectsData) setProjects(projectsData);
 
     // 2. Cultural Projects
     const { data: cultData, error: cultError } = await supabase.from('cultural_projects').select('*').order('year', { ascending: false });
-    if ((import.meta as any).env?.DEV) console.log('[Data] Cultural Projects:', cultData?.length || 0, cultError ? `Error: ${cultError.message}` : '');
+    if ((import.meta as any).env?.DEV) console.log('📊 DB: Query result', { table: 'cultural_projects', count: cultData?.length || 0, error: cultError?.message, timestamp: new Date().toISOString() });
     if (cultData) setCulturalProjects(cultData);
 
     // 3. Settings & Content - USING UUID AND 3 COLUMNS
@@ -575,16 +575,19 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   // --- AUTH ACTIONS ---
 
   const login = async (email: string, password: string) => {
+    if ((import.meta as any).env?.DEV) console.log('🔐 AUTH: Login attempt', { email, timestamp: new Date().toISOString() });
     setIsLoadingAuth(true); // Force loading state so ProtectedRoutes wait
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
+      if ((import.meta as any).env?.DEV) console.log('❌ AUTH ERROR:', { error: error.message, timestamp: new Date().toISOString() });
       setIsLoadingAuth(false);
       return { user: null, error: { message: translateAuthError(error.message) } };
     }
 
     // Force fetch profile immediately to update state BEFORE return
     if (data.user) {
+      if ((import.meta as any).env?.DEV) console.log('🔐 AUTH: Session created', { userId: data.user.id, timestamp: new Date().toISOString() });
       const user = await fetchFullUserProfile(data.user.id);
       setCurrentUser(user);
     }
@@ -594,6 +597,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const registerUser = async (name: string, email: string, phone: string, password: string) => {
+    if ((import.meta as any).env?.DEV) console.log('🔐 AUTH: Registration attempt', { email, timestamp: new Date().toISOString() });
     setIsLoadingAuth(true);
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -602,6 +606,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
 
     if (error) {
+      if ((import.meta as any).env?.DEV) console.log('❌ AUTH ERROR:', { error: error.message, timestamp: new Date().toISOString() });
       setIsLoadingAuth(false);
       return { user: null, error: { message: translateAuthError(error.message) } };
     }
@@ -625,8 +630,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const logout = async () => {
+    if ((import.meta as any).env?.DEV) console.log('🔐 AUTH: Logout initiated', { userId: currentUser?.id, timestamp: new Date().toISOString() });
     setCurrentUser(null); // Optimistic clear for immediate UI feedback
     await supabase.auth.signOut();
+    if ((import.meta as any).env?.DEV) console.log('🔐 AUTH: Session cleared', { timestamp: new Date().toISOString() });
   };
 
   // --- SETTINGS PERSISTENCE (FIXED) ---

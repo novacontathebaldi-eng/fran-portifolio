@@ -91,6 +91,8 @@ export const Checkout: React.FC = () => {
                 }))
             );
 
+            if ((import.meta as any).env?.DEV) console.log('💳 PAYMENT: Checkout initiated', { timestamp: new Date().toISOString(), method: paymentMethod });
+
             if (order) {
                 setOrderId(order.id);
                 setOrderComplete(true);
@@ -314,8 +316,8 @@ export const Checkout: React.FC = () => {
                                     <button
                                         onClick={() => setPaymentMethod('pix')}
                                         className={`w-full p-4 rounded-xl border-2 text-left transition ${paymentMethod === 'pix'
-                                                ? 'border-black bg-gray-50'
-                                                : 'border-gray-200 hover:border-gray-400'
+                                            ? 'border-black bg-gray-50'
+                                            : 'border-gray-200 hover:border-gray-400'
                                             }`}
                                     >
                                         <div className="flex items-center justify-between">
@@ -335,8 +337,8 @@ export const Checkout: React.FC = () => {
                                     <button
                                         onClick={() => setPaymentMethod('whatsapp')}
                                         className={`w-full p-4 rounded-xl border-2 text-left transition ${paymentMethod === 'whatsapp'
-                                                ? 'border-black bg-gray-50'
-                                                : 'border-gray-200 hover:border-gray-400'
+                                            ? 'border-black bg-gray-50'
+                                            : 'border-gray-200 hover:border-gray-400'
                                             }`}
                                     >
                                         <div className="flex items-center justify-between">
