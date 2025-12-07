@@ -422,47 +422,72 @@ const App: React.FC = () => {
 const AppContent: React.FC = () => {
   const { isLoadingData } = useProjects();
   const [showSplash, setShowSplash] = useState(true);
-  const [componentsReady, setComponentsReady] = useState(false);
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
-  // Preload the main page components during splash
+  // Preload images
   useEffect(() => {
-    const preloadComponents = async () => {
-      try {
-        // Preload only the essential initial pages
-        await Promise.all([
-          import('./pages/Home'),
-          import('./pages/Portfolio'),
-          import('./components/Layout'),
-        ]);
-        setComponentsReady(true);
-      } catch (error) {
-        console.error('[Preload] Error preloading components:', error);
-        // Even on error, mark as ready to avoid infinite loading
-        setComponentsReady(true);
-      }
-    };
+    const PRELOAD_IMAGES = [
+      "https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/fundo-home.png",
+      "https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/img-sobre-home.png"
+    ];
+    PRELOAD_IMAGES.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
 
-    preloadComponents();
+    // Minimum display time
+    const minTimer = setTimeout(() => setMinTimeElapsed(true), 2000);
+
+    // Safety timeout - force complete after 10s
+    const maxTimer = setTimeout(() => {
+      console.warn('[Splash] Force completing due to timeout');
+      setIsExiting(true);
+      setTimeout(() => setShowSplash(false), 500);
+    }, 10000);
+
+    return () => {
+      clearTimeout(minTimer);
+      clearTimeout(maxTimer);
+    };
   }, []);
 
-  if (showSplash) {
-    return (
-      <Splash
-        isDataReady={!isLoadingData}
-        areComponentsReady={componentsReady}
-        onComplete={() => setShowSplash(false)}
-      />
-    );
-  }
+  // Complete when data is ready AND min time has passed
+  useEffect(() => {
+    if (minTimeElapsed && !isLoadingData && !isExiting) {
+      setIsExiting(true);
+      // Smooth fade out before hiding
+      setTimeout(() => setShowSplash(false), 500);
+    }
+  }, [minTimeElapsed, isLoadingData, isExiting]);
 
   return (
-    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <ErrorBoundary>
-        <ScrollToTop />
-        <GlobalToast />
-        <AnimatedRoutes />
-      </ErrorBoundary>
-    </Router>
+    <>
+      {/* Router ALWAYS renders - loads in background behind Splash */}
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <ErrorBoundary>
+          <ScrollToTop />
+          <GlobalToast />
+          <AnimatedRoutes />
+        </ErrorBoundary>
+      </Router>
+
+      {/* Splash as OVERLAY - covers everything until ready */}
+      {showSplash && (
+        <div
+          className={`fixed inset-0 bg-[#1a1a1a] flex items-center justify-center z-[9999] text-white transition-opacity duration-500 ${isExiting ? 'opacity-0' : 'opacity-100'}`}
+          role="status"
+          aria-live="polite"
+          aria-label="Carregando site Fran Siller Arquitetura"
+        >
+          <div className="text-center animate-pulse">
+            <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">Fran Siller</h1>
+            <div className="h-0.5 w-16 bg-accent mx-auto"></div>
+            <p className="text-xs uppercase tracking-widest mt-4 text-gray-400">Arquitetura & Design</p>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
