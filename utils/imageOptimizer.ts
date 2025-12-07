@@ -114,14 +114,16 @@ export function blobToFile(blob: Blob, fileName: string): File {
 }
 
 /**
- * Create cropped image from canvas
+ * Create cropped image from canvas with optional rotation
  * @param imageSrc - Source image URL or base64
  * @param pixelCrop - Crop area in pixels { x, y, width, height }
+ * @param rotation - Rotation in degrees (0, 90, 180, 270)
  * @returns Cropped image as Blob
  */
 export async function getCroppedImg(
     imageSrc: string,
-    pixelCrop: { x: number; y: number; width: number; height: number }
+    pixelCrop: { x: number; y: number; width: number; height: number },
+    rotation: number = 0
 ): Promise<Blob> {
     const image = await createImage(imageSrc);
     const canvas = document.createElement('canvas');
@@ -131,22 +133,40 @@ export async function getCroppedImg(
         throw new Error('No 2d context');
     }
 
-    // Set canvas size to the cropped area
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
+    // Calculate bounding box of the rotated image
+    const rotRad = (rotation * Math.PI) / 180;
+    const { width: bBoxWidth, height: bBoxHeight } = getRotatedSize(
+        image.width,
+        image.height,
+        rotation
+    );
 
-    // Draw the cropped image
-    ctx.drawImage(
-        image,
+    // Set canvas size to the rotated image size
+    canvas.width = bBoxWidth;
+    canvas.height = bBoxHeight;
+
+    // Rotate around the center
+    ctx.translate(bBoxWidth / 2, bBoxHeight / 2);
+    ctx.rotate(rotRad);
+    ctx.translate(-image.width / 2, -image.height / 2);
+
+    // Draw the rotated image
+    ctx.drawImage(image, 0, 0);
+
+    // Extract the cropped area
+    const data = ctx.getImageData(
         pixelCrop.x,
         pixelCrop.y,
         pixelCrop.width,
-        pixelCrop.height,
-        0,
-        0,
-        pixelCrop.width,
         pixelCrop.height
     );
+
+    // Set canvas to crop size
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+
+    // Put cropped data
+    ctx.putImageData(data, 0, 0);
 
     // Convert canvas to blob
     return new Promise((resolve, reject) => {
@@ -162,6 +182,17 @@ export async function getCroppedImg(
             0.9
         );
     });
+}
+
+/**
+ * Calculate the size of the rotated image
+ */
+function getRotatedSize(width: number, height: number, rotation: number) {
+    const rotRad = (rotation * Math.PI) / 180;
+    return {
+        width: Math.abs(Math.cos(rotRad) * width) + Math.abs(Math.sin(rotRad) * height),
+        height: Math.abs(Math.sin(rotRad) * width) + Math.abs(Math.cos(rotRad) * height),
+    };
 }
 
 /**
