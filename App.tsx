@@ -35,20 +35,22 @@ interface ErrorBoundaryProps {
 
 interface ErrorBoundaryState {
   hasError: boolean;
+  errorMessage?: string;
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, errorMessage: '' };
   }
 
-  static getDerivedStateFromError(_: Error): ErrorBoundaryState {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, errorMessage: error.message };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("ErrorBoundary caught an error", error, errorInfo);
+    console.error("Error stack:", error.stack);
   }
 
   render() {
@@ -59,12 +61,18 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
             <AlertCircle className="w-12 h-12 text-gray-400" />
           </div>
           <h2 className="text-3xl font-serif mb-4">Algo deu errado.</h2>
-          <p className="text-gray-500 mb-8 max-w-md">
+          <p className="text-gray-500 mb-4 max-w-md">
             Ocorreu um erro inesperado ao carregar a página. Isso pode ser uma instabilidade temporária.
           </p>
+          {/* DEBUG: Show actual error in development */}
+          {import.meta.env.DEV && this.state.errorMessage && (
+            <p className="text-red-500 text-xs mb-4 font-mono bg-red-50 p-2 rounded max-w-lg break-all">
+              DEV: {this.state.errorMessage}
+            </p>
+          )}
           <button
             onClick={() => {
-              this.setState({ hasError: false });
+              this.setState({ hasError: false, errorMessage: '' });
               window.location.href = '/';
             }}
             className="bg-black text-white px-8 py-3 rounded-full hover:bg-accent hover:text-black transition flex items-center space-x-2 shadow-lg"

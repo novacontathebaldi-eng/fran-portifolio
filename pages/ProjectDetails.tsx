@@ -3,12 +3,12 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import { useProjects } from '../context/ProjectContext';
-import { Heart, ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, ArrowLeft, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const ProjectDetails: React.FC = () => {
   const { id } = useParams();
-  const { projects } = useProjects();
+  const { projects, isLoadingData } = useProjects();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
@@ -45,6 +45,18 @@ export const ProjectDetails: React.FC = () => {
     }
   }, [project]);
 
+  // Show loading while data is being fetched
+  // Also show loading if projects array is empty but we're looking for a specific project
+  // This handles the race condition where isLoadingData becomes false before projects state updates
+  if (isLoadingData || (projects.length === 0 && id)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  // Only show not found AFTER data has loaded AND projects array is populated
   if (!project) {
     return <div className="min-h-screen flex items-center justify-center text-gray-500">Projeto não encontrado.</div>;
   }
