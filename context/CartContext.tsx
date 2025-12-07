@@ -38,6 +38,22 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }, [cartItems]);
 
+    // MULTI-TAB SYNC: Listen for changes from other tabs
+    useEffect(() => {
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === CART_STORAGE_KEY && e.newValue) {
+                try {
+                    const newCart = JSON.parse(e.newValue);
+                    setCartItems(newCart);
+                } catch (error) {
+                    console.error('Error syncing cart from storage event:', error);
+                }
+            }
+        };
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
     // Add product to cart
     const addToCart = useCallback((product: ShopProduct, quantity: number = 1) => {
         setCartItems(prev => {

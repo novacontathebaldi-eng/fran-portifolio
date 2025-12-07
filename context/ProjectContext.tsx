@@ -348,12 +348,15 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setIsLoadingData(false);
   };
 
+  // Guard to prevent multiple simultaneous auth processing (multi-tab race condition fix)
+  const isProcessingAuthRef = React.useRef(false);
+
   useEffect(() => {
     const init = async () => {
       await fetchGlobalData();
 
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      if (session?.user?.id) {
         const user = await fetchFullUserProfile(session.user.id);
         if (user) setCurrentUser(user);
       }
@@ -362,19 +365,48 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     init();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session) {
-        // Only fetch if we don't have the user or it's a different user
-        if (!currentUser || currentUser.id !== session.user.id) {
+    // MULTI-TAB FIX: Handle auth state changes properly across tabs
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Auth] Event:', event, 'Session:', session?.user?.id);
+
+      // Skip if already processing to prevent race conditions between tabs
+      if (isProcessingAuthRef.current) {
+        console.log('[Auth] Skipping - already processing');
+        return;
+      }
+
+      // Handle SIGNED_OUT explicitly - clear user immediately
+      if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        setIsLoadingAuth(false);
+        return;
+      }
+
+      // TOKEN_REFRESHED doesn't need user refetch
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('[Auth] Token refreshed - no action needed');
+        setIsLoadingAuth(false);
+        return;
+      }
+
+      // For SIGNED_IN and INITIAL_SESSION, fetch user profile
+      if (session?.user?.id && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+        isProcessingAuthRef.current = true;
+        try {
           const user = await fetchFullUserProfile(session.user.id);
           if (user) setCurrentUser(user);
+        } catch (error) {
+          console.error('[Auth] Error fetching user profile:', error);
+        } finally {
+          isProcessingAuthRef.current = false;
         }
-      } else {
+      } else if (!session) {
         setCurrentUser(null);
-        // Do NOT clear chat messages on logout to preserve context for the user
       }
+
       setIsLoadingAuth(false);
     });
+
     return () => subscription.unsubscribe();
   }, []);
 
