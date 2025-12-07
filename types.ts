@@ -240,17 +240,7 @@ export interface FaqItem {
   answer: string;
 }
 
-// Contact Message from Form Submissions
-export interface ContactMessage {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  subject: string;
-  message: string;
-  status: 'unread' | 'read' | 'replied';
-  createdAt: string;
-}
+
 
 // Dynamic Social Link - Stored in database
 export interface SocialLink {
@@ -362,14 +352,16 @@ export interface GlobalSettings {
   dashboardWidgets?: DashboardWidget[]; // Customizable dashboard widgets
 }
 
-export interface AdminNote {
+export interface Message {
   id: string;
-  userName: string;
-  userContact: string; // Email or Phone
+  name: string;
+  email?: string;
+  phone?: string;
+  subject?: string;
   message: string;
-  date: string;
-  status: 'new' | 'read';
   source: 'chatbot' | 'contact_form';
+  status: 'new' | 'read' | 'replied';
+  createdAt: string;
 }
 
 export interface AiFeedbackItem {

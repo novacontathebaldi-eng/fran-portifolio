@@ -398,7 +398,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const { sendMessageToAI, currentUser, addAdminNote, showToast, currentChatMessages, logAiFeedback, settings, addAppointment, siteContent, archiveCurrentChat, addClientMemory, restoreChatSession, updateMessageUI, clearCurrentChat } = useProjects();
+  const { sendMessageToAI, currentUser, addMessage, showToast, currentChatMessages, logAiFeedback, settings, addAppointment, siteContent, archiveCurrentChat, addClientMemory, restoreChatSession, updateMessageUI, clearCurrentChat } = useProjects();
 
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -468,7 +468,15 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
       if (response.actions && response.actions.length > 0) {
         for (const action of response.actions) {
           if (action.type === 'saveNote') {
-            addAdminNote(action.payload);
+            const isEmail = action.payload.userContact?.includes('@');
+            addMessage({
+              name: action.payload.userName,
+              email: isEmail ? action.payload.userContact : undefined,
+              phone: !isEmail ? action.payload.userContact : undefined,
+              message: action.payload.message,
+              source: 'chatbot',
+              status: 'new'
+            });
             showToast("Recado enviado para a equipe.", "success");
           }
           else if (action.type === 'navigate') {

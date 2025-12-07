@@ -29,7 +29,7 @@ const steps = [
 ];
 
 export const ClientOrdersView: React.FC<ClientOrdersViewProps> = ({ showToast, clientId }) => {
-    const { settings, siteContent, updateShopOrderStatus, fetchShopProducts, shopProducts } = useProjects();
+    const { settings, siteContent, updateShopOrderStatus, fetchShopProducts, shopProducts, addMessage, users } = useProjects();
     const { addToCart } = useCart();
     const navigate = useNavigate();
 
@@ -146,20 +146,20 @@ export const ClientOrdersView: React.FC<ClientOrdersViewProps> = ({ showToast, c
 
         setSendingSupport(true);
         try {
-            // Save as admin note for the shop team to see
-            const { error } = await supabase.from('admin_notes').insert({
-                title: `Suporte Pedido #${showSupportModal.id.slice(0, 8).toUpperCase()}`,
-                content: supportMessage,
-                type: 'support_request',
-                metadata: {
-                    orderId: showSupportModal.id,
-                    clientId: clientId,
-                    orderTotal: showSupportModal.total,
-                    orderStatus: showSupportModal.status
-                }
+            // Save as message via unified system
+            const client = users.find(u => u.id === clientId);
+
+            await addMessage({
+                name: client?.name || 'Cliente da Loja',
+                email: client?.email,
+                phone: client?.phone,
+                subject: `Suporte Pedido #${showSupportModal.id.slice(0, 8).toUpperCase()}`,
+                message: `${supportMessage}\n\n---\n[Metadados do Pedido]\nID: ${showSupportModal.id}\nTotal: ${showSupportModal.total}\nStatus: ${showSupportModal.status}`,
+                source: 'contact_form',
+                status: 'new'
             });
 
-            if (error) throw error;
+            // Success assumed if no error thrown
 
             showToast('Mensagem enviada! Nossa equipe responderá em breve.', 'success');
             setShowSupportModal(null);

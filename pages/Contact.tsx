@@ -11,7 +11,7 @@ export const Contact: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
-  const { showToast, siteContent } = useProjects();
+  const { showToast, siteContent, addMessage } = useProjects();
   const { office } = siteContent;
 
   // Form state
@@ -47,20 +47,16 @@ export const Contact: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // 1. Save to database
-      const { error: dbError } = await supabase.from('contact_messages').insert({
+      // 1. Save to database via unified messages
+      await addMessage({
         name: formData.name,
         email: formData.email,
         phone: formData.phone || null,
         subject: formData.subject || subjects[0],
         message: formData.message,
-        status: 'unread'
+        source: 'contact_form',
+        status: 'new'
       });
-
-      if (dbError) {
-        console.error('[Contact] DB Error:', dbError);
-        // Continue anyway - email notification is more important
-      }
 
       // 2. Send email notification via Brevo
       await notifyNewContactMessage({

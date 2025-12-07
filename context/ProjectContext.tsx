@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { Project, User, SiteContent, GlobalSettings, AdminNote, ClientMemory, ChatMessage, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address, CulturalProject, ChatSession, ShopProduct, ShopOrder, ShopOrderItem } from '../types';
+import { Project, User, SiteContent, GlobalSettings, Message, ClientMemory, ChatMessage, ClientFolder, ClientFile, AiFeedbackItem, Appointment, ScheduleSettings, Address, CulturalProject, ChatSession, ShopProduct, ShopOrder, ShopOrderItem } from '../types';
 import { chatWithConcierge } from '../api/chat';
 import { supabase } from '../supabaseClient';
 import { notifyNewAppointment } from '../utils/emailService';
@@ -19,7 +19,7 @@ interface ProjectContextType {
   users: User[];
   siteContent: SiteContent;
   settings: GlobalSettings;
-  adminNotes: AdminNote[];
+  messages: Message[];
   aiFeedbacks: AiFeedbackItem[];
   isLoadingAuth: boolean;
   isLoadingData: boolean;
@@ -65,9 +65,9 @@ interface ProjectContextType {
 
   updateUser: (user: User) => Promise<boolean>;
 
-  addAdminNote: (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => Promise<void>;
-  markNoteAsRead: (id: string) => Promise<void>;
-  deleteAdminNote: (id: string) => Promise<void>;
+  addMessage: (msg: Omit<Message, 'id' | 'createdAt' | 'status'>) => Promise<void>;
+  updateMessageStatus: (id: string, status: Message['status']) => Promise<void>;
+  deleteMessage: (id: string) => Promise<void>;
 
   appointments: Appointment[];
   scheduleSettings: ScheduleSettings;
@@ -95,7 +95,7 @@ interface ProjectContextType {
   subscribeToShopProducts: () => (() => void) | undefined;
   subscribeToProjects: () => (() => void) | undefined;
   subscribeToCulturalProjects: () => (() => void) | undefined;
-  subscribeToAdminNotes: () => (() => void) | undefined;
+  subscribeToMessages: () => (() => void) | undefined;
   subscribeToSiteSettings: () => (() => void) | undefined;
 }
 
@@ -222,7 +222,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   });
 
-  const [adminNotes, setAdminNotes] = useState<AdminNote[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [aiFeedbacks, setAiFeedbacks] = useState<AiFeedbackItem[]>([]);
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'info', isVisible: false });
 
@@ -353,43 +353,31 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       setAppointments(mapped);
     }
 
-    // 5. Admin Notes (Chatbot messages/recados)
+    // 5. Messages (Unified)
     try {
-      const { data: notesData, error: notesError } = await supabase
-        .from('admin_notes')
+      const { data: msgData, error: msgError } = await supabase
+        .from('messages')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (notesError) {
-        // If created_at column doesn't exist, try without ordering
-        if ((import.meta as any).env?.DEV) console.log('[Data] Admin Notes error, trying without order:', notesError.message);
-        const { data: fallbackNotes } = await supabase.from('admin_notes').select('*');
-        if (fallbackNotes) {
-          const mappedNotes: AdminNote[] = fallbackNotes.map((n: any) => ({
-            id: n.id,
-            userName: n.user_name,
-            userContact: n.user_contact,
-            message: n.message,
-            date: n.created_at || new Date().toISOString(),
-            status: n.status || 'new',
-            source: n.source || 'chatbot'
-          }));
-          setAdminNotes(mappedNotes);
-        }
-      } else if (notesData) {
-        const mappedNotes: AdminNote[] = notesData.map((n: any) => ({
-          id: n.id,
-          userName: n.user_name,
-          userContact: n.user_contact,
-          message: n.message,
-          date: n.created_at,
-          status: n.status || 'new',
-          source: n.source || 'chatbot'
+      if (msgError) {
+        if ((import.meta as any).env?.DEV) console.error('[Data] Messages fetch error:', msgError);
+      } else if (msgData) {
+        const mapped: Message[] = msgData.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          email: m.email,
+          phone: m.phone,
+          subject: m.subject,
+          message: m.message,
+          source: m.source,
+          status: m.status,
+          createdAt: m.created_at
         }));
-        setAdminNotes(mappedNotes);
+        setMessages(mapped);
       }
     } catch (err) {
-      if ((import.meta as any).env?.DEV) console.error('[Data] Admin Notes fetch error:', err);
+      if ((import.meta as any).env?.DEV) console.error('[Data] Messages fetch unexpected error:', err);
     }
 
     if ((import.meta as any).env?.DEV) console.log('[Data] fetchGlobalData complete!');
@@ -497,12 +485,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     // Auto-subscribe to global realtime channels (Settings + Admin Notes)
     // These affect the whole site so they should always be active
     let unsubscribeSettings: (() => void) | undefined;
-    let unsubscribeNotes: (() => void) | undefined;
+    let unsubscribeMessages: (() => void) | undefined;
 
     // Slight delay to ensure subscriptions are defined
     setTimeout(() => {
       unsubscribeSettings = subscribeToSiteSettings?.();
-      unsubscribeNotes = subscribeToAdminNotes?.();
+      unsubscribeMessages = subscribeToMessages?.();
     }, 100);
 
     return () => {
@@ -511,7 +499,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
       subscription.unsubscribe();
       unsubscribeSettings?.();
-      unsubscribeNotes?.();
+      unsubscribeMessages?.();
     };
   }, []);
 
@@ -1245,49 +1233,51 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
   }, []);
 
-  // Subscribe to realtime changes on admin_notes table (chatbot messages)
-  const subscribeToAdminNotes = useCallback(() => {
+  // Subscribe to realtime changes on messages table
+  const subscribeToMessages = useCallback(() => {
     const channel = supabase
-      .channel('admin_notes_changes')
+      .channel('messages_changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'admin_notes'
+          table: 'messages'
         },
         (payload) => {
-          if ((import.meta as any).env?.DEV) {
-            console.log('[Realtime] Admin Notes change:', payload.eventType);
-          }
+          if ((import.meta as any).env?.DEV) console.log('[Realtime] Messages change:', payload.eventType);
 
           if (payload.eventType === 'INSERT') {
-            const newNote: AdminNote = {
+            const newMsg: Message = {
               id: payload.new.id,
-              userName: payload.new.user_name,
-              userContact: payload.new.user_contact,
+              name: payload.new.name,
+              email: payload.new.email,
+              phone: payload.new.phone,
+              subject: payload.new.subject,
               message: payload.new.message,
-              date: payload.new.created_at,
+              source: payload.new.source,
               status: payload.new.status,
-              source: payload.new.source
+              createdAt: payload.new.created_at
             };
-            setAdminNotes(prev => {
-              // Avoid duplicates (might have been added locally already)
-              if (prev.some(n => n.id === newNote.id)) return prev;
-              return [newNote, ...prev];
+            setMessages(prev => {
+              if (prev.some(m => m.id === newMsg.id)) return prev;
+              return [newMsg, ...prev];
             });
           } else if (payload.eventType === 'UPDATE') {
-            setAdminNotes(prev => prev.map(n =>
-              n.id === payload.new.id ? {
-                ...n,
-                userName: payload.new.user_name,
-                userContact: payload.new.user_contact,
-                message: payload.new.message,
-                status: payload.new.status
-              } : n
+            setMessages(prev => prev.map(m =>
+              m.id === payload.new.id ? {
+                ...m,
+                status: payload.new.status, // Usually only status updates interactively
+                // Update other fields if needed
+                name: payload.new.name,
+                email: payload.new.email,
+                phone: payload.new.phone,
+                subject: payload.new.subject,
+                message: payload.new.message
+              } : m
             ));
           } else if (payload.eventType === 'DELETE') {
-            setAdminNotes(prev => prev.filter(n => n.id !== payload.old.id));
+            setMessages(prev => prev.filter(m => m.id !== payload.old.id));
           }
         }
       )
@@ -1655,78 +1645,53 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  // Admin Notes - Now persist to Supabase!
-  const addAdminNote = async (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => {
+  // Unified Message Actions
+  const addMessage = async (msg: Omit<Message, 'id' | 'createdAt' | 'status'>) => {
     try {
       const { data, error } = await supabase
-        .from('admin_notes')
+        .from('messages')
         .insert({
-          user_name: note.userName,
-          user_contact: note.userContact,
-          message: note.message,
-          source: note.source || 'chatbot',
+          name: msg.name,
+          email: msg.email || null,
+          phone: msg.phone || null,
+          subject: msg.subject || null,
+          message: msg.message,
+          source: msg.source,
           status: 'new'
         })
         .select()
         .single();
 
       if (error) {
-        console.error('[AdminNote] Error saving note:', error);
-        // Fallback to local only if DB fails
-        const localNote: AdminNote = {
-          ...note,
+        console.error('[Messages] Error saving:', error);
+        // Fallback local
+        const localMsg: Message = {
+          ...msg,
           id: Math.random().toString(36).substr(2, 9),
-          date: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
           status: 'new'
         };
-        setAdminNotes(prev => [localNote, ...prev]);
+        setMessages(prev => [localMsg, ...prev]);
         return;
       }
-
-      // Add to local state with DB-generated ID
-      const newNote: AdminNote = {
-        id: data.id,
-        userName: data.user_name,
-        userContact: data.user_contact,
-        message: data.message,
-        date: data.created_at,
-        status: data.status,
-        source: data.source
-      };
-      setAdminNotes(prev => [newNote, ...prev]);
+      // Realtime will handle the update, but optimistic update is fine too if we wanted
     } catch (err) {
-      console.error('[AdminNote] Unexpected error:', err);
+      console.error('[Messages] Unexpected error:', err);
     }
   };
 
-  const markNoteAsRead = async (id: string) => {
-    // Update in Supabase
-    const { error } = await supabase
-      .from('admin_notes')
-      .update({ status: 'read' })
-      .eq('id', id);
-
-    if (error) {
-      console.error('[AdminNote] Error marking as read:', error);
+  const updateMessageStatus = async (id: string, status: Message['status']) => {
+    const { error } = await supabase.from('messages').update({ status }).eq('id', id);
+    if (!error) {
+      setMessages(prev => prev.map(m => m.id === id ? { ...m, status } : m));
     }
-
-    // Update locally
-    setAdminNotes(prev => prev.map(n => n.id === id ? { ...n, status: 'read' } : n));
   };
 
-  const deleteAdminNote = async (id: string) => {
-    // Delete from Supabase
-    const { error } = await supabase
-      .from('admin_notes')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('[AdminNote] Error deleting note:', error);
+  const deleteMessage = async (id: string) => {
+    const { error } = await supabase.from('messages').delete().eq('id', id);
+    if (!error) {
+      setMessages(prev => prev.filter(m => m.id !== id));
     }
-
-    // Remove locally
-    setAdminNotes(prev => prev.filter(n => n.id !== id));
   };
 
   return (
@@ -1737,7 +1702,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       users,
       siteContent,
       settings,
-      adminNotes,
+      messages,
       aiFeedbacks,
       isLoadingAuth,
       isLoadingData,
@@ -1773,9 +1738,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       uploadFileToFolder,
       deleteClientFile,
       updateUser,
-      addAdminNote,
-      markNoteAsRead,
-      deleteAdminNote,
+      addMessage,
+      updateMessageStatus,
+      deleteMessage,
       appointments,
       scheduleSettings,
       updateScheduleSettings,
@@ -1801,7 +1766,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       subscribeToShopProducts,
       subscribeToProjects,
       subscribeToCulturalProjects,
-      subscribeToAdminNotes,
+
       subscribeToSiteSettings
     }}>
       {children}
