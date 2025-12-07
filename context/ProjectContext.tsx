@@ -65,9 +65,9 @@ interface ProjectContextType {
 
   updateUser: (user: User) => Promise<boolean>;
 
-  addAdminNote: (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => void;
-  markNoteAsRead: (id: string) => void;
-  deleteAdminNote: (id: string) => void;
+  addAdminNote: (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => Promise<void>;
+  markNoteAsRead: (id: string) => Promise<void>;
+  deleteAdminNote: (id: string) => Promise<void>;
 
   appointments: Appointment[];
   scheduleSettings: ScheduleSettings;
@@ -95,6 +95,8 @@ interface ProjectContextType {
   subscribeToShopProducts: () => (() => void) | undefined;
   subscribeToProjects: () => (() => void) | undefined;
   subscribeToCulturalProjects: () => (() => void) | undefined;
+  subscribeToAdminNotes: () => (() => void) | undefined;
+  subscribeToSiteSettings: () => (() => void) | undefined;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -351,6 +353,24 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       setAppointments(mapped);
     }
 
+    // 5. Admin Notes (Chatbot messages/recados)
+    const { data: notesData } = await supabase
+      .from('admin_notes')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (notesData) {
+      const mappedNotes: AdminNote[] = notesData.map((n: any) => ({
+        id: n.id,
+        userName: n.user_name,
+        userContact: n.user_contact,
+        message: n.message,
+        date: n.created_at,
+        status: n.status || 'new',
+        source: n.source || 'chatbot'
+      }));
+      setAdminNotes(mappedNotes);
+    }
+
     if ((import.meta as any).env?.DEV) console.log('[Data] fetchGlobalData complete!');
     setIsLoadingData(false);
   };
@@ -453,11 +473,24 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       }, 100);
     });
 
+    // Auto-subscribe to global realtime channels (Settings + Admin Notes)
+    // These affect the whole site so they should always be active
+    let unsubscribeSettings: (() => void) | undefined;
+    let unsubscribeNotes: (() => void) | undefined;
+
+    // Slight delay to ensure subscriptions are defined
+    setTimeout(() => {
+      unsubscribeSettings = subscribeToSiteSettings?.();
+      unsubscribeNotes = subscribeToAdminNotes?.();
+    }, 100);
+
     return () => {
       if (authDebounceTimerRef.current) {
         clearTimeout(authDebounceTimerRef.current);
       }
       subscription.unsubscribe();
+      unsubscribeSettings?.();
+      unsubscribeNotes?.();
     };
   }, []);
 
@@ -1191,6 +1224,113 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
   }, []);
 
+  // Subscribe to realtime changes on admin_notes table (chatbot messages)
+  const subscribeToAdminNotes = useCallback(() => {
+    const channel = supabase
+      .channel('admin_notes_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'admin_notes'
+        },
+        (payload) => {
+          if ((import.meta as any).env?.DEV) {
+            console.log('[Realtime] Admin Notes change:', payload.eventType);
+          }
+
+          if (payload.eventType === 'INSERT') {
+            const newNote: AdminNote = {
+              id: payload.new.id,
+              userName: payload.new.user_name,
+              userContact: payload.new.user_contact,
+              message: payload.new.message,
+              date: payload.new.created_at,
+              status: payload.new.status,
+              source: payload.new.source
+            };
+            setAdminNotes(prev => {
+              // Avoid duplicates (might have been added locally already)
+              if (prev.some(n => n.id === newNote.id)) return prev;
+              return [newNote, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            setAdminNotes(prev => prev.map(n =>
+              n.id === payload.new.id ? {
+                ...n,
+                userName: payload.new.user_name,
+                userContact: payload.new.user_contact,
+                message: payload.new.message,
+                status: payload.new.status
+              } : n
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setAdminNotes(prev => prev.filter(n => n.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Subscribe to realtime changes on site_settings table (Phase 4)
+  const subscribeToSiteSettings = useCallback(() => {
+    const channel = supabase
+      .channel('site_settings_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'site_settings',
+          filter: `id=eq.${SETTINGS_ID}`
+        },
+        (payload) => {
+          if ((import.meta as any).env?.DEV) {
+            console.log('[Realtime] Site Settings change detected');
+          }
+
+          const row = payload.new as any;
+
+          // Update Site Content (About + Office)
+          if (row.about || row.office) {
+            setSiteContent({
+              about: { ...DEFAULT_SITE_CONTENT.about, ...(row.about || {}) },
+              office: { ...DEFAULT_SITE_CONTENT.office, ...(row.office || {}) }
+            });
+          }
+
+          // Update Global Settings + Schedule
+          if (row.settings) {
+            const savedBundle = row.settings;
+            if (savedBundle.global) {
+              setSettings({
+                ...DEFAULT_SETTINGS,
+                ...savedBundle.global,
+                aiConfig: {
+                  ...DEFAULT_SETTINGS.aiConfig,
+                  ...(savedBundle.global.aiConfig || {})
+                },
+                chatbotConfig: savedBundle.global.chatbotConfig || DEFAULT_SETTINGS.chatbotConfig
+              });
+            }
+            if (savedBundle.schedule) {
+              setScheduleSettings({ ...DEFAULT_SCHEDULE_SETTINGS, ...savedBundle.schedule });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
 
   const addShopProduct = async (product: Omit<ShopProduct, 'id' | 'created_at' | 'updated_at'>): Promise<ShopProduct | null> => {
     try {
@@ -1494,17 +1634,79 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  const addAdminNote = (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => {
-    const newNote: AdminNote = {
-      ...note,
-      id: Math.random().toString(36).substr(2, 9),
-      date: new Date().toISOString(),
-      status: 'new'
-    };
-    setAdminNotes(prev => [newNote, ...prev]);
+  // Admin Notes - Now persist to Supabase!
+  const addAdminNote = async (note: Omit<AdminNote, 'id' | 'date' | 'status'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_notes')
+        .insert({
+          user_name: note.userName,
+          user_contact: note.userContact,
+          message: note.message,
+          source: note.source || 'chatbot',
+          status: 'new'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[AdminNote] Error saving note:', error);
+        // Fallback to local only if DB fails
+        const localNote: AdminNote = {
+          ...note,
+          id: Math.random().toString(36).substr(2, 9),
+          date: new Date().toISOString(),
+          status: 'new'
+        };
+        setAdminNotes(prev => [localNote, ...prev]);
+        return;
+      }
+
+      // Add to local state with DB-generated ID
+      const newNote: AdminNote = {
+        id: data.id,
+        userName: data.user_name,
+        userContact: data.user_contact,
+        message: data.message,
+        date: data.created_at,
+        status: data.status,
+        source: data.source
+      };
+      setAdminNotes(prev => [newNote, ...prev]);
+    } catch (err) {
+      console.error('[AdminNote] Unexpected error:', err);
+    }
   };
-  const markNoteAsRead: (id: string) => void = (id) => setAdminNotes(prev => prev.map(n => n.id === id ? { ...n, status: 'read' } : n));
-  const deleteAdminNote = (id: string) => setAdminNotes(prev => prev.filter(n => n.id !== id));
+
+  const markNoteAsRead = async (id: string) => {
+    // Update in Supabase
+    const { error } = await supabase
+      .from('admin_notes')
+      .update({ status: 'read' })
+      .eq('id', id);
+
+    if (error) {
+      console.error('[AdminNote] Error marking as read:', error);
+    }
+
+    // Update locally
+    setAdminNotes(prev => prev.map(n => n.id === id ? { ...n, status: 'read' } : n));
+  };
+
+  const deleteAdminNote = async (id: string) => {
+    // Delete from Supabase
+    const { error } = await supabase
+      .from('admin_notes')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('[AdminNote] Error deleting note:', error);
+    }
+
+    // Remove locally
+    setAdminNotes(prev => prev.filter(n => n.id !== id));
+  };
 
   return (
     <ProjectContext.Provider value={{
@@ -1577,7 +1779,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       createShopOrder,
       subscribeToShopProducts,
       subscribeToProjects,
-      subscribeToCulturalProjects
+      subscribeToCulturalProjects,
+      subscribeToAdminNotes,
+      subscribeToSiteSettings
     }}>
       {children}
     </ProjectContext.Provider>
