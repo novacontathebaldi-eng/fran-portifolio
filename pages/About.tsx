@@ -27,6 +27,7 @@ const useIsMobile = () => {
 export const About: React.FC = () => {
   const { siteContent, projects, culturalProjects, isLoadingData } = useProjects();
   const { about } = siteContent;
+  const isMobile = useIsMobile();
 
   // Get parallax projects from settings OR use featured as fallback
   // about.parallaxProjects is array of {id, type: 'project' | 'cultural'}
@@ -54,15 +55,13 @@ export const About: React.FC = () => {
   // Don't render until data is loaded to avoid flash of default content
   if (isLoadingData) {
     return (
-      <div className="h-screen bg-[#1a1a1a] flex items-center justify-center">
-        <div className="text-white text-center animate-pulse">
+      <div className="h-screen bg-white flex items-center justify-center">
+        <div className="text-gray-500 text-center animate-pulse">
           <span className="text-accent uppercase tracking-[0.3em] text-sm">Carregando</span>
         </div>
       </div>
     );
   }
-
-  const isMobile = useIsMobile();
 
   // Content wrapper - disable Lenis on mobile for performance
   const ContentWrapper = isMobile
@@ -73,7 +72,7 @@ export const About: React.FC = () => {
 
   return (
     <ContentWrapper>
-      <div className="bg-[#1a1a1a]">
+      <div className="bg-white">
         {/* Smooth Scroll Hero with Parallax */}
         <SmoothHero
           heroImage={about.heroImage}
@@ -220,22 +219,22 @@ interface SmoothHeroProps {
 
 const SmoothHero: React.FC<SmoothHeroProps> = ({ heroImage, heroTitle, heroSubtitle, parallaxImages, isMobile }) => {
   // Shorter section on mobile for better performance
-  const sectionHeight = isMobile ? 800 : SECTION_HEIGHT;
+  const sectionHeight = isMobile ? 600 : SECTION_HEIGHT;
 
   return (
     <div
       style={{ height: `calc(${sectionHeight}px + 100vh)` }}
-      className="relative w-full"
+      className="relative w-full z-0"
     >
       <CenterImage heroImage={heroImage} heroTitle={heroTitle} heroSubtitle={heroSubtitle} isMobile={isMobile} />
 
       {/* Scroll indicator - OUTSIDE of CenterImage for proper z-index */}
       <ScrollIndicator />
 
-      {/* Hide parallax on mobile for performance */}
-      {!isMobile && <ParallaxImages images={parallaxImages} />}
+      {/* Parallax images - with lower z-index */}
+      <ParallaxImages images={parallaxImages} isMobile={isMobile} />
 
-      <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-b from-transparent to-white pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-b from-transparent to-white pointer-events-none z-[5]" />
     </div>
   );
 };
@@ -251,7 +250,7 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
   const { scrollY } = useScroll();
 
   // Simplified transformations for mobile
-  const scrollRange = isMobile ? 800 : 1500;
+  const scrollRange = isMobile ? 600 : 1500;
 
   const clip1 = useTransform(scrollY, [0, scrollRange], [25, 0]);
   const clip2 = useTransform(scrollY, [0, scrollRange], [75, 100]);
@@ -261,7 +260,7 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
   const backgroundSize = useTransform(
     scrollY,
     [0, scrollRange + 500],
-    [isMobile ? "140%" : "170%", "100%"]
+    [isMobile ? "130%" : "170%", "100%"]
   );
   const opacity = useTransform(
     scrollY,
@@ -269,12 +268,12 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
     [1, 0]
   );
 
-  const textOpacity = useTransform(scrollY, [0, isMobile ? 200 : 400], [1, 0]);
-  const textY = useTransform(scrollY, [0, isMobile ? 200 : 400], [0, -50]);
+  const textOpacity = useTransform(scrollY, [0, isMobile ? 150 : 400], [1, 0]);
+  const textY = useTransform(scrollY, [0, isMobile ? 150 : 400], [0, -30]);
 
   return (
     <motion.div
-      className="sticky top-0 h-screen w-full overflow-hidden"
+      className="sticky top-0 h-screen w-full overflow-hidden z-[1]"
       style={{
         clipPath,
         backgroundSize,
@@ -282,19 +281,18 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
         backgroundImage: `url(${heroImage})`,
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
-        willChange: isMobile ? 'auto' : 'clip-path, background-size, opacity',
       }}
     >
       {/* Dark overlay for text readability */}
       <div className="absolute inset-0 bg-black/50" />
 
-      {/* Hero Text - Optimized for mobile */}
+      {/* Hero Text - Very small on mobile to fit inside the clip-path */}
       <motion.div
-        className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4 sm:px-6"
+        className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-2 sm:px-6"
         style={{ opacity: textOpacity, y: textY }}
       >
         <motion.span
-          className="text-accent uppercase tracking-[0.15em] sm:tracking-[0.25em] text-[10px] sm:text-xs md:text-sm font-bold mb-2 sm:mb-4 block"
+          className="text-accent uppercase tracking-[0.1em] sm:tracking-[0.25em] text-[8px] sm:text-xs md:text-sm font-bold mb-1 sm:mb-4 block"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
@@ -302,7 +300,7 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
           {heroSubtitle}
         </motion.span>
         <motion.h1
-          className="text-lg sm:text-xl md:text-3xl lg:text-4xl font-serif leading-tight max-w-[90vw] sm:max-w-xl md:max-w-2xl drop-shadow-2xl"
+          className="text-sm sm:text-lg md:text-2xl lg:text-4xl font-serif leading-snug max-w-[50vw] sm:max-w-xl md:max-w-2xl drop-shadow-2xl"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.6 }}
@@ -338,13 +336,22 @@ const ScrollIndicator: React.FC = () => {
 
 interface ParallaxImagesProps {
   images: Array<{ src: string; alt: string; id: string; type: 'project' | 'cultural' }>;
+  isMobile: boolean;
 }
 
-const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images }) => {
+const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images, isMobile }) => {
   if (images.length === 0) return null;
 
+  // Reduced parallax movement on mobile for performance
+  const mobilePositions = [
+    { start: -50, end: 50, className: 'w-1/2 mx-auto' },
+    { start: 30, end: -40, className: 'w-2/3 mx-auto' },
+    { start: -30, end: 30, className: 'w-1/2 mx-auto' },
+    { start: 0, end: -60, className: 'w-2/3 mx-auto' },
+  ];
+
   // Dynamic positioning based on number of images
-  const positions = [
+  const desktopPositions = [
     { start: -200, end: 200, className: 'w-1/3' },
     { start: 200, end: -250, className: 'mx-auto w-2/3' },
     { start: -200, end: 200, className: 'ml-auto w-1/3' },
@@ -355,9 +362,13 @@ const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images }) => {
     { start: 50, end: -150, className: 'ml-16 w-2/5' },
   ];
 
+  const positions = isMobile ? mobilePositions : desktopPositions;
+  // Limit to 2 images on mobile for performance
+  const displayImages = isMobile ? images.slice(0, 2) : images;
+
   return (
-    <div className="mx-auto max-w-6xl px-4 pt-[200px]">
-      {images.map((img, index) => {
+    <div className="mx-auto max-w-6xl px-4 pt-[200px] relative z-[2]">
+      {displayImages.map((img, index) => {
         const pos = positions[index % positions.length];
         return (
           <ParallaxImg
@@ -369,6 +380,7 @@ const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images }) => {
             start={pos.start}
             end={pos.end}
             className={pos.className}
+            isMobile={isMobile}
           />
         );
       })}
@@ -384,9 +396,10 @@ interface ParallaxImgProps {
   end: number;
   projectId: string;
   projectType: 'project' | 'cultural';
+  isMobile: boolean;
 }
 
-const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, end, projectId, projectType }) => {
+const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, end, projectId, projectType, isMobile }) => {
   const ref = useRef<HTMLAnchorElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -403,12 +416,11 @@ const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, e
   const linkPath = projectType === 'cultural' ? `/cultural/${projectId}` : `/project/${projectId}`;
 
   return (
-    <Link to={linkPath}>
+    <Link to={linkPath} ref={ref} className="block relative z-[2]">
       <motion.img
         src={src}
         alt={alt}
         className={`${className} rounded-lg shadow-2xl cursor-pointer hover:ring-4 hover:ring-accent/50 transition-all duration-300`}
-        ref={ref as any}
         style={{ transform, opacity }}
         loading="lazy"
         decoding="async"
