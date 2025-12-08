@@ -70,9 +70,19 @@ export const About: React.FC = () => {
       <ReactLenis root options={{ lerp: 0.05 }}>{children}</ReactLenis>
     );
 
+  // Get background image from config or use default
+  const backgroundImage = (about as any).backgroundImage || '';
+
   return (
     <ContentWrapper>
-      <div className="bg-white">
+      <div
+        className="bg-white"
+        style={
+          backgroundImage
+            ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
+            : {}
+        }
+      >
         {/* Smooth Scroll Hero with Parallax */}
         <SmoothHero
           heroImage={about.heroImage}
@@ -139,7 +149,7 @@ export const About: React.FC = () => {
         </section>
 
         {/* Philosophy / Values - Dark Section for contrast */}
-        <section className="py-24 bg-[#1a1a1a] text-white">
+        <section className="py-24 bg-[#1a1a1a] text-white relative z-20">
           <div className="container mx-auto px-6">
             <motion.div
               className="text-center max-w-2xl mx-auto mb-20"
@@ -157,10 +167,10 @@ export const About: React.FC = () => {
                 <motion.div
                   key={pillar.id}
                   className="bg-white/5 backdrop-blur-sm p-10 rounded-lg border border-white/10 hover:bg-white/10 hover:border-accent/50 transition-all duration-500 h-full group"
-                  initial={{ opacity: 0, y: 40 }}
+                  initial={{ opacity: 0.3, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: idx * 0.15 }}
-                  viewport={{ once: true }}
+                  transition={{ duration: 0.8, ease: "easeOut", delay: idx * 0.1 }}
+                  viewport={{ once: true, amount: 0.3 }}
                 >
                   <div className="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center mb-6 group-hover:bg-accent/40 transition-colors">
                     {idx % 3 === 0 ? <Leaf className="w-6 h-6 text-accent" /> :
@@ -178,7 +188,7 @@ export const About: React.FC = () => {
         </section>
 
         {/* Recognition */}
-        <section className="py-20 bg-white border-t border-gray-100">
+        <section className="py-20 bg-white border-t border-gray-100 relative z-20">
           <div className="container mx-auto px-6 text-center">
             <motion.h3
               className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-10"
@@ -224,15 +234,17 @@ const SmoothHero: React.FC<SmoothHeroProps> = ({ heroImage, heroTitle, heroSubti
   return (
     <div
       style={{ height: `calc(${sectionHeight}px + 100vh)` }}
-      className="relative w-full z-0"
+      className="relative w-full z-0 overflow-hidden"
     >
       <CenterImage heroImage={heroImage} heroTitle={heroTitle} heroSubtitle={heroSubtitle} isMobile={isMobile} />
 
       {/* Scroll indicator - OUTSIDE of CenterImage for proper z-index */}
       <ScrollIndicator />
 
-      {/* Parallax images - with lower z-index */}
-      <ParallaxImages images={parallaxImages} isMobile={isMobile} />
+      {/* Parallax images - contained within this section */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ maxHeight: `calc(${sectionHeight}px + 50vh)` }}>
+        <ParallaxImages images={parallaxImages} isMobile={isMobile} />
+      </div>
 
       <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-b from-transparent to-white pointer-events-none z-[5]" />
     </div>
@@ -342,12 +354,12 @@ interface ParallaxImagesProps {
 const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images, isMobile }) => {
   if (images.length === 0) return null;
 
-  // Reduced parallax movement on mobile for performance
+  // Reduced parallax movement on mobile for smoother performance
   const mobilePositions = [
-    { start: -50, end: 50, className: 'w-1/2 mx-auto' },
-    { start: 30, end: -40, className: 'w-2/3 mx-auto' },
-    { start: -30, end: 30, className: 'w-1/2 mx-auto' },
-    { start: 0, end: -60, className: 'w-2/3 mx-auto' },
+    { start: -20, end: 20, className: 'w-1/2 mx-auto' },
+    { start: 15, end: -15, className: 'w-2/3 mx-auto' },
+    { start: -15, end: 15, className: 'w-1/2 mx-auto' },
+    { start: 10, end: -20, className: 'w-2/3 mx-auto' },
   ];
 
   // Dynamic positioning based on number of images
@@ -355,19 +367,18 @@ const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images, isMobile }) => 
     { start: -200, end: 200, className: 'w-1/3' },
     { start: 200, end: -250, className: 'mx-auto w-2/3' },
     { start: -200, end: 200, className: 'ml-auto w-1/3' },
-    { start: 0, end: -500, className: 'ml-24 w-5/12' },
+    { start: 0, end: -300, className: 'ml-24 w-5/12' },
     { start: -150, end: 150, className: 'w-2/5' },
     { start: 100, end: -200, className: 'ml-auto w-1/3' },
-    { start: -100, end: 300, className: 'mx-auto w-1/2' },
-    { start: 50, end: -150, className: 'ml-16 w-2/5' },
   ];
 
   const positions = isMobile ? mobilePositions : desktopPositions;
-  // Limit to 2 images on mobile for performance
-  const displayImages = isMobile ? images.slice(0, 2) : images;
+  // More images on mobile (4), max 6 on desktop
+  const maxImages = isMobile ? 4 : 6;
+  const displayImages = images.slice(0, maxImages);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pt-[200px] relative z-[2]">
+    <div className="mx-auto max-w-6xl px-4 pt-[200px] relative z-[2]" style={{ pointerEvents: 'none' }}>
       {displayImages.map((img, index) => {
         const pos = positions[index % positions.length];
         return (
@@ -400,15 +411,18 @@ interface ParallaxImgProps {
 }
 
 const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, end, projectId, projectType, isMobile }) => {
-  const ref = useRef<HTMLAnchorElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: [`${start}px end`, `end ${end * -1}px`],
   });
 
-  const opacity = useTransform(scrollYProgress, [0.75, 1], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0.75, 1], [1, 0.85]);
+  // Smoother opacity fade - start fading earlier and fade completely
+  const opacity = useTransform(scrollYProgress, [0.6, 0.9], [1, 0]);
+  // Gentler scale for smoother feel on mobile
+  const scaleValue = isMobile ? 0.95 : 0.85;
+  const scale = useTransform(scrollYProgress, [0.6, 0.9], [1, scaleValue]);
 
   const y = useTransform(scrollYProgress, [0, 1], [start, end]);
   const transform = useMotionTemplate`translateY(${y}px) scale(${scale})`;
@@ -416,16 +430,18 @@ const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, e
   const linkPath = projectType === 'cultural' ? `/cultural/${projectId}` : `/project/${projectId}`;
 
   return (
-    <Link to={linkPath} ref={ref} className="block relative z-[2]">
-      <motion.img
-        src={src}
-        alt={alt}
-        className={`${className} rounded-lg shadow-2xl cursor-pointer hover:ring-4 hover:ring-accent/50 transition-all duration-300`}
-        style={{ transform, opacity }}
-        loading="lazy"
-        decoding="async"
-      />
-    </Link>
+    <div ref={ref} className="relative">
+      <Link to={linkPath} className="block pointer-events-auto">
+        <motion.img
+          src={src}
+          alt={alt}
+          className={`${className} rounded-lg shadow-2xl cursor-pointer hover:ring-4 hover:ring-accent/50 transition-all duration-300`}
+          style={{ transform, opacity }}
+          loading="lazy"
+          decoding="async"
+        />
+      </Link>
+    </div>
   );
 };
 

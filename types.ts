@@ -297,7 +297,7 @@ export interface SiteContent {
     heroTitle: string;
     heroSubtitle: string;
     heroImage: string; // New
-    profileImage: string; // New
+    profileImage: string; // New\r\n    backgroundImage?: string; // Background image for About page
     bio: string;
     stats: StatItem[]; // New
     pillars: PillarItem[]; // New
