@@ -1904,15 +1904,26 @@ export const AdminDashboard: React.FC = () => {
                                                         <div
                                                             key={project.id}
                                                             onClick={() => {
-                                                                if (isSelected) return;
-                                                                const newItem = { id: project.id, type: 'project' as const };
                                                                 const currentList = (contentForm.about as any).parallaxProjects || [];
-                                                                setContentForm(prev => ({
-                                                                    ...prev,
-                                                                    about: { ...prev.about, parallaxProjects: [...currentList, newItem] }
-                                                                }));
+                                                                if (isSelected) {
+                                                                    // Remove
+                                                                    const newList = currentList.filter((p: any) => !(p.id === project.id && p.type === 'project'));
+                                                                    setContentForm(prev => ({
+                                                                        ...prev,
+                                                                        about: { ...prev.about, parallaxProjects: newList }
+                                                                    }));
+                                                                    showToast(`${project.title} removido`, 'info');
+                                                                } else {
+                                                                    // Add
+                                                                    const newItem = { id: project.id, type: 'project' as const };
+                                                                    setContentForm(prev => ({
+                                                                        ...prev,
+                                                                        about: { ...prev.about, parallaxProjects: [...currentList, newItem] }
+                                                                    }));
+                                                                    showToast(`${project.title} adicionado`, 'success');
+                                                                }
                                                             }}
-                                                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition ${isSelected ? 'bg-blue-50 border-2 border-blue-200 opacity-60' : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'}`}
+                                                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-200 ${isSelected ? 'bg-blue-50 border-2 border-blue-300 scale-[1.02]' : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent hover:scale-[1.01]'}`}
                                                         >
                                                             <img src={project.image} alt="" className="w-10 h-10 rounded object-cover" />
                                                             <div className="flex-grow min-w-0">
@@ -1942,15 +1953,26 @@ export const AdminDashboard: React.FC = () => {
                                                         <div
                                                             key={project.id}
                                                             onClick={() => {
-                                                                if (isSelected) return;
-                                                                const newItem = { id: project.id, type: 'cultural' as const };
                                                                 const currentList = (contentForm.about as any).parallaxProjects || [];
-                                                                setContentForm(prev => ({
-                                                                    ...prev,
-                                                                    about: { ...prev.about, parallaxProjects: [...currentList, newItem] }
-                                                                }));
+                                                                if (isSelected) {
+                                                                    // Remove
+                                                                    const newList = currentList.filter((p: any) => !(p.id === project.id && p.type === 'cultural'));
+                                                                    setContentForm(prev => ({
+                                                                        ...prev,
+                                                                        about: { ...prev.about, parallaxProjects: newList }
+                                                                    }));
+                                                                    showToast(`${project.title} removido`, 'info');
+                                                                } else {
+                                                                    // Add
+                                                                    const newItem = { id: project.id, type: 'cultural' as const };
+                                                                    setContentForm(prev => ({
+                                                                        ...prev,
+                                                                        about: { ...prev.about, parallaxProjects: [...currentList, newItem] }
+                                                                    }));
+                                                                    showToast(`${project.title} adicionado`, 'success');
+                                                                }
                                                             }}
-                                                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition ${isSelected ? 'bg-purple-50 border-2 border-purple-200 opacity-60' : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'}`}
+                                                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-200 ${isSelected ? 'bg-purple-50 border-2 border-purple-300 scale-[1.02]' : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent hover:scale-[1.01]'}`}
                                                         >
                                                             <img src={project.image} alt="" className="w-10 h-10 rounded object-cover" />
                                                             <div className="flex-grow min-w-0">

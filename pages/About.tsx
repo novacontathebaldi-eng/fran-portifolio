@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { ReactLenis } from 'lenis/react';
 import { motion, useMotionTemplate, useScroll, useTransform } from 'framer-motion';
 import { Users, Clock, Leaf, ArrowDown } from 'lucide-react';
@@ -7,6 +7,22 @@ import { Link } from 'react-router-dom';
 
 // Height for the parallax hero section
 const SECTION_HEIGHT = 1500;
+
+// Mobile detection hook
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+};
 
 export const About: React.FC = () => {
   const { siteContent, projects, culturalProjects, isLoadingData } = useProjects();
@@ -46,13 +62,17 @@ export const About: React.FC = () => {
     );
   }
 
+  const isMobile = useIsMobile();
+
+  // Content wrapper - disable Lenis on mobile for performance
+  const ContentWrapper = isMobile
+    ? ({ children }: { children: React.ReactNode }) => <>{children}</>
+    : ({ children }: { children: React.ReactNode }) => (
+      <ReactLenis root options={{ lerp: 0.05 }}>{children}</ReactLenis>
+    );
+
   return (
-    <ReactLenis
-      root
-      options={{
-        lerp: 0.05,
-      }}
-    >
+    <ContentWrapper>
       <div className="bg-[#1a1a1a]">
         {/* Smooth Scroll Hero with Parallax */}
         <SmoothHero
@@ -60,6 +80,7 @@ export const About: React.FC = () => {
           heroTitle={about.heroTitle}
           heroSubtitle={about.heroSubtitle}
           parallaxImages={parallaxImages}
+          isMobile={isMobile}
         />
 
         {/* Bio Section */}
@@ -183,7 +204,7 @@ export const About: React.FC = () => {
           </div>
         </section>
       </div>
-    </ReactLenis>
+    </ContentWrapper>
   );
 };
 
@@ -194,20 +215,26 @@ interface SmoothHeroProps {
   heroTitle: string;
   heroSubtitle: string;
   parallaxImages: Array<{ src: string; alt: string; id: string; type: 'project' | 'cultural' }>;
+  isMobile: boolean;
 }
 
-const SmoothHero: React.FC<SmoothHeroProps> = ({ heroImage, heroTitle, heroSubtitle, parallaxImages }) => {
+const SmoothHero: React.FC<SmoothHeroProps> = ({ heroImage, heroTitle, heroSubtitle, parallaxImages, isMobile }) => {
+  // Shorter section on mobile for better performance
+  const sectionHeight = isMobile ? 800 : SECTION_HEIGHT;
+
   return (
     <div
-      style={{ height: `calc(${SECTION_HEIGHT}px + 100vh)` }}
+      style={{ height: `calc(${sectionHeight}px + 100vh)` }}
       className="relative w-full"
     >
-      <CenterImage heroImage={heroImage} heroTitle={heroTitle} heroSubtitle={heroSubtitle} />
+      <CenterImage heroImage={heroImage} heroTitle={heroTitle} heroSubtitle={heroSubtitle} isMobile={isMobile} />
 
       {/* Scroll indicator - OUTSIDE of CenterImage for proper z-index */}
       <ScrollIndicator />
 
-      <ParallaxImages images={parallaxImages} />
+      {/* Hide parallax on mobile for performance */}
+      {!isMobile && <ParallaxImages images={parallaxImages} />}
+
       <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-b from-transparent to-white pointer-events-none" />
     </div>
   );
@@ -217,29 +244,33 @@ interface CenterImageProps {
   heroImage: string;
   heroTitle: string;
   heroSubtitle: string;
+  isMobile: boolean;
 }
 
-const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSubtitle }) => {
+const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSubtitle, isMobile }) => {
   const { scrollY } = useScroll();
 
-  const clip1 = useTransform(scrollY, [0, 1500], [25, 0]);
-  const clip2 = useTransform(scrollY, [0, 1500], [75, 100]);
+  // Simplified transformations for mobile
+  const scrollRange = isMobile ? 800 : 1500;
+
+  const clip1 = useTransform(scrollY, [0, scrollRange], [25, 0]);
+  const clip2 = useTransform(scrollY, [0, scrollRange], [75, 100]);
 
   const clipPath = useMotionTemplate`polygon(${clip1}% ${clip1}%, ${clip2}% ${clip1}%, ${clip2}% ${clip2}%, ${clip1}% ${clip2}%)`;
 
   const backgroundSize = useTransform(
     scrollY,
-    [0, SECTION_HEIGHT + 500],
-    ["170%", "100%"]
+    [0, scrollRange + 500],
+    [isMobile ? "140%" : "170%", "100%"]
   );
   const opacity = useTransform(
     scrollY,
-    [SECTION_HEIGHT, SECTION_HEIGHT + 500],
+    [scrollRange, scrollRange + 500],
     [1, 0]
   );
 
-  const textOpacity = useTransform(scrollY, [0, 400], [1, 0]);
-  const textY = useTransform(scrollY, [0, 400], [0, -100]);
+  const textOpacity = useTransform(scrollY, [0, isMobile ? 200 : 400], [1, 0]);
+  const textY = useTransform(scrollY, [0, isMobile ? 200 : 400], [0, -50]);
 
   return (
     <motion.div
@@ -251,29 +282,30 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
         backgroundImage: `url(${heroImage})`,
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
+        willChange: isMobile ? 'auto' : 'clip-path, background-size, opacity',
       }}
     >
       {/* Dark overlay for text readability */}
       <div className="absolute inset-0 bg-black/50" />
 
-      {/* Hero Text */}
+      {/* Hero Text - Optimized for mobile */}
       <motion.div
-        className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-6"
+        className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4 sm:px-6"
         style={{ opacity: textOpacity, y: textY }}
       >
         <motion.span
-          className="text-accent uppercase tracking-[0.25em] text-xs md:text-sm font-bold mb-4 block"
+          className="text-accent uppercase tracking-[0.15em] sm:tracking-[0.25em] text-[10px] sm:text-xs md:text-sm font-bold mb-2 sm:mb-4 block"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.8 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
         >
           {heroSubtitle}
         </motion.span>
         <motion.h1
-          className="text-2xl md:text-4xl lg:text-5xl font-serif leading-tight max-w-3xl drop-shadow-2xl"
+          className="text-lg sm:text-xl md:text-3xl lg:text-4xl font-serif leading-tight max-w-[90vw] sm:max-w-xl md:max-w-2xl drop-shadow-2xl"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
+          transition={{ delay: 0.5, duration: 0.6 }}
         >
           {heroTitle}
         </motion.h1>
