@@ -6,6 +6,7 @@ import { useProjects } from '../../context/ProjectContext';
 import { useCart } from '../../context/CartContext';
 import { ShopProduct } from '../../types';
 import { LoadingScreen } from '../../components/loading';
+import { normalizeString } from '../../utils/stringUtils';
 
 // Session storage keys for state preservation
 const SHOP_STATE_KEY = 'shop_state';
@@ -133,9 +134,10 @@ export const Shop: React.FC = () => {
 
     // Filter products by search only (category is now determined by sections)
     const filteredProducts = activeProducts.filter(p => {
+        const normalizedSearch = normalizeString(searchQuery);
         const matchesSearch = searchQuery === '' ||
-            p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.description.toLowerCase().includes(searchQuery.toLowerCase());
+            normalizeString(p.title).includes(normalizedSearch) ||
+            normalizeString(p.description).includes(normalizedSearch);
         return matchesSearch;
     });
 

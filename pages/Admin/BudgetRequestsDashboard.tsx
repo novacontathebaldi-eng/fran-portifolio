@@ -3,6 +3,7 @@ import { Search, Calendar, ChevronDown, Eye, Archive, FileText, CheckSquare, Squ
 import { BudgetRequest, BudgetStatus, BUDGET_STATUS_LABELS, BUDGET_STATUS_COLORS } from '../../types/budgetTypes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
+import { normalizeString } from '../../utils/stringUtils';
 
 interface BudgetRequestsDashboardProps {
     onViewDetails: (id: string) => void;
@@ -77,11 +78,11 @@ export const BudgetRequestsDashboard: React.FC<BudgetRequestsDashboardProps> = (
     // Filter logic
     const filteredRequests = budgetRequests.filter(request => {
         // Search
-        const searchLower = searchTerm.toLowerCase();
+        const normalizedSearch = normalizeString(searchTerm);
         const matchesSearch =
-            request.clientName.toLowerCase().includes(searchLower) ||
-            request.clientEmail.toLowerCase().includes(searchLower) ||
-            request.projectCity.toLowerCase().includes(searchLower);
+            normalizeString(request.clientName).includes(normalizedSearch) ||
+            normalizeString(request.clientEmail).includes(normalizedSearch) ||
+            normalizeString(request.projectCity).includes(normalizedSearch);
 
         // Status filter
         const matchesStatus = statusFilter === 'all' || request.status === statusFilter;

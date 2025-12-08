@@ -6,6 +6,7 @@ import { ChatMessage, Project } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
 import { loadBrevoConversations, openBrevoChat } from '../utils/brevoConversations';
 import ServiceRedirectWidget from './ServiceRedirectWidget';
+import { normalizeString } from '../utils/stringUtils';
 
 
 // --- Helper for Markdown ---
@@ -70,7 +71,7 @@ const ProjectCarousel = ({ data }: { data: any }) => {
 
   const category = data?.category;
   const filtered = category
-    ? projects.filter(p => p.category.toLowerCase().includes(category.toLowerCase())).slice(0, 3)
+    ? projects.filter(p => normalizeString(p.category).includes(normalizeString(category))).slice(0, 3)
     : projects.slice(0, 3);
 
   // Detect touch device on mount
@@ -167,7 +168,7 @@ const CulturalCarousel = ({ data }: { data: any }) => {
 
   const category = data?.category;
   const filtered = category
-    ? culturalProjects.filter(p => p.category?.toLowerCase().includes(category.toLowerCase())).slice(0, 4)
+    ? culturalProjects.filter(p => normalizeString(p.category || '').includes(normalizeString(category))).slice(0, 4)
     : culturalProjects.slice(0, 4);
 
   useEffect(() => {

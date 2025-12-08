@@ -3,6 +3,7 @@ import { Search, Calendar, ChevronDown, CheckCircle, Trash2, Mail, MessageSquare
 import { useProjects } from '../../context/ProjectContext';
 import { Message } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { normalizeString } from '../../utils/stringUtils';
 
 export const MessagesDashboard: React.FC = () => {
     const { messages, updateMessageStatus, deleteMessage, showToast } = useProjects();
@@ -14,10 +15,11 @@ export const MessagesDashboard: React.FC = () => {
     // Filter Logic
     const filteredMessages = useMemo(() => {
         return messages.filter(msg => {
+            const normalizedSearch = normalizeString(searchTerm);
             const matchesSearch =
-                (msg.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                (msg.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                (msg.message?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+                normalizeString(msg.name || '').includes(normalizedSearch) ||
+                normalizeString(msg.email || '').includes(normalizedSearch) ||
+                normalizeString(msg.message || '').includes(normalizedSearch);
 
             const matchesStatus = statusFilter === 'all' || msg.status === statusFilter;
             const matchesSource = sourceFilter === 'all' || msg.source === sourceFilter;
