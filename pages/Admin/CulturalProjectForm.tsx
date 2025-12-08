@@ -228,9 +228,9 @@ export const CulturalProjectForm: React.FC = () => {
     <div className="min-h-screen bg-gray-50 font-sans p-4 md:p-8 text-gray-900">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <Link to="/admin" className="flex items-center text-gray-500 hover:text-black">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Voltar ao Painel
-          </Link>
+          <button onClick={() => navigate(-1)} className="flex items-center text-gray-500 hover:text-black">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
+          </button>
           <h1 className="text-3xl font-serif font-bold text-black">{isEditing ? 'Editar Projeto Cultural' : 'Novo Projeto Cultural'}</h1>
         </div>
 

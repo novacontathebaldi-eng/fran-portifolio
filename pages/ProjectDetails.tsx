@@ -190,9 +190,9 @@ export const ProjectDetails: React.FC = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end pb-12 md:pb-20 px-6 md:px-12">
           <div className="container mx-auto relative z-10">
-            <Link to="/portfolio" className="text-white hover:text-white mb-6 flex items-center space-x-2 text-xs md:text-sm uppercase tracking-widest transition" style={{ textShadow: '0 0 2px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.6)' }}>
-              <ArrowLeft className="w-4 h-4" /> <span>Voltar para Portfólio</span>
-            </Link>
+            <button onClick={() => window.history.back()} className="text-white hover:text-white mb-6 flex items-center space-x-2 text-xs md:text-sm uppercase tracking-widest transition cursor-pointer" style={{ textShadow: '0 0 2px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.6)' }}>
+              <ArrowLeft className="w-4 h-4" /> <span>Voltar</span>
+            </button>
             <motion.span
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}

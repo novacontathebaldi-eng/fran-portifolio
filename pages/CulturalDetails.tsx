@@ -184,9 +184,9 @@ export const CulturalDetails: React.FC = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end pb-12 md:pb-20 px-6 md:px-12">
           <div className="container mx-auto relative z-10">
-            <Link to="/cultural" className="text-white/60 hover:text-white mb-6 flex items-center space-x-2 text-xs md:text-sm uppercase tracking-widest transition">
-              <ArrowLeft className="w-4 h-4" /> <span>Voltar para Cultura</span>
-            </Link>
+            <button onClick={() => window.history.back()} className="text-white/60 hover:text-white mb-6 flex items-center space-x-2 text-xs md:text-sm uppercase tracking-widest transition cursor-pointer">
+              <ArrowLeft className="w-4 h-4" /> <span>Voltar</span>
+            </button>
             <motion.span
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}

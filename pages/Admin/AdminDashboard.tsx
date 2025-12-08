@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail } from 'lucide-react';
 import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory, FaqItem, SocialLink, DashboardWidget, DashboardTabId } from '../../types';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
@@ -36,9 +36,36 @@ const uploadToSupabase = async (file: File): Promise<string> => {
 export const AdminDashboard: React.FC = () => {
     const { projects, deleteProject, culturalProjects, deleteCulturalProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, persistAllSettings, messages, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, updateAppointment, deleteAppointmentPermanently, currentUser, isLoadingData } = useProjects();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
 
-    // TABS: Added 'cultural' and 'shop'
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'clients' | 'agenda' | 'office' | 'budgets' | 'shop'>('dashboard');
+    // TABS: Synced with URL query params for better navigation
+    type AdminTab = 'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'clients' | 'agenda' | 'office' | 'budgets' | 'shop';
+    const validTabs: AdminTab[] = ['dashboard', 'projects', 'cultural', 'content', 'settings', 'ai-config', 'messages', 'clients', 'agenda', 'office', 'budgets', 'shop'];
+
+    // Get tab from URL or default to 'dashboard'
+    const urlTab = searchParams.get('tab') as AdminTab;
+    const initialTab: AdminTab = urlTab && validTabs.includes(urlTab) ? urlTab : 'dashboard';
+    const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
+
+    // Sync activeTab with URL changes (for browser back/forward)
+    useEffect(() => {
+        const urlTab = searchParams.get('tab') as AdminTab;
+        if (urlTab && validTabs.includes(urlTab) && urlTab !== activeTab) {
+            setActiveTab(urlTab);
+        } else if (!urlTab && activeTab !== 'dashboard') {
+            // If no tab param and not on dashboard, update URL to reflect current tab
+            setSearchParams({ tab: activeTab }, { replace: true });
+        }
+    }, [searchParams]);
+
+    // Tab change handler that syncs with URL
+    const handleTabChange = (tab: AdminTab) => {
+        setActiveTab(tab);
+        setSearchParams({ tab }, { replace: false });
+        setMobileMenuOpen(false);
+        setSelectedClient(null);
+        setCurrentAdminFolderId(null);
+    };
 
     // Contact Messages State Removed (Unified)
 
@@ -373,9 +400,9 @@ export const AdminDashboard: React.FC = () => {
         }
     };
 
-    const NavItem = ({ id, icon: Icon, label, count }: { id: typeof activeTab, icon: any, label: string, count?: number }) => (
+    const NavItem = ({ id, icon: Icon, label, count }: { id: AdminTab, icon: any, label: string, count?: number }) => (
         <button
-            onClick={() => { setActiveTab(id); setMobileMenuOpen(false); setSelectedClient(null); setCurrentAdminFolderId(null); }}
+            onClick={() => handleTabChange(id)}
             className={`flex items-center space-x-4 w-full p-4 rounded-xl transition duration-200 active:scale-95 relative ${activeTab === id ? 'bg-white text-black font-bold shadow-lg md:transform md:scale-105' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
         >
             <Icon className="w-5 h-5" />
@@ -787,7 +814,7 @@ export const AdminDashboard: React.FC = () => {
                                         return (
                                             <button
                                                 key={widget.id}
-                                                onClick={() => setActiveTab(widget.tabId)}
+                                                onClick={() => handleTabChange(widget.tabId)}
                                                 className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-200 text-left group cursor-pointer"
                                             >
                                                 <div className="flex justify-between items-start mb-4">
