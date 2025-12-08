@@ -168,11 +168,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link to="/portfolio" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Portfólio</Link>
             <Link to="/cultural" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Cultura</Link>
             {settings.enableShop && (
-              <>
-                <Link to="/shop" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Loja</Link>
-                <Link to="/services" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Serviços</Link>
-              </>
+              <Link to="/shop" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Loja</Link>
             )}
+            <Link to="/services" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Serviços</Link>
             <Link to="/contact" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Contato</Link>
             {currentUser?.role === 'admin' && (
               <Link to="/admin" className="text-sm font-bold text-accent hover:text-white bg-black/80 px-3 py-1.5 rounded-full transition flex items-center space-x-1 backdrop-blur-sm">
@@ -240,11 +238,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Link to="/portfolio" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Portfólio</Link>
               <Link to="/cultural" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Cultura</Link>
               {settings.enableShop && (
-                <>
-                  <Link to="/shop" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Loja</Link>
-                  <Link to="/services" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Serviços</Link>
-                </>
+                <Link to="/shop" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Loja</Link>
               )}
+              <Link to="/services" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Serviços</Link>
               <Link to="/contact" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Contato</Link>
 
               <div className="pt-4 space-y-4">
@@ -303,7 +299,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <ul className="space-y-4 text-sm text-gray-400">
                 <li><Link to="/portfolio" className="hover:text-white transition block">Projetos</Link></li>
                 <li><Link to="/cultural" className="hover:text-white transition block">Cultura</Link></li>
-                {settings.enableShop && <li><Link to="/services" className="hover:text-white transition block">Serviços</Link></li>}
+                <li><Link to="/services" className="hover:text-white transition block">Serviços</Link></li>
                 <li><Link to="/office" className="hover:text-white transition block">Nosso Espaço</Link></li>
                 <li><Link to="/about" className="hover:text-white transition block">Filosofia</Link></li>
                 <li><Link to="/contact" className="hover:text-white transition block">Contato</Link></li>

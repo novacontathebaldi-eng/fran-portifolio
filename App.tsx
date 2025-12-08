@@ -267,11 +267,13 @@ const AnimatedRoutes: React.FC = () => {
             }
           />
 
-          {/* Shop/Budget Routes (Conditional) */}
+          {/* Budget/Services Routes (ALWAYS available - independent of shop status) */}
+          <Route path="/services" element={<Layout><BudgetFlow /></Layout>} />
+          <Route path="/budget" element={<Layout><BudgetFlow /></Layout>} />
+
+          {/* Shop Routes (Conditional - only when shop enabled) */}
           {settings.enableShop && (
             <>
-              <Route path="/services" element={<Layout><BudgetFlow /></Layout>} />
-              <Route path="/budget" element={<Layout><BudgetFlow /></Layout>} />
               <Route path="/shop" element={<Layout><Shop /></Layout>} />
               <Route path="/shop/product/:id" element={<Layout><ProductDetails /></Layout>} />
               <Route path="/cart" element={<Layout><Cart /></Layout>} />
