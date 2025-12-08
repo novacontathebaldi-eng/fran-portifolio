@@ -530,7 +530,7 @@ export const Shop: React.FC = () => {
                             </div>
 
                             {/* View Mode Toggle */}
-                            <div className="hidden md:flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                            <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                                 <button
                                     onClick={() => setViewMode('grid')}
                                     className={`p-2 transition ${viewMode === 'grid' ? 'bg-black text-white' : 'text-gray-400 hover:text-black'}`}
