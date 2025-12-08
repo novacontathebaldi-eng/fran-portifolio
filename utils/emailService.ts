@@ -7,65 +7,43 @@ interface EmailPayload {
   tags: string[];
 }
 
-// Configurações via Variáveis de Ambiente
-const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
-const API_KEY = (import.meta as any).env.VITE_BREVO_API_KEY;
-const SENDER_NAME = (import.meta as any).env.VITE_BREVO_SENDER_NAME || 'Thebaldi - Suporte';
-const SENDER_EMAIL = (import.meta as any).env.VITE_BREVO_SENDER_EMAIL || 'suporte@othebaldi.me';
-const ADMIN_EMAILS_STRING = (import.meta as any).env.VITE_BREVO_ADMIN_EMAILS || '';
+import { supabase } from '../supabaseClient';
+
+interface EmailPayload {
+  subject: string;
+  htmlContent: string;
+  tags: string[];
+}
 
 /**
- * Função interna para enviar o e-mail via API REST do Brevo
+ * Função interna para enviar o e-mail via Supabase Edge Function
+ * Removemos a exposição da API KEY no frontend.
+ * A função no servidor se encarrega de usar a chave segura.
  */
 const sendBrevoEmail = async (data: EmailPayload): Promise<boolean> => {
-  if (!API_KEY) {
-    console.warn('[Brevo] API Key não configurada. O e-mail não será enviado.');
-    return false;
-  }
-
-  // Processar múltiplos destinatários
-  const toAddresses = ADMIN_EMAILS_STRING.split(',')
-    .map((email: string) => email.trim())
-    .filter((email: string) => email.length > 0)
-    .map((email: string) => ({ email, name: 'Admin Fran Siller' }));
-
-  if (toAddresses.length === 0) {
-    console.error('[Brevo] Nenhum e-mail de administrador configurado.');
-    return false;
-  }
-
   try {
-    const response = await fetch(BREVO_API_URL, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'api-key': API_KEY,
-      },
-      body: JSON.stringify({
-        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-        to: toAddresses,
+    const { error } = await supabase.functions.invoke('send-email', {
+      body: {
         subject: data.subject,
         htmlContent: data.htmlContent,
-        tags: [...data.tags, 'admin_notification', 'fran_siller_system'],
-      }),
+        tags: data.tags,
+      },
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[Brevo] Erro na API (${response.status}):`, errorText);
+    if (error) {
+      console.error('[Edge Function] Erro ao enviar email:', error);
       return false;
     }
 
-    const result = await response.json();
-    console.log('[Brevo] E-mail enviado com sucesso:', result);
+    console.log('[Edge Function] E-mail enviado com sucesso via servidor seguro.');
     return true;
 
   } catch (error) {
-    console.error('[Brevo] Erro de conexão:', error);
+    console.error('[Edge Function] Erro de conexão:', error);
     return false;
   }
 };
+
 
 // ============================================================================
 // TEMPLATES E FUNÇÕES PÚBLICAS
