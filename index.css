@@ -4,6 +4,12 @@
 
 /* Custom scrollbar for modern feel */
 @layer base {
+
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
   ::-webkit-scrollbar {
     width: 8px;
   }
