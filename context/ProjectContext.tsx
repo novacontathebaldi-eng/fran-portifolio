@@ -482,26 +482,17 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       }, 100);
     });
 
-    // Auto-subscribe to global realtime channels (Settings + Admin Notes)
-    // These affect the whole site so they should always be active
-    let unsubscribeSettings: (() => void) | undefined;
-    let unsubscribeMessages: (() => void) | undefined;
-
-    // Slight delay to ensure subscriptions are defined
-    setTimeout(() => {
-      unsubscribeSettings = subscribeToSiteSettings?.();
-      unsubscribeMessages = subscribeToMessages?.();
-    }, 100);
+    // Note: Global subscriptions (Settings, Messages) are now handled in a separate useEffect
+    // below to ensure subscribeToSiteSettings and subscribeToMessages are properly defined
 
     return () => {
       if (authDebounceTimerRef.current) {
         clearTimeout(authDebounceTimerRef.current);
       }
       subscription.unsubscribe();
-      unsubscribeSettings?.();
-      unsubscribeMessages?.();
     };
   }, []);
+
 
   // --- Admin: Fetch All Users ---
   useEffect(() => {
@@ -1375,6 +1366,21 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
   }, []);
 
+  // --- GLOBAL REALTIME SUBSCRIPTIONS ACTIVATION ---
+  // Activate subscriptions after functions are defined
+  useEffect(() => {
+    const unsubscribeSettings = subscribeToSiteSettings();
+    const unsubscribeMessages = subscribeToMessages();
+
+    if ((import.meta as any).env?.DEV) {
+      console.log('[Realtime] Global subscriptions activated (site_settings, messages)');
+    }
+
+    return () => {
+      unsubscribeSettings?.();
+      unsubscribeMessages?.();
+    };
+  }, [subscribeToSiteSettings, subscribeToMessages]);
 
   const addShopProduct = async (product: Omit<ShopProduct, 'id' | 'created_at' | 'updated_at'>): Promise<ShopProduct | null> => {
     try {

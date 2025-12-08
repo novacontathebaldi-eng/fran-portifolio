@@ -101,6 +101,12 @@ export const AdminDashboard: React.FC = () => {
     const [pendingOfficeBlockId, setPendingOfficeBlockId] = useState<string | null>(null);
     const [pendingOfficeGridIndex, setPendingOfficeGridIndex] = useState<number | null>(null);
 
+    // About Crop Modal States
+    const [aboutCropModalOpen, setAboutCropModalOpen] = useState(false);
+    const [aboutCropImage, setAboutCropImage] = useState('');
+    const [aboutCropFile, setAboutCropFile] = useState<File | null>(null);
+    const [pendingAboutField, setPendingAboutField] = useState<'heroImage' | 'profileImage' | null>(null);
+
     // SYNC SELECTED CLIENT WITH GLOBAL USERS STATE
     // This ensures that when a folder is created/deleted/renamed via Context, the local view updates immediately.
     useEffect(() => {
@@ -509,6 +515,42 @@ export const AdminDashboard: React.FC = () => {
         setPendingOfficeGridIndex(index);
         setOfficeCropModalOpen(true);
         e.target.value = '';
+    };
+
+    // --- About Image Upload with Crop ---
+    const handleAboutImageSelect = async (e: React.ChangeEvent<HTMLInputElement>, field: 'heroImage' | 'profileImage') => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+        });
+        setAboutCropImage(dataUrl);
+        setAboutCropFile(file);
+        setPendingAboutField(field);
+        setAboutCropModalOpen(true);
+        e.target.value = '';
+    };
+
+    const handleAboutCroppedImage = async (file: File) => {
+        try {
+            const url = await uploadToSupabase(file);
+            if (pendingAboutField) {
+                setContentForm(prev => ({
+                    ...prev,
+                    about: {
+                        ...prev.about,
+                        [pendingAboutField]: url
+                    }
+                }));
+            }
+            showToast('Imagem otimizada e enviada!', 'success');
+        } catch (err) {
+            showToast('Erro ao enviar imagem', 'error');
+        }
+        setAboutCropModalOpen(false);
+        setPendingAboutField(null);
     };
 
     // --- Blocking Logic ---
@@ -1792,6 +1834,48 @@ export const AdminDashboard: React.FC = () => {
                             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8 space-y-12">
                                 <div>
                                     <h3 className="font-bold text-xl mb-4 text-black border-b border-gray-100 pb-2">Página Sobre (Bio)</h3>
+
+                                    {/* Imagens da Página About */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                        {/* Hero Image */}
+                                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                            <label className="block text-xs font-bold uppercase text-gray-500 mb-3">Hero Image (Parallax)</label>
+                                            <div className="aspect-video relative rounded-lg overflow-hidden bg-gray-200 mb-3">
+                                                {contentForm.about.heroImage ? (
+                                                    <img src={contentForm.about.heroImage} alt="Hero" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="flex items-center justify-center h-full text-gray-400">
+                                                        <ImageIcon className="w-8 h-8" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <label className="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition cursor-pointer">
+                                                <Upload className="w-4 h-4" />
+                                                Alterar Imagem
+                                                <input type="file" accept="image/*" onChange={(e) => handleAboutImageSelect(e, 'heroImage')} className="hidden" />
+                                            </label>
+                                        </div>
+
+                                        {/* Profile Image */}
+                                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                            <label className="block text-xs font-bold uppercase text-gray-500 mb-3">Foto do Perfil (Fran)</label>
+                                            <div className="aspect-[3/4] relative rounded-lg overflow-hidden bg-gray-200 mb-3 max-h-48 mx-auto">
+                                                {contentForm.about.profileImage ? (
+                                                    <img src={contentForm.about.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="flex items-center justify-center h-full text-gray-400">
+                                                        <ImageIcon className="w-8 h-8" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <label className="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition cursor-pointer">
+                                                <Upload className="w-4 h-4" />
+                                                Alterar Foto
+                                                <input type="file" accept="image/*" onChange={(e) => handleAboutImageSelect(e, 'profileImage')} className="hidden" />
+                                            </label>
+                                        </div>
+                                    </div>
+
                                     <div>
                                         <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Bio Principal</label>
                                         <textarea name="bio" value={contentForm.about.bio} onChange={handleContentChange} className="w-full border p-3 rounded h-40 bg-white text-black" />
@@ -2146,6 +2230,20 @@ export const AdminDashboard: React.FC = () => {
                 requireCrop={false}
                 showAspectSelector={true}
                 title="Ajustar Imagem do Escritório"
+            />
+
+            {/* About Image Crop Modal */}
+            <ImageCropModal
+                image={aboutCropImage}
+                originalFile={aboutCropFile || undefined}
+                isOpen={aboutCropModalOpen}
+                onClose={() => { setAboutCropModalOpen(false); setPendingAboutField(null); }}
+                onCropComplete={handleAboutCroppedImage}
+                aspect={pendingAboutField === 'profileImage' ? 3 / 4 : 16 / 9}
+                preset={pendingAboutField === 'profileImage' ? 'profile' : 'hero'}
+                requireCrop={false}
+                showAspectSelector={true}
+                title={pendingAboutField === 'profileImage' ? 'Ajustar Foto do Perfil' : 'Ajustar Hero Image'}
             />
         </div>
     );
