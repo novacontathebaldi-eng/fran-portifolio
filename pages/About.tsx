@@ -63,17 +63,17 @@ export const About: React.FC = () => {
     );
   }
 
-  // For mobile: No Lenis, simpler experience
-  // For desktop: Full parallax experience with Lenis
-  if (isMobile) {
-    return <MobileAbout about={about} parallaxImages={parallaxImages} backgroundImage={backgroundImage} />;
-  }
-
   return (
-    <ReactLenis root options={{ lerp: 0.05 }}>
+    <ReactLenis root options={{ lerp: isMobile ? 0.1 : 0.05 }}>
       <div className="bg-zinc-950">
-        {/* Hero Section - Faithful to Original */}
-        <Hero heroImage={about.heroImage} heroTitle={about.heroTitle} heroSubtitle={about.heroSubtitle} parallaxImages={parallaxImages} />
+        {/* Hero Section with Parallax */}
+        <Hero
+          heroImage={about.heroImage}
+          heroTitle={about.heroTitle}
+          heroSubtitle={about.heroSubtitle}
+          parallaxImages={parallaxImages}
+          isMobile={isMobile}
+        />
 
         {/* Bio Section */}
         <section className="py-24 bg-white relative z-20">
@@ -104,7 +104,7 @@ export const About: React.FC = () => {
                 transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
                 viewport={{ once: true }}
               >
-                <h2 className="text-4xl font-serif mb-6">Fran Siller</h2>
+                <h2 className="text-3xl md:text-4xl font-serif mb-6">Fran Siller</h2>
                 <p className="text-gray-500 uppercase tracking-widest text-xs font-bold mb-8">Arquiteta Principal & Fundadora</p>
 
                 <div className="prose prose-lg text-secondary mb-8">
@@ -112,7 +112,7 @@ export const About: React.FC = () => {
                 </div>
 
                 {/* Dynamic Stats */}
-                <div className="grid grid-cols-3 gap-8 border-t border-gray-100 pt-8">
+                <div className="grid grid-cols-3 gap-4 md:gap-8 border-t border-gray-100 pt-8">
                   {about.stats.map((stat, index) => (
                     <motion.div
                       key={stat.id}
@@ -120,9 +120,10 @@ export const About: React.FC = () => {
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: index * 0.1 }}
                       viewport={{ once: true }}
+                      className="text-center md:text-left"
                     >
-                      <span className="block text-4xl font-serif text-accent mb-1">{stat.value}</span>
-                      <span className="text-xs uppercase text-gray-400 font-bold">{stat.label}</span>
+                      <span className="block text-2xl md:text-4xl font-serif text-accent mb-1">{stat.value}</span>
+                      <span className="text-[10px] md:text-xs uppercase text-gray-400 font-bold">{stat.label}</span>
                     </motion.div>
                   ))}
                 </div>
@@ -135,21 +136,21 @@ export const About: React.FC = () => {
         <section className="py-24 bg-[#1a1a1a] text-white relative z-20">
           <div className="container mx-auto px-6">
             <motion.div
-              className="text-center max-w-2xl mx-auto mb-20"
+              className="text-center max-w-2xl mx-auto mb-12 md:mb-20"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl font-serif mb-4">Nossos Pilares</h2>
-              <p className="text-gray-400">A base fundamental sobre a qual construímos cada projeto, do esboço inicial à entrega das chaves.</p>
+              <h2 className="text-3xl md:text-4xl font-serif mb-4">Nossos Pilares</h2>
+              <p className="text-gray-400 text-sm md:text-base">A base fundamental sobre a qual construímos cada projeto, do esboço inicial à entrega das chaves.</p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-12">
               {about.pillars.map((pillar, idx) => (
                 <motion.div
                   key={pillar.id}
-                  className="bg-white/5 backdrop-blur-sm p-10 rounded-lg border border-white/10 hover:bg-white/10 hover:border-accent/50 transition-all duration-500 h-full group"
+                  className="bg-white/5 backdrop-blur-sm p-6 md:p-10 rounded-lg border border-white/10 hover:bg-white/10 hover:border-accent/50 transition-all duration-500 h-full group"
                   initial={{ opacity: 0, y: 48 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ ease: "easeInOut", duration: 0.75, delay: idx * 0.1 }}
@@ -160,7 +161,7 @@ export const About: React.FC = () => {
                       idx % 3 === 1 ? <Clock className="w-6 h-6 text-accent" /> :
                         <Users className="w-6 h-6 text-accent" />}
                   </div>
-                  <h3 className="text-xl font-serif mb-4 text-white">{pillar.title}</h3>
+                  <h3 className="text-lg md:text-xl font-serif mb-4 text-white">{pillar.title}</h3>
                   <p className="text-gray-400 text-sm leading-relaxed">
                     {pillar.description}
                   </p>
@@ -171,10 +172,10 @@ export const About: React.FC = () => {
         </section>
 
         {/* Recognition */}
-        <section className="py-20 bg-white border-t border-gray-100 relative z-20">
+        <section className="py-16 md:py-20 bg-white border-t border-gray-100 relative z-20">
           <div className="container mx-auto px-6 text-center">
             <motion.h3
-              className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-10"
+              className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-8 md:mb-10"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ duration: 0.6 }}
@@ -183,14 +184,14 @@ export const About: React.FC = () => {
               Reconhecimento & Mídia
             </motion.h3>
             <motion.div
-              className="flex flex-wrap justify-center gap-12 opacity-50 grayscale"
+              className="flex flex-wrap justify-center gap-6 md:gap-12 opacity-50 grayscale"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 0.5, y: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
               {about.recognition.map((rec, idx) => (
-                <span key={idx} className="text-2xl font-serif font-bold">{rec}</span>
+                <span key={idx} className="text-lg md:text-2xl font-serif font-bold">{rec}</span>
               ))}
             </motion.div>
           </div>
@@ -200,156 +201,57 @@ export const About: React.FC = () => {
   );
 };
 
-// ========== MOBILE VERSION - NO PARALLAX ANIMATION ==========
-interface MobileAboutProps {
-  about: any;
-  parallaxImages: Array<{ src: string; alt: string; id: string; type: 'project' | 'cultural' }>;
-  backgroundImage: string;
-}
-
-const MobileAbout: React.FC<MobileAboutProps> = ({ about, parallaxImages, backgroundImage }) => {
-  return (
-    <div className="bg-zinc-950">
-      {/* Hero - Mobile */}
-      <div className="relative min-h-screen flex items-center justify-center">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${about.heroImage})` }}
-        />
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="relative z-10 text-center text-white px-6">
-          <span className="text-accent uppercase tracking-[0.2em] text-xs font-bold mb-4 block">
-            {about.heroSubtitle}
-          </span>
-          <h1 className="text-2xl font-serif leading-snug max-w-sm mx-auto">
-            {about.heroTitle}
-          </h1>
-        </div>
-      </div>
-
-      {/* Featured Projects - Static Grid on Mobile */}
-      <div className="py-12 px-4">
-        <div className="grid grid-cols-2 gap-4">
-          {parallaxImages.slice(0, 4).map((img) => {
-            const linkPath = img.type === 'cultural' ? `/cultural/${img.id}` : `/project/${img.id}`;
-            return (
-              <Link key={img.id} to={linkPath} className="block">
-                <img
-                  src={img.src}
-                  alt={img.alt}
-                  className="w-full h-40 object-cover rounded-lg"
-                  loading="lazy"
-                />
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Bio Section - Mobile */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-6">
-          <img
-            src={about.profileImage}
-            alt="Profile"
-            className="w-full h-64 object-cover mb-6 rounded-lg"
-            loading="lazy"
-          />
-          <h2 className="text-3xl font-serif mb-4">Fran Siller</h2>
-          <p className="text-gray-500 uppercase tracking-widest text-xs font-bold mb-6">Arquiteta Principal & Fundadora</p>
-          <p className="text-secondary leading-relaxed mb-8">{about.bio}</p>
-
-          <div className="grid grid-cols-3 gap-4 border-t border-gray-100 pt-6">
-            {about.stats.map((stat: any) => (
-              <div key={stat.id} className="text-center">
-                <span className="block text-2xl font-serif text-accent">{stat.value}</span>
-                <span className="text-[10px] uppercase text-gray-400 font-bold">{stat.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pillars - Mobile */}
-      <section className="py-16 bg-[#1a1a1a] text-white">
-        <div className="container mx-auto px-6">
-          <h2 className="text-3xl font-serif mb-8 text-center">Nossos Pilares</h2>
-          <div className="space-y-6">
-            {about.pillars.map((pillar: any, idx: number) => (
-              <div key={pillar.id} className="bg-white/5 p-6 rounded-lg">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center">
-                    {idx % 3 === 0 ? <Leaf className="w-5 h-5 text-accent" /> :
-                      idx % 3 === 1 ? <Clock className="w-5 h-5 text-accent" /> :
-                        <Users className="w-5 h-5 text-accent" />}
-                  </div>
-                  <h3 className="text-lg font-serif">{pillar.title}</h3>
-                </div>
-                <p className="text-gray-400 text-sm">{pillar.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Recognition - Mobile */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-6 text-center">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-8">Reconhecimento & Mídia</h3>
-          <div className="flex flex-wrap justify-center gap-6 opacity-50">
-            {about.recognition.map((rec: string, idx: number) => (
-              <span key={idx} className="text-lg font-serif font-bold">{rec}</span>
-            ))}
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-};
-
-// ========== DESKTOP HERO - FAITHFUL TO ORIGINAL HOVER.DEV ==========
+// ========== HERO COMPONENT ==========
 interface HeroProps {
   heroImage: string;
   heroTitle: string;
   heroSubtitle: string;
   parallaxImages: Array<{ src: string; alt: string; id: string; type: 'project' | 'cultural' }>;
+  isMobile: boolean;
 }
 
-const Hero: React.FC<HeroProps> = ({ heroImage, heroTitle, heroSubtitle, parallaxImages }) => {
+const Hero: React.FC<HeroProps> = ({ heroImage, heroTitle, heroSubtitle, parallaxImages, isMobile }) => {
+  // Shorter section on mobile
+  const sectionHeight = isMobile ? 800 : SECTION_HEIGHT;
+
   return (
     <div
-      style={{ height: `calc(${SECTION_HEIGHT}px + 100vh)` }}
+      style={{ height: `calc(${sectionHeight}px + 100vh)` }}
       className="relative w-full"
     >
-      <CenterImage heroImage={heroImage} heroTitle={heroTitle} heroSubtitle={heroSubtitle} />
-      <ParallaxImages images={parallaxImages} />
+      <CenterImage heroImage={heroImage} heroTitle={heroTitle} heroSubtitle={heroSubtitle} isMobile={isMobile} />
+      <ParallaxImages images={parallaxImages} isMobile={isMobile} />
       <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-b from-zinc-950/0 to-zinc-950" />
     </div>
   );
 };
 
+// ========== CENTER IMAGE (HERO BACKGROUND) ==========
 interface CenterImageProps {
   heroImage: string;
   heroTitle: string;
   heroSubtitle: string;
+  isMobile: boolean;
 }
 
-const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSubtitle }) => {
+const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSubtitle, isMobile }) => {
   const { scrollY } = useScroll();
+  const sectionHeight = isMobile ? 800 : SECTION_HEIGHT;
 
-  const clip1 = useTransform(scrollY, [0, SECTION_HEIGHT], [25, 0]);
-  const clip2 = useTransform(scrollY, [0, SECTION_HEIGHT], [75, 100]);
+  // Adjust clip-path for mobile (more vertical rectangle)
+  const clip1 = useTransform(scrollY, [0, sectionHeight], isMobile ? [30, 0] : [25, 0]);
+  const clip2 = useTransform(scrollY, [0, sectionHeight], isMobile ? [70, 100] : [75, 100]);
 
   const clipPath = useMotionTemplate`polygon(${clip1}% ${clip1}%, ${clip2}% ${clip1}%, ${clip2}% ${clip2}%, ${clip1}% ${clip2}%)`;
 
   const backgroundSize = useTransform(
     scrollY,
-    [0, SECTION_HEIGHT + 500],
-    ["170%", "100%"]
+    [0, sectionHeight + 500],
+    [isMobile ? "200%" : "170%", "100%"]
   );
   const opacity = useTransform(
     scrollY,
-    [SECTION_HEIGHT, SECTION_HEIGHT + 500],
+    [sectionHeight, sectionHeight + 500],
     [1, 0]
   );
 
@@ -371,7 +273,7 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
       {/* Hero Text */}
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-6">
         <motion.span
-          className="text-accent uppercase tracking-[0.25em] text-xs font-bold mb-4 block"
+          className="text-accent uppercase tracking-[0.15em] md:tracking-[0.25em] text-[10px] md:text-xs font-bold mb-2 md:mb-4 block"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
@@ -379,7 +281,7 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
           {heroSubtitle}
         </motion.span>
         <motion.h1
-          className="text-4xl md:text-5xl lg:text-6xl font-serif leading-snug max-w-2xl drop-shadow-2xl"
+          className="text-xl md:text-4xl lg:text-6xl font-serif leading-snug max-w-xs md:max-w-2xl drop-shadow-2xl"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.6 }}
@@ -395,30 +297,41 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
         transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
       >
         <div className="flex flex-col items-center gap-2">
-          <span className="text-xs uppercase tracking-widest">Role para descobrir</span>
-          <ArrowDown className="w-5 h-5" />
+          <span className="text-[10px] md:text-xs uppercase tracking-widest">Role para descobrir</span>
+          <ArrowDown className="w-4 h-4 md:w-5 md:h-5" />
         </div>
       </motion.div>
     </motion.div>
   );
 };
 
-// ========== PARALLAX IMAGES - EXACTLY LIKE ORIGINAL ==========
+// ========== PARALLAX IMAGES ==========
 interface ParallaxImagesProps {
   images: Array<{ src: string; alt: string; id: string; type: 'project' | 'cultural' }>;
+  isMobile: boolean;
 }
 
-const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images }) => {
-  // Fixed positions like original - exactly 4 images
-  const positions = [
+const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images, isMobile }) => {
+  // Desktop: Original positions with full movement
+  const desktopPositions = [
     { start: -200, end: 200, className: 'w-1/3' },
     { start: 200, end: -250, className: 'mx-auto w-2/3' },
     { start: -200, end: 200, className: 'ml-auto w-1/3' },
     { start: 0, end: -500, className: 'ml-24 w-5/12' },
   ];
 
+  // Mobile: Reduced movement, centered images, NO fade/scale to prevent "fall" effect
+  const mobilePositions = [
+    { start: -30, end: 30, className: 'w-2/3 mx-auto' },
+    { start: 20, end: -20, className: 'w-3/4 mx-auto' },
+    { start: -20, end: 20, className: 'w-2/3 mx-auto' },
+    { start: 15, end: -30, className: 'w-3/4 mx-auto' },
+  ];
+
+  const positions = isMobile ? mobilePositions : desktopPositions;
+
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-[200px]">
+    <div className={`mx-auto px-4 pt-[200px] ${isMobile ? 'max-w-sm' : 'max-w-5xl'}`}>
       {images.slice(0, 4).map((img, index) => {
         const pos = positions[index];
         if (!pos) return null;
@@ -432,6 +345,7 @@ const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images }) => {
             start={pos.start}
             end={pos.end}
             className={pos.className}
+            isMobile={isMobile}
           />
         );
       })}
@@ -439,6 +353,7 @@ const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images }) => {
   );
 };
 
+// ========== SINGLE PARALLAX IMAGE ==========
 interface ParallaxImgProps {
   className?: string;
   alt: string;
@@ -447,10 +362,10 @@ interface ParallaxImgProps {
   end: number;
   projectId: string;
   projectType: 'project' | 'cultural';
+  isMobile: boolean;
 }
 
-// ParallaxImg - EXACTLY like original hover.dev
-const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, end, projectId, projectType }) => {
+const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, end, projectId, projectType, isMobile }) => {
   const ref = useRef<HTMLAnchorElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -458,8 +373,10 @@ const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, e
     offset: [`${start}px end`, `end ${end * -1}px`],
   });
 
-  const opacity = useTransform(scrollYProgress, [0.75, 1], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0.75, 1], [1, 0.85]);
+  // Desktop: Full effect with opacity and scale
+  // Mobile: Only translateY, NO opacity/scale to prevent "fall" effect
+  const opacity = useTransform(scrollYProgress, [0.75, 1], isMobile ? [1, 1] : [1, 0]);
+  const scale = useTransform(scrollYProgress, [0.75, 1], isMobile ? [1, 1] : [1, 0.85]);
 
   const y = useTransform(scrollYProgress, [0, 1], [start, end]);
   const transform = useMotionTemplate`translateY(${y}px) scale(${scale})`;
