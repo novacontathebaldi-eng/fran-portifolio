@@ -5,7 +5,7 @@ import { Users, Clock, Leaf, ArrowDown } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
 import { Link } from 'react-router-dom';
 
-// Height for the parallax hero section
+// Height for the parallax hero section - MATCHES ORIGINAL
 const SECTION_HEIGHT = 1500;
 
 // Mobile detection hook
@@ -29,14 +29,13 @@ export const About: React.FC = () => {
   const { about } = siteContent;
   const isMobile = useIsMobile();
 
-  // Get parallax projects from settings OR use featured as fallback
-  // about.parallaxProjects is array of {id, type: 'project' | 'cultural'}
+  // Get parallax projects from settings OR use first 4 projects
   const parallaxProjectsConfig = (about as any).parallaxProjects || [];
 
   const parallaxImages = React.useMemo(() => {
     if (parallaxProjectsConfig.length > 0) {
-      // Use configured projects
       return parallaxProjectsConfig
+        .slice(0, 4) // Max 4 images like original
         .map((config: { id: string; type: 'project' | 'cultural' }) => {
           const source = config.type === 'cultural' ? culturalProjects : projects;
           const project = source.find(p => p.id === config.id);
@@ -46,54 +45,38 @@ export const About: React.FC = () => {
         .filter(Boolean);
     }
 
-    // Fallback: use featured projects or first 4
-    const featured = projects.filter((p: any) => p.featured).slice(0, 4);
-    const fallback = featured.length >= 4 ? featured : projects.slice(0, 4);
-    return fallback.map(p => ({ src: p.image, alt: p.title, id: p.id, type: 'project' as const }));
+    // Fallback: use first 4 projects
+    return projects.slice(0, 4).map(p => ({ src: p.image, alt: p.title, id: p.id, type: 'project' as const }));
   }, [parallaxProjectsConfig, projects, culturalProjects]);
+
+  // Get background image from config
+  const backgroundImage = (about as any).backgroundImage || '';
 
   // Don't render until data is loaded to avoid flash of default content
   if (isLoadingData) {
     return (
-      <div className="h-screen bg-white flex items-center justify-center">
-        <div className="text-gray-500 text-center animate-pulse">
+      <div className="h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-white text-center animate-pulse">
           <span className="text-accent uppercase tracking-[0.3em] text-sm">Carregando</span>
         </div>
       </div>
     );
   }
 
-  // Content wrapper - disable Lenis on mobile for performance
-  const ContentWrapper = isMobile
-    ? ({ children }: { children: React.ReactNode }) => <>{children}</>
-    : ({ children }: { children: React.ReactNode }) => (
-      <ReactLenis root options={{ lerp: 0.05 }}>{children}</ReactLenis>
-    );
-
-  // Get background image from config or use default
-  const backgroundImage = (about as any).backgroundImage || '';
+  // For mobile: No Lenis, simpler experience
+  // For desktop: Full parallax experience with Lenis
+  if (isMobile) {
+    return <MobileAbout about={about} parallaxImages={parallaxImages} backgroundImage={backgroundImage} />;
+  }
 
   return (
-    <ContentWrapper>
-      <div
-        className="bg-white"
-        style={
-          backgroundImage
-            ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
-            : {}
-        }
-      >
-        {/* Smooth Scroll Hero with Parallax */}
-        <SmoothHero
-          heroImage={about.heroImage}
-          heroTitle={about.heroTitle}
-          heroSubtitle={about.heroSubtitle}
-          parallaxImages={parallaxImages}
-          isMobile={isMobile}
-        />
+    <ReactLenis root options={{ lerp: 0.05 }}>
+      <div className="bg-zinc-950">
+        {/* Hero Section - Faithful to Original */}
+        <Hero heroImage={about.heroImage} heroTitle={about.heroTitle} heroSubtitle={about.heroSubtitle} parallaxImages={parallaxImages} />
 
         {/* Bio Section */}
-        <section className="py-24 bg-white relative z-10">
+        <section className="py-24 bg-white relative z-20">
           <div className="container mx-auto px-6">
             <div className="flex flex-col md:flex-row gap-16 items-center">
               <motion.div
@@ -148,7 +131,7 @@ export const About: React.FC = () => {
           </div>
         </section>
 
-        {/* Philosophy / Values - Dark Section for contrast */}
+        {/* Philosophy / Values - Dark Section */}
         <section className="py-24 bg-[#1a1a1a] text-white relative z-20">
           <div className="container mx-auto px-6">
             <motion.div
@@ -167,10 +150,10 @@ export const About: React.FC = () => {
                 <motion.div
                   key={pillar.id}
                   className="bg-white/5 backdrop-blur-sm p-10 rounded-lg border border-white/10 hover:bg-white/10 hover:border-accent/50 transition-all duration-500 h-full group"
-                  initial={{ opacity: 0.3, y: 20 }}
+                  initial={{ opacity: 0, y: 48 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, ease: "easeOut", delay: idx * 0.1 }}
-                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ ease: "easeInOut", duration: 0.75, delay: idx * 0.1 }}
+                  viewport={{ once: true }}
                 >
                   <div className="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center mb-6 group-hover:bg-accent/40 transition-colors">
                     {idx % 3 === 0 ? <Leaf className="w-6 h-6 text-accent" /> :
@@ -213,40 +196,134 @@ export const About: React.FC = () => {
           </div>
         </section>
       </div>
-    </ContentWrapper>
+    </ReactLenis>
   );
 };
 
-// ========== SMOOTH SCROLL HERO COMPONENTS ==========
+// ========== MOBILE VERSION - NO PARALLAX ANIMATION ==========
+interface MobileAboutProps {
+  about: any;
+  parallaxImages: Array<{ src: string; alt: string; id: string; type: 'project' | 'cultural' }>;
+  backgroundImage: string;
+}
 
-interface SmoothHeroProps {
+const MobileAbout: React.FC<MobileAboutProps> = ({ about, parallaxImages, backgroundImage }) => {
+  return (
+    <div className="bg-zinc-950">
+      {/* Hero - Mobile */}
+      <div className="relative min-h-screen flex items-center justify-center">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${about.heroImage})` }}
+        />
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="relative z-10 text-center text-white px-6">
+          <span className="text-accent uppercase tracking-[0.2em] text-xs font-bold mb-4 block">
+            {about.heroSubtitle}
+          </span>
+          <h1 className="text-2xl font-serif leading-snug max-w-sm mx-auto">
+            {about.heroTitle}
+          </h1>
+        </div>
+      </div>
+
+      {/* Featured Projects - Static Grid on Mobile */}
+      <div className="py-12 px-4">
+        <div className="grid grid-cols-2 gap-4">
+          {parallaxImages.slice(0, 4).map((img) => {
+            const linkPath = img.type === 'cultural' ? `/cultural/${img.id}` : `/project/${img.id}`;
+            return (
+              <Link key={img.id} to={linkPath} className="block">
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  className="w-full h-40 object-cover rounded-lg"
+                  loading="lazy"
+                />
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Bio Section - Mobile */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-6">
+          <img
+            src={about.profileImage}
+            alt="Profile"
+            className="w-full h-64 object-cover mb-6 rounded-lg"
+            loading="lazy"
+          />
+          <h2 className="text-3xl font-serif mb-4">Fran Siller</h2>
+          <p className="text-gray-500 uppercase tracking-widest text-xs font-bold mb-6">Arquiteta Principal & Fundadora</p>
+          <p className="text-secondary leading-relaxed mb-8">{about.bio}</p>
+
+          <div className="grid grid-cols-3 gap-4 border-t border-gray-100 pt-6">
+            {about.stats.map((stat: any) => (
+              <div key={stat.id} className="text-center">
+                <span className="block text-2xl font-serif text-accent">{stat.value}</span>
+                <span className="text-[10px] uppercase text-gray-400 font-bold">{stat.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pillars - Mobile */}
+      <section className="py-16 bg-[#1a1a1a] text-white">
+        <div className="container mx-auto px-6">
+          <h2 className="text-3xl font-serif mb-8 text-center">Nossos Pilares</h2>
+          <div className="space-y-6">
+            {about.pillars.map((pillar: any, idx: number) => (
+              <div key={pillar.id} className="bg-white/5 p-6 rounded-lg">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center">
+                    {idx % 3 === 0 ? <Leaf className="w-5 h-5 text-accent" /> :
+                      idx % 3 === 1 ? <Clock className="w-5 h-5 text-accent" /> :
+                        <Users className="w-5 h-5 text-accent" />}
+                  </div>
+                  <h3 className="text-lg font-serif">{pillar.title}</h3>
+                </div>
+                <p className="text-gray-400 text-sm">{pillar.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Recognition - Mobile */}
+      <section className="py-12 bg-white">
+        <div className="container mx-auto px-6 text-center">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-8">Reconhecimento & Mídia</h3>
+          <div className="flex flex-wrap justify-center gap-6 opacity-50">
+            {about.recognition.map((rec: string, idx: number) => (
+              <span key={idx} className="text-lg font-serif font-bold">{rec}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+// ========== DESKTOP HERO - FAITHFUL TO ORIGINAL HOVER.DEV ==========
+interface HeroProps {
   heroImage: string;
   heroTitle: string;
   heroSubtitle: string;
   parallaxImages: Array<{ src: string; alt: string; id: string; type: 'project' | 'cultural' }>;
-  isMobile: boolean;
 }
 
-const SmoothHero: React.FC<SmoothHeroProps> = ({ heroImage, heroTitle, heroSubtitle, parallaxImages, isMobile }) => {
-  // Shorter section on mobile for better performance
-  const sectionHeight = isMobile ? 600 : SECTION_HEIGHT;
-
+const Hero: React.FC<HeroProps> = ({ heroImage, heroTitle, heroSubtitle, parallaxImages }) => {
   return (
     <div
-      style={{ height: `calc(${sectionHeight}px + 100vh)` }}
-      className="relative w-full z-0 overflow-hidden"
+      style={{ height: `calc(${SECTION_HEIGHT}px + 100vh)` }}
+      className="relative w-full"
     >
-      <CenterImage heroImage={heroImage} heroTitle={heroTitle} heroSubtitle={heroSubtitle} isMobile={isMobile} />
-
-      {/* Scroll indicator - OUTSIDE of CenterImage for proper z-index */}
-      <ScrollIndicator />
-
-      {/* Parallax images - contained within this section */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ maxHeight: `calc(${sectionHeight}px + 50vh)` }}>
-        <ParallaxImages images={parallaxImages} isMobile={isMobile} />
-      </div>
-
-      <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-b from-transparent to-white pointer-events-none z-[5]" />
+      <CenterImage heroImage={heroImage} heroTitle={heroTitle} heroSubtitle={heroSubtitle} />
+      <ParallaxImages images={parallaxImages} />
+      <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-b from-zinc-950/0 to-zinc-950" />
     </div>
   );
 };
@@ -255,37 +332,30 @@ interface CenterImageProps {
   heroImage: string;
   heroTitle: string;
   heroSubtitle: string;
-  isMobile: boolean;
 }
 
-const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSubtitle, isMobile }) => {
+const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSubtitle }) => {
   const { scrollY } = useScroll();
 
-  // Simplified transformations for mobile
-  const scrollRange = isMobile ? 600 : 1500;
-
-  const clip1 = useTransform(scrollY, [0, scrollRange], [25, 0]);
-  const clip2 = useTransform(scrollY, [0, scrollRange], [75, 100]);
+  const clip1 = useTransform(scrollY, [0, SECTION_HEIGHT], [25, 0]);
+  const clip2 = useTransform(scrollY, [0, SECTION_HEIGHT], [75, 100]);
 
   const clipPath = useMotionTemplate`polygon(${clip1}% ${clip1}%, ${clip2}% ${clip1}%, ${clip2}% ${clip2}%, ${clip1}% ${clip2}%)`;
 
   const backgroundSize = useTransform(
     scrollY,
-    [0, scrollRange + 500],
-    [isMobile ? "130%" : "170%", "100%"]
+    [0, SECTION_HEIGHT + 500],
+    ["170%", "100%"]
   );
   const opacity = useTransform(
     scrollY,
-    [scrollRange, scrollRange + 500],
+    [SECTION_HEIGHT, SECTION_HEIGHT + 500],
     [1, 0]
   );
 
-  const textOpacity = useTransform(scrollY, [0, isMobile ? 150 : 400], [1, 0]);
-  const textY = useTransform(scrollY, [0, isMobile ? 150 : 400], [0, -30]);
-
   return (
     <motion.div
-      className="sticky top-0 h-screen w-full overflow-hidden z-[1]"
+      className="sticky top-0 h-screen w-full"
       style={{
         clipPath,
         backgroundSize,
@@ -296,15 +366,12 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
       }}
     >
       {/* Dark overlay for text readability */}
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-black/40" />
 
-      {/* Hero Text - Very small on mobile to fit inside the clip-path */}
-      <motion.div
-        className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-2 sm:px-6"
-        style={{ opacity: textOpacity, y: textY }}
-      >
+      {/* Hero Text */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-6">
         <motion.span
-          className="text-accent uppercase tracking-[0.1em] sm:tracking-[0.25em] text-[8px] sm:text-xs md:text-sm font-bold mb-1 sm:mb-4 block"
+          className="text-accent uppercase tracking-[0.25em] text-xs font-bold mb-4 block"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
@@ -312,75 +379,49 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
           {heroSubtitle}
         </motion.span>
         <motion.h1
-          className="text-sm sm:text-lg md:text-2xl lg:text-4xl font-serif leading-snug max-w-[50vw] sm:max-w-xl md:max-w-2xl drop-shadow-2xl"
+          className="text-4xl md:text-5xl lg:text-6xl font-serif leading-snug max-w-2xl drop-shadow-2xl"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.6 }}
         >
           {heroTitle}
         </motion.h1>
-      </motion.div>
-    </motion.div>
-  );
-};
+      </div>
 
-// Scroll Indicator - Separate component with fixed position
-const ScrollIndicator: React.FC = () => {
-  const { scrollY } = useScroll();
-  const opacity = useTransform(scrollY, [0, 200], [1, 0]);
-
-  return (
-    <motion.div
-      className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
-      style={{ opacity }}
-    >
+      {/* Scroll indicator */}
       <motion.div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/80"
         animate={{ y: [0, 10, 0] }}
         transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-        className="flex flex-col items-center gap-2 text-white/80"
       >
-        <span className="text-xs uppercase tracking-widest bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm">Role para descobrir</span>
-        <ArrowDown className="w-5 h-5" />
+        <div className="flex flex-col items-center gap-2">
+          <span className="text-xs uppercase tracking-widest">Role para descobrir</span>
+          <ArrowDown className="w-5 h-5" />
+        </div>
       </motion.div>
     </motion.div>
   );
 };
 
+// ========== PARALLAX IMAGES - EXACTLY LIKE ORIGINAL ==========
 interface ParallaxImagesProps {
   images: Array<{ src: string; alt: string; id: string; type: 'project' | 'cultural' }>;
-  isMobile: boolean;
 }
 
-const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images, isMobile }) => {
-  if (images.length === 0) return null;
-
-  // Reduced parallax movement on mobile for smoother performance
-  const mobilePositions = [
-    { start: -20, end: 20, className: 'w-1/2 mx-auto' },
-    { start: 15, end: -15, className: 'w-2/3 mx-auto' },
-    { start: -15, end: 15, className: 'w-1/2 mx-auto' },
-    { start: 10, end: -20, className: 'w-2/3 mx-auto' },
-  ];
-
-  // Dynamic positioning based on number of images
-  const desktopPositions = [
+const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images }) => {
+  // Fixed positions like original - exactly 4 images
+  const positions = [
     { start: -200, end: 200, className: 'w-1/3' },
     { start: 200, end: -250, className: 'mx-auto w-2/3' },
     { start: -200, end: 200, className: 'ml-auto w-1/3' },
-    { start: 0, end: -300, className: 'ml-24 w-5/12' },
-    { start: -150, end: 150, className: 'w-2/5' },
-    { start: 100, end: -200, className: 'ml-auto w-1/3' },
+    { start: 0, end: -500, className: 'ml-24 w-5/12' },
   ];
 
-  const positions = isMobile ? mobilePositions : desktopPositions;
-  // More images on mobile (4), max 6 on desktop
-  const maxImages = isMobile ? 4 : 6;
-  const displayImages = images.slice(0, maxImages);
-
   return (
-    <div className="mx-auto max-w-6xl px-4 pt-[200px] relative z-[2]" style={{ pointerEvents: 'none' }}>
-      {displayImages.map((img, index) => {
-        const pos = positions[index % positions.length];
+    <div className="mx-auto max-w-5xl px-4 pt-[200px]">
+      {images.slice(0, 4).map((img, index) => {
+        const pos = positions[index];
+        if (!pos) return null;
         return (
           <ParallaxImg
             key={img.id}
@@ -391,7 +432,6 @@ const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images, isMobile }) => 
             start={pos.start}
             end={pos.end}
             className={pos.className}
-            isMobile={isMobile}
           />
         );
       })}
@@ -407,22 +447,19 @@ interface ParallaxImgProps {
   end: number;
   projectId: string;
   projectType: 'project' | 'cultural';
-  isMobile: boolean;
 }
 
-const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, end, projectId, projectType, isMobile }) => {
-  const ref = useRef<HTMLDivElement>(null);
+// ParallaxImg - EXACTLY like original hover.dev
+const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, end, projectId, projectType }) => {
+  const ref = useRef<HTMLAnchorElement>(null);
 
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: [`${start}px end`, `end ${end * -1}px`],
   });
 
-  // Smoother opacity fade - start fading earlier and fade completely
-  const opacity = useTransform(scrollYProgress, [0.6, 0.9], [1, 0]);
-  // Gentler scale for smoother feel on mobile
-  const scaleValue = isMobile ? 0.95 : 0.85;
-  const scale = useTransform(scrollYProgress, [0.6, 0.9], [1, scaleValue]);
+  const opacity = useTransform(scrollYProgress, [0.75, 1], [1, 0]);
+  const scale = useTransform(scrollYProgress, [0.75, 1], [1, 0.85]);
 
   const y = useTransform(scrollYProgress, [0, 1], [start, end]);
   const transform = useMotionTemplate`translateY(${y}px) scale(${scale})`;
@@ -430,18 +467,16 @@ const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, e
   const linkPath = projectType === 'cultural' ? `/cultural/${projectId}` : `/project/${projectId}`;
 
   return (
-    <div ref={ref} className="relative">
-      <Link to={linkPath} className="block pointer-events-auto">
-        <motion.img
-          src={src}
-          alt={alt}
-          className={`${className} rounded-lg shadow-2xl cursor-pointer hover:ring-4 hover:ring-accent/50 transition-all duration-300`}
-          style={{ transform, opacity }}
-          loading="lazy"
-          decoding="async"
-        />
-      </Link>
-    </div>
+    <Link to={linkPath} ref={ref} className="block">
+      <motion.img
+        src={src}
+        alt={alt}
+        className={`${className} rounded-lg shadow-2xl cursor-pointer hover:ring-4 hover:ring-accent/50 transition-all duration-300`}
+        style={{ transform, opacity }}
+        loading="lazy"
+        decoding="async"
+      />
+    </Link>
   );
 };
 
