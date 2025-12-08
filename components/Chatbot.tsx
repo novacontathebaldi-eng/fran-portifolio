@@ -311,21 +311,29 @@ const ProductCarousel = () => {
 
   // Mensagens variadas para loja fechada
   const closedShopMessages = [
-    "Nossa loja está fechada no momento, mas logo teremos novidades! Enquanto isso, posso ajudar com outras dúvidas ou você pode deixar uma mensagem.",
-    "A loja não está disponível agora. Fique de olho que em breve teremos produtos incríveis! Posso ajudar com algo mais?",
-    "Por ora a loja está em pausa, mas estamos preparando coisas boas! Se tiver outras dúvidas, estou aqui."
+    "Nossa loja está fechada no momento, mas logo teremos novidades!",
+    "A loja não está disponível agora. Em breve teremos produtos incríveis!",
+    "Por ora a loja está em pausa, mas estamos preparando coisas boas!"
   ];
 
   // Mensagens variadas para sem produtos
   const noProductsMessages = [
-    "No momento não temos produtos cadastrados na loja, mas isso pode mudar em breve! Posso ajudar com outra coisa?",
-    "A loja ainda não tem produtos disponíveis. Fique ligado nas novidades! Se precisar de algo mais, é só falar."
+    "No momento não temos produtos cadastrados, mas isso pode mudar em breve!",
+    "A loja ainda não tem produtos disponíveis. Fique ligado nas novidades!"
   ];
 
-  // If shop is disabled
+  // If shop is disabled - Show nice styled card
   if (!settings.enableShop) {
     const randomMsg = closedShopMessages[Math.floor(Math.random() * closedShopMessages.length)];
-    return <div className="text-xs text-gray-600 mt-2 leading-relaxed">{randomMsg}</div>;
+    return (
+      <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4 text-center animate-fadeIn">
+        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <Archive className="w-5 h-5 text-gray-400" />
+        </div>
+        <p className="text-sm text-gray-600 leading-relaxed mb-2">{randomMsg}</p>
+        <p className="text-xs text-gray-400">Posso ajudar com outras dúvidas ou você pode deixar uma mensagem.</p>
+      </div>
+    );
   }
 
   // Still loading
@@ -338,10 +346,18 @@ const ProductCarousel = () => {
     );
   }
 
-  // No active products
+  // No active products - Show nice styled card
   if (activeProducts.length === 0) {
     const randomMsg = noProductsMessages[Math.floor(Math.random() * noProductsMessages.length)];
-    return <div className="text-xs text-gray-600 mt-2 leading-relaxed">{randomMsg}</div>;
+    return (
+      <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4 text-center animate-fadeIn">
+        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <Archive className="w-5 h-5 text-gray-400" />
+        </div>
+        <p className="text-sm text-gray-600 leading-relaxed mb-2">{randomMsg}</p>
+        <p className="text-xs text-gray-400">Se precisar de algo mais, é só falar.</p>
+      </div>
+    );
   }
 
   return (
@@ -349,7 +365,7 @@ const ProductCarousel = () => {
       {!isTouchDevice && canScrollLeft && (
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all -ml-2"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all -ml-2"
           aria-label="Rolar para esquerda"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -362,7 +378,7 @@ const ProductCarousel = () => {
         className="flex gap-3 overflow-x-auto pb-2 no-scrollbar pl-1 pr-1"
       >
         {activeProducts.map(product => (
-          <Link to={`/shop/${product.id}`} key={product.id} className="min-w-[150px] bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden block hover:border-amber-500 transition group">
+          <Link to={`/shop/product/${product.id}`} key={product.id} className="min-w-[150px] bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden block hover:border-black transition group">
             <div className="relative">
               <img
                 src={product.images[0] || '/placeholder.jpg'}
@@ -371,7 +387,7 @@ const ProductCarousel = () => {
                 decoding="async"
               />
               {product.stock <= 3 && product.stock > 0 && (
-                <span className="absolute top-2 right-2 bg-orange-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">Últimas!</span>
+                <span className="absolute top-2 right-2 bg-black text-white text-[8px] font-bold px-1.5 py-0.5 rounded">Últimas!</span>
               )}
               {product.stock === 0 && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -381,7 +397,7 @@ const ProductCarousel = () => {
             </div>
             <div className="p-2.5">
               <h4 className="font-medium text-sm truncate">{product.title}</h4>
-              <p className="text-amber-600 font-bold text-sm mt-1">
+              <p className="text-black font-bold text-sm mt-1">
                 {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </p>
             </div>
@@ -392,7 +408,7 @@ const ProductCarousel = () => {
       {!isTouchDevice && canScrollRight && (
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all -mr-2"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all -mr-2"
           aria-label="Rolar para direita"
         >
           <ChevronRight className="w-4 h-4" />
@@ -401,7 +417,7 @@ const ProductCarousel = () => {
 
       <Link
         to="/shop"
-        className="mt-3 w-full block text-center text-xs font-bold text-amber-600 hover:text-amber-700 transition py-2 border border-amber-200 rounded-lg hover:bg-amber-50"
+        className="mt-3 w-full block text-center text-xs font-bold text-gray-600 hover:text-black transition py-2 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-black"
       >
         Ver Todos os Produtos →
       </Link>
