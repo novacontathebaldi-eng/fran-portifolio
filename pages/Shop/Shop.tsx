@@ -145,41 +145,6 @@ export const Shop: React.FC = () => {
         return acc;
     }, {} as Record<string, ShopProduct[]>);
 
-    // ScrollSpy: IntersectionObserver to detect visible category sections
-    useEffect(() => {
-        if (categories.length === 0) return;
-
-        const observers: IntersectionObserver[] = [];
-
-        categories.forEach(cat => {
-            const section = sectionRefs.current[cat];
-            if (!section) return;
-
-            const observer = new IntersectionObserver(
-                ([entry]) => {
-                    if (entry.isIntersecting) {
-                        setActiveCategory(cat);
-                        centerActiveTab(cat);
-                    }
-                },
-                {
-                    rootMargin: '-140px 0px -50% 0px', // Offset for header + nav bar
-                    threshold: 0.1
-                }
-            );
-
-            observer.observe(section);
-            observers.push(observer);
-        });
-
-        // Set initial active category
-        if (!activeCategory && categories.length > 0) {
-            setActiveCategory(categories[0]);
-        }
-
-        return () => observers.forEach(obs => obs.disconnect());
-    }, [categories, loading]);
-
     // Center the active tab in the navigation bar (for mobile)
     const centerActiveTab = useCallback((cat: string) => {
         const nav = navRef.current;
@@ -191,6 +156,70 @@ export const Shop: React.FC = () => {
             nav.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
         }
     }, []);
+
+    // ScrollSpy: IntersectionObserver to detect visible category sections
+    useEffect(() => {
+        if (categories.length === 0 || loading) return;
+
+        // Track visibility ratios for all sections
+        const visibilityMap = new Map<string, number>();
+
+        const updateActiveCategory = () => {
+            // Find the category with highest visibility
+            let maxRatio = 0;
+            let mostVisibleCategory = categories[0];
+
+            visibilityMap.forEach((ratio, cat) => {
+                if (ratio > maxRatio) {
+                    maxRatio = ratio;
+                    mostVisibleCategory = cat;
+                }
+            });
+
+            if (mostVisibleCategory) {
+                setActiveCategory(prev => {
+                    if (prev !== mostVisibleCategory) {
+                        // Schedule tab centering after state update
+                        setTimeout(() => centerActiveTab(mostVisibleCategory), 50);
+                        return mostVisibleCategory;
+                    }
+                    return prev;
+                });
+            }
+        };
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => {
+                    const cat = entry.target.getAttribute('data-category');
+                    if (cat) {
+                        visibilityMap.set(cat, entry.intersectionRatio);
+                    }
+                });
+                updateActiveCategory();
+            },
+            {
+                rootMargin: '-120px 0px -40% 0px', // Adjusted for mobile
+                threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] // Multiple thresholds for smoother detection
+            }
+        );
+
+        // Observe all category sections
+        categories.forEach(cat => {
+            const section = sectionRefs.current[cat];
+            if (section) {
+                section.setAttribute('data-category', cat);
+                observer.observe(section);
+            }
+        });
+
+        // Set initial active category
+        if (categories.length > 0) {
+            setActiveCategory(prev => prev || categories[0]);
+        }
+
+        return () => observer.disconnect();
+    }, [categories, loading, centerActiveTab]);
 
     // Scroll to category section on tab click
     const scrollToCategory = useCallback((cat: string) => {
@@ -475,8 +504,8 @@ export const Shop: React.FC = () => {
                                     data-category={cat}
                                     onClick={() => scrollToCategory(cat)}
                                     className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 shrink-0 ${activeCategory === cat
-                                            ? 'bg-black text-white shadow-md'
-                                            : 'text-gray-600 hover:bg-gray-100'
+                                        ? 'bg-black text-white shadow-md'
+                                        : 'text-gray-600 hover:bg-gray-100'
                                         }`}
                                 >
                                     {cat}
