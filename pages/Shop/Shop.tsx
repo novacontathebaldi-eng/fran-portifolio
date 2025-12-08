@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Filter, Search, Grid, List, Plus, Check } from 'lucide-react';
+import { ShoppingBag, Search, Grid, List, Plus, Check } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useCart } from '../../context/CartContext';
 import { ShopProduct } from '../../types';
@@ -12,10 +12,13 @@ const SHOP_STATE_KEY = 'shop_state';
 
 export const Shop: React.FC = () => {
     const navigate = useNavigate();
-    const location = useLocation();
     const { shopProducts, fetchShopProducts, settings, isLoadingData, subscribeToShopProducts } = useProjects();
     const { addToCart, cartCount } = useCart();
     const containerRef = useRef<HTMLDivElement>(null);
+
+    // Refs for ScrollSpy
+    const navRef = useRef<HTMLDivElement>(null);
+    const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
     // Restore state from session storage or use defaults
     const getSavedState = () => {
@@ -27,14 +30,16 @@ export const Shop: React.FC = () => {
         } catch (e) {
             if ((import.meta as any).env.DEV) console.warn('Erro ao restaurar state:', e);
         }
-        return { category: 'all', search: '', viewMode: 'grid', scrollY: 0 };
+        return { search: '', viewMode: 'grid', scrollY: 0 };
     };
 
     const savedState = getSavedState();
-    const [selectedCategory, setSelectedCategory] = useState<string>(savedState.category);
     const [searchQuery, setSearchQuery] = useState(savedState.search);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>(savedState.viewMode);
+
+    // ScrollSpy: active category from intersection
+    const [activeCategory, setActiveCategory] = useState<string>('');
 
     // Visual feedback for add to cart
     const [addedProductId, setAddedProductId] = useState<string | null>(null);
@@ -88,13 +93,12 @@ export const Shop: React.FC = () => {
     // Save state to session storage when it changes
     useEffect(() => {
         const state = {
-            category: selectedCategory,
             search: searchQuery,
             viewMode: viewMode,
             scrollY: window.scrollY
         };
         sessionStorage.setItem(SHOP_STATE_KEY, JSON.stringify(state));
-    }, [selectedCategory, searchQuery, viewMode]);
+    }, [searchQuery, viewMode]);
 
     // Restore scroll position after products load
     useEffect(() => {
@@ -110,7 +114,6 @@ export const Shop: React.FC = () => {
     useEffect(() => {
         const handleBeforeUnload = () => {
             const state = {
-                category: selectedCategory,
                 search: searchQuery,
                 viewMode: viewMode,
                 scrollY: window.scrollY
@@ -120,21 +123,86 @@ export const Shop: React.FC = () => {
 
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [selectedCategory, searchQuery, viewMode]);
+    }, [searchQuery, viewMode]);
 
     // Get only active products
     const activeProducts = shopProducts.filter(p => p.status === 'active');
 
-    // Get unique categories
-    const categories = ['all', ...new Set(activeProducts.map(p => p.category).filter(Boolean))];
+    // Get unique categories (without 'all')
+    const categories = [...new Set(activeProducts.map(p => p.category).filter(Boolean))] as string[];
 
-    // Filter products
+    // Filter products by search only (category is now determined by sections)
     const filteredProducts = activeProducts.filter(p => {
-        const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
-        const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        const matchesSearch = searchQuery === '' ||
+            p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             p.description.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
+        return matchesSearch;
     });
+
+    // Group products by category
+    const productsByCategory = categories.reduce((acc, cat) => {
+        acc[cat] = filteredProducts.filter(p => p.category === cat);
+        return acc;
+    }, {} as Record<string, ShopProduct[]>);
+
+    // ScrollSpy: IntersectionObserver to detect visible category sections
+    useEffect(() => {
+        if (categories.length === 0) return;
+
+        const observers: IntersectionObserver[] = [];
+
+        categories.forEach(cat => {
+            const section = sectionRefs.current[cat];
+            if (!section) return;
+
+            const observer = new IntersectionObserver(
+                ([entry]) => {
+                    if (entry.isIntersecting) {
+                        setActiveCategory(cat);
+                        centerActiveTab(cat);
+                    }
+                },
+                {
+                    rootMargin: '-140px 0px -50% 0px', // Offset for header + nav bar
+                    threshold: 0.1
+                }
+            );
+
+            observer.observe(section);
+            observers.push(observer);
+        });
+
+        // Set initial active category
+        if (!activeCategory && categories.length > 0) {
+            setActiveCategory(categories[0]);
+        }
+
+        return () => observers.forEach(obs => obs.disconnect());
+    }, [categories, loading]);
+
+    // Center the active tab in the navigation bar (for mobile)
+    const centerActiveTab = useCallback((cat: string) => {
+        const nav = navRef.current;
+        const tab = nav?.querySelector(`[data-category="${cat}"]`) as HTMLElement | null;
+        if (nav && tab) {
+            const navRect = nav.getBoundingClientRect();
+            const tabRect = tab.getBoundingClientRect();
+            const scrollLeft = tab.offsetLeft - (navRect.width / 2) + (tabRect.width / 2);
+            nav.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
+        }
+    }, []);
+
+    // Scroll to category section on tab click
+    const scrollToCategory = useCallback((cat: string) => {
+        const section = sectionRefs.current[cat];
+        if (section) {
+            const headerOffset = 140; // Header + nav bar height
+            const top = section.offsetTop - headerOffset;
+            window.scrollTo({ top, behavior: 'smooth' });
+        }
+        setActiveCategory(cat);
+        centerActiveTab(cat);
+    }, [centerActiveTab]);
 
     const handleAddToCart = useCallback((product: ShopProduct, e: React.MouseEvent) => {
         e.preventDefault();
@@ -161,13 +229,12 @@ export const Shop: React.FC = () => {
     // Save scroll before navigating to product
     const handleProductClick = useCallback(() => {
         const state = {
-            category: selectedCategory,
             search: searchQuery,
             viewMode: viewMode,
             scrollY: window.scrollY
         };
         sessionStorage.setItem(SHOP_STATE_KEY, JSON.stringify(state));
-    }, [selectedCategory, searchQuery, viewMode]);
+    }, [searchQuery, viewMode]);
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('pt-BR', {
@@ -179,6 +246,172 @@ export const Shop: React.FC = () => {
     if (loading || isLoadingData) {
         return <LoadingScreen message="Carregando produtos..." />;
     }
+
+    // Render product card (reusable for grid/list)
+    const renderProductCard = (product: ShopProduct, index: number) => (
+        <motion.div
+            key={product.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: index * 0.05 }}
+        >
+            <Link
+                to={`/shop/product/${product.id}`}
+                onClick={handleProductClick}
+                className="group block"
+            >
+                {/* Product Image */}
+                <div className="aspect-[4/5] overflow-hidden bg-gray-100 relative mb-4">
+                    {product.images && product.images[0] ? (
+                        <img
+                            src={product.images[0]}
+                            alt={product.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            loading="lazy"
+                            decoding="async"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                            <ShoppingBag className="w-16 h-16 text-gray-300" />
+                        </div>
+                    )}
+
+                    {/* Overlay on Hover */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+
+                    {/* Quick Add Button with Feedback */}
+                    {product.stock > 0 && (
+                        <motion.button
+                            onClick={(e) => handleAddToCart(product, e)}
+                            className={`absolute bottom-4 right-4 p-3 rounded-full shadow-lg transition-all duration-300 ${addedProductId === product.id
+                                ? 'bg-green-500 text-white scale-110'
+                                : 'bg-white opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 hover:bg-black hover:text-white'
+                                }`}
+                            whileTap={{ scale: 0.9 }}
+                        >
+                            <AnimatePresence mode="wait">
+                                {addedProductId === product.id ? (
+                                    <motion.div
+                                        key="check"
+                                        initial={{ scale: 0, rotate: -180 }}
+                                        animate={{ scale: 1, rotate: 0 }}
+                                        exit={{ scale: 0 }}
+                                        transition={{ type: 'spring', stiffness: 300 }}
+                                    >
+                                        <Check className="w-5 h-5" />
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="plus"
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        exit={{ scale: 0 }}
+                                    >
+                                        <Plus className="w-5 h-5" />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </motion.button>
+                    )}
+
+                    {/* Out of Stock Badge */}
+                    {product.stock === 0 && (
+                        <div className="absolute top-4 left-4">
+                            <span className="bg-black text-white px-3 py-1 text-xs font-medium">
+                                Esgotado
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Product Info */}
+                <div>
+                    {product.category && (
+                        <span className="text-xs text-gray-400 uppercase tracking-widest">
+                            {product.category}
+                        </span>
+                    )}
+                    <h3 className="font-serif text-lg mt-1 group-hover:text-accent transition-colors">
+                        {product.title}
+                    </h3>
+                    <p className="text-gray-900 font-medium mt-2">
+                        {formatPrice(product.price)}
+                    </p>
+                    {product.stock > 0 && product.stock <= 5 && (
+                        <p className="text-xs text-orange-600 mt-1">
+                            Apenas {product.stock} em estoque
+                        </p>
+                    )}
+                </div>
+            </Link>
+        </motion.div>
+    );
+
+    const renderProductListItem = (product: ShopProduct, index: number) => (
+        <motion.div
+            key={product.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.03 }}
+        >
+            <Link
+                to={`/shop/product/${product.id}`}
+                onClick={handleProductClick}
+                className="group flex gap-6 p-4 border border-gray-100 rounded-xl hover:shadow-lg transition-shadow"
+            >
+                {/* Image */}
+                <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                    {product.images?.[0] ? (
+                        <img src={product.images[0]} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                            <ShoppingBag className="w-8 h-8 text-gray-300" />
+                        </div>
+                    )}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 flex flex-col justify-center">
+                    {product.category && (
+                        <span className="text-xs text-gray-400 uppercase tracking-widest">
+                            {product.category}
+                        </span>
+                    )}
+                    <h3 className="font-serif text-xl group-hover:text-accent transition-colors">
+                        {product.title}
+                    </h3>
+                    <p className="text-gray-500 text-sm mt-1 line-clamp-2">
+                        {product.description}
+                    </p>
+                </div>
+
+                {/* Price & Action */}
+                <div className="flex flex-col items-end justify-center gap-2">
+                    <span className="text-xl font-medium">{formatPrice(product.price)}</span>
+                    {product.stock > 0 ? (
+                        <button
+                            onClick={(e) => handleAddToCart(product, e)}
+                            className={`px-4 py-2 text-sm rounded-full transition flex items-center gap-2 ${addedProductId === product.id
+                                ? 'bg-green-500 text-white'
+                                : 'bg-black text-white hover:bg-accent hover:text-black'
+                                }`}
+                        >
+                            {addedProductId === product.id ? (
+                                <>
+                                    <Check className="w-4 h-4" />
+                                    Adicionado!
+                                </>
+                            ) : (
+                                'Adicionar'
+                            )}
+                        </button>
+                    ) : (
+                        <span className="text-gray-400 text-sm">Esgotado</span>
+                    )}
+                </div>
+            </Link>
+        </motion.div>
+    );
 
     return (
         <div className="min-h-screen bg-white" ref={containerRef}>
@@ -227,34 +460,26 @@ export const Shop: React.FC = () => {
                 </div>
             </section>
 
-            {/* Filter Bar - Style like Cultura page */}
-            <section className="sticky top-[72px] bg-white border-b border-gray-100 z-30">
-                <div className="container mx-auto px-6 py-4">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                        {/* Left: Filter Button + Categories */}
-                        <div className="flex items-center gap-3 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
-                            <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-full text-sm font-medium text-gray-600 hover:border-black transition shrink-0">
-                                <Filter className="w-4 h-4" />
-                                <span>Filtrar</span>
-                            </button>
-
-                            {/* Ordering placeholder - matches Cultura style */}
-                            <div className="hidden md:flex items-center gap-2 text-sm text-gray-500 shrink-0">
-                                <span>Ordenar:</span>
-                                <span className="font-medium text-black">Mais recentes</span>
-                            </div>
-
-                            {/* Category Pills */}
+            {/* Category Navigation with ScrollSpy - Sticky */}
+            <nav className="sticky top-[72px] bg-white/95 backdrop-blur-md border-b border-gray-100 z-30 shadow-sm">
+                <div className="container mx-auto px-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 py-3">
+                        {/* Category Tabs */}
+                        <div
+                            ref={navRef}
+                            className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 lg:pb-0"
+                        >
                             {categories.map(cat => (
                                 <button
                                     key={cat}
-                                    onClick={() => setSelectedCategory(cat)}
-                                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition shrink-0 ${selectedCategory === cat
-                                        ? 'bg-black text-white'
-                                        : 'text-gray-600 hover:bg-gray-100'
+                                    data-category={cat}
+                                    onClick={() => scrollToCategory(cat)}
+                                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 shrink-0 ${activeCategory === cat
+                                            ? 'bg-black text-white shadow-md'
+                                            : 'text-gray-600 hover:bg-gray-100'
                                         }`}
                                 >
-                                    {cat === 'all' ? 'Todos' : cat}
+                                    {cat}
                                 </button>
                             ))}
                         </div>
@@ -301,201 +526,64 @@ export const Shop: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            </section>
+            </nav>
 
-            {/* Products Section */}
+            {/* Products organized by category sections */}
             <section className="container mx-auto px-6 py-12">
                 {/* Results Count */}
-                <p className="text-sm text-gray-500 mb-6">
+                <p className="text-sm text-gray-500 mb-8">
                     Mostrando {filteredProducts.length} produto{filteredProducts.length !== 1 ? 's' : ''}
+                    {searchQuery && ` para "${searchQuery}"`}
                 </p>
 
-                {/* Products Grid */}
                 {filteredProducts.length === 0 ? (
                     <div className="text-center py-20">
                         <ShoppingBag className="w-16 h-16 mx-auto text-gray-200 mb-4" />
                         <h2 className="text-2xl font-serif text-gray-800 mb-2">Nenhum produto encontrado</h2>
-                        <p className="text-gray-500">Tente ajustar os filtros ou volte mais tarde.</p>
+                        <p className="text-gray-500">Tente ajustar a busca ou volte mais tarde.</p>
                     </div>
-                ) : viewMode === 'grid' ? (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.4 }}
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
-                    >
-                        {filteredProducts.map((product, index) => (
-                            <motion.div
-                                key={product.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: index * 0.05 }}
-                            >
-                                <Link
-                                    to={`/shop/product/${product.id}`}
-                                    onClick={handleProductClick}
-                                    className="group block"
-                                >
-                                    {/* Product Image */}
-                                    <div className="aspect-[4/5] overflow-hidden bg-gray-100 relative mb-4">
-                                        {product.images && product.images[0] ? (
-                                            <img
-                                                src={product.images[0]}
-                                                alt={product.title}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                                loading="lazy"
-                                                decoding="async"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center">
-                                                <ShoppingBag className="w-16 h-16 text-gray-300" />
-                                            </div>
-                                        )}
-
-                                        {/* Overlay on Hover */}
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-
-                                        {/* Quick Add Button with Feedback */}
-                                        {product.stock > 0 && (
-                                            <motion.button
-                                                onClick={(e) => handleAddToCart(product, e)}
-                                                className={`absolute bottom-4 right-4 p-3 rounded-full shadow-lg transition-all duration-300 ${addedProductId === product.id
-                                                    ? 'bg-green-500 text-white scale-110'
-                                                    : 'bg-white opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 hover:bg-black hover:text-white'
-                                                    }`}
-                                                whileTap={{ scale: 0.9 }}
-                                            >
-                                                <AnimatePresence mode="wait">
-                                                    {addedProductId === product.id ? (
-                                                        <motion.div
-                                                            key="check"
-                                                            initial={{ scale: 0, rotate: -180 }}
-                                                            animate={{ scale: 1, rotate: 0 }}
-                                                            exit={{ scale: 0 }}
-                                                            transition={{ type: 'spring', stiffness: 300 }}
-                                                        >
-                                                            <Check className="w-5 h-5" />
-                                                        </motion.div>
-                                                    ) : (
-                                                        <motion.div
-                                                            key="plus"
-                                                            initial={{ scale: 0 }}
-                                                            animate={{ scale: 1 }}
-                                                            exit={{ scale: 0 }}
-                                                        >
-                                                            <Plus className="w-5 h-5" />
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </motion.button>
-                                        )}
-
-                                        {/* Out of Stock Badge */}
-                                        {product.stock === 0 && (
-                                            <div className="absolute top-4 left-4">
-                                                <span className="bg-black text-white px-3 py-1 text-xs font-medium">
-                                                    Esgotado
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Product Info */}
-                                    <div>
-                                        {product.category && (
-                                            <span className="text-xs text-gray-400 uppercase tracking-widest">
-                                                {product.category}
-                                            </span>
-                                        )}
-                                        <h3 className="font-serif text-lg mt-1 group-hover:text-accent transition-colors">
-                                            {product.title}
-                                        </h3>
-                                        <p className="text-gray-900 font-medium mt-2">
-                                            {formatPrice(product.price)}
-                                        </p>
-                                        {product.stock > 0 && product.stock <= 5 && (
-                                            <p className="text-xs text-orange-600 mt-1">
-                                                Apenas {product.stock} em estoque
-                                            </p>
-                                        )}
-                                    </div>
-                                </Link>
-                            </motion.div>
-                        ))}
-                    </motion.div>
                 ) : (
-                    // List View
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="space-y-6"
-                    >
-                        {filteredProducts.map((product, index) => (
-                            <motion.div
-                                key={product.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.03 }}
-                            >
-                                <Link
-                                    to={`/shop/product/${product.id}`}
-                                    onClick={handleProductClick}
-                                    className="group flex gap-6 p-4 border border-gray-100 rounded-xl hover:shadow-lg transition-shadow"
+                    <div className="space-y-16">
+                        {categories.map(cat => {
+                            const categoryProducts = productsByCategory[cat];
+                            if (!categoryProducts || categoryProducts.length === 0) return null;
+
+                            return (
+                                <section
+                                    key={cat}
+                                    ref={el => sectionRefs.current[cat] = el}
+                                    id={`category-${cat.replace(/\s+/g, '-').toLowerCase()}`}
+                                    className="scroll-mt-36"
                                 >
-                                    {/* Image */}
-                                    <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                                        {product.images?.[0] ? (
-                                            <img src={product.images[0]} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center">
-                                                <ShoppingBag className="w-8 h-8 text-gray-300" />
-                                            </div>
-                                        )}
-                                    </div>
+                                    <h2 className="text-2xl md:text-3xl font-serif mb-8 flex items-center gap-4">
+                                        <span>{cat}</span>
+                                        <span className="text-sm font-sans text-gray-400 font-normal">
+                                            ({categoryProducts.length})
+                                        </span>
+                                    </h2>
 
-                                    {/* Info */}
-                                    <div className="flex-1 flex flex-col justify-center">
-                                        {product.category && (
-                                            <span className="text-xs text-gray-400 uppercase tracking-widest">
-                                                {product.category}
-                                            </span>
-                                        )}
-                                        <h3 className="font-serif text-xl group-hover:text-accent transition-colors">
-                                            {product.title}
-                                        </h3>
-                                        <p className="text-gray-500 text-sm mt-1 line-clamp-2">
-                                            {product.description}
-                                        </p>
-                                    </div>
-
-                                    {/* Price & Action */}
-                                    <div className="flex flex-col items-end justify-center gap-2">
-                                        <span className="text-xl font-medium">{formatPrice(product.price)}</span>
-                                        {product.stock > 0 ? (
-                                            <button
-                                                onClick={(e) => handleAddToCart(product, e)}
-                                                className={`px-4 py-2 text-sm rounded-full transition flex items-center gap-2 ${addedProductId === product.id
-                                                    ? 'bg-green-500 text-white'
-                                                    : 'bg-black text-white hover:bg-accent hover:text-black'
-                                                    }`}
-                                            >
-                                                {addedProductId === product.id ? (
-                                                    <>
-                                                        <Check className="w-4 h-4" />
-                                                        Adicionado!
-                                                    </>
-                                                ) : (
-                                                    'Adicionar'
-                                                )}
-                                            </button>
-                                        ) : (
-                                            <span className="text-gray-400 text-sm">Esgotado</span>
-                                        )}
-                                    </div>
-                                </Link>
-                            </motion.div>
-                        ))}
-                    </motion.div>
+                                    {viewMode === 'grid' ? (
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ duration: 0.4 }}
+                                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+                                        >
+                                            {categoryProducts.map((product, index) => renderProductCard(product, index))}
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            className="space-y-6"
+                                        >
+                                            {categoryProducts.map((product, index) => renderProductListItem(product, index))}
+                                        </motion.div>
+                                    )}
+                                </section>
+                            );
+                        })}
+                    </div>
                 )}
             </section>
         </div>
