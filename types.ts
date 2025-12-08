@@ -377,7 +377,7 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text?: string;
   uiComponent?: {
-    type: 'ProjectCarousel' | 'ContactCard' | 'LeadForm' | 'SocialLinks' | 'CalendarWidget';
+    type: 'ProjectCarousel' | 'ContactCard' | 'LeadForm' | 'SocialLinks' | 'CalendarWidget' | 'BookingSuccess' | 'ServiceRedirect' | 'CulturalCarousel' | 'ProductCarousel' | 'OfficeMap';
     data: any;
   };
   actions?: {

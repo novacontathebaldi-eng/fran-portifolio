@@ -17,6 +17,26 @@ const tools = [
         }
       },
       {
+        name: 'showCulturalProjects',
+        description: 'Display a carousel of cultural projects including exhibitions, heritage preservation, restoration work, research, and publications. Use when user asks about expositions, cultural work, heritage, history, or preservation projects.',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            category: { type: Type.STRING, description: 'Optional filter: Patrimônio, Exposição, Restauro, Pesquisa, or Publicação' },
+          },
+        }
+      },
+      {
+        name: 'showProducts',
+        description: 'Display products from the shop/store. Use when user asks "what do you sell?", "show me products", "store", "loja", "produtos", or expresses interest in purchasing decorative items, art, or architectural merchandise.',
+        parameters: { type: Type.OBJECT, properties: {} }
+      },
+      {
+        name: 'showOfficeMap',
+        description: 'Display an interactive map with the office location. Use when user asks "where is the office?", "address", "location", "endereço", "como chego aí?", "localização", or wants directions to visit the studio.',
+        parameters: { type: Type.OBJECT, properties: {} }
+      },
+      {
         name: 'saveClientNote',
         description: 'CRITICAL: Use this tool ONLY AFTER you have ALL information including the actual message content. You MUST ask "Qual mensagem gostaria de deixar?" or "Sobre o que gostaria de falar?" if the user has not provided the message details. NEVER call this tool without knowing what the user wants to communicate.',
         parameters: {
@@ -419,6 +439,18 @@ export async function chatWithConcierge(
         if (call.name === 'showProjects') {
           responseData.uiComponent = { type: 'ProjectCarousel', data: call.args };
           if (!responseData.text) responseData.text = "Aqui estão alguns projetos selecionados.";
+        }
+        else if (call.name === 'showCulturalProjects') {
+          responseData.uiComponent = { type: 'CulturalCarousel', data: call.args };
+          if (!responseData.text) responseData.text = "Aqui estão alguns dos nossos projetos culturais:";
+        }
+        else if (call.name === 'showProducts') {
+          responseData.uiComponent = { type: 'ProductCarousel', data: {} };
+          if (!responseData.text) responseData.text = "Confira alguns produtos disponíveis na nossa loja:";
+        }
+        else if (call.name === 'showOfficeMap') {
+          responseData.uiComponent = { type: 'OfficeMap', data: {} };
+          if (!responseData.text) responseData.text = "Aqui está a localização do nosso escritório:";
         }
         else if (call.name === 'saveClientNote') {
           const userName = call.args['name'] || (context.user ? context.user.name : 'Anônimo');

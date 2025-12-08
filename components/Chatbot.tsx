@@ -157,6 +157,269 @@ const ProjectCarousel = ({ data }: { data: any }) => {
   );
 };
 
+// --- Cultural Projects Carousel ---
+const CulturalCarousel = ({ data }: { data: any }) => {
+  const { culturalProjects } = useProjects();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const category = data?.category;
+  const filtered = category
+    ? culturalProjects.filter(p => p.category?.toLowerCase().includes(category.toLowerCase())).slice(0, 4)
+    : culturalProjects.slice(0, 4);
+
+  useEffect(() => {
+    const checkTouch = () => {
+      setIsTouchDevice(
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        window.matchMedia('(pointer: coarse)').matches
+      );
+    };
+    checkTouch();
+  }, []);
+
+  const updateScrollButtons = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
+    }
+  };
+
+  useEffect(() => {
+    updateScrollButtons();
+  }, [filtered]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 200;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+      setTimeout(updateScrollButtons, 300);
+    }
+  };
+
+  if (filtered.length === 0) return <div className="text-xs text-gray-500 mt-2">Nenhum projeto cultural encontrado.</div>;
+
+  return (
+    <div className="mt-4 relative">
+      {!isTouchDevice && canScrollLeft && (
+        <button
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-red-600 hover:text-white hover:border-red-600 transition-all -ml-2"
+          aria-label="Rolar para esquerda"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+      )}
+
+      <div
+        ref={scrollRef}
+        onScroll={updateScrollButtons}
+        className="flex gap-3 overflow-x-auto pb-2 no-scrollbar pl-1 pr-1"
+      >
+        {filtered.map(p => (
+          <Link to={`/cultural/${p.id}`} key={p.id} className="min-w-[180px] bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden block hover:border-red-500 transition group">
+            <div className="relative">
+              <img src={p.image} className="w-full h-28 object-cover" loading="lazy" decoding="async" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition"></div>
+              <span className="absolute top-2 left-2 bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">{p.category}</span>
+            </div>
+            <div className="p-3">
+              <h4 className="font-serif font-bold text-sm truncate">{p.title}</h4>
+              <p className="text-[10px] text-gray-400 flex items-center gap-1 mt-1">
+                <MapPin className="w-3 h-3" /> {p.location}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {!isTouchDevice && canScrollRight && (
+        <button
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-red-600 hover:text-white hover:border-red-600 transition-all -mr-2"
+          aria-label="Rolar para direita"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      )}
+    </div>
+  );
+};
+
+// --- Product Carousel (Shop) ---
+const ProductCarousel = () => {
+  const { shopProducts, settings } = useProjects();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  // Filter only active products
+  const activeProducts = shopProducts.filter(p => p.status === 'active').slice(0, 5);
+
+  useEffect(() => {
+    const checkTouch = () => {
+      setIsTouchDevice(
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        window.matchMedia('(pointer: coarse)').matches
+      );
+    };
+    checkTouch();
+  }, []);
+
+  const updateScrollButtons = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
+    }
+  };
+
+  useEffect(() => {
+    updateScrollButtons();
+  }, [activeProducts]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 170;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+      setTimeout(updateScrollButtons, 300);
+    }
+  };
+
+  // If shop is disabled or no products
+  if (!settings.enableShop) return <div className="text-xs text-gray-500 mt-2">A loja está desativada no momento.</div>;
+  if (activeProducts.length === 0) return <div className="text-xs text-gray-500 mt-2">Nenhum produto disponível.</div>;
+
+  return (
+    <div className="mt-4 relative">
+      {!isTouchDevice && canScrollLeft && (
+        <button
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all -ml-2"
+          aria-label="Rolar para esquerda"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+      )}
+
+      <div
+        ref={scrollRef}
+        onScroll={updateScrollButtons}
+        className="flex gap-3 overflow-x-auto pb-2 no-scrollbar pl-1 pr-1"
+      >
+        {activeProducts.map(product => (
+          <Link to={`/shop/${product.id}`} key={product.id} className="min-w-[150px] bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden block hover:border-amber-500 transition group">
+            <div className="relative">
+              <img
+                src={product.images[0] || '/placeholder.jpg'}
+                className="w-full h-28 object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+              {product.stock <= 3 && product.stock > 0 && (
+                <span className="absolute top-2 right-2 bg-orange-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">Últimas!</span>
+              )}
+              {product.stock === 0 && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">Esgotado</span>
+                </div>
+              )}
+            </div>
+            <div className="p-2.5">
+              <h4 className="font-medium text-sm truncate">{product.title}</h4>
+              <p className="text-amber-600 font-bold text-sm mt-1">
+                {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {!isTouchDevice && canScrollRight && (
+        <button
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all -mr-2"
+          aria-label="Rolar para direita"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      )}
+
+      <Link
+        to="/shop"
+        className="mt-3 w-full block text-center text-xs font-bold text-amber-600 hover:text-amber-700 transition py-2 border border-amber-200 rounded-lg hover:bg-amber-50"
+      >
+        Ver Todos os Produtos →
+      </Link>
+    </div>
+  );
+};
+
+// --- Office Map Widget ---
+const OfficeMapWidget = () => {
+  const { siteContent } = useProjects();
+  const [isOpening, setIsOpening] = useState(false);
+
+  const office = siteContent.office;
+  const mapQuery = office.mapQuery || office.address || 'Fran Siller Arquitetura';
+  const mapsUrl = office.mapsLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
+
+  const handleOpenMaps = () => {
+    if (isOpening) return; // Prevent double-click
+    setIsOpening(true);
+    window.open(mapsUrl, '_blank');
+    setTimeout(() => setIsOpening(false), 2000);
+  };
+
+  return (
+    <div className="mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+      {/* Map Embed */}
+      <div className="w-full h-40 bg-gray-100 relative">
+        <iframe
+          title="Localização do Escritório"
+          src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`}
+          className="w-full h-full border-0"
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+      </div>
+
+      {/* Office Info */}
+      <div className="p-4">
+        <h4 className="font-serif font-bold text-sm mb-2">📍 Nosso Escritório</h4>
+        <p className="text-xs text-gray-600 leading-relaxed mb-1">{office.address}</p>
+        <p className="text-[10px] text-gray-400 mb-3 flex items-center gap-1">
+          <Clock className="w-3 h-3" /> {office.hoursDescription}
+        </p>
+
+        <button
+          onClick={handleOpenMaps}
+          disabled={isOpening}
+          className={`w-full py-2.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${isOpening
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-black text-white hover:bg-accent hover:text-black'
+            }`}
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          {isOpening ? 'Abrindo...' : 'Abrir no Google Maps'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // Dynamic Social Links Component - reads from database
 const SocialLinks = () => {
   const { siteContent } = useProjects();
@@ -467,7 +730,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const { sendMessageToAI, currentUser, addMessage, showToast, currentChatMessages, logAiFeedback, settings, addAppointment, siteContent, archiveCurrentChat, addClientMemory, restoreChatSession, updateMessageUI, clearCurrentChat } = useProjects();
+  const { sendMessageToAI, currentUser, addMessage, showToast, currentChatMessages, logAiFeedback, settings, addAppointment, siteContent, archiveCurrentChat, addClientMemory, restoreChatSession, updateMessageUI, clearCurrentChat, shopProducts } = useProjects();
 
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -713,6 +976,9 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                       {msg.uiComponent?.type === 'CalendarWidget' && <CalendarWidget data={msg.uiComponent.data} messageId={msg.id} closeChat={() => setIsOpen(false)} />}
                       {msg.uiComponent?.type === 'BookingSuccess' && <BookingSuccess data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} />}
                       {msg.uiComponent?.type === 'ServiceRedirect' && <ServiceRedirectWidget data={msg.uiComponent.data} closeChat={() => setIsOpen(false)} />}
+                      {msg.uiComponent?.type === 'CulturalCarousel' && <CulturalCarousel data={msg.uiComponent.data} />}
+                      {msg.uiComponent?.type === 'ProductCarousel' && <ProductCarousel />}
+                      {msg.uiComponent?.type === 'OfficeMap' && <OfficeMapWidget />}
                     </div>
 
                     {msg.role === 'model' && (
