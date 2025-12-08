@@ -1853,7 +1853,7 @@ export const AdminDashboard: React.FC = () => {
 
                                     {/* Selected Projects */}
                                     <div className="mb-6">
-                                        <p className="text-xs font-bold uppercase text-gray-500 mb-3">Projetos Selecionados ({((contentForm.about as any).parallaxProjects || []).length})</p>
+                                        <p className="text-xs font-bold uppercase text-gray-500 mb-3">Projetos Selecionados ({((contentForm.about as any).parallaxProjects || []).length}/4)</p>
                                         {((contentForm.about as any).parallaxProjects || []).length === 0 ? (
                                             <p className="text-sm text-gray-400 italic py-4 text-center bg-gray-50 rounded-lg">Nenhum projeto selecionado. Adicione abaixo.</p>
                                         ) : (
@@ -1914,6 +1914,11 @@ export const AdminDashboard: React.FC = () => {
                                                                     }));
                                                                     showToast(`${project.title} removido`, 'info');
                                                                 } else {
+                                                                    // Max 4 projects
+                                                                    if (currentList.length >= 4) {
+                                                                        showToast('Máximo de 4 projetos permitido', 'error');
+                                                                        return;
+                                                                    }
                                                                     // Add
                                                                     const newItem = { id: project.id, type: 'project' as const };
                                                                     setContentForm(prev => ({
@@ -1963,6 +1968,11 @@ export const AdminDashboard: React.FC = () => {
                                                                     }));
                                                                     showToast(`${project.title} removido`, 'info');
                                                                 } else {
+                                                                    // Max 4 projects
+                                                                    if (currentList.length >= 4) {
+                                                                        showToast('Máximo de 4 projetos permitido', 'error');
+                                                                        return;
+                                                                    }
                                                                     // Add
                                                                     const newItem = { id: project.id, type: 'cultural' as const };
                                                                     setContentForm(prev => ({
@@ -1990,7 +2000,7 @@ export const AdminDashboard: React.FC = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-gray-400 mt-4">Clique nos projetos para adicionar ao parallax. Mínimo recomendado: 4 projetos.</p>
+                                    <p className="text-xs text-gray-400 mt-4">Clique nos projetos para adicionar ao parallax. Máximo: 4 projetos.</p>
                                 </div>
 
                                 <div className="mt-6 pt-6 border-t border-gray-100">
