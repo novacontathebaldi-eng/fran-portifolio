@@ -302,6 +302,7 @@ export interface SiteContent {
     stats: StatItem[]; // New
     pillars: PillarItem[]; // New
     recognition: string[]; // New
+    parallaxProjects?: Array<{ id: string; type: 'project' | 'cultural' }>; // Projects for About page parallax
   };
   office: OfficeDetails; // Centralized Office Data (Source of Truth)
 }

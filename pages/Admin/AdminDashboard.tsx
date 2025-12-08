@@ -1841,6 +1841,136 @@ export const AdminDashboard: React.FC = () => {
                                         ))}
                                     </div>
                                 </div>
+
+                                {/* Parallax Projects for About Page */}
+                                <div>
+                                    <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+                                        <div>
+                                            <h3 className="font-bold text-xl text-black">Projetos em Destaque (Parallax)</h3>
+                                            <p className="text-xs text-gray-400 mt-1">Projetos que aparecem flutuando na página Sobre</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Selected Projects */}
+                                    <div className="mb-6">
+                                        <p className="text-xs font-bold uppercase text-gray-500 mb-3">Projetos Selecionados ({((contentForm.about as any).parallaxProjects || []).length})</p>
+                                        {((contentForm.about as any).parallaxProjects || []).length === 0 ? (
+                                            <p className="text-sm text-gray-400 italic py-4 text-center bg-gray-50 rounded-lg">Nenhum projeto selecionado. Adicione abaixo.</p>
+                                        ) : (
+                                            <div className="flex flex-wrap gap-3">
+                                                {((contentForm.about as any).parallaxProjects || []).map((p: { id: string; type: 'project' | 'cultural' }, idx: number) => {
+                                                    const source = p.type === 'cultural' ? culturalProjects : projects;
+                                                    const project = source.find(proj => proj.id === p.id);
+                                                    if (!project) return null;
+                                                    return (
+                                                        <div key={p.id} className="relative group">
+                                                            <div className="w-24 h-24 rounded-lg overflow-hidden border-2 border-accent shadow-lg">
+                                                                <img src={project.image} alt={project.title} className="w-full h-full object-cover" />
+                                                            </div>
+                                                            <span className={`absolute -top-2 -left-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${p.type === 'cultural' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                                {p.type === 'cultural' ? 'Cultural' : 'Portfólio'}
+                                                            </span>
+                                                            <button
+                                                                onClick={() => {
+                                                                    const newList = ((contentForm.about as any).parallaxProjects || []).filter((_: any, i: number) => i !== idx);
+                                                                    setContentForm(prev => ({
+                                                                        ...prev,
+                                                                        about: { ...prev.about, parallaxProjects: newList }
+                                                                    }));
+                                                                }}
+                                                                className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition"
+                                                            >
+                                                                <X className="w-3 h-3" />
+                                                            </button>
+                                                            <p className="text-[10px] text-center mt-1 truncate w-24 font-medium">{project.title}</p>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Available Projects */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Portfolio Projects */}
+                                        <div>
+                                            <p className="text-xs font-bold uppercase text-gray-500 mb-3 flex items-center gap-2">
+                                                <span className="w-2 h-2 bg-blue-500 rounded-full"></span> Portfólio
+                                            </p>
+                                            <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                                                {projects.map(project => {
+                                                    const isSelected = ((contentForm.about as any).parallaxProjects || []).some((p: any) => p.id === project.id && p.type === 'project');
+                                                    return (
+                                                        <div
+                                                            key={project.id}
+                                                            onClick={() => {
+                                                                if (isSelected) return;
+                                                                const newItem = { id: project.id, type: 'project' as const };
+                                                                const currentList = (contentForm.about as any).parallaxProjects || [];
+                                                                setContentForm(prev => ({
+                                                                    ...prev,
+                                                                    about: { ...prev.about, parallaxProjects: [...currentList, newItem] }
+                                                                }));
+                                                            }}
+                                                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition ${isSelected ? 'bg-blue-50 border-2 border-blue-200 opacity-60' : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'}`}
+                                                        >
+                                                            <img src={project.image} alt="" className="w-10 h-10 rounded object-cover" />
+                                                            <div className="flex-grow min-w-0">
+                                                                <p className="text-sm font-bold truncate">{project.title}</p>
+                                                                <p className="text-[10px] text-gray-400">{project.category}</p>
+                                                            </div>
+                                                            {isSelected ? (
+                                                                <Check className="w-4 h-4 text-blue-500" />
+                                                            ) : (
+                                                                <Plus className="w-4 h-4 text-gray-300" />
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* Cultural Projects */}
+                                        <div>
+                                            <p className="text-xs font-bold uppercase text-gray-500 mb-3 flex items-center gap-2">
+                                                <span className="w-2 h-2 bg-purple-500 rounded-full"></span> Culturais
+                                            </p>
+                                            <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                                                {culturalProjects.map(project => {
+                                                    const isSelected = ((contentForm.about as any).parallaxProjects || []).some((p: any) => p.id === project.id && p.type === 'cultural');
+                                                    return (
+                                                        <div
+                                                            key={project.id}
+                                                            onClick={() => {
+                                                                if (isSelected) return;
+                                                                const newItem = { id: project.id, type: 'cultural' as const };
+                                                                const currentList = (contentForm.about as any).parallaxProjects || [];
+                                                                setContentForm(prev => ({
+                                                                    ...prev,
+                                                                    about: { ...prev.about, parallaxProjects: [...currentList, newItem] }
+                                                                }));
+                                                            }}
+                                                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition ${isSelected ? 'bg-purple-50 border-2 border-purple-200 opacity-60' : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'}`}
+                                                        >
+                                                            <img src={project.image} alt="" className="w-10 h-10 rounded object-cover" />
+                                                            <div className="flex-grow min-w-0">
+                                                                <p className="text-sm font-bold truncate">{project.title}</p>
+                                                                <p className="text-[10px] text-gray-400">{project.category}</p>
+                                                            </div>
+                                                            {isSelected ? (
+                                                                <Check className="w-4 h-4 text-purple-500" />
+                                                            ) : (
+                                                                <Plus className="w-4 h-4 text-gray-300" />
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-gray-400 mt-4">Clique nos projetos para adicionar ao parallax. Mínimo recomendado: 4 projetos.</p>
+                                </div>
+
                                 <div className="mt-6 pt-6 border-t border-gray-100">
                                     <button onClick={saveContent} disabled={saving} className="w-full md:w-auto bg-green-500 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-green-600 transition flex items-center justify-center gap-2 disabled:opacity-50">
                                         {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}

@@ -9,14 +9,42 @@ import { Link } from 'react-router-dom';
 const SECTION_HEIGHT = 1500;
 
 export const About: React.FC = () => {
-  const { siteContent, projects } = useProjects();
+  const { siteContent, projects, culturalProjects, isLoadingData } = useProjects();
   const { about } = siteContent;
 
-  // Get featured projects for parallax images
-  const featuredProjects = projects.filter(p => p.featured).slice(0, 4);
-  const parallaxImages = featuredProjects.length >= 4
-    ? featuredProjects.map(p => ({ src: p.image, alt: p.title, id: p.id }))
-    : projects.slice(0, 4).map(p => ({ src: p.image, alt: p.title, id: p.id }));
+  // Get parallax projects from settings OR use featured as fallback
+  // about.parallaxProjects is array of {id, type: 'project' | 'cultural'}
+  const parallaxProjectsConfig = (about as any).parallaxProjects || [];
+
+  const parallaxImages = React.useMemo(() => {
+    if (parallaxProjectsConfig.length > 0) {
+      // Use configured projects
+      return parallaxProjectsConfig
+        .map((config: { id: string; type: 'project' | 'cultural' }) => {
+          const source = config.type === 'cultural' ? culturalProjects : projects;
+          const project = source.find(p => p.id === config.id);
+          if (!project) return null;
+          return { src: project.image, alt: project.title, id: project.id, type: config.type };
+        })
+        .filter(Boolean);
+    }
+
+    // Fallback: use featured projects or first 4
+    const featured = projects.filter((p: any) => p.featured).slice(0, 4);
+    const fallback = featured.length >= 4 ? featured : projects.slice(0, 4);
+    return fallback.map(p => ({ src: p.image, alt: p.title, id: p.id, type: 'project' as const }));
+  }, [parallaxProjectsConfig, projects, culturalProjects]);
+
+  // Don't render until data is loaded to avoid flash of default content
+  if (isLoadingData) {
+    return (
+      <div className="h-screen bg-[#1a1a1a] flex items-center justify-center">
+        <div className="text-white text-center animate-pulse">
+          <span className="text-accent uppercase tracking-[0.3em] text-sm">Carregando</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ReactLenis
@@ -165,7 +193,7 @@ interface SmoothHeroProps {
   heroImage: string;
   heroTitle: string;
   heroSubtitle: string;
-  parallaxImages: Array<{ src: string; alt: string; id: string }>;
+  parallaxImages: Array<{ src: string; alt: string; id: string; type: 'project' | 'cultural' }>;
 }
 
 const SmoothHero: React.FC<SmoothHeroProps> = ({ heroImage, heroTitle, heroSubtitle, parallaxImages }) => {
@@ -175,6 +203,10 @@ const SmoothHero: React.FC<SmoothHeroProps> = ({ heroImage, heroTitle, heroSubti
       className="relative w-full"
     >
       <CenterImage heroImage={heroImage} heroTitle={heroTitle} heroSubtitle={heroSubtitle} />
+
+      {/* Scroll indicator - OUTSIDE of CenterImage for proper z-index */}
+      <ScrollIndicator />
+
       <ParallaxImages images={parallaxImages} />
       <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-b from-transparent to-white pointer-events-none" />
     </div>
@@ -230,7 +262,7 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
         style={{ opacity: textOpacity, y: textY }}
       >
         <motion.span
-          className="text-accent uppercase tracking-[0.3em] text-sm font-bold mb-6 block"
+          className="text-accent uppercase tracking-[0.25em] text-xs md:text-sm font-bold mb-4 block"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.8 }}
@@ -238,76 +270,76 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
           {heroSubtitle}
         </motion.span>
         <motion.h1
-          className="text-4xl md:text-6xl lg:text-7xl font-serif leading-tight max-w-4xl drop-shadow-2xl"
+          className="text-2xl md:text-4xl lg:text-5xl font-serif leading-tight max-w-3xl drop-shadow-2xl"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.8 }}
         >
           {heroTitle}
         </motion.h1>
+      </motion.div>
+    </motion.div>
+  );
+};
 
-        {/* Scroll indicator */}
-        <motion.div
-          className="absolute bottom-12 left-1/2 -translate-x-1/2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2, duration: 0.8 }}
-        >
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-            className="flex flex-col items-center gap-2 text-white/60"
-          >
-            <span className="text-xs uppercase tracking-widest">Role para descobrir</span>
-            <ArrowDown className="w-5 h-5" />
-          </motion.div>
-        </motion.div>
+// Scroll Indicator - Separate component with fixed position
+const ScrollIndicator: React.FC = () => {
+  const { scrollY } = useScroll();
+  const opacity = useTransform(scrollY, [0, 200], [1, 0]);
+
+  return (
+    <motion.div
+      className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+      style={{ opacity }}
+    >
+      <motion.div
+        animate={{ y: [0, 10, 0] }}
+        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+        className="flex flex-col items-center gap-2 text-white/80"
+      >
+        <span className="text-xs uppercase tracking-widest bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm">Role para descobrir</span>
+        <ArrowDown className="w-5 h-5" />
       </motion.div>
     </motion.div>
   );
 };
 
 interface ParallaxImagesProps {
-  images: Array<{ src: string; alt: string; id: string }>;
+  images: Array<{ src: string; alt: string; id: string; type: 'project' | 'cultural' }>;
 }
 
 const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images }) => {
-  if (images.length < 4) return null;
+  if (images.length === 0) return null;
+
+  // Dynamic positioning based on number of images
+  const positions = [
+    { start: -200, end: 200, className: 'w-1/3' },
+    { start: 200, end: -250, className: 'mx-auto w-2/3' },
+    { start: -200, end: 200, className: 'ml-auto w-1/3' },
+    { start: 0, end: -500, className: 'ml-24 w-5/12' },
+    { start: -150, end: 150, className: 'w-2/5' },
+    { start: 100, end: -200, className: 'ml-auto w-1/3' },
+    { start: -100, end: 300, className: 'mx-auto w-1/2' },
+    { start: 50, end: -150, className: 'ml-16 w-2/5' },
+  ];
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-[200px]">
-      <ParallaxImg
-        src={images[0].src}
-        alt={images[0].alt}
-        projectId={images[0].id}
-        start={-200}
-        end={200}
-        className="w-1/3"
-      />
-      <ParallaxImg
-        src={images[1].src}
-        alt={images[1].alt}
-        projectId={images[1].id}
-        start={200}
-        end={-250}
-        className="mx-auto w-2/3"
-      />
-      <ParallaxImg
-        src={images[2].src}
-        alt={images[2].alt}
-        projectId={images[2].id}
-        start={-200}
-        end={200}
-        className="ml-auto w-1/3"
-      />
-      <ParallaxImg
-        src={images[3].src}
-        alt={images[3].alt}
-        projectId={images[3].id}
-        start={0}
-        end={-500}
-        className="ml-24 w-5/12"
-      />
+      {images.map((img, index) => {
+        const pos = positions[index % positions.length];
+        return (
+          <ParallaxImg
+            key={img.id}
+            src={img.src}
+            alt={img.alt}
+            projectId={img.id}
+            projectType={img.type}
+            start={pos.start}
+            end={pos.end}
+            className={pos.className}
+          />
+        );
+      })}
     </div>
   );
 };
@@ -319,9 +351,10 @@ interface ParallaxImgProps {
   start: number;
   end: number;
   projectId: string;
+  projectType: 'project' | 'cultural';
 }
 
-const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, end, projectId }) => {
+const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, end, projectId, projectType }) => {
   const ref = useRef<HTMLAnchorElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -335,8 +368,10 @@ const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, e
   const y = useTransform(scrollYProgress, [0, 1], [start, end]);
   const transform = useMotionTemplate`translateY(${y}px) scale(${scale})`;
 
+  const linkPath = projectType === 'cultural' ? `/cultural/${projectId}` : `/project/${projectId}`;
+
   return (
-    <Link to={`/project/${projectId}`}>
+    <Link to={linkPath}>
       <motion.img
         src={src}
         alt={alt}
