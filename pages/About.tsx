@@ -197,7 +197,7 @@ export const About: React.FC = () => {
   const lenisOptions = isMobile
     ? {
       syncTouch: true,
-      touchMultiplier: 1.5, // Ajusta sensibilidade do touch
+      touchMultiplier: 0.8, // Menos sensível para não rolar tão rápido
       smoothWheel: true,
     }
     : {
@@ -248,10 +248,10 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
   const { scrollY } = useScroll();
   const sectionHeight = isMobile ? MOBILE_SECTION_HEIGHT : SECTION_HEIGHT;
 
-  // Mobile: Start with MUCH more vertical rectangle (40-60) to ensure text fits
+  // Mobile: Larger rectangle (30-70) with less black border
   // Desktop: Original (25-75)
-  const clip1 = useTransform(scrollY, [0, sectionHeight], isMobile ? [40, 0] : [25, 0]);
-  const clip2 = useTransform(scrollY, [0, sectionHeight], isMobile ? [60, 100] : [75, 100]);
+  const clip1 = useTransform(scrollY, [0, sectionHeight], isMobile ? [30, 0] : [25, 0]);
+  const clip2 = useTransform(scrollY, [0, sectionHeight], isMobile ? [70, 100] : [75, 100]);
 
   const clipPath = useMotionTemplate`polygon(${clip1}% ${clip1}%, ${clip2}% ${clip1}%, ${clip2}% ${clip2}%, ${clip1}% ${clip2}%)`;
 
@@ -285,7 +285,7 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4">
         <motion.span
           className={`text-accent uppercase font-bold mb-1 md:mb-4 block ${isMobile
-            ? 'text-[7px] tracking-[0.08em]'
+            ? 'text-[8px] tracking-[0.08em]'
             : 'text-xs tracking-[0.25em]'
             }`}
           initial={{ opacity: 0, y: 20 }}
@@ -296,7 +296,7 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
         </motion.span>
         <motion.h1
           className={`font-serif drop-shadow-2xl ${isMobile
-            ? 'text-[10px] leading-[1.2] max-w-[100px]'
+            ? 'text-[13px] leading-[1.3] max-w-[140px]'
             : 'text-4xl lg:text-6xl leading-snug max-w-2xl'
             }`}
           initial={{ opacity: 0, y: 30 }}
@@ -339,12 +339,12 @@ const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images, isMobile }) => 
     { start: 0, end: -500, className: 'ml-24 w-5/12' },
   ];
 
-  // Mobile: Very gentle movement, CSS transform is GPU-accelerated
+  // Mobile: Gentle movement, STAGGERED positions (left/right alternating)
   const mobilePositions = [
-    { start: -8, end: 8, className: 'w-4/5 mx-auto' },
-    { start: 5, end: -5, className: 'w-[85%] mx-auto' },
-    { start: -6, end: 6, className: 'w-4/5 mx-auto' },
-    { start: 4, end: -8, className: 'w-[85%] mx-auto' },
+    { start: -6, end: 6, className: 'w-3/4 mr-auto ml-2' },      // Left
+    { start: 4, end: -4, className: 'w-3/4 ml-auto mr-2' },     // Right
+    { start: -5, end: 5, className: 'w-[70%] mr-auto ml-4' },   // Left
+    { start: 3, end: -5, className: 'w-3/4 ml-auto mr-4' },     // Right
   ];
 
   const positions = isMobile ? mobilePositions : desktopPositions;
