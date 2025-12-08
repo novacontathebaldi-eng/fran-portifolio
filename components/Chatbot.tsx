@@ -211,7 +211,7 @@ const CulturalCarousel = ({ data }: { data: any }) => {
       {!isTouchDevice && canScrollLeft && (
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-red-600 hover:text-white hover:border-red-600 transition-all -ml-2"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all -ml-2"
           aria-label="Rolar para esquerda"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -224,11 +224,11 @@ const CulturalCarousel = ({ data }: { data: any }) => {
         className="flex gap-3 overflow-x-auto pb-2 no-scrollbar pl-1 pr-1"
       >
         {filtered.map(p => (
-          <Link to={`/cultural/${p.id}`} key={p.id} className="min-w-[180px] bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden block hover:border-red-500 transition group">
+          <Link to={`/cultural/${p.id}`} key={p.id} className="min-w-[180px] bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden block hover:border-black transition group">
             <div className="relative">
               <img src={p.image} className="w-full h-28 object-cover" loading="lazy" decoding="async" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition"></div>
-              <span className="absolute top-2 left-2 bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">{p.category}</span>
+              <span className="absolute top-2 left-2 bg-black text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">{p.category}</span>
             </div>
             <div className="p-3">
               <h4 className="font-serif font-bold text-sm truncate">{p.title}</h4>
@@ -243,7 +243,7 @@ const CulturalCarousel = ({ data }: { data: any }) => {
       {!isTouchDevice && canScrollRight && (
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-red-600 hover:text-white hover:border-red-600 transition-all -mr-2"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all -mr-2"
           aria-label="Rolar para direita"
         >
           <ChevronRight className="w-4 h-4" />
@@ -255,11 +255,22 @@ const CulturalCarousel = ({ data }: { data: any }) => {
 
 // --- Product Carousel (Shop) ---
 const ProductCarousel = () => {
-  const { shopProducts, settings } = useProjects();
+  const { shopProducts, settings, fetchShopProducts } = useProjects();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch products when component mounts
+  useEffect(() => {
+    const loadProducts = async () => {
+      setIsLoading(true);
+      await fetchShopProducts();
+      setIsLoading(false);
+    };
+    loadProducts();
+  }, []);
 
   // Filter only active products
   const activeProducts = shopProducts.filter(p => p.status === 'active').slice(0, 5);
@@ -298,9 +309,40 @@ const ProductCarousel = () => {
     }
   };
 
-  // If shop is disabled or no products
-  if (!settings.enableShop) return <div className="text-xs text-gray-500 mt-2">A loja está desativada no momento.</div>;
-  if (activeProducts.length === 0) return <div className="text-xs text-gray-500 mt-2">Nenhum produto disponível.</div>;
+  // Mensagens variadas para loja fechada
+  const closedShopMessages = [
+    "Nossa loja está fechada no momento, mas logo teremos novidades! Enquanto isso, posso ajudar com outras dúvidas ou você pode deixar uma mensagem.",
+    "A loja não está disponível agora. Fique de olho que em breve teremos produtos incríveis! Posso ajudar com algo mais?",
+    "Por ora a loja está em pausa, mas estamos preparando coisas boas! Se tiver outras dúvidas, estou aqui."
+  ];
+
+  // Mensagens variadas para sem produtos
+  const noProductsMessages = [
+    "No momento não temos produtos cadastrados na loja, mas isso pode mudar em breve! Posso ajudar com outra coisa?",
+    "A loja ainda não tem produtos disponíveis. Fique ligado nas novidades! Se precisar de algo mais, é só falar."
+  ];
+
+  // If shop is disabled
+  if (!settings.enableShop) {
+    const randomMsg = closedShopMessages[Math.floor(Math.random() * closedShopMessages.length)];
+    return <div className="text-xs text-gray-600 mt-2 leading-relaxed">{randomMsg}</div>;
+  }
+
+  // Still loading
+  if (isLoading) {
+    return (
+      <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        Carregando produtos...
+      </div>
+    );
+  }
+
+  // No active products
+  if (activeProducts.length === 0) {
+    const randomMsg = noProductsMessages[Math.floor(Math.random() * noProductsMessages.length)];
+    return <div className="text-xs text-gray-600 mt-2 leading-relaxed">{randomMsg}</div>;
+  }
 
   return (
     <div className="mt-4 relative">
