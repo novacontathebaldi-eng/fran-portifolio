@@ -58,8 +58,6 @@ export const About: React.FC = () => {
     );
   }
 
-  // Desktop: Use Lenis for smooth scroll
-  // Mobile: Use native scroll (Lenis has issues on touch devices)
   const PageContent = (
     <div className="bg-zinc-950">
       <Hero
@@ -193,13 +191,22 @@ export const About: React.FC = () => {
     </div>
   );
 
-  // Desktop: wrap with Lenis, Mobile: use native scroll
-  if (isMobile) {
-    return PageContent;
-  }
+  // Lenis options based on device
+  // Desktop: smooth lerp
+  // Mobile: syncTouch for better touch experience
+  const lenisOptions = isMobile
+    ? {
+      syncTouch: true,
+      touchMultiplier: 1.5, // Ajusta sensibilidade do touch
+      smoothWheel: true,
+    }
+    : {
+      lerp: 0.05,
+      smoothWheel: true,
+    };
 
   return (
-    <ReactLenis root options={{ lerp: 0.05 }}>
+    <ReactLenis root options={lenisOptions}>
       {PageContent}
     </ReactLenis>
   );
@@ -241,17 +248,17 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
   const { scrollY } = useScroll();
   const sectionHeight = isMobile ? MOBILE_SECTION_HEIGHT : SECTION_HEIGHT;
 
-  // Mobile: Start with more vertical rectangle (35-65) to fit text
+  // Mobile: Start with MUCH more vertical rectangle (40-60) to ensure text fits
   // Desktop: Original (25-75)
-  const clip1 = useTransform(scrollY, [0, sectionHeight], isMobile ? [35, 0] : [25, 0]);
-  const clip2 = useTransform(scrollY, [0, sectionHeight], isMobile ? [65, 100] : [75, 100]);
+  const clip1 = useTransform(scrollY, [0, sectionHeight], isMobile ? [40, 0] : [25, 0]);
+  const clip2 = useTransform(scrollY, [0, sectionHeight], isMobile ? [60, 100] : [75, 100]);
 
   const clipPath = useMotionTemplate`polygon(${clip1}% ${clip1}%, ${clip2}% ${clip1}%, ${clip2}% ${clip2}%, ${clip1}% ${clip2}%)`;
 
   const backgroundSize = useTransform(
     scrollY,
     [0, sectionHeight + 500],
-    [isMobile ? "250%" : "170%", "100%"]
+    [isMobile ? "280%" : "170%", "100%"]
   );
 
   const opacity = useTransform(
@@ -274,10 +281,13 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
     >
       <div className="absolute inset-0 bg-black/40" />
 
-      {/* Hero Text - Smaller on mobile to fit inside clip-path */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-8">
+      {/* Hero Text - VERY small on mobile to fit inside narrow clip-path */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4">
         <motion.span
-          className="text-accent uppercase tracking-[0.1em] md:tracking-[0.25em] text-[9px] md:text-xs font-bold mb-2 md:mb-4 block"
+          className={`text-accent uppercase font-bold mb-1 md:mb-4 block ${isMobile
+            ? 'text-[7px] tracking-[0.08em]'
+            : 'text-xs tracking-[0.25em]'
+            }`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
@@ -285,7 +295,10 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
           {heroSubtitle}
         </motion.span>
         <motion.h1
-          className="text-[15px] leading-tight md:text-4xl lg:text-6xl font-serif md:leading-snug max-w-[200px] md:max-w-2xl drop-shadow-2xl"
+          className={`font-serif drop-shadow-2xl ${isMobile
+            ? 'text-[10px] leading-[1.2] max-w-[100px]'
+            : 'text-4xl lg:text-6xl leading-snug max-w-2xl'
+            }`}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.6 }}
@@ -294,17 +307,19 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
         </motion.h1>
       </div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 text-white/80"
-        animate={{ y: [0, 10, 0] }}
-        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-      >
-        <div className="flex flex-col items-center gap-1 md:gap-2">
-          <span className="text-[8px] md:text-xs uppercase tracking-widest">Role para descobrir</span>
-          <ArrowDown className="w-3 h-3 md:w-5 md:h-5" />
-        </div>
-      </motion.div>
+      {/* Scroll indicator - Hidden on mobile to save space */}
+      {!isMobile && (
+        <motion.div
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/80"
+          animate={{ y: [0, 10, 0] }}
+          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+        >
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-xs uppercase tracking-widest">Role para descobrir</span>
+            <ArrowDown className="w-5 h-5" />
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   );
 };
@@ -324,18 +339,18 @@ const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images, isMobile }) => 
     { start: 0, end: -500, className: 'ml-24 w-5/12' },
   ];
 
-  // Mobile: Much smaller movement, centered images
+  // Mobile: Very gentle movement, CSS transform is GPU-accelerated
   const mobilePositions = [
-    { start: -15, end: 15, className: 'w-3/4 mx-auto' },
-    { start: 10, end: -10, className: 'w-4/5 mx-auto' },
-    { start: -10, end: 10, className: 'w-3/4 mx-auto' },
-    { start: 8, end: -15, className: 'w-4/5 mx-auto' },
+    { start: -8, end: 8, className: 'w-4/5 mx-auto' },
+    { start: 5, end: -5, className: 'w-[85%] mx-auto' },
+    { start: -6, end: 6, className: 'w-4/5 mx-auto' },
+    { start: 4, end: -8, className: 'w-[85%] mx-auto' },
   ];
 
   const positions = isMobile ? mobilePositions : desktopPositions;
 
   return (
-    <div className={`mx-auto px-4 pt-[200px] ${isMobile ? 'max-w-xs' : 'max-w-5xl'}`}>
+    <div className={`mx-auto px-4 ${isMobile ? 'pt-[150px] max-w-xs space-y-3' : 'pt-[200px] max-w-5xl'}`}>
       {images.slice(0, 4).map((img, index) => {
         const pos = positions[index];
         if (!pos) return null;
@@ -378,22 +393,28 @@ const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, e
   });
 
   // Desktop: Full effect with opacity and scale
-  // Mobile: Only gentle translateY, no opacity/scale
+  // Mobile: Only gentle translateY, no opacity/scale to avoid "falling" effect
   const opacity = useTransform(scrollYProgress, [0.75, 1], isMobile ? [1, 1] : [1, 0]);
   const scale = useTransform(scrollYProgress, [0.75, 1], isMobile ? [1, 1] : [1, 0.85]);
 
   const y = useTransform(scrollYProgress, [0, 1], [start, end]);
+
+  // Use CSS transform with will-change for GPU acceleration on mobile
   const transform = useMotionTemplate`translateY(${y}px) scale(${scale})`;
 
   const linkPath = projectType === 'cultural' ? `/cultural/${projectId}` : `/project/${projectId}`;
 
   return (
-    <Link to={linkPath} ref={ref} className="block mb-4 md:mb-0">
+    <Link to={linkPath} ref={ref} className="block">
       <motion.img
         src={src}
         alt={alt}
         className={`${className} rounded-lg shadow-xl md:shadow-2xl`}
-        style={{ transform, opacity }}
+        style={{
+          transform,
+          opacity,
+          willChange: isMobile ? 'transform' : 'auto', // GPU acceleration hint for mobile
+        }}
         loading="lazy"
         decoding="async"
       />
