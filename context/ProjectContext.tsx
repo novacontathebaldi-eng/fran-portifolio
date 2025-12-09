@@ -108,7 +108,7 @@ const LS_CHAT_KEY = 'active_chat_session';
 const DEFAULT_SETTINGS: GlobalSettings = {
   enableShop: true,
   aiConfig: {
-    model: 'gemini-2.5-flash',
+    model: 'gemini-2.0-flash-exp',
     useCustomSystemInstruction: false,
     systemInstruction: `VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA...`,
     defaultGreeting: "Olá {name}. Sou o Concierge Digital Fran Siller. Como posso tornar seu dia melhor?",
