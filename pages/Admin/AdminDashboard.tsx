@@ -1517,7 +1517,7 @@ export const AdminDashboard: React.FC = () => {
                                         >
                                             <option value="gemini-2.5-flash">Gemini 2.5 Flash (Padrão)</option>
                                             <option value="gemini-1.5-pro">Gemini 1.5 Pro (Avançado)</option>
-                                            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Econômico)</option>
+                                            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Rápido)</option>
                                             <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite (Econômico)</option>
                                         </select>
                                     </div>
