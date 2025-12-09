@@ -1515,10 +1515,12 @@ export const AdminDashboard: React.FC = () => {
                                             onChange={(e) => handleSettingsChange('aiConfig.model', e.target.value)}
                                             className="w-full border p-3 rounded bg-white text-black focus:outline-none focus:border-black"
                                         >
-                                            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Padrão)</option>
-                                            <option value="gemini-1.5-pro">Gemini 1.5 Pro (Avançado)</option>
-                                            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Rápido)</option>
-                                            <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite (Econômico)</option>
+                                            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Rápido e Inteligente)</option>
+                                            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Econômico, Ultra Rápido)</option>
+                                            <option value="gemini-3-pro-preview">Gemini 3 Pro Preview (Mais Inteligente)</option>
+                                            <option value="gemini-2.5-pro">Gemini 2.5 Pro (Raciocínio Avançado)</option>
+                                            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Antigo)</option>
+                                            <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite (Econômico Antigo)</option>
                                         </select>
                                     </div>
                                     <div>

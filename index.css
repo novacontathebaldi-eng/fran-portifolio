@@ -134,4 +134,19 @@ body.brevo-visible #brevo-root {
   opacity: 1 !important;
   visibility: visible !important;
   pointer-events: auto !important;
+  z-index: 99999 !important;
+  position: fixed !important;
+}
+
+/* Mobile: Ensure Brevo appears above our chatbot */
+@media (max-width: 768px) {
+  body.brevo-visible #brevo-root,
+  body.brevo-visible #brevo-root * {
+    z-index: 99999 !important;
+  }
+  
+  /* Hide our chatbot when Brevo is visible on mobile */
+  body.brevo-visible .chatbot-scroll-view {
+    z-index: 1 !important;
+  }
 }
