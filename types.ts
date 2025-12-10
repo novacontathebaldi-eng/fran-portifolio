@@ -342,16 +342,40 @@ export interface DashboardWidget {
 
 export interface GlobalSettings {
   enableShop: boolean;
-  aiConfig: {
-    model: string;
-    useCustomSystemInstruction: boolean; // New Toggle
-    systemInstruction: string;
-    defaultGreeting: string; // New: Editable Welcome Message
-    temperature: number;
-  };
-  chatbotConfig?: ChatbotConfig; // NEW: Chatbot configuration
-  dashboardWidgets?: DashboardWidget[]; // Customizable dashboard widgets
+  aiConfig: AIConfig;
+  chatbotConfig?: ChatbotConfig;
+  dashboardWidgets?: DashboardWidget[];
 }
+
+// ==================== AI PROVIDER TYPES ====================
+
+export type AIProvider = 'gemini' | 'groq';
+
+export type GeminiModel = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-3-pro-preview' | 'gemini-2.5-pro' | 'gemini-2.0-flash' | 'gemini-2.0-flash-lite';
+
+export type GroqModel = 'llama-3.3-70b-versatile' | 'llama-3.1-8b-instant' | 'mixtral-8x7b-32768' | 'qwen/qwen3-32b';
+
+export interface GeminiConfig {
+  model: GeminiModel;
+}
+
+export interface GroqConfig {
+  model: GroqModel;
+}
+
+export interface AIConfig {
+  provider: AIProvider;
+  useCustomSystemInstruction: boolean;
+  systemInstruction: string;
+  defaultGreeting: string;
+  temperature: number;
+  // Provider-specific configs
+  gemini: GeminiConfig;
+  groq: GroqConfig;
+  // Legacy fallback
+  model?: string;
+}
+
 
 export interface Message {
   id: string;
