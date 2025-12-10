@@ -948,10 +948,12 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
     const result = await archiveCurrentChat();
 
     if (result === 'success') {
+      setShowQuickActions(true); // Restore quick actions
       showToast("Conversa arquivada com sucesso.", "success");
     } else if (result === 'guest') {
       // Logic Fix: Do not redirect guests. Just clear the chat.
       clearCurrentChat();
+      setShowQuickActions(true); // Restore quick actions
       showToast("Chat limpo. Faça login para salvar o histórico.", "info");
     } else {
       showToast("Erro ao arquivar.", "error");
