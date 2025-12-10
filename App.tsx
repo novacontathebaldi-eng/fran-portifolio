@@ -154,12 +154,17 @@ const Splash: React.FC<SplashProps> = ({ isDataReady, areComponentsReady, onComp
   );
 };
 
-// ScrollToTop
+// ScrollToTop - Respect back/forward navigation
 const ScrollToTop = () => {
-  const { pathname } = useLocation();
+  const { pathname, key } = useLocation();
+
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    // Quando key é 'default', geralmente significa navegação de histórico (back/forward)
+    // Apenas rola para o topo em navegação para frente (push/replace)
+    if (key !== 'default') {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, key]);
   return null;
 };
 
