@@ -110,7 +110,12 @@ const ProjectCarousel = ({ data }: { data: any }) => {
     }
   };
 
-  if (filtered.length === 0) return <div className="text-xs text-gray-500 mt-2">Nenhum projeto encontrado.</div>;
+  if (filtered.length === 0) return (
+    <div className="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-100 text-center">
+      <p className="text-sm text-gray-600">Carregando projetos...</p>
+      <p className="text-xs text-gray-400 mt-1">Se o problema persistir, tente recarregar a página.</p>
+    </div>
+  );
 
   return (
     <div className="mt-4 relative">
