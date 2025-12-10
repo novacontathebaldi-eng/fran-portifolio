@@ -207,7 +207,7 @@ const ScrollToTop = () => {
 const RouteLogger = () => {
   const { pathname } = useLocation();
   useEffect(() => {
-    if ((import.meta as any).env?.DEV) {
+    if (import.meta.env.DEV) {
       console.log('🧭 ROUTE: User navigated to', { path: pathname, timestamp: new Date().toISOString() });
     }
   }, [pathname]);
@@ -283,7 +283,7 @@ const AnimatedRoutes: React.FC = () => {
   return (
     <Suspense fallback={<PageLoader />}>
       <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
+        <Routes location={location}>
           {/* Public Routes */}
           <Route path="/" element={<Layout><Home /></Layout>} />
           <Route path="/portfolio" element={<Layout><Portfolio /></Layout>} />
