@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { useProjects } from '../context/ProjectContext';
@@ -40,6 +40,7 @@ export const Auth: React.FC = () => {
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useProjects();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,8 +59,9 @@ const Login: React.FC = () => {
       if (error) {
         setError(error.message);
       } else {
-        // Force redirect to profile with replace to clear history stack
-        navigate('/profile', { replace: true });
+        // Redirect to specified URL or profile
+        const redirectTo = searchParams.get('redirect') || '/profile';
+        navigate(redirectTo, { replace: true });
       }
     } catch (err) {
       setError('Ocorreu um erro inesperado.');
@@ -175,6 +177,7 @@ const Login: React.FC = () => {
 const Register: React.FC = () => {
   const { registerUser } = useProjects();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -206,7 +209,8 @@ const Register: React.FC = () => {
       if (error) {
         setError(error.message);
       } else {
-        navigate('/profile', { replace: true });
+        const redirectTo = searchParams.get('redirect') || '/profile';
+        navigate(redirectTo, { replace: true });
       }
     } catch (err) {
       setError("Erro inesperado ao criar conta.");

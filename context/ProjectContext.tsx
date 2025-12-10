@@ -65,6 +65,10 @@ interface ProjectContextType {
 
   updateUser: (user: User) => Promise<boolean>;
 
+  // Address Management
+  addAddress: (address: Omit<Address, 'id'>) => Promise<Address | null>;
+  deleteAddress: (addressId: string) => Promise<boolean>;
+
   addMessage: (msg: Omit<Message, 'id' | 'createdAt' | 'status'>) => Promise<void>;
   updateMessageStatus: (id: string, status: Message['status']) => Promise<void>;
   deleteMessage: (id: string) => Promise<void>;
@@ -766,6 +770,65 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       showToast("Erro ao atualizar perfil.", "error");
       return false;
     }
+  };
+
+  // --- ADDRESS MANAGEMENT ---
+  const addAddress = async (address: Omit<Address, 'id'>): Promise<Address | null> => {
+    if (!currentUser) return null;
+
+    const { data, error } = await supabase.from('addresses').insert({
+      user_id: currentUser.id,
+      label: address.label,
+      street: address.street,
+      number: address.number,
+      complement: address.complement || null,
+      district: address.district,
+      city: address.city,
+      state: address.state,
+      zip_code: address.zipCode
+    }).select().single();
+
+    if (error) {
+      console.error('Error adding address:', error);
+      showToast('Erro ao salvar endereço.', 'error');
+      return null;
+    }
+
+    const newAddress: Address = {
+      id: data.id,
+      label: data.label,
+      street: data.street,
+      number: data.number,
+      complement: data.complement,
+      district: data.district,
+      city: data.city,
+      state: data.state,
+      zipCode: data.zip_code
+    };
+
+    // Update local state
+    const updatedAddresses = [...(currentUser.addresses || []), newAddress];
+    setCurrentUser({ ...currentUser, addresses: updatedAddresses });
+
+    return newAddress;
+  };
+
+  const deleteAddress = async (addressId: string): Promise<boolean> => {
+    if (!currentUser) return false;
+
+    const { error } = await supabase.from('addresses').delete().eq('id', addressId);
+
+    if (error) {
+      console.error('Error deleting address:', error);
+      showToast('Erro ao excluir endereço.', 'error');
+      return false;
+    }
+
+    // Update local state
+    const updatedAddresses = (currentUser.addresses || []).filter(a => a.id !== addressId);
+    setCurrentUser({ ...currentUser, addresses: updatedAddresses });
+
+    return true;
   };
 
   const addClientMemory = async (memory: Omit<ClientMemory, 'id' | 'createdAt'>) => {
@@ -1777,6 +1840,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       uploadFileToFolder,
       deleteClientFile,
       updateUser,
+      addAddress,
+      deleteAddress,
       addMessage,
       updateMessageStatus,
       deleteMessage,

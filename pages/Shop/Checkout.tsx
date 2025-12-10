@@ -1,15 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ShoppingBag, ArrowLeft, Check, Loader2, MapPin, CreditCard, MessageCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ShoppingBag, ArrowLeft, Check, Loader2, MapPin, CreditCard, MessageCircle, Home, Briefcase, MapPinned, Plus, User, X, Trash2 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useProjects } from '../../context/ProjectContext';
 import { Address } from '../../types';
 
+// Address label icons mapping
+const getLabelIcon = (label: string) => {
+    const lowerLabel = label.toLowerCase();
+    if (lowerLabel.includes('casa') || lowerLabel.includes('home')) return <Home className="w-5 h-5" />;
+    if (lowerLabel.includes('trabalho') || lowerLabel.includes('work') || lowerLabel.includes('escritório')) return <Briefcase className="w-5 h-5" />;
+    return <MapPinned className="w-5 h-5" />;
+};
+
+// Label type for new addresses
+type AddressLabelType = 'Casa' | 'Trabalho' | 'Outro';
+
 export const Checkout: React.FC = () => {
     const navigate = useNavigate();
     const { cartItems, cartTotal, clearCart } = useCart();
-    const { currentUser, settings, createShopOrder, showToast, siteContent } = useProjects();
+    const { currentUser, settings, createShopOrder, showToast, siteContent, addAddress } = useProjects();
 
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<'shipping' | 'payment' | 'confirmation'>('shipping');
@@ -17,10 +28,20 @@ export const Checkout: React.FC = () => {
     const [orderComplete, setOrderComplete] = useState(false);
     const [orderId, setOrderId] = useState<string | null>(null);
 
-    // Address form
+    // Address selection
+    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+    const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+    const [newAddressLabel, setNewAddressLabel] = useState<AddressLabelType>('Casa');
+    const [customLabel, setCustomLabel] = useState('');
+    const [savingAddress, setSavingAddress] = useState(false);
+
+    // Recipient name
+    const [recipientName, setRecipientName] = useState('');
+
+    // Address form for new addresses
     const [address, setAddress] = useState<Address>({
         id: '',
-        label: 'Entrega',
+        label: 'Casa',
         street: '',
         number: '',
         complement: '',
@@ -48,10 +69,14 @@ export const Checkout: React.FC = () => {
         }
     }, [currentUser, navigate]);
 
-    // Pre-fill address from user if available
+    // Pre-select first address if available
     useEffect(() => {
-        if (currentUser?.addresses && currentUser.addresses.length > 0) {
-            setAddress(currentUser.addresses[0]);
+        if (currentUser?.addresses && currentUser.addresses.length > 0 && !selectedAddressId) {
+            setSelectedAddressId(currentUser.addresses[0].id);
+        }
+        // Pre-fill recipient name
+        if (currentUser?.name && !recipientName) {
+            setRecipientName(currentUser.name);
         }
     }, [currentUser]);
 
@@ -70,8 +95,62 @@ export const Checkout: React.FC = () => {
         return address.street && address.number && address.district && address.city && address.state && address.zipCode;
     };
 
+    const getSelectedAddress = (): Address | null => {
+        if (!selectedAddressId || !currentUser?.addresses) return null;
+        return currentUser.addresses.find(a => a.id === selectedAddressId) || null;
+    };
+
+    const handleSaveNewAddress = async () => {
+        if (!isAddressValid()) return;
+
+        setSavingAddress(true);
+        const labelToSave = newAddressLabel === 'Outro' ? (customLabel || 'Outro') : newAddressLabel;
+
+        const savedAddress = await addAddress({
+            label: labelToSave,
+            street: address.street,
+            number: address.number,
+            complement: address.complement,
+            district: address.district,
+            city: address.city,
+            state: address.state,
+            zipCode: address.zipCode
+        });
+
+        setSavingAddress(false);
+
+        if (savedAddress) {
+            setSelectedAddressId(savedAddress.id);
+            setShowNewAddressForm(false);
+            // Reset form
+            setAddress({
+                id: '',
+                label: 'Casa',
+                street: '',
+                number: '',
+                complement: '',
+                district: '',
+                city: '',
+                state: '',
+                zipCode: ''
+            });
+            showToast('Endereço salvo com sucesso!', 'success');
+        }
+    };
+
     const handleSubmitOrder = async () => {
         if (!currentUser || cartItems.length === 0) return;
+
+        const selectedAddr = getSelectedAddress();
+        if (!selectedAddr) {
+            showToast('Selecione um endereço de entrega.', 'error');
+            return;
+        }
+
+        if (!recipientName.trim()) {
+            showToast('Informe o nome do destinatário.', 'error');
+            return;
+        }
 
         setLoading(true);
         try {
@@ -80,9 +159,9 @@ export const Checkout: React.FC = () => {
                     userId: currentUser.id,
                     status: 'pending',
                     total: cartTotal,
-                    shippingAddress: address,
+                    shippingAddress: selectedAddr,
                     paymentMethod: paymentMethod,
-                    notes: `Pedido via ${paymentMethod === 'pix' ? 'PIX' : 'WhatsApp'}`
+                    notes: `Destinatário: ${recipientName} | Pedido via ${paymentMethod === 'pix' ? 'PIX' : 'WhatsApp'}`
                 },
                 cartItems.map(item => ({
                     productId: item.product.id,
@@ -168,6 +247,8 @@ export const Checkout: React.FC = () => {
         );
     }
 
+    const userAddresses = currentUser?.addresses || [];
+
     return (
         <div className="min-h-screen bg-gray-50 pt-20">
             <div className="container mx-auto px-6 py-8">
@@ -209,91 +290,233 @@ export const Checkout: React.FC = () => {
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+                                className="space-y-6"
                             >
-                                <div className="flex items-center gap-3 mb-6">
-                                    <MapPin className="w-6 h-6 text-gray-700" />
-                                    <h2 className="text-xl font-bold">Endereço de Entrega</h2>
+                                {/* Recipient Name */}
+                                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <User className="w-6 h-6 text-gray-700" />
+                                        <h2 className="text-xl font-bold">Nome do Destinatário</h2>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <input
+                                            type="text"
+                                            value={recipientName}
+                                            onChange={(e) => setRecipientName(e.target.value)}
+                                            placeholder="Nome completo para entrega"
+                                            className="flex-grow px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
+                                        />
+                                        <button
+                                            onClick={() => currentUser?.name && setRecipientName(currentUser.name)}
+                                            className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium whitespace-nowrap"
+                                        >
+                                            Usar meu nome
+                                        </button>
+                                    </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">CEP *</label>
-                                        <input
-                                            type="text"
-                                            value={address.zipCode}
-                                            onChange={(e) => handleAddressChange('zipCode', e.target.value)}
-                                            placeholder="00000-000"
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
-                                        />
+                                {/* Address Selection */}
+                                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <MapPin className="w-6 h-6 text-gray-700" />
+                                        <h2 className="text-xl font-bold">Endereço de Entrega</h2>
                                     </div>
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Rua *</label>
-                                        <input
-                                            type="text"
-                                            value={address.street}
-                                            onChange={(e) => handleAddressChange('street', e.target.value)}
-                                            placeholder="Nome da rua"
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Número *</label>
-                                        <input
-                                            type="text"
-                                            value={address.number}
-                                            onChange={(e) => handleAddressChange('number', e.target.value)}
-                                            placeholder="123"
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
-                                        <input
-                                            type="text"
-                                            value={address.complement || ''}
-                                            onChange={(e) => handleAddressChange('complement', e.target.value)}
-                                            placeholder="Apto, bloco, etc."
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Bairro *</label>
-                                        <input
-                                            type="text"
-                                            value={address.district}
-                                            onChange={(e) => handleAddressChange('district', e.target.value)}
-                                            placeholder="Bairro"
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Cidade *</label>
-                                        <input
-                                            type="text"
-                                            value={address.city}
-                                            onChange={(e) => handleAddressChange('city', e.target.value)}
-                                            placeholder="Cidade"
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Estado *</label>
-                                        <input
-                                            type="text"
-                                            value={address.state}
-                                            onChange={(e) => handleAddressChange('state', e.target.value)}
-                                            placeholder="UF"
-                                            maxLength={2}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
-                                        />
-                                    </div>
+
+                                    {userAddresses.length > 0 && !showNewAddressForm && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                            {userAddresses.map(addr => (
+                                                <button
+                                                    key={addr.id}
+                                                    onClick={() => setSelectedAddressId(addr.id)}
+                                                    className={`p-4 rounded-xl border-2 text-left transition ${selectedAddressId === addr.id
+                                                        ? 'border-black bg-gray-50'
+                                                        : 'border-gray-200 hover:border-gray-400'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-gray-600">{getLabelIcon(addr.label)}</span>
+                                                        <span className="font-bold">{addr.label}</span>
+                                                        {selectedAddressId === addr.id && (
+                                                            <Check className="w-4 h-4 text-black ml-auto" />
+                                                        )}
+                                                    </div>
+                                                    <p className="text-sm text-gray-600">
+                                                        {addr.street}, {addr.number}
+                                                        {addr.complement && ` - ${addr.complement}`}
+                                                    </p>
+                                                    <p className="text-sm text-gray-500">
+                                                        {addr.district} - {addr.city}/{addr.state}
+                                                    </p>
+                                                    <p className="text-xs text-gray-400 mt-1">CEP: {addr.zipCode}</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Add New Address Button */}
+                                    {!showNewAddressForm && (
+                                        <button
+                                            onClick={() => setShowNewAddressForm(true)}
+                                            className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-black hover:text-black transition flex items-center justify-center gap-2"
+                                        >
+                                            <Plus className="w-5 h-5" />
+                                            Adicionar Novo Endereço
+                                        </button>
+                                    )}
+
+                                    {/* New Address Form */}
+                                    <AnimatePresence>
+                                        {showNewAddressForm && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="border-t pt-6 mt-4">
+                                                    <div className="flex justify-between items-center mb-4">
+                                                        <h3 className="font-bold text-gray-900">Novo Endereço</h3>
+                                                        <button
+                                                            onClick={() => setShowNewAddressForm(false)}
+                                                            className="p-2 text-gray-400 hover:text-gray-600 transition"
+                                                        >
+                                                            <X className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Label Selection */}
+                                                    <div className="mb-4">
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de endereço</label>
+                                                        <div className="flex gap-3">
+                                                            {(['Casa', 'Trabalho', 'Outro'] as AddressLabelType[]).map(label => (
+                                                                <button
+                                                                    key={label}
+                                                                    onClick={() => setNewAddressLabel(label)}
+                                                                    className={`flex-1 p-3 rounded-xl border-2 flex flex-col items-center gap-1 transition ${newAddressLabel === label
+                                                                        ? 'border-black bg-gray-50'
+                                                                        : 'border-gray-200 hover:border-gray-400'
+                                                                        }`}
+                                                                >
+                                                                    {label === 'Casa' && <Home className="w-5 h-5" />}
+                                                                    {label === 'Trabalho' && <Briefcase className="w-5 h-5" />}
+                                                                    {label === 'Outro' && <MapPinned className="w-5 h-5" />}
+                                                                    <span className="text-sm font-medium">{label}</span>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        {newAddressLabel === 'Outro' && (
+                                                            <input
+                                                                type="text"
+                                                                value={customLabel}
+                                                                onChange={(e) => setCustomLabel(e.target.value)}
+                                                                placeholder="Nome do endereço (ex: Casa da Praia)"
+                                                                className="mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
+                                                            />
+                                                        )}
+                                                    </div>
+
+                                                    {/* Address Fields */}
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div className="md:col-span-2">
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">CEP *</label>
+                                                            <input
+                                                                type="text"
+                                                                value={address.zipCode}
+                                                                onChange={(e) => handleAddressChange('zipCode', e.target.value)}
+                                                                placeholder="00000-000"
+                                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
+                                                            />
+                                                        </div>
+                                                        <div className="md:col-span-2">
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Rua *</label>
+                                                            <input
+                                                                type="text"
+                                                                value={address.street}
+                                                                onChange={(e) => handleAddressChange('street', e.target.value)}
+                                                                placeholder="Nome da rua"
+                                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Número *</label>
+                                                            <input
+                                                                type="text"
+                                                                value={address.number}
+                                                                onChange={(e) => handleAddressChange('number', e.target.value)}
+                                                                placeholder="123"
+                                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
+                                                            <input
+                                                                type="text"
+                                                                value={address.complement || ''}
+                                                                onChange={(e) => handleAddressChange('complement', e.target.value)}
+                                                                placeholder="Apto, bloco, etc."
+                                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Bairro *</label>
+                                                            <input
+                                                                type="text"
+                                                                value={address.district}
+                                                                onChange={(e) => handleAddressChange('district', e.target.value)}
+                                                                placeholder="Bairro"
+                                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Cidade *</label>
+                                                            <input
+                                                                type="text"
+                                                                value={address.city}
+                                                                onChange={(e) => handleAddressChange('city', e.target.value)}
+                                                                placeholder="Cidade"
+                                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Estado *</label>
+                                                            <input
+                                                                type="text"
+                                                                value={address.state}
+                                                                onChange={(e) => handleAddressChange('state', e.target.value)}
+                                                                placeholder="UF"
+                                                                maxLength={2}
+                                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <button
+                                                        onClick={handleSaveNewAddress}
+                                                        disabled={!isAddressValid() || savingAddress}
+                                                        className="mt-6 w-full bg-black text-white py-4 rounded-xl font-bold hover:bg-accent hover:text-black transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                                    >
+                                                        {savingAddress ? (
+                                                            <>
+                                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                                Salvando...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Check className="w-5 h-5" />
+                                                                Salvar e Usar Este Endereço
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
 
                                 <button
                                     onClick={() => setStep('payment')}
-                                    disabled={!isAddressValid()}
-                                    className="mt-8 w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-accent hover:text-black transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                    disabled={!selectedAddressId || !recipientName.trim()}
+                                    className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-accent hover:text-black transition disabled:bg-gray-300 disabled:cursor-not-allowed"
                                 >
                                     Continuar para Pagamento
                                 </button>
@@ -407,6 +630,17 @@ export const Checkout: React.FC = () => {
                                     </div>
                                 ))}
                             </div>
+
+                            {/* Selected Address Preview */}
+                            {selectedAddressId && getSelectedAddress() && (
+                                <div className="border-t pt-4 mb-4">
+                                    <p className="text-xs text-gray-500 font-medium mb-1">Entregar para:</p>
+                                    <p className="text-sm font-medium">{recipientName || 'Não informado'}</p>
+                                    <p className="text-xs text-gray-500">
+                                        {getSelectedAddress()?.street}, {getSelectedAddress()?.number} - {getSelectedAddress()?.city}/{getSelectedAddress()?.state}
+                                    </p>
+                                </div>
+                            )}
 
                             <div className="border-t pt-4 space-y-2">
                                 <div className="flex justify-between text-gray-600">
