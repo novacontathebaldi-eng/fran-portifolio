@@ -1518,8 +1518,8 @@ export const AdminDashboard: React.FC = () => {
                                                     handleSettingsChange('aiConfig.provider', 'gemini');
                                                 }}
                                                 className={`flex-1 p-4 rounded-xl border-2 transition-all ${settingsForm.aiConfig.provider === 'gemini'
-                                                        ? 'border-black bg-black text-white'
-                                                        : 'border-gray-200 hover:border-gray-400'
+                                                    ? 'border-black bg-black text-white'
+                                                    : 'border-gray-200 hover:border-gray-400'
                                                     }`}
                                             >
                                                 <div className="font-bold">Google Gemini</div>
@@ -1530,8 +1530,8 @@ export const AdminDashboard: React.FC = () => {
                                                     handleSettingsChange('aiConfig.provider', 'groq');
                                                 }}
                                                 className={`flex-1 p-4 rounded-xl border-2 transition-all ${settingsForm.aiConfig.provider === 'groq'
-                                                        ? 'border-black bg-black text-white'
-                                                        : 'border-gray-200 hover:border-gray-400'
+                                                    ? 'border-black bg-black text-white'
+                                                    : 'border-gray-200 hover:border-gray-400'
                                                     }`}
                                             >
                                                 <div className="font-bold">Groq AI</div>
@@ -1569,9 +1569,8 @@ export const AdminDashboard: React.FC = () => {
                                                 className="w-full border p-3 rounded bg-white text-black focus:outline-none focus:border-black"
                                             >
                                                 <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Recomendado)</option>
-                                                <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Mais Rápido)</option>
+                                                <option value="llama-3.1-8b-instant">Llama 3.1 8B (Melhor Rate Limit)</option>
                                                 <option value="qwen/qwen3-32b">Qwen3 32B (Alternativo)</option>
-                                                <option value="mixtral-8x7b-32768">Mixtral 8x7B (Contexto Longo)</option>
                                             </select>
                                             <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
                                                 <Check className="w-3 h-3" /> 100% Gratuito • 14.400 req/dia
