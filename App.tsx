@@ -7,27 +7,62 @@ import { ProjectProvider, useProjects } from './context/ProjectContext';
 import { CartProvider } from './context/CartContext';
 import { LoadingScreen } from './components/loading';
 
-// Lazy load all pages for code-splitting
-const Home = lazy(() => import('./pages/Home').then(module => ({ default: module.Home })));
-const Portfolio = lazy(() => import('./pages/Portfolio').then(module => ({ default: module.Portfolio })));
-const ProjectDetails = lazy(() => import('./pages/ProjectDetails').then(module => ({ default: module.ProjectDetails })));
-const Cultural = lazy(() => import('./pages/Cultural').then(module => ({ default: module.Cultural })));
-const CulturalDetails = lazy(() => import('./pages/CulturalDetails').then(module => ({ default: module.CulturalDetails })));
-const About = lazy(() => import('./pages/About').then(module => ({ default: module.About })));
-const Office = lazy(() => import('./pages/Office').then(module => ({ default: module.Office })));
-const Contact = lazy(() => import('./pages/Contact').then(module => ({ default: module.Contact })));
-const Auth = lazy(() => import('./pages/Auth').then(module => ({ default: module.Auth })));
-const ClientArea = lazy(() => import('./pages/ClientArea').then(module => ({ default: module.ClientArea })));
-const BudgetFlow = lazy(() => import('./pages/BudgetFlow').then(module => ({ default: module.BudgetFlow })));
-const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
-const ProjectForm = lazy(() => import('./pages/Admin/ProjectForm').then(module => ({ default: module.ProjectForm })));
-const CulturalProjectForm = lazy(() => import('./pages/Admin/CulturalProjectForm').then(module => ({ default: module.CulturalProjectForm })));
+// Lazy load with automatic retry - reloads page once if chunk fails (e.g., after deploy)
+// This prevents 404 errors when old cached index.html references old chunk hashes
+function lazyWithRetry<T extends React.ComponentType<unknown>>(
+  importFn: () => Promise<{ default: T }>
+) {
+  return lazy(async () => {
+    try {
+      return await importFn();
+    } catch (error) {
+      // Chunk load failed (likely 404 from old version after deploy)
+      // Check if we already tried reloading to prevent infinite loop
+      const hasReloaded = sessionStorage.getItem('chunk-reload-retry');
 
-// Shop Pages (Lazy loaded)
-const Shop = lazy(() => import('./pages/Shop/Shop').then(module => ({ default: module.Shop })));
-const ProductDetails = lazy(() => import('./pages/Shop/ProductDetails').then(module => ({ default: module.ProductDetails })));
-const Cart = lazy(() => import('./pages/Shop/Cart').then(module => ({ default: module.Cart })));
-const Checkout = lazy(() => import('./pages/Shop/Checkout').then(module => ({ default: module.Checkout })));
+      if (!hasReloaded) {
+        // Mark that we're about to reload
+        sessionStorage.setItem('chunk-reload-retry', 'true');
+        // Reload to get fresh index.html with new chunk references
+        window.location.reload();
+      } else {
+        // Already reloaded once, clear flag for future and let error propagate
+        sessionStorage.removeItem('chunk-reload-retry');
+      }
+
+      throw error;
+    }
+  });
+}
+
+// Clear retry flag on successful page load (ensures next deploy can trigger reload)
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    sessionStorage.removeItem('chunk-reload-retry');
+  });
+}
+
+// Lazy load all pages for code-splitting (with automatic retry on failure)
+const Home = lazyWithRetry(() => import('./pages/Home').then(module => ({ default: module.Home })));
+const Portfolio = lazyWithRetry(() => import('./pages/Portfolio').then(module => ({ default: module.Portfolio })));
+const ProjectDetails = lazyWithRetry(() => import('./pages/ProjectDetails').then(module => ({ default: module.ProjectDetails })));
+const Cultural = lazyWithRetry(() => import('./pages/Cultural').then(module => ({ default: module.Cultural })));
+const CulturalDetails = lazyWithRetry(() => import('./pages/CulturalDetails').then(module => ({ default: module.CulturalDetails })));
+const About = lazyWithRetry(() => import('./pages/About').then(module => ({ default: module.About })));
+const Office = lazyWithRetry(() => import('./pages/Office').then(module => ({ default: module.Office })));
+const Contact = lazyWithRetry(() => import('./pages/Contact').then(module => ({ default: module.Contact })));
+const Auth = lazyWithRetry(() => import('./pages/Auth').then(module => ({ default: module.Auth })));
+const ClientArea = lazyWithRetry(() => import('./pages/ClientArea').then(module => ({ default: module.ClientArea })));
+const BudgetFlow = lazyWithRetry(() => import('./pages/BudgetFlow').then(module => ({ default: module.BudgetFlow })));
+const AdminDashboard = lazyWithRetry(() => import('./pages/Admin/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
+const ProjectForm = lazyWithRetry(() => import('./pages/Admin/ProjectForm').then(module => ({ default: module.ProjectForm })));
+const CulturalProjectForm = lazyWithRetry(() => import('./pages/Admin/CulturalProjectForm').then(module => ({ default: module.CulturalProjectForm })));
+
+// Shop Pages (Lazy loaded with retry)
+const Shop = lazyWithRetry(() => import('./pages/Shop/Shop').then(module => ({ default: module.Shop })));
+const ProductDetails = lazyWithRetry(() => import('./pages/Shop/ProductDetails').then(module => ({ default: module.ProductDetails })));
+const Cart = lazyWithRetry(() => import('./pages/Shop/Cart').then(module => ({ default: module.Cart })));
+const Checkout = lazyWithRetry(() => import('./pages/Shop/Checkout').then(module => ({ default: module.Checkout })));
 
 // --- Error Boundary Component ---
 interface ErrorBoundaryProps {

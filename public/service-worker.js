@@ -3,7 +3,7 @@
 // Professional caching with automatic update detection
 // ====================================================================
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_STATIC = `fran-siller-static-${CACHE_VERSION}`;
 const CACHE_IMAGES = `fran-siller-images-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `fran-siller-dynamic-${CACHE_VERSION}`;
@@ -102,8 +102,12 @@ self.addEventListener('fetch', (event) => {
         // IMAGES: Stale-While-Revalidate
         // Show cached version immediately, update cache in background
         event.respondWith(staleWhileRevalidate(request, CACHE_IMAGES));
+    } else if (isJSFile(request)) {
+        // JS FILES: Network Only (NEVER cache JS to avoid stale chunk issues)
+        // This ensures users always get fresh code after deploys
+        event.respondWith(networkOnlyWithFallback(request));
     } else if (isStaticAsset(request)) {
-        // STATIC ASSETS (JS, CSS): Cache First with Network Fallback
+        // OTHER STATIC ASSETS (CSS, fonts): Cache First with Network Fallback
         event.respondWith(cacheFirstWithRefresh(request, CACHE_STATIC));
     } else {
         // HTML/OTHER: Network First with Cache Fallback
@@ -124,11 +128,20 @@ function isImageRequest(request) {
 }
 
 // ====================================================================
-// HELPER: Check if request is for static asset
+// HELPER: Check if request is for a JS file
+// ====================================================================
+function isJSFile(request) {
+    const url = new URL(request.url);
+    return url.pathname.endsWith('.js');
+}
+
+// ====================================================================
+// HELPER: Check if request is for static asset (excluding JS)
 // ====================================================================
 function isStaticAsset(request) {
     const url = new URL(request.url);
-    const staticExtensions = ['.js', '.css', '.woff', '.woff2', '.ttf', '.eot'];
+    // Exclude .js - they have their own network-only strategy
+    const staticExtensions = ['.css', '.woff', '.woff2', '.ttf', '.eot'];
     return staticExtensions.some(ext => url.pathname.endsWith(ext));
 }
 
@@ -227,6 +240,24 @@ async function networkFirstWithCache(request, cacheName) {
         return new Response('Offline', {
             status: 503,
             statusText: 'Service Unavailable'
+        });
+    }
+}
+
+// ====================================================================
+// STRATEGY: Network Only (JS files - never cache to avoid stale chunks)
+// Always fetches from network, fails gracefully if offline
+// ====================================================================
+async function networkOnlyWithFallback(request) {
+    try {
+        const response = await fetch(request);
+        return response;
+    } catch (error) {
+        // Network failed - return error response
+        // The app's lazyWithRetry will handle reload if needed
+        return new Response('', {
+            status: 503,
+            statusText: 'Service Unavailable - JS chunk not available'
         });
     }
 }
