@@ -32,7 +32,7 @@ const uploadToSupabase = async (file: File): Promise<string> => {
 };
 
 export const ClientArea: React.FC = () => {
-  const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory, appointments, updateAppointmentStatus, updateAppointment, updateUser, showToast, siteContent, checkAvailability, settings } = useProjects();
+  const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory, appointments, updateAppointmentStatus, updateAppointment, updateUser, showToast, siteContent, checkAvailability, settings, addAddress, updateAddress, deleteAddress } = useProjects();
   const [activeTab, setActiveTab] = useState<'profile' | 'projects' | 'docs' | 'settings' | 'favs' | 'memories' | 'schedule' | 'budgets' | 'orders'>('projects');
 
   const navigate = useNavigate();
@@ -116,27 +116,58 @@ export const ClientArea: React.FC = () => {
   };
 
   const handleAddAddress = () => {
-    setAddressForm({ label: 'Casa', country: 'Brasil' } as any);
+    setAddressForm({ label: 'Casa' });
     setShowAddressModal(true);
   };
 
-  const handleSaveAddress = () => {
+  const handleSaveAddress = async () => {
     if (!currentUser) return;
-    const newAddress = {
-      ...addressForm,
-      id: addressForm.id || Math.random().toString(36).substr(2, 9)
-    } as Address;
 
-    let updatedAddresses = [...(currentUser.addresses || [])];
-    if (addressForm.id) {
-      updatedAddresses = updatedAddresses.map(a => a.id === addressForm.id ? newAddress : a);
-    } else {
-      updatedAddresses.push(newAddress);
+    // Validate label isn't duplicate
+    const existingLabels = (currentUser.addresses || []).map(a => a.label.toLowerCase());
+    const newLabel = (addressForm.label || 'Casa').toLowerCase();
+
+    // If editing and same label, allow
+    if (!addressForm.id && existingLabels.includes(newLabel)) {
+      showToast(`Você já tem um endereço chamado "${addressForm.label}". Use outro nome.`, 'error');
+      return;
     }
 
-    updateUser({ ...currentUser, addresses: updatedAddresses });
+    if (addressForm.id) {
+      // Update existing address in database using updateAddress
+      const success = await updateAddress({
+        id: addressForm.id,
+        label: addressForm.label || 'Casa',
+        street: addressForm.street || '',
+        number: addressForm.number || '',
+        complement: addressForm.complement || '',
+        district: addressForm.district || '',
+        city: addressForm.city || '',
+        state: addressForm.state || '',
+        zipCode: addressForm.zipCode || ''
+      });
+      if (success) {
+        showToast('Endereço atualizado.', 'success');
+      }
+    } else {
+      // Add new address to database
+      const saved = await addAddress({
+        label: addressForm.label || 'Casa',
+        street: addressForm.street || '',
+        number: addressForm.number || '',
+        complement: addressForm.complement || '',
+        district: addressForm.district || '',
+        city: addressForm.city || '',
+        state: addressForm.state || '',
+        zipCode: addressForm.zipCode || ''
+      });
+
+      if (saved) {
+        showToast('Endereço adicionado.', 'success');
+      }
+    }
+
     setShowAddressModal(false);
-    showToast(addressForm.id ? 'Endereço atualizado.' : 'Endereço adicionado.', 'success');
   };
 
   const handleEditAddress = (addr: Address) => {
@@ -144,10 +175,12 @@ export const ClientArea: React.FC = () => {
     setShowAddressModal(true);
   };
 
-  const handleDeleteAddress = (id: string) => {
+  const handleDeleteAddress = async (id: string) => {
     if (!currentUser || !confirm('Excluir este endereço?')) return;
-    const updatedAddresses = (currentUser.addresses || []).filter(a => a.id !== id);
-    updateUser({ ...currentUser, addresses: updatedAddresses });
+    const success = await deleteAddress(id);
+    if (success) {
+      showToast('Endereço excluído.', 'success');
+    }
   };
 
   const handleAddMemory = () => {

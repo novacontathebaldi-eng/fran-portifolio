@@ -67,6 +67,7 @@ interface ProjectContextType {
 
   // Address Management
   addAddress: (address: Omit<Address, 'id'>) => Promise<Address | null>;
+  updateAddress: (address: Address) => Promise<boolean>;
   deleteAddress: (addressId: string) => Promise<boolean>;
 
   addMessage: (msg: Omit<Message, 'id' | 'createdAt' | 'status'>) => Promise<void>;
@@ -275,17 +276,31 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       const { data: userAppts } = await supabase.from('appointments').select('*').eq('client_id', userId);
       const mappedAppts = userAppts ? userAppts.map(mapAppointment) : [];
 
+      // Fetch addresses from the addresses table (not JSONB)
+      const { data: addressesData } = await supabase.from('addresses').select('*').eq('user_id', userId);
+      const mappedAddresses: Address[] = addressesData ? addressesData.map((a: any) => ({
+        id: a.id,
+        label: a.label || '',
+        street: a.street || '',
+        number: a.number || '',
+        complement: a.complement || '',
+        district: a.district || '',
+        city: a.city || '',
+        state: a.state || '',
+        zipCode: a.zip_code || ''
+      })) : [];
+
       return {
         id: profile.id,
         name: profile.name,
         email: profile.email,
         role: profile.role as 'admin' | 'client',
         phone: profile.phone,
-        avatar: profile.avatar,
+        avatar: profile.avatar_url, // Use correct column name
         bio: profile.bio,
         cpf: profile.cpf,
         birthDate: profile.birth_date,
-        addresses: profile.addresses || [],
+        addresses: mappedAddresses,
 
         memories: memories || [],
         folders: folders || [],
@@ -826,6 +841,35 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     // Update local state
     const updatedAddresses = (currentUser.addresses || []).filter(a => a.id !== addressId);
+    setCurrentUser({ ...currentUser, addresses: updatedAddresses });
+
+    return true;
+  };
+
+  const updateAddress = async (address: Address): Promise<boolean> => {
+    if (!currentUser) return false;
+
+    const { error } = await supabase.from('addresses').update({
+      label: address.label,
+      street: address.street,
+      number: address.number,
+      complement: address.complement || null,
+      district: address.district,
+      city: address.city,
+      state: address.state,
+      zip_code: address.zipCode
+    }).eq('id', address.id);
+
+    if (error) {
+      console.error('Error updating address:', error);
+      showToast('Erro ao atualizar endereço.', 'error');
+      return false;
+    }
+
+    // Update local state
+    const updatedAddresses = (currentUser.addresses || []).map(a =>
+      a.id === address.id ? address : a
+    );
     setCurrentUser({ ...currentUser, addresses: updatedAddresses });
 
     return true;
@@ -1841,6 +1885,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       deleteClientFile,
       updateUser,
       addAddress,
+      updateAddress,
       deleteAddress,
       addMessage,
       updateMessageStatus,
