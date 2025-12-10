@@ -741,56 +741,152 @@ export const ClientArea: React.FC = () => {
                 {/* Address Modal */}
                 <AnimatePresence>
                   {showAddressModal && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
                       <motion.div
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.9, opacity: 0 }}
-                        className="bg-white rounded-2xl w-full max-w-lg p-6 md:p-8"
+                        className="bg-white rounded-2xl w-full max-w-lg p-6 md:p-8 max-h-[90vh] overflow-y-auto"
                       >
                         <div className="flex justify-between items-center mb-6">
                           <h3 className="text-xl font-serif font-bold">{addressForm.id ? 'Editar Endereço' : 'Novo Endereço'}</h3>
-                          <button onClick={() => setShowAddressModal(false)}><X className="w-5 h-5" /></button>
+                          <button onClick={() => setShowAddressModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition"><X className="w-5 h-5" /></button>
                         </div>
-                        <div className="space-y-4">
+                        <div className="space-y-5">
+                          {/* Label Selection with Icons */}
                           <div>
-                            <label className="text-xs font-bold uppercase text-gray-500">Rótulo (Ex: Casa, Escritório)</label>
-                            <input value={addressForm.label || ''} onChange={e => setAddressForm({ ...addressForm, label: e.target.value })} className="w-full border p-2 rounded mt-1" placeholder="Casa" />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="text-xs font-bold uppercase text-gray-500">CEP</label>
-                              <input value={addressForm.zipCode || ''} onChange={e => setAddressForm({ ...addressForm, zipCode: e.target.value })} className="w-full border p-2 rounded mt-1" />
+                            <label className="block text-xs font-bold uppercase text-gray-500 mb-3">Tipo de Endereço</label>
+                            <div className="grid grid-cols-3 gap-3">
+                              <button
+                                type="button"
+                                onClick={() => setAddressForm({ ...addressForm, label: 'Casa' })}
+                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition ${addressForm.label === 'Casa'
+                                    ? 'border-black bg-gray-50'
+                                    : 'border-gray-200 hover:border-gray-400'
+                                  }`}
+                              >
+                                <Home className="w-6 h-6" />
+                                <span className="text-sm font-bold">Casa</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setAddressForm({ ...addressForm, label: 'Trabalho' })}
+                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition ${addressForm.label === 'Trabalho'
+                                    ? 'border-black bg-gray-50'
+                                    : 'border-gray-200 hover:border-gray-400'
+                                  }`}
+                              >
+                                <Briefcase className="w-6 h-6" />
+                                <span className="text-sm font-bold">Trabalho</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setAddressForm({ ...addressForm, label: 'Outro' })}
+                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition ${(addressForm.label !== 'Casa' && addressForm.label !== 'Trabalho' && addressForm.label)
+                                    ? 'border-black bg-gray-50'
+                                    : 'border-gray-200 hover:border-gray-400'
+                                  }`}
+                              >
+                                <MapPin className="w-6 h-6" />
+                                <span className="text-sm font-bold">Outro</span>
+                              </button>
                             </div>
-                            <div>
-                              <label className="text-xs font-bold uppercase text-gray-500">Cidade/UF</label>
-                              <div className="flex gap-2">
-                                <input value={addressForm.city || ''} onChange={e => setAddressForm({ ...addressForm, city: e.target.value })} className="w-full border p-2 rounded mt-1" placeholder="Cidade" />
-                                <input value={addressForm.state || ''} onChange={e => setAddressForm({ ...addressForm, state: e.target.value })} className="w-20 border p-2 rounded mt-1" placeholder="UF" />
-                              </div>
-                            </div>
+                            {/* Custom label input for "Outro" */}
+                            {addressForm.label !== 'Casa' && addressForm.label !== 'Trabalho' && addressForm.label && (
+                              <input
+                                type="text"
+                                value={addressForm.label === 'Outro' ? '' : addressForm.label}
+                                onChange={e => setAddressForm({ ...addressForm, label: e.target.value || 'Outro' })}
+                                placeholder="Nome personalizado (ex: Casa da Praia)"
+                                className="w-full border border-gray-300 p-3 rounded-lg mt-3 focus:outline-none focus:ring-2 focus:ring-black/10"
+                              />
+                            )}
                           </div>
+
+                          {/* CEP */}
+                          <div>
+                            <label className="text-xs font-bold uppercase text-gray-500">CEP *</label>
+                            <input
+                              value={addressForm.zipCode || ''}
+                              onChange={e => setAddressForm({ ...addressForm, zipCode: e.target.value })}
+                              className="w-full border border-gray-300 p-3 rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-black/10"
+                              placeholder="00000-000"
+                            />
+                          </div>
+
+                          {/* Street and Number */}
                           <div className="grid grid-cols-[1fr_100px] gap-4">
                             <div>
-                              <label className="text-xs font-bold uppercase text-gray-500">Rua</label>
-                              <input value={addressForm.street || ''} onChange={e => setAddressForm({ ...addressForm, street: e.target.value })} className="w-full border p-2 rounded mt-1" />
+                              <label className="text-xs font-bold uppercase text-gray-500">Rua *</label>
+                              <input
+                                value={addressForm.street || ''}
+                                onChange={e => setAddressForm({ ...addressForm, street: e.target.value })}
+                                className="w-full border border-gray-300 p-3 rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-black/10"
+                                placeholder="Nome da rua"
+                              />
                             </div>
                             <div>
-                              <label className="text-xs font-bold uppercase text-gray-500">Número</label>
-                              <input value={addressForm.number || ''} onChange={e => setAddressForm({ ...addressForm, number: e.target.value })} className="w-full border p-2 rounded mt-1" />
+                              <label className="text-xs font-bold uppercase text-gray-500">Número *</label>
+                              <input
+                                value={addressForm.number || ''}
+                                onChange={e => setAddressForm({ ...addressForm, number: e.target.value })}
+                                className="w-full border border-gray-300 p-3 rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-black/10"
+                                placeholder="123"
+                              />
                             </div>
                           </div>
+
+                          {/* District and Complement */}
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <label className="text-xs font-bold uppercase text-gray-500">Bairro</label>
-                              <input value={addressForm.district || ''} onChange={e => setAddressForm({ ...addressForm, district: e.target.value })} className="w-full border p-2 rounded mt-1" />
+                              <label className="text-xs font-bold uppercase text-gray-500">Bairro *</label>
+                              <input
+                                value={addressForm.district || ''}
+                                onChange={e => setAddressForm({ ...addressForm, district: e.target.value })}
+                                className="w-full border border-gray-300 p-3 rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-black/10"
+                                placeholder="Bairro"
+                              />
                             </div>
                             <div>
                               <label className="text-xs font-bold uppercase text-gray-500">Complemento</label>
-                              <input value={addressForm.complement || ''} onChange={e => setAddressForm({ ...addressForm, complement: e.target.value })} className="w-full border p-2 rounded mt-1" />
+                              <input
+                                value={addressForm.complement || ''}
+                                onChange={e => setAddressForm({ ...addressForm, complement: e.target.value })}
+                                className="w-full border border-gray-300 p-3 rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-black/10"
+                                placeholder="Apto, bloco..."
+                              />
                             </div>
                           </div>
-                          <button onClick={handleSaveAddress} className="w-full bg-black text-white py-3 rounded-lg font-bold hover:bg-accent hover:text-black transition mt-4">Salvar Endereço</button>
+
+                          {/* City and State */}
+                          <div className="grid grid-cols-[1fr_80px] gap-4">
+                            <div>
+                              <label className="text-xs font-bold uppercase text-gray-500">Cidade *</label>
+                              <input
+                                value={addressForm.city || ''}
+                                onChange={e => setAddressForm({ ...addressForm, city: e.target.value })}
+                                className="w-full border border-gray-300 p-3 rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-black/10"
+                                placeholder="Cidade"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-bold uppercase text-gray-500">UF *</label>
+                              <input
+                                value={addressForm.state || ''}
+                                onChange={e => setAddressForm({ ...addressForm, state: e.target.value })}
+                                className="w-full border border-gray-300 p-3 rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-black/10"
+                                placeholder="ES"
+                                maxLength={2}
+                              />
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={handleSaveAddress}
+                            className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-accent hover:text-black transition mt-2"
+                          >
+                            Salvar Endereço
+                          </button>
                         </div>
                       </motion.div>
                     </div>
