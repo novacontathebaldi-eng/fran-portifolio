@@ -205,7 +205,12 @@ const CulturalCarousel = ({ data }: { data: any }) => {
     }
   };
 
-  if (filtered.length === 0) return <div className="text-xs text-gray-500 mt-2">Nenhum projeto cultural encontrado.</div>;
+  if (filtered.length === 0) return (
+    <div className="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-100 text-center">
+      <p className="text-sm text-gray-600">Ainda não temos projetos culturais cadastrados.</p>
+      <p className="text-xs text-gray-400 mt-1">Mas fique à vontade para ver nosso portfólio de arquitetura!</p>
+    </div>
+  );
 
   return (
     <div className="mt-4 relative">

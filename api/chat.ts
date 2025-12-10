@@ -49,14 +49,33 @@ export async function chatWithConcierge(
     }
 
     // Data structure returned from Edge Function: { text: string, functionCalls: ToolCall[] }
-    const modelText = data.text;
+    let modelText = data.text || "";
     const functionCalls = data.functionCalls as ToolCall[];
+
+    // Clean up any function call syntax that the model might have included in the text
+    // Some models (especially smaller ones) may output function calls as text
+    const functionNames = 'showProjects|showCulturalProjects|showProducts|scheduleMeeting|saveClientNote|getSocialLinks|showOfficeMap|navigateSite|requestHumanAgent|showBudgetOptions|learnClientPreference';
+    modelText = modelText
+      .replace(/<function=[^>]*><\/function>/gi, '')
+      .replace(/<function=[^>]*>/gi, '')
+      .replace(/\[function_call:[^\]]*\]/gi, '')
+      .replace(/```tool_call[\s\S]*?```/gi, '')
+      // Catch function calls written as text like: saveClientNote("message")
+      .replace(new RegExp(`\\b(${functionNames})\\s*\\([^)]*\\)`, 'gi'), '')
+      // Catch markdown-style function calls
+      .replace(new RegExp(`\\*\\*(${functionNames})[^*]*\\*\\*`, 'gi'), '')
+      // Catch standalone function names on their own line
+      .replace(new RegExp(`^\\s*(${functionNames})\\s*$`, 'gim'), '')
+      // Catch function names at end of text
+      .replace(new RegExp(`\\s+(${functionNames})\\s*$`, 'gi'), '')
+      .trim();
 
     let responseData: ChatResponse = {
       role: 'model',
-      text: modelText || "",
+      text: modelText,
       actions: []
     };
+
 
     // Process function calls (Tools) - Client side logic for UI Components & Side Effects
     if (functionCalls && functionCalls.length > 0) {
