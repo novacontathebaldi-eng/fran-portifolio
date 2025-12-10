@@ -70,9 +70,15 @@ const ProjectCarousel = ({ data }: { data: any }) => {
   const [canScrollRight, setCanScrollRight] = useState(true);
 
   const category = data?.category;
-  const filtered = category
-    ? projects.filter(p => normalizeString(p.category).includes(normalizeString(category))).slice(0, 3)
-    : projects.slice(0, 3);
+  // Try to filter by category, but fallback to all projects if no matches
+  const categoryFiltered = category
+    ? projects.filter(p => normalizeString(p.category).includes(normalizeString(category)))
+    : [];
+  // Use filtered if found, otherwise show all projects
+  const filtered = (category && categoryFiltered.length > 0)
+    ? categoryFiltered.slice(0, 4)
+    : projects.slice(0, 4);
+  const showingFallback = category && categoryFiltered.length === 0 && projects.length > 0;
 
   // Detect touch device on mount
   useEffect(() => {
@@ -119,6 +125,11 @@ const ProjectCarousel = ({ data }: { data: any }) => {
 
   return (
     <div className="mt-4 relative">
+      {showingFallback && (
+        <p className="text-xs text-gray-500 mb-2 italic">
+          Não temos projetos "{category}" no momento. Veja nossos outros projetos:
+        </p>
+      )}
       {/* Left scroll button - Desktop only */}
       {!isTouchDevice && canScrollLeft && (
         <button
