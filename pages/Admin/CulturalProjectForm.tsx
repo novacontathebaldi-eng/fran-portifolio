@@ -221,7 +221,7 @@ export const CulturalProjectForm: React.FC = () => {
       addCulturalProject({ ...projectData } as CulturalProject);
       showToast('Novo projeto cultural criado!', 'success');
     }
-    navigate('/admin');
+    navigate('/admin?tab=cultural');
   };
 
   return (

@@ -239,7 +239,7 @@ export const ProjectForm: React.FC = () => {
       addProject({ ...projectData } as Project);
       showToast('Novo projeto criado!', 'success');
     }
-    navigate('/admin');
+    navigate('/admin?tab=projects');
   };
 
   return (
