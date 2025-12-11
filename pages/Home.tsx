@@ -5,7 +5,7 @@ import { useProjects } from '../context/ProjectContext';
 import { motion, Variants } from 'framer-motion';
 
 export const Home: React.FC = () => {
-  const { projects, siteContent } = useProjects();
+  const { projects, culturalProjects, siteContent } = useProjects();
 
   const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 30 },
@@ -75,7 +75,7 @@ export const Home: React.FC = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl md:text-4xl font-serif mb-2">Obras Selecionadas</h2>
+            <h2 className="text-3xl md:text-4xl font-serif mb-2">Projetos Selecionados</h2>
             <p className="text-secondary text-base md:text-lg font-light">Projetos curados do nosso portfólio recente.</p>
           </motion.div>
           <Link to="/portfolio" className="text-sm font-bold uppercase tracking-widest border-b border-black pb-1 hover:text-accent hover:border-accent transition">Ver Todos</Link>
@@ -89,7 +89,11 @@ export const Home: React.FC = () => {
           transition={{ duration: 0.8 }}
           className="flex overflow-x-auto pb-6 space-x-6 md:space-x-8 px-6 md:px-20 lg:px-32 xl:px-40 obras-scroll snap-x snap-mandatory scroll-pl-6 md:scroll-pl-20"
         >
-          {projects.slice(0, 5).map((project) => (
+          {/* Mostrar featured primeiro, fallback para os 5 primeiros */}
+          {(projects.filter(p => p.featured).length > 0
+            ? projects.filter(p => p.featured)
+            : projects.slice(0, 5)
+          ).map((project) => (
             <Link
               to={`/project/${project.id}`}
               key={project.id}
@@ -109,6 +113,57 @@ export const Home: React.FC = () => {
           ))}
         </motion.div>
       </section>
+
+      {/* Featured Cultural Projects Scroll */}
+      {(culturalProjects.filter(p => p.featured).length > 0 || culturalProjects.length > 0) && (
+        <section className="pt-8 pb-20 md:pt-12 md:pb-32 bg-white">
+          <div className="container mx-auto px-6 mb-12 md:mb-16 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h2 className="text-3xl md:text-4xl font-serif mb-2">Projetos Culturais Selecionados</h2>
+              <p className="text-secondary text-base md:text-lg font-light">Iniciativas culturais e projetos especiais.</p>
+            </motion.div>
+            <Link to="/cultural" className="text-sm font-bold uppercase tracking-widest border-b border-black pb-1 hover:text-accent hover:border-accent transition">Ver Todos</Link>
+          </div>
+
+          {/* Horizontal Scroll Container */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="flex overflow-x-auto pb-6 space-x-6 md:space-x-8 px-6 md:px-20 lg:px-32 xl:px-40 obras-scroll snap-x snap-mandatory scroll-pl-6 md:scroll-pl-20"
+          >
+            {/* Mostrar featured primeiro, fallback para os 5 primeiros */}
+            {(culturalProjects.filter(p => p.featured).length > 0
+              ? culturalProjects.filter(p => p.featured)
+              : culturalProjects.slice(0, 5)
+            ).map((project) => (
+              <Link
+                to={`/cultural/${project.id}`}
+                key={project.id}
+                className="min-w-[280px] md:min-w-[450px] snap-start group"
+              >
+                <div className="aspect-[4/5] overflow-hidden bg-gray-100 mb-6 relative rounded-sm">
+                  <img
+                    src={project.image}
+                    alt={project.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-in-out"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition duration-500" />
+                </div>
+                <h3 className="text-xl md:text-2xl font-serif group-hover:text-accent transition">{project.title}</h3>
+                <p className="text-sm text-gray-400 mt-2 uppercase tracking-wide">{project.category} — {project.year}</p>
+              </Link>
+            ))}
+          </motion.div>
+        </section>
+      )}
+
 
       {/* About Teaser */}
       <section className="py-20 md:py-32 bg-[#f9f9f9]">

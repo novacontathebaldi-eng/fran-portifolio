@@ -23,6 +23,7 @@ export interface Project {
   images: string[];
   price?: string;
   created_at?: string; // For "Newest" sorting
+  featured?: boolean; // Exibir na página inicial
 }
 
 export interface CulturalProject {
@@ -37,6 +38,7 @@ export interface CulturalProject {
   blocks?: ContentBlock[];
   images: string[]; // Legacy support fallback
   created_at?: string;
+  featured?: boolean; // Exibir na página inicial
 }
 
 // ==================== SHOP / E-COMMERCE TYPES ====================

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail } from 'lucide-react';
+import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail, Star } from 'lucide-react';
 import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory, FaqItem, SocialLink, DashboardWidget, DashboardTabId } from '../../types';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
@@ -34,7 +34,7 @@ const uploadToSupabase = async (file: File): Promise<string> => {
 };
 
 export const AdminDashboard: React.FC = () => {
-    const { projects, deleteProject, culturalProjects, deleteCulturalProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, persistAllSettings, messages, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, updateAppointment, deleteAppointmentPermanently, currentUser, isLoadingData } = useProjects();
+    const { projects, deleteProject, updateProject, culturalProjects, deleteCulturalProject, updateCulturalProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, persistAllSettings, messages, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, updateAppointment, deleteAppointmentPermanently, currentUser, isLoadingData } = useProjects();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -1827,6 +1827,7 @@ export const AdminDashboard: React.FC = () => {
                                             <th className="text-left p-6 text-xs font-bold uppercase text-gray-600">Projeto</th>
                                             <th className="text-left p-6 text-xs font-bold uppercase text-gray-600 hidden md:table-cell">Categoria</th>
                                             <th className="text-left p-6 text-xs font-bold uppercase text-gray-600 hidden md:table-cell">Local</th>
+                                            <th className="text-center p-6 text-xs font-bold uppercase text-gray-600 hidden sm:table-cell" title="Exibir na Home">Home</th>
                                             <th className="text-right p-6 text-xs font-bold uppercase text-gray-600">Ações</th>
                                         </tr>
                                     </thead>
@@ -1841,6 +1842,18 @@ export const AdminDashboard: React.FC = () => {
                                                 </td>
                                                 <td className="p-6 text-sm text-gray-600 hidden md:table-cell">{project.category}</td>
                                                 <td className="p-6 text-sm text-gray-600 hidden md:table-cell">{project.location}</td>
+                                                <td className="p-6 text-center hidden sm:table-cell">
+                                                    <button
+                                                        onClick={() => {
+                                                            updateProject({ ...project, featured: !project.featured });
+                                                            showToast(project.featured ? 'Removido da Home' : 'Adicionado à Home', 'success');
+                                                        }}
+                                                        className={`p-2 rounded-lg transition ${project.featured ? 'text-yellow-500 bg-yellow-50 hover:bg-yellow-100' : 'text-gray-300 hover:text-yellow-400 hover:bg-gray-100'}`}
+                                                        title={project.featured ? 'Remover da Home' : 'Exibir na Home'}
+                                                    >
+                                                        <Star className={`w-5 h-5 ${project.featured ? 'fill-yellow-400' : ''}`} />
+                                                    </button>
+                                                </td>
                                                 <td className="p-6 text-right">
                                                     <div className="flex justify-end space-x-2">
                                                         <Link to={`/admin/project/edit/${project.id}`} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"><Edit2 className="w-4 h-4" /></Link>
@@ -1871,13 +1884,14 @@ export const AdminDashboard: React.FC = () => {
                                             <th className="text-left p-6 text-xs font-bold uppercase text-gray-600">Projeto</th>
                                             <th className="text-left p-6 text-xs font-bold uppercase text-gray-600 hidden md:table-cell">Categoria</th>
                                             <th className="text-left p-6 text-xs font-bold uppercase text-gray-600 hidden md:table-cell">Parceiros</th>
+                                            <th className="text-center p-6 text-xs font-bold uppercase text-gray-600 hidden sm:table-cell" title="Exibir na Home">Home</th>
                                             <th className="text-right p-6 text-xs font-bold uppercase text-gray-600">Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {culturalProjects.length === 0 ? (
                                             <tr>
-                                                <td colSpan={4} className="p-8 text-center text-gray-400">Nenhum projeto cultural cadastrado.</td>
+                                                <td colSpan={5} className="p-8 text-center text-gray-400">Nenhum projeto cultural cadastrado.</td>
                                             </tr>
                                         ) : (
                                             culturalProjects.map(project => (
@@ -1890,6 +1904,18 @@ export const AdminDashboard: React.FC = () => {
                                                     </td>
                                                     <td className="p-6 text-sm text-gray-600 hidden md:table-cell">{project.category}</td>
                                                     <td className="p-6 text-sm text-gray-600 hidden md:table-cell">{project.partners || '-'}</td>
+                                                    <td className="p-6 text-center hidden sm:table-cell">
+                                                        <button
+                                                            onClick={() => {
+                                                                updateCulturalProject({ ...project, featured: !project.featured });
+                                                                showToast(project.featured ? 'Removido da Home' : 'Adicionado à Home', 'success');
+                                                            }}
+                                                            className={`p-2 rounded-lg transition ${project.featured ? 'text-yellow-500 bg-yellow-50 hover:bg-yellow-100' : 'text-gray-300 hover:text-yellow-400 hover:bg-gray-100'}`}
+                                                            title={project.featured ? 'Remover da Home' : 'Exibir na Home'}
+                                                        >
+                                                            <Star className={`w-5 h-5 ${project.featured ? 'fill-yellow-400' : ''}`} />
+                                                        </button>
+                                                    </td>
                                                     <td className="p-6 text-right">
                                                         <div className="flex justify-end space-x-2">
                                                             <Link to={`/admin/cultural/edit/${project.id}`} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"><Edit2 className="w-4 h-4" /></Link>
