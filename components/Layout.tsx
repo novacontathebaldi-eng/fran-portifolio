@@ -163,15 +163,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Início</Link>
-            <Link to="/about" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Sobre</Link>
-            <Link to="/portfolio" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Portfólio</Link>
-            <Link to="/cultural" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Cultura</Link>
+            <Link to="/" className={`nav-link-animated text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Início</Link>
+            <Link to="/about" className={`nav-link-animated text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Sobre</Link>
+            <Link to="/portfolio" className={`nav-link-animated text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Portfólio</Link>
+            <Link to="/cultural" className={`nav-link-animated text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Cultura</Link>
             {settings.enableShop && (
-              <Link to="/shop" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Loja</Link>
+              <Link to="/shop" className={`nav-link-animated text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Loja</Link>
             )}
-            <Link to="/services" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Serviços</Link>
-            <Link to="/contact" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Contato</Link>
+            <Link to="/services" className={`nav-link-animated text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Serviços</Link>
+            <Link to="/contact" className={`nav-link-animated text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Contato</Link>
             {currentUser?.role === 'admin' && (
               <Link to="/admin" className="text-sm font-bold text-accent hover:text-white bg-black/80 px-3 py-1.5 rounded-full transition flex items-center space-x-1 backdrop-blur-sm">
                 <LayoutDashboard className="w-3 h-3" />

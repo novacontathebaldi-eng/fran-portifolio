@@ -140,13 +140,53 @@ body.brevo-visible #brevo-root {
 
 /* Mobile: Ensure Brevo appears above our chatbot */
 @media (max-width: 768px) {
+
   body.brevo-visible #brevo-root,
   body.brevo-visible #brevo-root * {
     z-index: 99999 !important;
   }
-  
+
   /* Hide our chatbot when Brevo is visible on mobile */
   body.brevo-visible .chatbot-scroll-view {
     z-index: 1 !important;
   }
+}
+
+/* ============================
+   MAGNETIC LETTER EFFECTS
+   ============================ */
+
+/* Magnetic letter base styles */
+.magnetic-letter {
+  display: inline-block;
+  transition: transform 0.15s cubic-bezier(0.23, 1, 0.32, 1);
+  will-change: transform;
+}
+
+.magnetic-letter:hover {
+  color: #d4bbb0;
+}
+
+/* ============================
+   ANIMATED UNDERLINE FOR HEADER LINKS
+   ============================ */
+
+.nav-link-animated {
+  position: relative;
+  text-decoration: none;
+}
+
+.nav-link-animated::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: #d4bbb0;
+  transition: width 500ms ease;
+}
+
+.nav-link-animated:hover::after {
+  width: 100%;
 }

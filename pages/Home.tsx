@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Clock } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
 import { motion, Variants } from 'framer-motion';
+import { MagneticTitle } from '../components/MagneticTitle';
 
 export const Home: React.FC = () => {
   const { projects, culturalProjects, siteContent } = useProjects();
@@ -49,10 +50,14 @@ export const Home: React.FC = () => {
             Arquitetura & Design
           </motion.span>
 
-          <motion.h1 variants={fadeInUp} className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-serif font-light mb-8 md:mb-10 leading-[1.1] max-w-4xl drop-shadow-lg">
-            Projetando espaços <br />
-            para <i className="font-serif italic text-accent">viver melhor</i>.
-          </motion.h1>
+          <motion.div variants={fadeInUp}>
+            <MagneticTitle
+              className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-serif font-light mb-8 md:mb-10 leading-[1.1] max-w-4xl drop-shadow-lg text-white"
+              italicWords={['viver', 'melhor.']}
+            >
+              {"Projetando espaços\npara viver melhor."}
+            </MagneticTitle>
+          </motion.div>
 
           <motion.div variants={fadeInUp}>
             <Link
