@@ -1,32 +1,11 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, MapPin, Clock, ChevronDown } from 'lucide-react';
+import { ArrowRight, MapPin, Clock } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
-import { motion, Variants, useScroll, useTransform } from 'framer-motion';
-import { MagneticTitle } from '../components/MagneticTitle';
-
-// Hook para detectar mobile
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-  return isMobile;
-};
+import { motion, Variants } from 'framer-motion';
 
 export const Home: React.FC = () => {
   const { projects, culturalProjects, siteContent } = useProjects();
-  const heroRef = useRef<HTMLElement>(null);
-  const isMobile = useIsMobile();
-
-  // Parallax scroll effect
-  const { scrollY } = useScroll();
-  const backgroundY = useTransform(scrollY, [0, 800], [0, 200]);
-  const contentY = useTransform(scrollY, [0, 800], [0, 100]);
-  const opacity = useTransform(scrollY, [0, 600], [1, 0]);
 
   const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 30 },
@@ -38,139 +17,51 @@ export const Home: React.FC = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15,
-        delayChildren: 0.3
+        staggerChildren: 0.2
       }
     }
   };
 
-  const letterVariants: Variants = {
-    hidden: { opacity: 0, y: 40, rotateX: -90 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      rotateX: 0,
-      transition: {
-        duration: 0.6,
-        delay: i * 0.03,
-        ease: [0.16, 1, 0.3, 1]
-      }
-    })
-  };
-
   return (
     <div className="overflow-hidden">
-      {/* Hero Section - Premium Parallax */}
-      <section ref={heroRef} className="relative h-screen flex items-center overflow-hidden">
-        {/* Parallax Background Layer */}
-        <motion.div
-          className="absolute inset-0 z-0 scale-110"
-          style={{ y: backgroundY }}
-        >
+      {/* Hero Section */}
+      <section className="relative h-screen flex items-center">
+        <div className="absolute inset-0 z-0">
           <motion.img
-            initial={{ scale: 1.2, opacity: 0 }}
-            animate={{ scale: 1.1, opacity: 1 }}
-            transition={{ duration: 2, ease: "easeOut" }}
+            initial={{ scale: 1.1 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 2.5, ease: "easeOut" }}
             src="https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/fundo-home.png"
             alt="Hero Architecture"
             className="w-full h-full object-cover"
           />
-        </motion.div>
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+        </div>
 
-        {/* Gradient Overlays */}
-        <div className="absolute inset-0 hero-gradient-animated z-[1]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 z-[1]" />
-
-        {/* Decorative Elements */}
         <motion.div
-          className="absolute top-1/4 left-10 w-px h-32 bg-gradient-to-b from-accent/0 via-accent/50 to-accent/0 hidden lg:block"
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: 1 }}
-          transition={{ duration: 1.5, delay: 1 }}
-        />
-        <motion.div
-          className="absolute bottom-1/4 right-10 w-px h-32 bg-gradient-to-b from-accent/0 via-accent/50 to-accent/0 hidden lg:block"
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: 1 }}
-          transition={{ duration: 1.5, delay: 1.2 }}
-        />
-
-        {/* Hero Content with Parallax */}
-        <motion.div
-          style={{ y: contentY, opacity }}
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
           className="container mx-auto px-6 relative z-10 text-white mt-12"
         >
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-          >
-            {/* Elegant Tagline with Shimmer */}
-            <motion.div
-              variants={fadeInUp}
-              className="mb-8 flex items-center gap-4"
+          <motion.span variants={fadeInUp} className="block mb-6 text-accent uppercase tracking-[0.3em] text-xs font-bold drop-shadow-md">
+            Arquitetura & Design
+          </motion.span>
+
+          <motion.h1 variants={fadeInUp} className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-serif font-light mb-8 md:mb-10 leading-[1.1] max-w-4xl drop-shadow-lg">
+            Projetando espaços <br />
+            para <i className="font-serif italic text-accent">viver melhor</i>.
+          </motion.h1>
+
+          <motion.div variants={fadeInUp}>
+            <Link
+              to="/portfolio"
+              className="inline-flex items-center space-x-3 text-base md:text-lg group"
             >
-              <motion.div
-                className="w-12 h-px bg-accent line-expand hidden md:block"
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ duration: 1, delay: 0.5 }}
-              />
-              <span className="tagline-shimmer uppercase tracking-[0.4em] text-xs md:text-sm font-bold">
-                Criando Espaços • Transformando Vidas
-              </span>
-            </motion.div>
-
-            {/* Main Title with Magnetic Effect */}
-            <motion.div variants={fadeInUp} className="mb-10 md:mb-12">
-              {isMobile ? (
-                <h1 className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-serif font-light leading-[1.1] max-w-4xl drop-shadow-lg text-glow">
-                  Projetando espaços <br />
-                  para <i className="font-serif italic text-accent">viver melhor</i>.
-                </h1>
-              ) : (
-                <MagneticTitle
-                  className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-serif font-light leading-[1.1] max-w-4xl drop-shadow-lg text-glow"
-                  italicWord="viver"
-                >
-                  Projetando espaços para viver melhor.
-                </MagneticTitle>
-              )}
-            </motion.div>
-
-            {/* CTA Button */}
-            <motion.div variants={fadeInUp}>
-              <Link
-                to="/portfolio"
-                className="group inline-flex items-center space-x-4 text-base md:text-lg"
-              >
-                <span className="relative overflow-hidden">
-                  <span className="inline-block border-b-2 border-white/50 pb-1 group-hover:border-accent transition-colors duration-500">
-                    Explorar Projetos
-                  </span>
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
-                </span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-2 group-hover:text-accent transition-all duration-300" />
-              </Link>
-            </motion.div>
-          </motion.div>
-        </motion.div>
-
-        {/* Scroll Indicator */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 text-white/70"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 2, duration: 0.8 }}
-        >
-          <motion.div
-            className="flex flex-col items-center gap-2 cursor-pointer"
-            animate={{ y: [0, 8, 0] }}
-            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-            onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
-          >
-            <span className="text-[10px] uppercase tracking-[0.3em] font-light">Scroll</span>
-            <ChevronDown className="w-5 h-5" />
+              <span className="border-b border-white pb-1 group-hover:border-accent group-hover:text-accent transition duration-300">Explorar Projetos</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition duration-300 group-hover:text-accent" />
+            </Link>
           </motion.div>
         </motion.div>
       </section>
@@ -202,38 +93,23 @@ export const Home: React.FC = () => {
           {(projects.filter(p => p.featured).length > 0
             ? projects.filter(p => p.featured)
             : projects.slice(0, 5)
-          ).map((project, index) => (
-            <motion.div
+          ).map((project) => (
+            <Link
+              to={`/project/${project.id}`}
               key={project.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
+              className="min-w-[280px] md:min-w-[450px] snap-start group"
             >
-              <Link
-                to={`/project/${project.id}`}
-                className="min-w-[280px] md:min-w-[450px] snap-start group block"
-              >
-                <div className="aspect-[4/5] overflow-hidden bg-gray-100 mb-6 relative rounded-lg shadow-lg group-hover:shadow-2xl transition-shadow duration-500">
-                  <img
-                    src={project.image}
-                    alt={project.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
-                  />
-                  {/* Gradient overlay on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  {/* Location badge */}
-                  <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
-                    <span className="text-white text-xs font-bold uppercase tracking-wider bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                      {project.location}
-                    </span>
-                    <span className="text-white/80 text-xs">{project.year}</span>
-                  </div>
-                </div>
-                <h3 className="text-xl md:text-2xl font-serif group-hover:text-accent transition-colors duration-300">{project.title}</h3>
-                <p className="text-sm text-gray-400 mt-2 uppercase tracking-wide group-hover:text-secondary transition-colors duration-300">{project.location} — {project.year}</p>
-              </Link>
-            </motion.div>
+              <div className="aspect-[4/5] overflow-hidden bg-gray-100 mb-6 relative rounded-sm">
+                <img
+                  src={project.image}
+                  alt={project.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-in-out"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition duration-500" />
+              </div>
+              <h3 className="text-xl md:text-2xl font-serif group-hover:text-accent transition">{project.title}</h3>
+              <p className="text-sm text-gray-400 mt-2 uppercase tracking-wide">{project.location} — {project.year}</p>
+            </Link>
           ))}
         </motion.div>
       </section>
@@ -266,38 +142,23 @@ export const Home: React.FC = () => {
             {(culturalProjects.filter(p => p.featured).length > 0
               ? culturalProjects.filter(p => p.featured)
               : culturalProjects.slice(0, 5)
-            ).map((project, index) => (
-              <motion.div
+            ).map((project) => (
+              <Link
+                to={`/cultural/${project.id}`}
                 key={project.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="min-w-[280px] md:min-w-[450px] snap-start group"
               >
-                <Link
-                  to={`/cultural/${project.id}`}
-                  className="min-w-[280px] md:min-w-[450px] snap-start group block"
-                >
-                  <div className="aspect-[4/5] overflow-hidden bg-gray-100 mb-6 relative rounded-lg shadow-lg group-hover:shadow-2xl transition-shadow duration-500">
-                    <img
-                      src={project.image}
-                      alt={project.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
-                    />
-                    {/* Gradient overlay on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    {/* Category badge */}
-                    <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
-                      <span className="text-white text-xs font-bold uppercase tracking-wider bg-accent/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                        {project.category}
-                      </span>
-                      <span className="text-white/80 text-xs">{project.year}</span>
-                    </div>
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-serif group-hover:text-accent transition-colors duration-300">{project.title}</h3>
-                  <p className="text-sm text-gray-400 mt-2 uppercase tracking-wide group-hover:text-secondary transition-colors duration-300">{project.category} — {project.year}</p>
-                </Link>
-              </motion.div>
+                <div className="aspect-[4/5] overflow-hidden bg-gray-100 mb-6 relative rounded-sm">
+                  <img
+                    src={project.image}
+                    alt={project.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-in-out"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition duration-500" />
+                </div>
+                <h3 className="text-xl md:text-2xl font-serif group-hover:text-accent transition">{project.title}</h3>
+                <p className="text-sm text-gray-400 mt-2 uppercase tracking-wide">{project.category} — {project.year}</p>
+              </Link>
             ))}
           </motion.div>
         </section>
