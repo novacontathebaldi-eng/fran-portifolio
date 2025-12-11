@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, LayoutDashboard } from 'lucide-react';
@@ -7,6 +5,7 @@ import { useProjects } from '../context/ProjectContext';
 import { useCart } from '../context/CartContext';
 import { Chatbot } from './Chatbot';
 import InstallButton from './InstallButton';
+import { isStandalone } from '../utils/deviceDetection';
 
 
 interface LayoutProps {
@@ -153,25 +152,25 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       )}
 
       {/* Navigation Bar - Added transition-all duration-700 ease-in-out */}
-      <nav className={`fixed w-full z-50 transition-all duration-700 ease-in-out ${isMenuOpen ? 'bg-transparent' : navClasses}`}>
+      <nav className={`fixed w - full z - 50 transition - all duration - 700 ease -in -out ${isMenuOpen ? 'bg-transparent' : navClasses} `}>
         <div className="container mx-auto px-6 flex justify-between items-center relative">
 
           {/* Logo */}
-          <Link to="/" onClick={handleLinkClick} className={`text-xl md:text-2xl font-serif tracking-tight font-bold z-[60] relative uppercase transition-colors duration-300 pointer-events-auto ${logoClasses}`}>
+          <Link to="/" onClick={handleLinkClick} className={`text - xl md: text - 2xl font - serif tracking - tight font - bold z - [60] relative uppercase transition - colors duration - 300 pointer - events - auto ${logoClasses} `}>
             FRAN<span className="text-accent">.</span>
           </Link>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Início</Link>
-            <Link to="/about" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Sobre</Link>
-            <Link to="/portfolio" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Portfólio</Link>
-            <Link to="/cultural" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Cultura</Link>
+            <Link to="/" className={`text - sm font - medium tracking - wide transition - colors duration - 300 ${linkClasses} `}>Início</Link>
+            <Link to="/about" className={`text - sm font - medium tracking - wide transition - colors duration - 300 ${linkClasses} `}>Sobre</Link>
+            <Link to="/portfolio" className={`text - sm font - medium tracking - wide transition - colors duration - 300 ${linkClasses} `}>Portfólio</Link>
+            <Link to="/cultural" className={`text - sm font - medium tracking - wide transition - colors duration - 300 ${linkClasses} `}>Cultura</Link>
             {settings.enableShop && (
-              <Link to="/shop" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Loja</Link>
+              <Link to="/shop" className={`text - sm font - medium tracking - wide transition - colors duration - 300 ${linkClasses} `}>Loja</Link>
             )}
-            <Link to="/services" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Serviços</Link>
-            <Link to="/contact" className={`text-sm font-medium tracking-wide transition-colors duration-300 ${linkClasses}`}>Contato</Link>
+            <Link to="/services" className={`text - sm font - medium tracking - wide transition - colors duration - 300 ${linkClasses} `}>Serviços</Link>
+            <Link to="/contact" className={`text - sm font - medium tracking - wide transition - colors duration - 300 ${linkClasses} `}>Contato</Link>
             {currentUser?.role === 'admin' && (
               <Link to="/admin" className="text-sm font-bold text-accent hover:text-white bg-black/80 px-3 py-1.5 rounded-full transition flex items-center space-x-1 backdrop-blur-sm">
                 <LayoutDashboard className="w-3 h-3" />
@@ -181,7 +180,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* Desktop Icons */}
-          <div className={`hidden md:flex items-center space-x-6 transition-colors duration-300 ${linkClasses}`}>
+          <div className={`hidden md:flex items - center space - x - 6 transition - colors duration - 300 ${linkClasses} `}>
             <button onClick={() => setSearchOpen(true)} className="hover:scale-110 transition-transform"><Search className="w-5 h-5" /></button>
             <Link to={currentUser ? "/profile" : "/auth"} className="hover:scale-110 transition-transform"><User className="w-5 h-5" /></Link>
             {settings.enableShop && (
@@ -198,27 +197,27 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Mobile Toggle Button (Animated X) */}
           <button
-            className={`md:hidden z-[60] relative w-12 h-12 flex items-center justify-center focus:outline-none transition-colors duration-300 pointer-events-auto ${isMenuOpen ? 'text-black' : iconClasses}`}
+            className={`md:hidden z - [60] relative w - 12 h - 12 flex items - center justify - center focus: outline - none transition - colors duration - 300 pointer - events - auto ${isMenuOpen ? 'text-black' : iconClasses} `}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label={isMenuOpen ? "Fechar Menu" : "Abrir Menu"}
           >
             <div className="w-6 h-5 relative flex flex-col justify-between">
               {/* Top Line - Rotate to make one leg of X */}
               <span
-                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 ${isMenuOpen ? 'top-1/2 -translate-y-1/2 rotate-45' : 'top-0 rotate-0'
-                  }`}
+                className={`w - full h - 0.5 bg - current rounded - full transition - all duration - 300 ease -in -out absolute left - 0 ${isMenuOpen ? 'top-1/2 -translate-y-1/2 rotate-45' : 'top-0 rotate-0'
+                  } `}
               />
 
               {/* Middle Line - Fade out */}
               <span
-                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 top-1/2 -translate-y-1/2 ${isMenuOpen ? 'opacity-0' : 'opacity-100'
-                  }`}
+                className={`w - full h - 0.5 bg - current rounded - full transition - all duration - 300 ease -in -out absolute left - 0 top - 1 / 2 - translate - y - 1 / 2 ${isMenuOpen ? 'opacity-0' : 'opacity-100'
+                  } `}
               />
 
               {/* Bottom Line - Rotate to make other leg of X */}
               <span
-                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 ${isMenuOpen ? 'top-1/2 -translate-y-1/2 -rotate-45' : 'bottom-0 rotate-0'
-                  }`}
+                className={`w - full h - 0.5 bg - current rounded - full transition - all duration - 300 ease -in -out absolute left - 0 ${isMenuOpen ? 'top-1/2 -translate-y-1/2 -rotate-45' : 'bottom-0 rotate-0'
+                  } `}
               />
             </div>
           </button>
@@ -307,8 +306,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </ul>
             </div>
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-widest mb-8 text-accent">Instalar App</h4>
-              <p className="text-xs text-gray-500 mb-4">Adicione à tela inicial do seu dispositivo.</p>
+              <h4 className="text-xs font-bold uppercase tracking-widest mb-8 text-accent">
+                {isStandalone() ? 'App Instalado ✓' : 'Instalar App'}
+              </h4>
+              <p className="text-xs text-gray-500 mb-4">
+                {isStandalone()
+                  ? 'Obrigado por instalar nosso app! 💚'
+                  : 'Adicione à tela inicial do seu dispositivo.'}
+              </p>
               <InstallButton />
             </div>
           </div>

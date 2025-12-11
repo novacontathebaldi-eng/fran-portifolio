@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download, Smartphone } from 'lucide-react';
+import { Download, Smartphone, CheckCircle } from 'lucide-react';
 import { isIOS, isIOSChrome, isAndroid, isStandalone, isMobile } from '../utils/deviceDetection';
 import IOSInstallModal from './IOSInstallModal';
 import IOSChromeInstallModal from './IOSChromeInstallModal';
@@ -11,14 +11,16 @@ const InstallButton: React.FC = () => {
     const [showIOSChromeModal, setShowIOSChromeModal] = useState(false);
     const [showDesktopModal, setShowDesktopModal] = useState(false);
     const [isInstallable, setIsInstallable] = useState(false);
+    const [isInstalled, setIsInstalled] = useState(false);
 
     useEffect(() => {
-        // Don't show install button if already installed
+        // Check if already installed (standalone mode)
         if (isStandalone()) {
+            setIsInstalled(true);
             return;
         }
 
-        // Always show button (iOS, Android, PC)
+        // Not installed - show install button
         setIsInstallable(true);
 
         // For Android/PC, listen for beforeinstallprompt event
@@ -53,10 +55,11 @@ const InstallButton: React.FC = () => {
 
             if (outcome === 'accepted') {
                 console.log('PWA installed successfully');
+                setIsInstalled(true);
+                setIsInstallable(false);
             }
 
             setDeferredPrompt(null);
-            setIsInstallable(false);
         } else if (!isAndroid()) {
             // Desktop only - show visual instructions modal
             // Android should not show modal, installation happens via deferredPrompt
@@ -65,7 +68,22 @@ const InstallButton: React.FC = () => {
         // On Android without deferredPrompt, do nothing (user may need to refresh or browser doesn't support PWA)
     };
 
-    // Don't render if not installable or already installed
+    // Show "App Installed" indicator when already installed
+    if (isInstalled) {
+        return (
+            <div
+                className="group flex items-center justify-center gap-2 px-6 py-3 bg-green-500/20 border border-green-500/30 rounded-full w-full md:w-auto cursor-default"
+                aria-label="App Instalado"
+            >
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <span className="text-sm font-bold text-green-400 uppercase tracking-wide">
+                    App Instalado
+                </span>
+            </div>
+        );
+    }
+
+    // Don't render if not installable
     if (!isInstallable) {
         return null;
     }
