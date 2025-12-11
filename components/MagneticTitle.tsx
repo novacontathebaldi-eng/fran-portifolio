@@ -21,16 +21,15 @@ const MagneticLetter: React.FC<MagneticLetterProps> = ({ letter, isItalic }) => 
         const distX = e.clientX - centerX;
         const distY = e.clientY - centerY;
 
-        // Efeito magnético - letras se afastam do cursor (repulsão)
-        const maxOffset = 15;
+        const maxOffset = 20;
         const distance = Math.sqrt(distX * distX + distY * distY);
-        const maxDistance = 100;
+        const maxDistance = 120;
 
         if (distance < maxDistance) {
             const factor = (1 - distance / maxDistance) * maxOffset;
             setOffset({
-                x: (distX / distance) * factor * -0.5,
-                y: (distY / distance) * factor * -0.5
+                x: (distX / distance) * factor * -0.6,
+                y: (distY / distance) * factor * -0.6
             });
         }
     }, []);
@@ -59,12 +58,12 @@ const MagneticLetter: React.FC<MagneticLetterProps> = ({ letter, isItalic }) => 
             }}
             transition={{
                 type: "spring",
-                stiffness: 350,
-                damping: 25,
-                mass: 0.5
+                stiffness: 400,
+                damping: 20,
+                mass: 0.4
             }}
-            style={{
-                display: 'inline-block',
+            whileHover={{
+                textShadow: "0 0 20px rgba(212, 187, 176, 0.8)",
             }}
         >
             {letter}
@@ -76,7 +75,7 @@ interface MagneticTitleProps {
     children: string;
     className?: string;
     as?: 'h1' | 'h2' | 'h3' | 'span';
-    italicWords?: string[]; // Palavras que devem ser itálicas com cor accent
+    italicWords?: string[];
 }
 
 export const MagneticTitle: React.FC<MagneticTitleProps> = ({
@@ -89,7 +88,6 @@ export const MagneticTitle: React.FC<MagneticTitleProps> = ({
     const [isMobile, setIsMobile] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Detectar mobile para desabilitar efeito
     useEffect(() => {
         const checkMobile = () => {
             setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window);
@@ -99,7 +97,6 @@ export const MagneticTitle: React.FC<MagneticTitleProps> = ({
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // Dividir texto em linhas (suporta <br> ou \n)
     const lines = children.split(/(<br\s*\/?>|\n)/gi).filter(Boolean);
 
     const renderContent = () => {
@@ -111,7 +108,6 @@ export const MagneticTitle: React.FC<MagneticTitleProps> = ({
             const words = line.split(' ');
 
             return words.map((word, wordIndex) => {
-                // Checa se a palavra deve ser itálica
                 const isItalicWord = italicWords.some(
                     iw => word.toLowerCase().includes(iw.toLowerCase())
                 );
@@ -119,19 +115,17 @@ export const MagneticTitle: React.FC<MagneticTitleProps> = ({
                 const letters = word.split('').map((letter, letterIndex) => {
                     const globalIndex = lineIndex * 1000 + wordIndex * 100 + letterIndex;
 
-                    // Se for mobile ou não estiver em hover, renderiza sem efeito
                     if (isMobile || !isHovering) {
                         return (
                             <span
                                 key={globalIndex}
-                                className={`inline-block transition-transform duration-300 ${isItalicWord ? 'italic text-accent font-serif' : ''}`}
+                                className={`inline-block transition-all duration-500 ${isItalicWord ? 'italic text-accent font-serif' : ''}`}
                             >
                                 {letter}
                             </span>
                         );
                     }
 
-                    // Com efeito magnético
                     return (
                         <MagneticLetter
                             key={globalIndex}
@@ -153,16 +147,19 @@ export const MagneticTitle: React.FC<MagneticTitleProps> = ({
     };
 
     return (
-        <div
+        <motion.div
             ref={containerRef}
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
             className="relative"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
         >
             <Tag className={className}>
                 {renderContent()}
             </Tag>
-        </div>
+        </motion.div>
     );
 };
 
