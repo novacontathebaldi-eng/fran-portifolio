@@ -58,6 +58,7 @@ export async function chatWithConcierge(
     modelText = modelText
       .replace(/<function=[^>]*><\/function>/gi, '')
       .replace(/<function=[^>]*>/gi, '')
+      .replace(/<\/function>/gi, '')
       .replace(/\[function_call:[^\]]*\]/gi, '')
       .replace(/```tool_call[\s\S]*?```/gi, '')
       // Catch function calls written as text like: saveClientNote("message")
@@ -68,6 +69,11 @@ export async function chatWithConcierge(
       .replace(new RegExp(`^\\s*(${functionNames})\\s*$`, 'gim'), '')
       // Catch function names at end of text
       .replace(new RegExp(`\\s+(${functionNames})\\s*$`, 'gi'), '')
+      // Catch function descriptions written as text
+      .replace(/OBRIGATÓRIO quando pedir[^.]*\./gi, '')
+      .replace(/Transfere para humano\./gi, '')
+      .replace(/Mostra [^.]*\./gi, '')
+      .replace(/Salva [^.]*\./gi, '')
       .trim();
 
     let responseData: ChatResponse = {
