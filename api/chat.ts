@@ -74,6 +74,10 @@ export async function chatWithConcierge(
       .replace(/Transfere para humano\./gi, '')
       .replace(/Mostra [^.]*\./gi, '')
       .replace(/Salva [^.]*\./gi, '')
+      // Catch JSON arguments written as text (from 8B models)
+      .replace(/\{"type":\s*"[^"]*"\}/gi, '')
+      .replace(/\{"message":\s*"[^"]*"\}/gi, '')
+      .replace(/\{[^{}]*"type"[^{}]*\}/gi, '')
       .trim();
 
     let responseData: ChatResponse = {
