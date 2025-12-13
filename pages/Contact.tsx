@@ -437,7 +437,7 @@ export const Contact: React.FC = () => {
                       transition={{ duration: 0.3 }}
                       className="overflow-hidden"
                     >
-                      <p className="px-6 pb-6 text-secondary leading-relaxed">{faq.answer}</p>
+                      <p className="px-6 pb-6 text-secondary leading-relaxed whitespace-pre-line">{faq.answer}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>

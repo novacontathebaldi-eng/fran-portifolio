@@ -1453,7 +1453,7 @@ export const AdminDashboard: React.FC = () => {
                                 <div className="flex justify-between items-center border-b pb-2">
                                     <h3 className="font-bold text-lg flex items-center gap-2 text-black"><Info className="w-5 h-5" /> FAQ - Perguntas Frequentes</h3>
                                     <button onClick={() => {
-                                        const newFaq = { id: Date.now().toString(), question: 'Nova pergunta?', answer: 'Resposta...' };
+                                        const newFaq = { id: Date.now().toString(), question: '', answer: '' };
                                         const currentFaq = contentForm.office.faqItems || [];
                                         handleOfficeChange('faqItems', [...currentFaq, newFaq]);
                                     }} className="text-xs bg-black text-white px-3 py-1 rounded-full flex items-center gap-1 hover:bg-accent hover:text-black transition"><Plus className="w-3 h-3" /> Adicionar</button>
