@@ -56,9 +56,8 @@ export const Home: React.FC = () => {
 
         {/* Hero Text with Smoke Effect */}
         <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 1 }}
           className="container mx-auto px-6 relative z-10 text-white mt-12 will-change-transform"
           style={{
             opacity: textOpacity,
@@ -67,16 +66,30 @@ export const Home: React.FC = () => {
             filter: textFilter,
           }}
         >
-          <motion.span variants={fadeInUp} className="block mb-6 text-accent uppercase tracking-[0.3em] text-xs font-bold drop-shadow-md">
+          <motion.span
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="block mb-6 text-accent uppercase tracking-[0.3em] text-xs font-bold drop-shadow-md"
+          >
             Arquitetura & Design
           </motion.span>
 
-          <motion.h1 variants={fadeInUp} className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-serif font-light mb-8 md:mb-10 leading-[1.1] max-w-4xl drop-shadow-lg">
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+            className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-serif font-light mb-8 md:mb-10 leading-[1.1] max-w-4xl drop-shadow-lg"
+          >
             Projetando espaços <br />
             para <i className="font-serif italic text-accent">viver melhor</i>.
           </motion.h1>
 
-          <motion.div variants={fadeInUp}>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.4 }}
+          >
             <Link
               to="/portfolio"
               className="inline-flex items-center space-x-3 text-base md:text-lg group"
