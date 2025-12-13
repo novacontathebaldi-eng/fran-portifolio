@@ -8,9 +8,11 @@ export const Home: React.FC = () => {
   const { projects, culturalProjects, siteContent } = useProjects();
   const heroRef = useRef<HTMLElement>(null);
 
-  // Parallax scroll effects for hero image - more zoom, no fade
+  // Parallax scroll effects for hero image - more zoom + blur out of focus
   const { scrollY } = useScroll();
-  const heroScale = useTransform(scrollY, [0, 800], [1, 1.4]);
+  const heroScale = useTransform(scrollY, [0, 800], [1, 1.6]);
+  const heroBlur = useTransform(scrollY, [0, 600], [0, 15]);
+  const heroFilter = useMotionTemplate`blur(${heroBlur}px)`;
 
   // Smoke effect for hero text - dissipates as you scroll (slower, more gradual)
   const textOpacity = useTransform(scrollY, [0, 600], [1, 0]);
@@ -38,11 +40,12 @@ export const Home: React.FC = () => {
     <div className="overflow-hidden">
       {/* Hero Section with Parallax */}
       <section ref={heroRef} className="relative h-screen flex items-center">
-        {/* Fixed Parallax Background */}
+        {/* Fixed Parallax Background with blur effect */}
         <motion.div
           className="fixed inset-0 z-0 will-change-transform"
           style={{
             scale: heroScale,
+            filter: heroFilter,
           }}
         >
           <img
