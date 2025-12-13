@@ -1,38 +1,11 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Clock } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
-import { motion, Variants, useScroll, useTransform, useMotionTemplate } from 'framer-motion';
+import { motion, Variants } from 'framer-motion';
 
 export const Home: React.FC = () => {
   const { projects, culturalProjects, siteContent } = useProjects();
-  const heroRef = useRef<HTMLElement>(null);
-
-  // Detect mobile for reduced effects
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Parallax scroll effects - reduced on mobile for performance
-  const { scrollY } = useScroll();
-
-  // Hero image: less zoom on mobile, no blur on mobile
-  const heroScale = useTransform(scrollY, [0, 800], [1, isMobile ? 1.2 : 1.6]);
-  const heroBlur = useTransform(scrollY, [0, 600], [0, isMobile ? 0 : 15]); // No blur on mobile
-  const heroOpacity = useTransform(scrollY, [400, 800], [1, 0]);
-  const heroFilter = useMotionTemplate`blur(${heroBlur}px)`;
-
-  // Smoke effect for hero text - reduced on mobile
-  const textOpacity = useTransform(scrollY, [0, isMobile ? 400 : 600], [1, 0]);
-  const textBlur = useTransform(scrollY, [0, isMobile ? 400 : 600], [0, isMobile ? 8 : 20]);
-  const textY = useTransform(scrollY, [0, isMobile ? 400 : 600], [0, isMobile ? -40 : -80]);
-  const textScale = useTransform(scrollY, [0, isMobile ? 400 : 600], [1, isMobile ? 1.05 : 1.15]);
-  const textFilter = useMotionTemplate`blur(${textBlur}px)`;
 
   const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 30 },
@@ -51,62 +24,37 @@ export const Home: React.FC = () => {
 
   return (
     <div className="overflow-hidden">
-      {/* Hero Section with Parallax */}
-      <section ref={heroRef} className="relative h-screen flex items-center">
-        {/* Fixed Parallax Background with blur effect - fades out to not show under footer */}
-        <motion.div
-          className="fixed inset-0 z-0 will-change-transform"
-          style={{
-            scale: heroScale,
-            filter: heroFilter,
-            opacity: heroOpacity,
-          }}
-        >
-          <img
+      {/* Hero Section */}
+      <section className="relative h-screen flex items-center">
+        <div className="absolute inset-0 z-0">
+          <motion.img
+            initial={{ scale: 1.1 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 2.5, ease: "easeOut" }}
             src="https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/1765189105042-0.24789718604799715.webp"
             alt="Hero Architecture"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-black/50" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
-        </motion.div>
+        </div>
 
-        {/* Hero Text with Smoke Effect */}
         <motion.div
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 1 }}
-          className="container mx-auto px-6 relative z-10 text-white mt-12 will-change-transform"
-          style={{
-            opacity: textOpacity,
-            y: textY,
-            scale: textScale,
-            filter: textFilter,
-          }}
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="container mx-auto px-6 relative z-10 text-white mt-12"
         >
-          <motion.span
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="block mb-6 text-accent uppercase tracking-[0.3em] text-xs font-bold drop-shadow-md"
-          >
+          <motion.span variants={fadeInUp} className="block mb-6 text-accent uppercase tracking-[0.3em] text-xs font-bold drop-shadow-md">
             Arquitetura & Design
           </motion.span>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-            className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-serif font-light mb-8 md:mb-10 leading-[1.1] max-w-4xl drop-shadow-lg"
-          >
+          <motion.h1 variants={fadeInUp} className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-serif font-light mb-8 md:mb-10 leading-[1.1] max-w-4xl drop-shadow-lg">
             Projetando espaços <br />
             para <i className="font-serif italic text-accent">viver melhor</i>.
           </motion.h1>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.4 }}
-          >
+          <motion.div variants={fadeInUp}>
             <Link
               to="/portfolio"
               className="inline-flex items-center space-x-3 text-base md:text-lg group"
@@ -119,7 +67,7 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Featured Scroll */}
-      <section className="relative z-10 pt-20 pb-8 md:pt-32 md:pb-12 bg-white">
+      <section className="pt-20 pb-8 md:pt-32 md:pb-12 bg-white">
         <div className="container mx-auto px-6 mb-12 md:mb-16 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -168,7 +116,7 @@ export const Home: React.FC = () => {
 
       {/* Featured Cultural Projects Scroll */}
       {(culturalProjects.filter(p => p.featured).length > 0 || culturalProjects.length > 0) && (
-        <section className="relative z-10 pt-8 pb-20 md:pt-12 md:pb-32 bg-white">
+        <section className="pt-8 pb-20 md:pt-12 md:pb-32 bg-white">
           <div className="container mx-auto px-6 mb-12 md:mb-16 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -218,7 +166,7 @@ export const Home: React.FC = () => {
 
 
       {/* About Teaser */}
-      <section className="relative z-10 py-20 md:py-32 bg-[#f9f9f9]">
+      <section className="py-20 md:py-32 bg-[#f9f9f9]">
         <div className="container mx-auto px-6 flex flex-col md:flex-row items-center gap-12 md:gap-20">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -257,7 +205,7 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Visit Us Section - FIXED LINK */}
-      <section className="relative z-10 py-20 bg-white border-t border-gray-100">
+      <section className="py-20 bg-white border-t border-gray-100">
         <div className="container mx-auto px-6">
           <div className="flex flex-col lg:flex-row gap-0 shadow-2xl rounded-2xl overflow-hidden">
 
