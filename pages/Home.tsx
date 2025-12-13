@@ -1,11 +1,17 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Clock } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
-import { motion, Variants } from 'framer-motion';
+import { motion, Variants, useScroll, useTransform } from 'framer-motion';
 
 export const Home: React.FC = () => {
   const { projects, culturalProjects, siteContent } = useProjects();
+  const heroRef = useRef<HTMLElement>(null);
+
+  // Parallax scroll effects for hero image
+  const { scrollY } = useScroll();
+  const heroScale = useTransform(scrollY, [0, 800], [1, 1.15]);
+  const heroOpacity = useTransform(scrollY, [0, 600], [1, 0]);
 
   const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 30 },
@@ -24,20 +30,24 @@ export const Home: React.FC = () => {
 
   return (
     <div className="overflow-hidden">
-      {/* Hero Section */}
-      <section className="relative h-screen flex items-center">
-        <div className="absolute inset-0 z-0">
-          <motion.img
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 2.5, ease: "easeOut" }}
+      {/* Hero Section with Parallax */}
+      <section ref={heroRef} className="relative h-screen flex items-center">
+        {/* Fixed Parallax Background */}
+        <motion.div
+          className="fixed inset-0 z-0 will-change-transform"
+          style={{
+            scale: heroScale,
+            opacity: heroOpacity,
+          }}
+        >
+          <img
             src="https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/1765189105042-0.24789718604799715.webp"
             alt="Hero Architecture"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-black/50" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
-        </div>
+        </motion.div>
 
         <motion.div
           variants={staggerContainer}
@@ -67,7 +77,7 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Featured Scroll */}
-      <section className="pt-20 pb-8 md:pt-32 md:pb-12 bg-white">
+      <section className="relative z-10 pt-20 pb-8 md:pt-32 md:pb-12 bg-white">
         <div className="container mx-auto px-6 mb-12 md:mb-16 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -116,7 +126,7 @@ export const Home: React.FC = () => {
 
       {/* Featured Cultural Projects Scroll */}
       {(culturalProjects.filter(p => p.featured).length > 0 || culturalProjects.length > 0) && (
-        <section className="pt-8 pb-20 md:pt-12 md:pb-32 bg-white">
+        <section className="relative z-10 pt-8 pb-20 md:pt-12 md:pb-32 bg-white">
           <div className="container mx-auto px-6 mb-12 md:mb-16 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -166,7 +176,7 @@ export const Home: React.FC = () => {
 
 
       {/* About Teaser */}
-      <section className="py-20 md:py-32 bg-[#f9f9f9]">
+      <section className="relative z-10 py-20 md:py-32 bg-[#f9f9f9]">
         <div className="container mx-auto px-6 flex flex-col md:flex-row items-center gap-12 md:gap-20">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -205,7 +215,7 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Visit Us Section - FIXED LINK */}
-      <section className="py-20 bg-white border-t border-gray-100">
+      <section className="relative z-10 py-20 bg-white border-t border-gray-100">
         <div className="container mx-auto px-6">
           <div className="flex flex-col lg:flex-row gap-0 shadow-2xl rounded-2xl overflow-hidden">
 
