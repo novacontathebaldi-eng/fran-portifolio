@@ -12,11 +12,11 @@ export const Home: React.FC = () => {
   const { scrollY } = useScroll();
   const heroScale = useTransform(scrollY, [0, 800], [1, 1.4]);
 
-  // Smoke effect for hero text - dissipates as you scroll
-  const textOpacity = useTransform(scrollY, [0, 300], [1, 0]);
-  const textBlur = useTransform(scrollY, [0, 300], [0, 20]);
-  const textY = useTransform(scrollY, [0, 300], [0, -50]);
-  const textScale = useTransform(scrollY, [0, 300], [1, 1.1]);
+  // Smoke effect for hero text - dissipates as you scroll (slower, more gradual)
+  const textOpacity = useTransform(scrollY, [0, 600], [1, 0]);
+  const textBlur = useTransform(scrollY, [0, 600], [0, 20]);
+  const textY = useTransform(scrollY, [0, 600], [0, -80]);
+  const textScale = useTransform(scrollY, [0, 600], [1, 1.15]);
   const textFilter = useMotionTemplate`blur(${textBlur}px)`;
 
   const fadeInUp: Variants = {
