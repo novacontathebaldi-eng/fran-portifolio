@@ -12,6 +12,7 @@ export const Home: React.FC = () => {
   const { scrollY } = useScroll();
   const heroScale = useTransform(scrollY, [0, 800], [1, 1.6]);
   const heroBlur = useTransform(scrollY, [0, 600], [0, 15]);
+  const heroOpacity = useTransform(scrollY, [400, 800], [1, 0]); // Fade out after hero section
   const heroFilter = useMotionTemplate`blur(${heroBlur}px)`;
 
   // Smoke effect for hero text - dissipates as you scroll (slower, more gradual)
@@ -40,12 +41,13 @@ export const Home: React.FC = () => {
     <div className="overflow-hidden">
       {/* Hero Section with Parallax */}
       <section ref={heroRef} className="relative h-screen flex items-center">
-        {/* Fixed Parallax Background with blur effect */}
+        {/* Fixed Parallax Background with blur effect - fades out to not show under footer */}
         <motion.div
           className="fixed inset-0 z-0 will-change-transform"
           style={{
             scale: heroScale,
             filter: heroFilter,
+            opacity: heroOpacity,
           }}
         >
           <img
