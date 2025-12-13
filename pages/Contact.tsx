@@ -25,7 +25,7 @@ export const Contact: React.FC = () => {
 
   // Default FAQ items if not set in admin
   const defaultFaqItems = [
-    { id: '1', question: 'Vocês realizam projetos fora de São Paulo?', answer: 'Sim. Atuamos em todo o Brasil e realizamos consultorias online para o exterior. Para acompanhamento de obra presencial, é necessário consulta prévia.' },
+    { id: '1', question: 'Vocês realizam projetos fora de Santa Leopoldina?', answer: 'Sim. Atuamos em todo o estado e realizamos consultorias online para todo o Brasil. Para acompanhamento de obra presencial, é necessário consulta prévia.' },
     { id: '2', question: 'Qual o prazo médio de um projeto?', answer: 'Um projeto completo de interiores leva em média 30 a 45 dias úteis. Projetos arquitetônicos (construção) variam de 3 a 6 meses dependendo da complexidade.' },
     { id: '3', question: 'Vocês indicam mão de obra?', answer: 'Trabalhamos com uma lista de parceiros de confiança que indicamos aos clientes, mas o cliente tem total liberdade para escolher seus fornecedores.' },
     { id: '4', question: 'Como funciona o orçamento?', answer: 'O orçamento é calculado com base na metragem quadrada e na complexidade do escopo. Você pode fazer uma simulação na nossa página de Serviços.' }
