@@ -245,7 +245,7 @@ export const ClientArea: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen pt-44 pb-24 bg-gray-50">
+    <div className="min-h-screen pt-24 pb-24 bg-gray-50">
       <div className="container mx-auto px-6 max-w-5xl">
 
         {/* Header com Botão de Logout */}
@@ -261,8 +261,8 @@ export const ClientArea: React.FC = () => {
           </button>
         </div>
 
-        {/* Barra de Abas - Estilo Portfólio Sticky */}
-        <div className="sticky top-[80px] z-40 bg-white border-y border-gray-100 mb-8 -mx-6 px-6 md:mx-0 md:px-0 shadow-sm w-[calc(100%+3rem)] md:w-full">
+        {/* Barra de Abas - Sticky que fica grudada no header */}
+        <div className="sticky top-16 z-40 bg-white border-y border-gray-100 mb-8 -mx-6 px-6 md:mx-0 md:px-0 shadow-sm w-[calc(100%+3rem)] md:w-full">
           <nav className="flex items-center space-x-2 md:space-x-4 overflow-x-auto no-scrollbar py-3 md:py-4">
             <button onClick={() => setActiveTab('projects')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'projects' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
               <Package className="w-4 h-4" />
@@ -299,7 +299,7 @@ export const ClientArea: React.FC = () => {
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - Apenas Perfil */}
-          <div className="w-full lg:w-1/4 h-fit lg:sticky lg:top-44 z-30">
+          <div className="w-full lg:w-1/4 h-fit lg:sticky lg:top-32 z-30">
             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex flex-col items-center text-center">
               <div className="relative mb-4 group cursor-pointer">
                 <div className="w-20 h-20 lg:w-24 lg:h-24 bg-accent rounded-full flex items-center justify-center text-2xl lg:text-3xl font-serif font-bold text-white shrink-0 overflow-hidden shadow-md">
