@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Clock } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
@@ -8,18 +8,30 @@ export const Home: React.FC = () => {
   const { projects, culturalProjects, siteContent } = useProjects();
   const heroRef = useRef<HTMLElement>(null);
 
-  // Parallax scroll effects for hero image - more zoom + blur out of focus
+  // Detect mobile for reduced effects
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Parallax scroll effects - reduced on mobile for performance
   const { scrollY } = useScroll();
-  const heroScale = useTransform(scrollY, [0, 800], [1, 1.6]);
-  const heroBlur = useTransform(scrollY, [0, 600], [0, 15]);
-  const heroOpacity = useTransform(scrollY, [400, 800], [1, 0]); // Fade out after hero section
+
+  // Hero image: less zoom on mobile, no blur on mobile
+  const heroScale = useTransform(scrollY, [0, 800], [1, isMobile ? 1.2 : 1.6]);
+  const heroBlur = useTransform(scrollY, [0, 600], [0, isMobile ? 0 : 15]); // No blur on mobile
+  const heroOpacity = useTransform(scrollY, [400, 800], [1, 0]);
   const heroFilter = useMotionTemplate`blur(${heroBlur}px)`;
 
-  // Smoke effect for hero text - dissipates as you scroll (slower, more gradual)
-  const textOpacity = useTransform(scrollY, [0, 600], [1, 0]);
-  const textBlur = useTransform(scrollY, [0, 600], [0, 20]);
-  const textY = useTransform(scrollY, [0, 600], [0, -80]);
-  const textScale = useTransform(scrollY, [0, 600], [1, 1.15]);
+  // Smoke effect for hero text - reduced on mobile
+  const textOpacity = useTransform(scrollY, [0, isMobile ? 400 : 600], [1, 0]);
+  const textBlur = useTransform(scrollY, [0, isMobile ? 400 : 600], [0, isMobile ? 8 : 20]);
+  const textY = useTransform(scrollY, [0, isMobile ? 400 : 600], [0, isMobile ? -40 : -80]);
+  const textScale = useTransform(scrollY, [0, isMobile ? 400 : 600], [1, isMobile ? 1.05 : 1.15]);
   const textFilter = useMotionTemplate`blur(${textBlur}px)`;
 
   const fadeInUp: Variants = {
