@@ -8,10 +8,9 @@ export const Home: React.FC = () => {
   const { projects, culturalProjects, siteContent } = useProjects();
   const heroRef = useRef<HTMLElement>(null);
 
-  // Parallax scroll effects for hero image
+  // Parallax scroll effects for hero image - more zoom, no fade
   const { scrollY } = useScroll();
-  const heroScale = useTransform(scrollY, [0, 800], [1, 1.15]);
-  const heroOpacity = useTransform(scrollY, [0, 600], [1, 0]);
+  const heroScale = useTransform(scrollY, [0, 800], [1, 1.4]);
 
   const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 30 },
@@ -37,7 +36,6 @@ export const Home: React.FC = () => {
           className="fixed inset-0 z-0 will-change-transform"
           style={{
             scale: heroScale,
-            opacity: heroOpacity,
           }}
         >
           <img
