@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Clock } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
-import { motion, Variants, useScroll, useTransform } from 'framer-motion';
+import { motion, Variants, useScroll, useTransform, useMotionTemplate } from 'framer-motion';
 
 export const Home: React.FC = () => {
   const { projects, culturalProjects, siteContent } = useProjects();
@@ -11,6 +11,13 @@ export const Home: React.FC = () => {
   // Parallax scroll effects for hero image - more zoom, no fade
   const { scrollY } = useScroll();
   const heroScale = useTransform(scrollY, [0, 800], [1, 1.4]);
+
+  // Smoke effect for hero text - dissipates as you scroll
+  const textOpacity = useTransform(scrollY, [0, 300], [1, 0]);
+  const textBlur = useTransform(scrollY, [0, 300], [0, 20]);
+  const textY = useTransform(scrollY, [0, 300], [0, -50]);
+  const textScale = useTransform(scrollY, [0, 300], [1, 1.1]);
+  const textFilter = useMotionTemplate`blur(${textBlur}px)`;
 
   const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 30 },
@@ -47,11 +54,18 @@ export const Home: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
         </motion.div>
 
+        {/* Hero Text with Smoke Effect */}
         <motion.div
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
-          className="container mx-auto px-6 relative z-10 text-white mt-12"
+          className="container mx-auto px-6 relative z-10 text-white mt-12 will-change-transform"
+          style={{
+            opacity: textOpacity,
+            y: textY,
+            scale: textScale,
+            filter: textFilter,
+          }}
         >
           <motion.span variants={fadeInUp} className="block mb-6 text-accent uppercase tracking-[0.3em] text-xs font-bold drop-shadow-md">
             Arquitetura & Design
