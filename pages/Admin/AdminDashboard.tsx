@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail, Star, Gift } from 'lucide-react';
+import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail, Star, Gift, AlertTriangle } from 'lucide-react';
 import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory, FaqItem, SocialLink, DashboardWidget, DashboardTabId } from '../../types';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
@@ -134,6 +134,11 @@ export const AdminDashboard: React.FC = () => {
     const [aboutCropImage, setAboutCropImage] = useState('');
     const [aboutCropFile, setAboutCropFile] = useState<File | null>(null);
     const [pendingAboutField, setPendingAboutField] = useState<'heroImage' | 'profileImage' | null>(null);
+
+    // Delete User States
+    const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
+    const [confirmDeleteEmail, setConfirmDeleteEmail] = useState('');
+    const [deletingUser, setDeletingUser] = useState(false);
 
     // SYNC SELECTED CLIENT WITH GLOBAL USERS STATE
     // This ensures that when a folder is created/deleted/renamed via Context, the local view updates immediately.
@@ -351,6 +356,30 @@ export const AdminDashboard: React.FC = () => {
             showToast('Memória removida.', 'success');
         }
     }
+
+    // Delete User Account Handler
+    const handleDeleteUser = async () => {
+        if (!selectedClient || confirmDeleteEmail !== selectedClient.email) return;
+
+        setDeletingUser(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('delete-user', {
+                body: { userId: selectedClient.id }
+            });
+
+            if (error) throw error;
+            if (data?.error) throw new Error(data.error);
+
+            showToast('Conta excluída com sucesso!', 'success');
+            setSelectedClient(null);
+            setShowDeleteUserModal(false);
+            setConfirmDeleteEmail('');
+        } catch (err: any) {
+            showToast(`Erro ao excluir conta: ${err.message}`, 'error');
+        } finally {
+            setDeletingUser(false);
+        }
+    };
 
     const handleCreateFolder = () => {
         if (newFolderName.trim() && selectedClient) {
@@ -1204,6 +1233,24 @@ export const AdminDashboard: React.FC = () => {
                                                         </div>
                                                     ) : <p className="text-gray-400 text-sm">Nenhum endereço.</p>}
                                                 </div>
+
+                                                {/* Danger Zone - Delete Account */}
+                                                {selectedClient.role !== 'admin' && (
+                                                    <div className="border-t border-red-100 pt-6 mt-6">
+                                                        <h4 className="font-bold mb-4 text-red-600 flex items-center gap-2">
+                                                            <AlertTriangle className="w-5 h-5" />
+                                                            Zona de Perigo
+                                                        </h4>
+                                                        <p className="text-sm text-gray-500 mb-4">Esta ação é irreversível e apagará todos os dados do cliente.</p>
+                                                        <button
+                                                            onClick={() => setShowDeleteUserModal(true)}
+                                                            className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition flex items-center gap-2"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                            Excluir Conta Permanentemente
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                         {activeClientTab === 'memories' && (
@@ -2364,6 +2411,70 @@ export const AdminDashboard: React.FC = () => {
                 showAspectSelector={true}
                 title={pendingAboutField === 'profileImage' ? 'Ajustar Foto do Perfil' : 'Ajustar Hero Image'}
             />
+
+            {/* Delete User Confirmation Modal */}
+            {showDeleteUserModal && selectedClient && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl animate-fadeIn">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 bg-red-100 rounded-full">
+                                <AlertTriangle className="w-6 h-6 text-red-600" />
+                            </div>
+                            <h3 className="text-xl font-bold text-red-600">Excluir Conta Permanentemente</h3>
+                        </div>
+
+                        <p className="text-gray-600 mb-4">
+                            Esta ação é <strong>irreversível</strong>. Todos os dados do cliente serão apagados permanentemente:
+                        </p>
+
+                        <ul className="text-sm text-gray-500 mb-4 space-y-1 pl-4">
+                            <li>• Perfil e informações pessoais</li>
+                            <li>• Todas as pastas e arquivos</li>
+                            <li>• Memórias da IA</li>
+                            <li>• Histórico de pedidos</li>
+                            <li>• Histórico de orçamentos</li>
+                            <li>• Todos os anexos</li>
+                        </ul>
+
+                        <p className="text-sm mb-2">
+                            Para confirmar, digite o email: <strong className="text-red-600 break-all">{selectedClient.email}</strong>
+                        </p>
+
+                        <input
+                            type="text"
+                            value={confirmDeleteEmail}
+                            onChange={e => setConfirmDeleteEmail(e.target.value)}
+                            placeholder="Digite o email do cliente"
+                            className="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:outline-none focus:border-red-500"
+                            disabled={deletingUser}
+                        />
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setShowDeleteUserModal(false); setConfirmDeleteEmail(''); }}
+                                className="flex-1 bg-gray-100 py-3 rounded-lg font-bold hover:bg-gray-200 transition"
+                                disabled={deletingUser}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleDeleteUser}
+                                disabled={confirmDeleteEmail !== selectedClient.email || deletingUser}
+                                className="flex-1 bg-red-600 text-white py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-700 transition flex items-center justify-center gap-2"
+                            >
+                                {deletingUser ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Excluindo...
+                                    </>
+                                ) : (
+                                    'Excluir Permanentemente'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
