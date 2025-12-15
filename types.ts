@@ -329,7 +329,7 @@ export interface ChatbotConfig {
 }
 
 // Dashboard Widget for Customizable Admin Overview
-export type DashboardTabId = 'dashboard' | 'agenda' | 'projects' | 'cultural' | 'clients' | 'ai-config' | 'budgets' | 'messages' | 'contact-messages' | 'office' | 'content' | 'settings' | 'shop';
+export type DashboardTabId = 'dashboard' | 'agenda' | 'projects' | 'cultural' | 'clients' | 'ai-config' | 'budgets' | 'messages' | 'contact-messages' | 'office' | 'content' | 'settings' | 'shop' | 'invites';
 
 export interface DashboardWidget {
   id: string;
