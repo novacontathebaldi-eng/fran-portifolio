@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail, Star } from 'lucide-react';
+import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail, Star, Gift } from 'lucide-react';
 import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory, FaqItem, SocialLink, DashboardWidget, DashboardTabId } from '../../types';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
@@ -11,6 +11,7 @@ import { Receipt } from 'lucide-react';
 import { MessagesDashboard } from './MessagesDashboard';
 import { ShopManagement } from './ShopManagement';
 import { ImageCropModal, useImageCropModal } from '../../components/ImageCropModal';
+import { AdminInviteManager } from './AdminInviteManager';
 
 // Real Supabase Upload
 const uploadToSupabase = async (file: File): Promise<string> => {
@@ -39,8 +40,8 @@ export const AdminDashboard: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
     // TABS: Synced with URL query params for better navigation
-    type AdminTab = 'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'clients' | 'agenda' | 'office' | 'budgets' | 'shop';
-    const validTabs: AdminTab[] = ['dashboard', 'projects', 'cultural', 'content', 'settings', 'ai-config', 'messages', 'clients', 'agenda', 'office', 'budgets', 'shop'];
+    type AdminTab = 'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'clients' | 'agenda' | 'office' | 'budgets' | 'shop' | 'invites';
+    const validTabs: AdminTab[] = ['dashboard', 'projects', 'cultural', 'content', 'settings', 'ai-config', 'messages', 'clients', 'agenda', 'office', 'budgets', 'shop', 'invites'];
 
     // Get tab from URL or default to 'dashboard'
     const urlTab = searchParams.get('tab') as AdminTab;
@@ -664,6 +665,7 @@ export const AdminDashboard: React.FC = () => {
                     <NavItem id="messages" icon={MessageSquare} label="Mensagens" count={unreadMessagesCount} />
                     <NavItem id="office" icon={MapPin} label="Escritório (Site)" />
                     <NavItem id="content" icon={FileText} label="Conteúdo Site" />
+                    <NavItem id="invites" icon={Gift} label="Convites" />
                     <NavItem id="settings" icon={Settings} label="Configurações" />
                 </nav>
 
@@ -1101,6 +1103,13 @@ export const AdminDashboard: React.FC = () => {
                     {activeTab === 'shop' && (
                         <div className="animate-fadeIn">
                             <ShopManagement onShowToast={showToast} />
+                        </div>
+                    )}
+
+                    {/* Invites Management View */}
+                    {activeTab === 'invites' && (
+                        <div className="animate-fadeIn">
+                            <AdminInviteManager />
                         </div>
                     )}
 

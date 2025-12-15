@@ -64,6 +64,9 @@ const ProductDetails = lazyWithRetry(() => import('./pages/Shop/ProductDetails')
 const Cart = lazyWithRetry(() => import('./pages/Shop/Cart').then(module => ({ default: module.Cart })));
 const Checkout = lazyWithRetry(() => import('./pages/Shop/Checkout').then(module => ({ default: module.Checkout })));
 
+// Claim Invite Page (Public - for new client registration via invite code)
+const ClaimInvite = lazyWithRetry(() => import('./pages/ClaimInvite').then(module => ({ default: module.ClaimInvite })));
+
 // --- Error Boundary Component ---
 interface ErrorBoundaryProps {
   children?: ReactNode;
@@ -296,6 +299,9 @@ const AnimatedRoutes: React.FC = () => {
 
           {/* Auth Routes - NO LAYOUT/HEADER */}
           <Route path="/auth/*" element={<Auth />} />
+
+          {/* Claim Invite - Public route for new client registration */}
+          <Route path="/claim/:code" element={<ClaimInvite />} />
 
           {/* Client Protected Routes */}
           <Route
