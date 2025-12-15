@@ -102,7 +102,7 @@ export const AdminDashboard: React.FC = () => {
 
     // Client Details View
     const [selectedClient, setSelectedClient] = useState<User | null>(null);
-    const [activeClientTab, setActiveClientTab] = useState<'info' | 'memories' | 'files'>('info');
+    const [activeClientTab, setActiveClientTab] = useState<'info' | 'memories' | 'files' | 'danger'>('info');
 
     // Admin File Manager State
     const [currentAdminFolderId, setCurrentAdminFolderId] = useState<string | null>(null);
@@ -1205,6 +1205,11 @@ export const AdminDashboard: React.FC = () => {
                                         <button onClick={() => setActiveClientTab('info')} className={`text-left px-4 py-3 rounded-lg text-sm font-bold transition ${activeClientTab === 'info' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}>Informações</button>
                                         <button onClick={() => setActiveClientTab('memories')} className={`text-left px-4 py-3 rounded-lg text-sm font-bold transition ${activeClientTab === 'memories' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}>Memória IA</button>
                                         <button onClick={() => setActiveClientTab('files')} className={`text-left px-4 py-3 rounded-lg text-sm font-bold transition ${activeClientTab === 'files' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}>Arquivos</button>
+                                        {selectedClient.role !== 'admin' && (
+                                            <button onClick={() => setActiveClientTab('danger')} className={`text-left px-4 py-3 rounded-lg text-sm font-bold transition mt-4 ${activeClientTab === 'danger' ? 'bg-red-600 text-white' : 'text-red-500 hover:bg-red-50'}`}>
+                                                <span className="flex items-center gap-2"><Trash2 className="w-4 h-4" /> Excluir conta</span>
+                                            </button>
+                                        )}
                                     </div>
                                     <div className="flex-grow p-8">
                                         {activeClientTab === 'info' && (
@@ -1233,24 +1238,6 @@ export const AdminDashboard: React.FC = () => {
                                                         </div>
                                                     ) : <p className="text-gray-400 text-sm">Nenhum endereço.</p>}
                                                 </div>
-
-                                                {/* Danger Zone - Delete Account */}
-                                                {selectedClient.role !== 'admin' && (
-                                                    <div className="border-t border-red-100 pt-6 mt-6">
-                                                        <h4 className="font-bold mb-4 text-red-600 flex items-center gap-2">
-                                                            <AlertTriangle className="w-5 h-5" />
-                                                            Zona de Perigo
-                                                        </h4>
-                                                        <p className="text-sm text-gray-500 mb-4">Esta ação é irreversível e apagará todos os dados do cliente.</p>
-                                                        <button
-                                                            onClick={() => setShowDeleteUserModal(true)}
-                                                            className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition flex items-center gap-2"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                            Excluir Conta Permanentemente
-                                                        </button>
-                                                    </div>
-                                                )}
                                             </div>
                                         )}
                                         {activeClientTab === 'memories' && (
@@ -1362,6 +1349,43 @@ export const AdminDashboard: React.FC = () => {
                                                         </div>
                                                     </div>
                                                 )}
+                                            </div>
+                                        )}
+
+                                        {/* Danger Zone Tab */}
+                                        {activeClientTab === 'danger' && selectedClient.role !== 'admin' && (
+                                            <div className="animate-fadeIn">
+                                                <div className="flex items-center gap-3 mb-6">
+                                                    <div className="p-3 bg-red-100 rounded-full">
+                                                        <AlertTriangle className="w-6 h-6 text-red-600" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-xl font-bold text-red-600">Zona de Perigo</h3>
+                                                        <p className="text-sm text-gray-500">Ações destrutivas e irreversíveis</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+                                                    <h4 className="font-bold text-red-700 mb-2">Excluir Conta Permanentemente</h4>
+                                                    <p className="text-sm text-red-600 mb-4">
+                                                        Esta ação irá remover permanentemente todos os dados deste cliente, incluindo:
+                                                    </p>
+                                                    <ul className="text-sm text-red-600 mb-6 space-y-1 pl-4">
+                                                        <li>• Perfil e informações pessoais</li>
+                                                        <li>• Todas as pastas e arquivos</li>
+                                                        <li>• Memórias da IA</li>
+                                                        <li>• Histórico de pedidos</li>
+                                                        <li>• Histórico de orçamentos</li>
+                                                        <li>• Todos os anexos</li>
+                                                    </ul>
+                                                    <button
+                                                        onClick={() => setShowDeleteUserModal(true)}
+                                                        className="bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 transition flex items-center gap-2"
+                                                    >
+                                                        <Trash2 className="w-5 h-5" />
+                                                        Excluir Conta Permanentemente
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -2436,8 +2460,11 @@ export const AdminDashboard: React.FC = () => {
                             <li>• Todos os anexos</li>
                         </ul>
 
-                        <p className="text-sm mb-2">
-                            Para confirmar, digite o email: <strong className="text-red-600 break-all">{selectedClient.email}</strong>
+                        <p className="text-sm text-gray-700 font-medium mb-1">
+                            Para confirmar, digite o email:
+                        </p>
+                        <p className="text-red-600 font-bold text-sm mb-3 break-all bg-red-50 p-2 rounded">
+                            {selectedClient.email}
                         </p>
 
                         <input
@@ -2445,14 +2472,14 @@ export const AdminDashboard: React.FC = () => {
                             value={confirmDeleteEmail}
                             onChange={e => setConfirmDeleteEmail(e.target.value)}
                             placeholder="Digite o email do cliente"
-                            className="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:outline-none focus:border-red-500"
+                            className="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:outline-none focus:border-red-500 text-gray-900 bg-white"
                             disabled={deletingUser}
                         />
 
                         <div className="flex gap-3">
                             <button
                                 onClick={() => { setShowDeleteUserModal(false); setConfirmDeleteEmail(''); }}
-                                className="flex-1 bg-gray-100 py-3 rounded-lg font-bold hover:bg-gray-200 transition"
+                                className="flex-1 bg-white border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-bold hover:bg-gray-100 transition"
                                 disabled={deletingUser}
                             >
                                 Cancelar
