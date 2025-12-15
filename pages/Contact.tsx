@@ -54,8 +54,7 @@ export const Contact: React.FC = () => {
         phone: formData.phone || null,
         subject: formData.subject || subjects[0],
         message: formData.message,
-        source: 'contact_form',
-        status: 'new'
+        source: 'contact_form'
       });
 
       // 2. Send email notification via Brevo

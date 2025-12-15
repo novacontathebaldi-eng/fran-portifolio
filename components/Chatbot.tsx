@@ -886,8 +886,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
               email: isEmail ? action.payload.userContact : undefined,
               phone: !isEmail ? action.payload.userContact : undefined,
               message: action.payload.message,
-              source: 'chatbot',
-              status: 'new'
+              source: 'chatbot'
             });
             showToast("Recado enviado para a equipe.", "success");
           }

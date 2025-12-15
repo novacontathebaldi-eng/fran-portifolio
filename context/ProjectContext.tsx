@@ -1798,7 +1798,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         id: (Date.now() + 1).toString(),
         role: 'model',
         text: responseData.text,
-        uiComponent: responseData.uiComponent,
+        uiComponent: responseData.uiComponent as ChatMessage['uiComponent'],
         actions: responseData.actions
       };
 

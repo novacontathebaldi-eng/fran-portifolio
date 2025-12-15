@@ -40,8 +40,8 @@ export const AdminDashboard: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
     // TABS: Synced with URL query params for better navigation
-    type AdminTab = 'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'clients' | 'agenda' | 'office' | 'budgets' | 'shop' | 'invites';
-    const validTabs: AdminTab[] = ['dashboard', 'projects', 'cultural', 'content', 'settings', 'ai-config', 'messages', 'clients', 'agenda', 'office', 'budgets', 'shop', 'invites'];
+    type AdminTab = 'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'clients' | 'agenda' | 'office' | 'budgets' | 'shop' | 'invites' | 'contact-messages';
+    const validTabs: AdminTab[] = ['dashboard', 'projects', 'cultural', 'content', 'settings', 'ai-config', 'messages', 'clients', 'agenda', 'office', 'budgets', 'shop', 'invites', 'contact-messages'];
 
     // Get tab from URL or default to 'dashboard'
     const urlTab = searchParams.get('tab') as AdminTab;
@@ -774,11 +774,11 @@ export const AdminDashboard: React.FC = () => {
                             const widgetsToSave = [...localEditingWidgets];
                             // Update settings with new widgets
                             const newSettings = { ...settings, dashboardWidgets: widgetsToSave };
-                            const success = await updateSettings(newSettings);
-                            if (success) {
+                            try {
+                                await updateSettings(newSettings);
                                 setShowEditDashboardModal(false);
                                 showToast('Widgets salvos com sucesso!', 'success');
-                            } else {
+                            } catch {
                                 showToast('Erro ao salvar widgets', 'error');
                             }
                         };
@@ -2359,7 +2359,7 @@ export const AdminDashboard: React.FC = () => {
                 onClose={() => { setAboutCropModalOpen(false); setPendingAboutField(null); }}
                 onCropComplete={handleAboutCroppedImage}
                 aspect={pendingAboutField === 'profileImage' ? 3 / 4 : 16 / 9}
-                preset={pendingAboutField === 'profileImage' ? 'profile' : 'hero'}
+                preset={pendingAboutField === 'profileImage' ? 'avatar' : 'projectHero'}
                 requireCrop={false}
                 showAspectSelector={true}
                 title={pendingAboutField === 'profileImage' ? 'Ajustar Foto do Perfil' : 'Ajustar Hero Image'}
