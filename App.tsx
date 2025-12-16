@@ -54,6 +54,7 @@ const Contact = lazyWithRetry(() => import('./pages/Contact').then(module => ({ 
 const Auth = lazyWithRetry(() => import('./pages/Auth').then(module => ({ default: module.Auth })));
 const ClientArea = lazyWithRetry(() => import('./pages/ClientArea').then(module => ({ default: module.ClientArea })));
 const BudgetFlow = lazyWithRetry(() => import('./pages/BudgetFlow').then(module => ({ default: module.BudgetFlow })));
+const Schedule = lazyWithRetry(() => import('./pages/Schedule').then(module => ({ default: module.Schedule })));
 const AdminDashboard = lazyWithRetry(() => import('./pages/Admin/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const ProjectForm = lazyWithRetry(() => import('./pages/Admin/ProjectForm').then(module => ({ default: module.ProjectForm })));
 const CulturalProjectForm = lazyWithRetry(() => import('./pages/Admin/CulturalProjectForm').then(module => ({ default: module.CulturalProjectForm })));
@@ -316,6 +317,7 @@ const AnimatedRoutes: React.FC = () => {
           {/* Budget/Services Routes (ALWAYS available - independent of shop status) */}
           <Route path="/services" element={<Layout><BudgetFlow /></Layout>} />
           <Route path="/budget" element={<Layout><BudgetFlow /></Layout>} />
+          <Route path="/schedule" element={<Layout><Schedule /></Layout>} />
 
           {/* Shop Routes (Conditional - only when shop enabled) */}
           {settings.enableShop && (
