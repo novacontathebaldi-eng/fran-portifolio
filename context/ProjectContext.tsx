@@ -1446,6 +1446,43 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
   }, []);
 
+  // Subscribe to realtime changes on appointments table
+  const subscribeToAppointments = useCallback(() => {
+    const channel = supabase
+      .channel('appointments_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments'
+        },
+        (payload) => {
+          if ((import.meta as any).env?.DEV) console.log('[Realtime] Appointments change:', payload.eventType);
+
+          if (payload.eventType === 'INSERT') {
+            const newAppt = mapAppointment(payload.new);
+            setAppointments(prev => {
+              if (prev.some(a => a.id === newAppt.id)) return prev;
+              return [newAppt, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedAppt = mapAppointment(payload.new);
+            setAppointments(prev => prev.map(a =>
+              a.id === updatedAppt.id ? updatedAppt : a
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setAppointments(prev => prev.filter(a => a.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Subscribe to realtime changes on site_settings table (Phase 4)
   const subscribeToSiteSettings = useCallback(() => {
     const channel = supabase
@@ -1505,16 +1542,18 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     const unsubscribeSettings = subscribeToSiteSettings();
     const unsubscribeMessages = subscribeToMessages();
+    const unsubscribeAppointments = subscribeToAppointments();
 
     if ((import.meta as any).env?.DEV) {
-      console.log('[Realtime] Global subscriptions activated (site_settings, messages)');
+      console.log('[Realtime] Global subscriptions activated (site_settings, messages, appointments)');
     }
 
     return () => {
       unsubscribeSettings?.();
       unsubscribeMessages?.();
+      unsubscribeAppointments?.();
     };
-  }, [subscribeToSiteSettings, subscribeToMessages]);
+  }, [subscribeToSiteSettings, subscribeToMessages, subscribeToAppointments]);
 
   const addShopProduct = async (product: Omit<ShopProduct, 'id' | 'created_at' | 'updated_at'>): Promise<ShopProduct | null> => {
     try {

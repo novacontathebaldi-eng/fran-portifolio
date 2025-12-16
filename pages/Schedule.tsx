@@ -284,7 +284,7 @@ export const Schedule: React.FC = () => {
         <div className="min-h-screen bg-[#f8f6f4]">
 
             {/* Header */}
-            <section className="py-20 md:py-28 bg-[#1a1a1a] text-white">
+            <section className="pt-28 pb-16 md:pt-36 md:pb-20 bg-[#1a1a1a] text-white">
                 <div className="container mx-auto px-6 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}

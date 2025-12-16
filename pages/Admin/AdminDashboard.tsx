@@ -453,11 +453,12 @@ export const AdminDashboard: React.FC = () => {
     // Filter Logic for Agenda View
     const isPast = (date: string) => {
         // Check if date is before TODAY (00:00:00)
-        const d = new Date(date);
-        // Adjust to local timezone date string comparison to avoid UTC issues
+        // Use T12:00:00 to avoid timezone issues (noon is safe for any timezone)
+        const d = new Date(date + 'T12:00:00');
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        return new Date(d.toISOString().split('T')[0]).getTime() < today.getTime();
+        d.setHours(0, 0, 0, 0);
+        return d.getTime() < today.getTime();
     };
 
     const filteredAppointments = sortedAppointments.filter(a => {
@@ -1090,7 +1091,7 @@ export const AdminDashboard: React.FC = () => {
                                         <div className="space-y-2 max-h-60 overflow-y-auto">
                                             {scheduleSettings.blockedDates.map(date => (
                                                 <div key={date} className="flex justify-between items-center text-sm p-2 bg-red-50 text-red-700 rounded">
-                                                    <span>Dia {new Date(date).toLocaleDateString()}</span>
+                                                    <span>Dia {new Date(date + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
                                                     <button onClick={() => handleRemoveBlockDate(date)}><X className="w-4 h-4" /></button>
                                                 </div>
                                             ))}
