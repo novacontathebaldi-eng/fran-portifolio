@@ -97,7 +97,7 @@ export const Home: React.FC = () => {
               </Link>
               <Link
                 to="/budget"
-                className="px-8 py-4 border border-white/50 text-white text-sm tracking-widest uppercase font-light hover:bg-white hover:text-black transition-all duration-300 rounded-none"
+                className="px-8 py-4 bg-[#d4bbb0] text-black text-sm tracking-widest uppercase font-medium hover:bg-white transition-colors duration-300 rounded-none"
               >
                 Solicitar Orçamento
               </Link>
