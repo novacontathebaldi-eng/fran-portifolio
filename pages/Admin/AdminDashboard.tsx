@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail, Star, Gift, AlertTriangle } from 'lucide-react';
+import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail, Star, Gift, AlertTriangle, Video, Wrench, CheckCircle } from 'lucide-react';
 import { SiteContent, GlobalSettings, StatItem, PillarItem, User, ClientFolder, Appointment, OfficeDetails, ContentBlock, ClientMemory, FaqItem, SocialLink, DashboardWidget, DashboardTabId } from '../../types';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
@@ -969,147 +969,361 @@ export const AdminDashboard: React.FC = () => {
                     {/* I'm keeping the structure but focusing on the changed Agenda view below */}
 
                     {/* Agenda View */}
-                    {activeTab === 'agenda' && (
-                        <div className="animate-fadeIn">
-                            <div className="flex justify-between items-center mb-8">
-                                <h2 className="text-3xl font-serif font-bold text-black">
-                                    {showHistory ? 'Histórico de Agendamentos' : 'Próximos Compromissos'}
-                                </h2>
-                                <div className="flex gap-2">
-                                    <button onClick={() => setShowBlockModal(true)} className="bg-red-50 text-red-600 px-4 py-2 rounded-full font-bold text-xs hover:bg-red-100 transition flex items-center gap-1">
-                                        <Ban className="w-3 h-3" /> Bloquear Horário
-                                    </button>
-                                    <button onClick={() => setShowHistory(!showHistory)} className={`px-4 py-2 rounded-full font-bold text-xs transition flex items-center gap-1 ${showHistory ? 'bg-black text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-black'}`}>
-                                        <History className="w-3 h-3" /> {showHistory ? 'Ver Ativos' : 'Histórico'}
-                                    </button>
-                                </div>
-                            </div>
+                    {activeTab === 'agenda' && (() => {
+                        // Group appointments by date for better organization
+                        const groupAppointmentsByDate = (appts: typeof filteredAppointments) => {
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+                            const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-                            {/* Block Modal */}
-                            <AnimatePresence>
-                                {showBlockModal && (
-                                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-xl p-6 max-w-sm w-full">
-                                            <h3 className="font-bold text-lg mb-4">Bloquear Agenda</h3>
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <label className="text-xs font-bold uppercase text-gray-500">Data</label>
-                                                    <input type="date" value={blockForm.date} onChange={e => setBlockForm({ ...blockForm, date: e.target.value })} className="w-full border p-2 rounded mt-1" />
+                            return appts.reduce((groups, appt) => {
+                                const apptDate = new Date(appt.date + 'T12:00:00');
+                                apptDate.setHours(0, 0, 0, 0);
+
+                                let groupKey = '';
+                                if (showHistory) {
+                                    // For history, group by recency
+                                    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+                                    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                                    if (apptDate.toDateString() === today.toDateString()) {
+                                        groupKey = 'Hoje';
+                                    } else if (apptDate.toDateString() === yesterday.toDateString()) {
+                                        groupKey = 'Ontem';
+                                    } else if (apptDate >= weekAgo) {
+                                        groupKey = 'Últimos 7 dias';
+                                    } else {
+                                        groupKey = 'Mais antigos';
+                                    }
+                                } else {
+                                    // For active, group by upcoming
+                                    if (apptDate.toDateString() === today.toDateString()) {
+                                        groupKey = 'Hoje';
+                                    } else if (apptDate.toDateString() === tomorrow.toDateString()) {
+                                        groupKey = 'Amanhã';
+                                    } else if (apptDate < weekFromNow) {
+                                        groupKey = 'Esta Semana';
+                                    } else {
+                                        groupKey = 'Próximas Semanas';
+                                    }
+                                }
+
+                                if (!groups[groupKey]) groups[groupKey] = [];
+                                groups[groupKey].push(appt);
+                                return groups;
+                            }, {} as Record<string, typeof filteredAppointments>);
+                        };
+
+                        const groupedAppts = groupAppointmentsByDate(filteredAppointments);
+                        const groupOrder = showHistory
+                            ? ['Hoje', 'Ontem', 'Últimos 7 dias', 'Mais antigos']
+                            : ['Hoje', 'Amanhã', 'Esta Semana', 'Próximas Semanas'];
+
+                        const pendingCount = appointments.filter(a => a.status === 'pending' && !isPast(a.date)).length;
+                        const confirmedCount = appointments.filter(a => a.status === 'confirmed' && !isPast(a.date)).length;
+                        const visitCount = appointments.filter(a => a.type === 'visit' && a.status !== 'cancelled' && !isPast(a.date)).length;
+                        const meetingCount = appointments.filter(a => a.type === 'meeting' && a.status !== 'cancelled' && !isPast(a.date)).length;
+
+                        return (
+                            <div className="animate-fadeIn">
+                                {/* Header with Stats */}
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                                    <div>
+                                        <h2 className="text-3xl font-serif font-bold text-black">
+                                            {showHistory ? 'Histórico de Agendamentos' : 'Agenda'}
+                                        </h2>
+                                        <p className="text-gray-500 mt-1">
+                                            {filteredAppointments.length} {filteredAppointments.length === 1 ? 'agendamento' : 'agendamentos'} {showHistory ? 'no histórico' : 'ativos'}
+                                        </p>
+                                    </div>
+
+                                    <div className="flex gap-2 flex-wrap">
+                                        <button
+                                            onClick={() => setShowBlockModal(true)}
+                                            className="bg-red-50 text-red-600 px-4 py-2 rounded-full font-bold text-xs hover:bg-red-100 transition flex items-center gap-1"
+                                        >
+                                            <Ban className="w-3 h-3" /> Bloquear Horário
+                                        </button>
+                                        <button
+                                            onClick={() => setShowHistory(!showHistory)}
+                                            className={`px-4 py-2 rounded-full font-bold text-xs transition flex items-center gap-1 ${showHistory ? 'bg-black text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-black'}`}
+                                        >
+                                            <History className="w-3 h-3" /> {showHistory ? 'Ver Ativos' : 'Histórico'}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Stats Cards (Only for Active View) */}
+                                {!showHistory && (
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                        <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-4">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                                    <Clock className="w-4 h-4 text-yellow-600" />
                                                 </div>
-                                                <div>
-                                                    <label className="text-xs font-bold uppercase text-gray-500">Horário (Opcional - Dia Inteiro se vazio)</label>
-                                                    <input type="time" value={blockForm.time} onChange={e => setBlockForm({ ...blockForm, time: e.target.value })} className="w-full border p-2 rounded mt-1" />
-                                                </div>
-                                                <div className="flex gap-2 pt-2">
-                                                    <button onClick={handleAddBlock} className="flex-1 bg-red-500 text-white py-2 rounded font-bold hover:bg-red-600">Bloquear</button>
-                                                    <button onClick={() => setShowBlockModal(false)} className="flex-1 bg-gray-100 text-gray-600 py-2 rounded font-bold hover:bg-gray-200">Cancelar</button>
-                                                </div>
+                                                <span className="text-2xl font-bold text-yellow-700">{pendingCount}</span>
                                             </div>
-                                        </motion.div>
+                                            <p className="text-xs text-yellow-600 font-medium">Pendentes</p>
+                                        </div>
+                                        <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                                    <CheckCircle className="w-4 h-4 text-green-600" />
+                                                </div>
+                                                <span className="text-2xl font-bold text-green-700">{confirmedCount}</span>
+                                            </div>
+                                            <p className="text-xs text-green-600 font-medium">Confirmados</p>
+                                        </div>
+                                        <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                                    <Video className="w-4 h-4 text-purple-600" />
+                                                </div>
+                                                <span className="text-2xl font-bold text-purple-700">{meetingCount}</span>
+                                            </div>
+                                            <p className="text-xs text-purple-600 font-medium">Reuniões</p>
+                                        </div>
+                                        <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                                    <Wrench className="w-4 h-4 text-orange-600" />
+                                                </div>
+                                                <span className="text-2xl font-bold text-orange-700">{visitCount}</span>
+                                            </div>
+                                            <p className="text-xs text-orange-600 font-medium">Visitas Técnicas</p>
+                                        </div>
                                     </div>
                                 )}
-                            </AnimatePresence>
 
-                            {/* Appointments List */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <div className="lg:col-span-2 space-y-6">
-                                    {filteredAppointments.length > 0 ? (
-                                        filteredAppointments.map(appt => (
-                                            <div key={appt.id} className={`bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between gap-4 ${appt.status === 'cancelled' ? 'opacity-70 bg-gray-50' : ''}`}>
-                                                <div>
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${appt.status === 'confirmed' ? 'bg-green-100 text-green-700' : appt.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-200 text-gray-500'}`}>
-                                                            {appt.status === 'confirmed' ? 'Confirmado' : appt.status === 'pending' ? 'Pendente' : 'Cancelado'}
-                                                        </span>
-                                                        <span className="text-xs text-gray-400">{appt.type === 'visit' ? 'Visita Técnica' : 'Reunião'}</span>
-                                                        {isPast(appt.date) && <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Passado</span>}
+                                {/* Block Modal */}
+                                <AnimatePresence>
+                                    {showBlockModal && (
+                                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+                                                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                                                    <Ban className="w-5 h-5 text-red-500" />
+                                                    Bloquear Agenda
+                                                </h3>
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <label className="text-xs font-bold uppercase text-gray-500">Data</label>
+                                                        <input type="date" value={blockForm.date} onChange={e => setBlockForm({ ...blockForm, date: e.target.value })} className="w-full border border-gray-200 p-3 rounded-lg mt-1 focus:outline-none focus:border-black transition" />
                                                     </div>
-                                                    <h4 className="font-bold text-lg">{new Date(appt.date + 'T00:00:00').toLocaleDateString('pt-BR')} às {appt.time}</h4>
-                                                    <p className="text-gray-600">{appt.clientName}</p>
-                                                    {appt.location && <p className="text-xs text-gray-400 mt-1 flex items-center gap-1"><MapPin className="w-3 h-3" /> {appt.location}</p>}
+                                                    <div>
+                                                        <label className="text-xs font-bold uppercase text-gray-500">Horário (Opcional - Dia Inteiro se vazio)</label>
+                                                        <input type="time" value={blockForm.time} onChange={e => setBlockForm({ ...blockForm, time: e.target.value })} className="w-full border border-gray-200 p-3 rounded-lg mt-1 focus:outline-none focus:border-black transition" />
+                                                    </div>
+                                                    <div className="flex gap-2 pt-2">
+                                                        <button onClick={handleAddBlock} className="flex-1 bg-red-500 text-white py-3 rounded-lg font-bold hover:bg-red-600 transition">Bloquear</button>
+                                                        <button onClick={() => setShowBlockModal(false)} className="flex-1 bg-gray-100 text-gray-600 py-3 rounded-lg font-bold hover:bg-gray-200 transition">Cancelar</button>
+                                                    </div>
                                                 </div>
-
-                                                <div className="flex flex-col gap-2 justify-center min-w-[140px]">
-                                                    {appt.status === 'pending' && !showHistory && (
-                                                        <button onClick={() => updateAppointmentStatus(appt.id, 'confirmed')} className="bg-green-500 text-white py-2 rounded font-bold text-xs hover:bg-green-600 transition">Aprovar</button>
-                                                    )}
-                                                    {appt.status !== 'cancelled' && !showHistory && (
-                                                        <button onClick={() => { if (confirm('Ao cancelar, o agendamento irá para o histórico.')) updateAppointmentStatus(appt.id, 'cancelled'); }} className="bg-gray-100 text-gray-600 py-2 rounded font-bold text-xs hover:bg-gray-200 transition">Cancelar</button>
-                                                    )}
-                                                    <button onClick={() => { if (confirm('ATENÇÃO: Isso excluirá permanentemente o agendamento do banco de dados.')) deleteAppointmentPermanently(appt.id); }} className="text-red-300 text-xs hover:text-red-500 hover:underline flex items-center justify-center gap-1">
-                                                        <Trash2 className="w-3 h-3" /> Excluir
-                                                    </button>
-                                                    {appt.status === 'confirmed' && appt.type === 'meeting' && !showHistory && (
-                                                        <button onClick={() => { const link = prompt('Link da Reunião:', appt.meetingLink || ''); if (link) updateAppointment({ ...appt, meetingLink: link }) }} className="text-blue-500 text-xs font-bold hover:underline mt-1 text-center">
-                                                            {appt.meetingLink ? 'Editar Link' : 'Adicionar Link'}
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="p-12 text-center text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
-                                            {showHistory ? 'Nenhum histórico encontrado.' : 'Nenhum agendamento futuro.'}
+                                            </motion.div>
                                         </div>
                                     )}
-                                </div>
+                                </AnimatePresence>
 
-                                {/* Settings Side */}
-                                <div className="space-y-6">
-                                    <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-                                        <h3 className="font-bold text-lg mb-4">Configuração Semanal</h3>
-                                        <div className="flex flex-wrap gap-2 mb-4">
-                                            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d, i) => (
-                                                <button
-                                                    key={i}
-                                                    onClick={() => {
-                                                        const newDays = scheduleSettings.workDays.includes(i)
-                                                            ? scheduleSettings.workDays.filter(day => day !== i)
-                                                            : [...scheduleSettings.workDays, i].sort();
-                                                        updateScheduleSettings({ ...scheduleSettings, workDays: newDays });
-                                                    }}
-                                                    className={`w-10 h-10 rounded-full text-xs font-bold transition ${scheduleSettings.workDays.includes(i) ? 'bg-black text-white' : 'bg-gray-100 text-gray-400'}`}
-                                                >
-                                                    {d}
-                                                </button>
-                                            ))}
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="text-[10px] uppercase font-bold text-gray-400">Início</label>
-                                                <input type="time" value={scheduleSettings.startHour} onChange={e => updateScheduleSettings({ ...scheduleSettings, startHour: e.target.value })} className="w-full border p-2 rounded text-sm" />
+                                {/* Main Content Grid */}
+                                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                                    {/* Appointments Column (3/4) */}
+                                    <div className="lg:col-span-3 space-y-4">
+                                        {filteredAppointments.length > 0 ? (
+                                            groupOrder.filter(g => groupedAppts[g]?.length > 0).map(groupName => (
+                                                <div key={groupName} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                                    {/* Group Header */}
+                                                    <div className="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-100">
+                                                        <div className="flex items-center gap-3">
+                                                            <Calendar className="w-4 h-4 text-gray-400" />
+                                                            <span className="font-bold text-sm uppercase text-gray-600">{groupName}</span>
+                                                            <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{groupedAppts[groupName].length}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Appointments in Group */}
+                                                    <div className="divide-y divide-gray-100">
+                                                        {groupedAppts[groupName].map(appt => (
+                                                            <div
+                                                                key={appt.id}
+                                                                className={`p-4 hover:bg-gray-50 transition ${appt.status === 'cancelled' ? 'opacity-60 bg-gray-50' : ''}`}
+                                                            >
+                                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                                    {/* Left: Info */}
+                                                                    <div className="flex items-start gap-4 flex-1">
+                                                                        {/* Type Icon */}
+                                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${appt.type === 'visit' ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600'}`}>
+                                                                            {appt.type === 'visit' ? <Wrench className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+                                                                        </div>
+
+                                                                        {/* Details */}
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${appt.status === 'confirmed' ? 'bg-green-100 text-green-700' : appt.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-200 text-gray-500'}`}>
+                                                                                    {appt.status === 'confirmed' ? 'Confirmado' : appt.status === 'pending' ? 'Pendente' : 'Cancelado'}
+                                                                                </span>
+                                                                                <span className="text-xs text-gray-400">
+                                                                                    {appt.type === 'visit' ? 'Visita Técnica' : 'Reunião'}
+                                                                                </span>
+                                                                                {isPast(appt.date) && <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Passado</span>}
+                                                                            </div>
+
+                                                                            <h4 className="font-bold text-base mb-0.5">{appt.clientName}</h4>
+
+                                                                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                                                                                <span className="flex items-center gap-1">
+                                                                                    <Calendar className="w-3 h-3" />
+                                                                                    {new Date(appt.date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                                                                </span>
+                                                                                <span className="flex items-center gap-1">
+                                                                                    <Clock className="w-3 h-3" />
+                                                                                    {appt.time}
+                                                                                </span>
+                                                                            </div>
+
+                                                                            {appt.location && (
+                                                                                <p className="text-xs text-gray-400 mt-1 flex items-center gap-1 truncate">
+                                                                                    <MapPin className="w-3 h-3 shrink-0" />
+                                                                                    <span className="truncate">{appt.location}</span>
+                                                                                </p>
+                                                                            )}
+
+                                                                            {appt.meetingLink && (
+                                                                                <a href={appt.meetingLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 mt-1 flex items-center gap-1 hover:underline">
+                                                                                    <LinkIcon className="w-3 h-3" />
+                                                                                    Link da Reunião
+                                                                                </a>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Right: Actions */}
+                                                                    <div className="flex items-center gap-2 shrink-0">
+                                                                        {appt.status === 'pending' && !showHistory && (
+                                                                            <button
+                                                                                onClick={() => updateAppointmentStatus(appt.id, 'confirmed')}
+                                                                                className="bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-green-600 transition flex items-center gap-1"
+                                                                            >
+                                                                                <Check className="w-3 h-3" /> Aprovar
+                                                                            </button>
+                                                                        )}
+                                                                        {appt.status !== 'cancelled' && !showHistory && (
+                                                                            <button
+                                                                                onClick={() => { if (confirm('Ao cancelar, o agendamento irá para o histórico.')) updateAppointmentStatus(appt.id, 'cancelled'); }}
+                                                                                className="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg font-bold text-xs hover:bg-gray-200 transition"
+                                                                            >
+                                                                                Cancelar
+                                                                            </button>
+                                                                        )}
+                                                                        {appt.status === 'confirmed' && appt.type === 'meeting' && !showHistory && (
+                                                                            <button
+                                                                                onClick={() => { const link = prompt('Link da Reunião:', appt.meetingLink || ''); if (link) updateAppointment({ ...appt, meetingLink: link }); }}
+                                                                                className="text-blue-500 text-xs font-bold hover:underline flex items-center gap-1"
+                                                                            >
+                                                                                <LinkIcon className="w-3 h-3" />
+                                                                                {appt.meetingLink ? 'Editar' : 'Add Link'}
+                                                                            </button>
+                                                                        )}
+                                                                        <button
+                                                                            onClick={() => { if (confirm('ATENÇÃO: Isso excluirá permanentemente o agendamento.')) deleteAppointmentPermanently(appt.id); }}
+                                                                            className="p-2 text-gray-300 hover:text-red-500 transition"
+                                                                            title="Excluir permanentemente"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+                                                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                                                <h3 className="font-bold text-lg text-gray-600 mb-2">
+                                                    {showHistory ? 'Nenhum histórico encontrado' : 'Nenhum agendamento ativo'}
+                                                </h3>
+                                                <p className="text-gray-400 text-sm">
+                                                    {showHistory ? 'Os agendamentos cancelados ou passados aparecerão aqui.' : 'Novos agendamentos aparecerão aqui automaticamente.'}
+                                                </p>
                                             </div>
-                                            <div>
-                                                <label className="text-[10px] uppercase font-bold text-gray-400">Fim</label>
-                                                <input type="time" value={scheduleSettings.endHour} onChange={e => updateScheduleSettings({ ...scheduleSettings, endHour: e.target.value })} className="w-full border p-2 rounded text-sm" />
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
 
-                                    <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-                                        <h3 className="font-bold text-lg mb-4">Bloqueios Ativos</h3>
-                                        <div className="space-y-2 max-h-60 overflow-y-auto">
-                                            {scheduleSettings.blockedDates.map(date => (
-                                                <div key={date} className="flex justify-between items-center text-sm p-2 bg-red-50 text-red-700 rounded">
-                                                    <span>Dia {new Date(date + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
-                                                    <button onClick={() => handleRemoveBlockDate(date)}><X className="w-4 h-4" /></button>
+                                    {/* Sidebar (1/4) */}
+                                    <div className="space-y-4">
+                                        {/* Weekly Settings */}
+                                        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                                            <h3 className="font-bold text-sm uppercase text-gray-500 mb-4 flex items-center gap-2">
+                                                <Settings className="w-4 h-4" />
+                                                Horário de Funcionamento
+                                            </h3>
+                                            <div className="flex flex-wrap gap-1.5 mb-4">
+                                                {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => {
+                                                            const newDays = scheduleSettings.workDays.includes(i)
+                                                                ? scheduleSettings.workDays.filter(day => day !== i)
+                                                                : [...scheduleSettings.workDays, i].sort();
+                                                            updateScheduleSettings({ ...scheduleSettings, workDays: newDays });
+                                                        }}
+                                                        className={`w-8 h-8 rounded-lg text-xs font-bold transition ${scheduleSettings.workDays.includes(i) ? 'bg-black text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                                                    >
+                                                        {d}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Início</label>
+                                                    <input
+                                                        type="time"
+                                                        value={scheduleSettings.startHour}
+                                                        onChange={e => updateScheduleSettings({ ...scheduleSettings, startHour: e.target.value })}
+                                                        className="w-full border border-gray-200 p-2 rounded-lg text-sm focus:outline-none focus:border-black transition"
+                                                    />
                                                 </div>
-                                            ))}
-                                            {scheduleSettings.blockedSlots?.map((slot, i) => (
-                                                <div key={i} className="flex justify-between items-center text-sm p-2 bg-yellow-50 text-yellow-700 rounded">
-                                                    <span>{new Date(slot.date + 'T00:00:00').toLocaleDateString('pt-BR')} às {slot.time}</span>
-                                                    <button onClick={() => handleRemoveBlockSlot(slot.date, slot.time)}><X className="w-4 h-4" /></button>
+                                                <div>
+                                                    <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Fim</label>
+                                                    <input
+                                                        type="time"
+                                                        value={scheduleSettings.endHour}
+                                                        onChange={e => updateScheduleSettings({ ...scheduleSettings, endHour: e.target.value })}
+                                                        className="w-full border border-gray-200 p-2 rounded-lg text-sm focus:outline-none focus:border-black transition"
+                                                    />
                                                 </div>
-                                            ))}
-                                            {scheduleSettings.blockedDates.length === 0 && (!scheduleSettings.blockedSlots || scheduleSettings.blockedSlots.length === 0) && (
-                                                <p className="text-gray-400 text-xs text-center">Nenhum bloqueio.</p>
-                                            )}
+                                            </div>
+                                        </div>
+
+                                        {/* Blocked Dates */}
+                                        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                                            <h3 className="font-bold text-sm uppercase text-gray-500 mb-4 flex items-center gap-2">
+                                                <Ban className="w-4 h-4" />
+                                                Bloqueios Ativos
+                                            </h3>
+                                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                                                {scheduleSettings.blockedDates.map(date => (
+                                                    <div key={date} className="flex justify-between items-center text-xs p-2.5 bg-red-50 text-red-700 rounded-lg group">
+                                                        <span className="font-medium">📅 {new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                                                        <button onClick={() => handleRemoveBlockDate(date)} className="opacity-50 group-hover:opacity-100 transition"><X className="w-4 h-4" /></button>
+                                                    </div>
+                                                ))}
+                                                {scheduleSettings.blockedSlots?.map((slot, i) => (
+                                                    <div key={i} className="flex justify-between items-center text-xs p-2.5 bg-yellow-50 text-yellow-700 rounded-lg group">
+                                                        <span className="font-medium">⏰ {new Date(slot.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })} às {slot.time}</span>
+                                                        <button onClick={() => handleRemoveBlockSlot(slot.date, slot.time)} className="opacity-50 group-hover:opacity-100 transition"><X className="w-4 h-4" /></button>
+                                                    </div>
+                                                ))}
+                                                {scheduleSettings.blockedDates.length === 0 && (!scheduleSettings.blockedSlots || scheduleSettings.blockedSlots.length === 0) && (
+                                                    <p className="text-gray-400 text-xs text-center py-4">Nenhum bloqueio ativo</p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     {/* Budgets View */}
                     {activeTab === 'budgets' && (
