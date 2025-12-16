@@ -2021,6 +2021,90 @@ export const AdminDashboard: React.FC = () => {
                     {activeTab === 'content' && (
                         <div className="animate-fadeIn max-w-4xl">
                             <h2 className="text-3xl font-serif font-bold mb-8 text-black">Conteúdo do Site</h2>
+
+                            {/* Hero Project Selection */}
+                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
+                                <h3 className="font-bold text-xl mb-4 text-black border-b border-gray-100 pb-2 flex items-center gap-2">
+                                    <Star className="w-5 h-5 text-accent" />
+                                    Projeto Destaque no Hero (Página Inicial)
+                                </h3>
+                                <p className="text-sm text-gray-500 mb-4">
+                                    Selecione qual projeto aparecerá em destaque no Hero da página inicial. A imagem do projeto será usada como fundo.
+                                </p>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Current Selection Preview */}
+                                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                        <label className="block text-xs font-bold uppercase text-gray-500 mb-3">Projeto Atual</label>
+                                        {(() => {
+                                            const heroConfig = contentForm.heroProject;
+                                            let currentProject = null;
+                                            if (heroConfig?.id) {
+                                                currentProject = heroConfig.type === 'cultural'
+                                                    ? culturalProjects.find(p => p.id === heroConfig.id)
+                                                    : projects.find(p => p.id === heroConfig.id);
+                                            }
+                                            if (!currentProject) {
+                                                currentProject = projects.find(p => p.featured) || culturalProjects.find(p => p.featured) || projects[0];
+                                            }
+                                            return currentProject ? (
+                                                <div className="flex items-center gap-3">
+                                                    <img src={currentProject.image} alt={currentProject.title} className="w-16 h-16 object-cover rounded-lg" />
+                                                    <div>
+                                                        <p className="font-semibold text-black">{currentProject.title}</p>
+                                                        <p className="text-xs text-gray-500">{heroConfig?.id ? 'Selecionado manualmente' : 'Automático (primeiro featured)'}</p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p className="text-gray-400 italic">Nenhum projeto disponível</p>
+                                            );
+                                        })()}
+                                    </div>
+
+                                    {/* Selector */}
+                                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                        <label className="block text-xs font-bold uppercase text-gray-500 mb-3">Escolher Projeto</label>
+                                        <select
+                                            value={contentForm.heroProject?.id ? `${contentForm.heroProject.type}:${contentForm.heroProject.id}` : ''}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                if (!value) {
+                                                    setContentForm(prev => ({ ...prev, heroProject: null }));
+                                                } else {
+                                                    const [type, id] = value.split(':');
+                                                    setContentForm(prev => ({ ...prev, heroProject: { id, type: type as 'project' | 'cultural' } }));
+                                                }
+                                            }}
+                                            className="w-full p-3 border border-gray-200 rounded-lg text-black bg-white focus:ring-2 focus:ring-accent focus:border-transparent"
+                                        >
+                                            <option value="">Automático (primeiro featured)</option>
+                                            <optgroup label="Projetos">
+                                                {projects.map(p => (
+                                                    <option key={p.id} value={`project:${p.id}`}>{p.title}</option>
+                                                ))}
+                                            </optgroup>
+                                            <optgroup label="Projetos Culturais">
+                                                {culturalProjects.map(p => (
+                                                    <option key={p.id} value={`cultural:${p.id}`}>{p.title}</option>
+                                                ))}
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Save Button */}
+                                <div className="mt-6 flex justify-end">
+                                    <button
+                                        onClick={saveContent}
+                                        disabled={saving}
+                                        className="flex items-center gap-2 px-6 py-3 bg-black text-white font-medium rounded-lg hover:bg-accent hover:text-black transition disabled:opacity-50"
+                                    >
+                                        <Save className="w-4 h-4" />
+                                        {saving ? 'Salvando...' : 'Salvar Projeto do Hero'}
+                                    </button>
+                                </div>
+                            </div>
+
                             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8 space-y-12">
                                 <div>
                                     <h3 className="font-bold text-xl mb-4 text-black border-b border-gray-100 pb-2">Página Sobre (Bio)</h3>

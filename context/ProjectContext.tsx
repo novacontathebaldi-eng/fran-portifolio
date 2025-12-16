@@ -187,7 +187,8 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     // Contact page config
     faqItems: [],
     contactSubjects: ['Orçamento de Projeto', 'Dúvidas Gerais', 'Imprensa / Mídia', 'Parcerias']
-  }
+  },
+  heroProject: null
 };
 
 // Helper to map DB Snake Case to App Camel Case
@@ -348,7 +349,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       // Update Site Content (About + Office)
       setSiteContent({
         about: { ...DEFAULT_SITE_CONTENT.about, ...(settingsRow.about || {}) },
-        office: { ...DEFAULT_SITE_CONTENT.office, ...(settingsRow.office || {}) }
+        office: { ...DEFAULT_SITE_CONTENT.office, ...(settingsRow.office || {}) },
+        heroProject: settingsRow.settings?.heroProject || null
       });
 
       // Update Global Settings + Schedule (bundled in 'settings' column)
@@ -688,7 +690,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       office: finalContent.office,
       settings: {
         global: finalSettings,
-        schedule: finalSchedule
+        schedule: finalSchedule,
+        heroProject: finalContent.heroProject || null
       }
     };
 
@@ -772,7 +775,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       office: content.office,
       settings: {
         global: globalSettings,
-        schedule: schedule
+        schedule: schedule,
+        heroProject: content.heroProject || null
       }
     };
 

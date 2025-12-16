@@ -307,6 +307,8 @@ export interface SiteContent {
     parallaxProjects?: Array<{ id: string; type: 'project' | 'cultural' }>; // Projects for About page parallax
   };
   office: OfficeDetails; // Centralized Office Data (Source of Truth)
+  // Hero Section Settings
+  heroProject?: { id: string; type: 'project' | 'cultural' } | null; // Project to feature on homepage Hero
 }
 
 // Quick Action Button for Chatbot (configurable via Admin Panel)
