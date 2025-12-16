@@ -24,47 +24,210 @@ export const Home: React.FC = () => {
 
   return (
     <div className="overflow-hidden">
-      {/* Hero Section */}
-      <section className="relative h-screen flex items-center">
-        <div className="absolute inset-0 z-0">
-          <motion.img
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 2.5, ease: "easeOut" }}
-            src="https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/1765189105042-0.24789718604799715.webp"
-            alt="Hero Architecture"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/50" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
-        </div>
+      {/* Hero Section - Editorial Split-Screen */}
+      <section className="relative h-screen flex overflow-hidden bg-[#0a0a0a]">
 
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="container mx-auto px-6 relative z-10 text-white mt-12"
-        >
-          <motion.span variants={fadeInUp} className="block mb-6 text-accent uppercase tracking-[0.3em] text-xs font-bold drop-shadow-md">
-            Arquitetura & Design
-          </motion.span>
+        {/* Left Side - Typography & Content */}
+        <div className="relative z-20 w-full lg:w-[55%] flex flex-col justify-center px-8 md:px-16 lg:px-20 py-20">
 
-          <motion.h1 variants={fadeInUp} className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-serif font-light mb-8 md:mb-10 leading-[1.1] max-w-4xl drop-shadow-lg">
-            Projetando espaços <br />
-            para <i className="font-serif italic text-accent">viver melhor</i>.
-          </motion.h1>
+          {/* Floating Label */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="mb-8"
+          >
+            <span className="inline-block px-4 py-2 border border-[#d4bbb0]/30 text-[#d4bbb0] text-[10px] md:text-xs tracking-[0.5em] uppercase font-light">
+              Fran Siller Arquitetura
+            </span>
+          </motion.div>
 
-          <motion.div variants={fadeInUp}>
+          {/* Giant Typography - Character by character animation */}
+          <div className="overflow-hidden mb-4">
+            <motion.h1
+              className="text-[clamp(2.5rem,8vw,6rem)] font-light leading-[0.95] tracking-[-0.03em] text-white"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              {"Criamos".split("").map((char, i) => (
+                <motion.span
+                  key={i}
+                  initial={{ y: 100, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.3 + i * 0.05, ease: [0.33, 1, 0.68, 1] }}
+                  className="inline-block"
+                >
+                  {char}
+                </motion.span>
+              ))}
+            </motion.h1>
+          </div>
+
+          <div className="overflow-hidden mb-4">
+            <motion.h1
+              className="text-[clamp(2.5rem,8vw,6rem)] font-light leading-[0.95] tracking-[-0.03em]"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              {"poesia em".split("").map((char, i) => (
+                <motion.span
+                  key={i}
+                  initial={{ y: 100, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.6 + i * 0.04, ease: [0.33, 1, 0.68, 1] }}
+                  className={`inline-block ${char === " " ? "w-[0.3em]" : ""}`}
+                  style={{ color: char === " " ? "transparent" : "#d4bbb0" }}
+                >
+                  {char === " " ? "\u00A0" : char}
+                </motion.span>
+              ))}
+            </motion.h1>
+          </div>
+
+          <div className="overflow-hidden mb-10">
+            <motion.h1
+              className="text-[clamp(2.5rem,8vw,6rem)] font-light leading-[0.95] tracking-[-0.03em] text-white italic"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              {"concreto.".split("").map((char, i) => (
+                <motion.span
+                  key={i}
+                  initial={{ y: 100, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.9 + i * 0.05, ease: [0.33, 1, 0.68, 1] }}
+                  className="inline-block"
+                >
+                  {char}
+                </motion.span>
+              ))}
+            </motion.h1>
+          </div>
+
+          {/* Elegant Description */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 1.4 }}
+            className="text-white/50 text-sm md:text-base font-light leading-relaxed max-w-md mb-10"
+            style={{ fontFamily: "'Inter', sans-serif" }}
+          >
+            Cada traço nasce da escuta. Cada espaço, de um sonho compartilhado.
+            Arquitetura que abraça quem mora.
+          </motion.p>
+
+          {/* Elegant CTAs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 1.6 }}
+            className="flex flex-wrap items-center gap-6"
+          >
             <Link
               to="/portfolio"
-              className="inline-flex items-center space-x-3 text-base md:text-lg group"
+              className="group relative overflow-hidden"
             >
-              <span className="border-b border-white pb-1 group-hover:border-accent group-hover:text-accent transition duration-300">Explorar Projetos</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition duration-300 group-hover:text-accent" />
+              <span className="relative z-10 flex items-center gap-3 text-white text-sm tracking-[0.2em] uppercase font-light py-4 px-8 border border-white/20 hover:border-[#d4bbb0] transition-all duration-500">
+                Descobrir Projetos
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform duration-500" />
+              </span>
+              <div className="absolute inset-0 bg-[#d4bbb0] translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+              <span className="absolute inset-0 z-20 flex items-center justify-center gap-3 text-black text-sm tracking-[0.2em] uppercase font-light opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                Descobrir Projetos
+                <ArrowRight className="w-4 h-4" />
+              </span>
+            </Link>
+
+            <Link
+              to="/budget"
+              className="group flex items-center gap-3 text-[#d4bbb0] text-sm tracking-[0.15em] uppercase font-light hover:text-white transition-colors duration-300"
+            >
+              <span className="w-8 h-[1px] bg-current group-hover:w-12 transition-all duration-300" />
+              Iniciar Projeto
             </Link>
           </motion.div>
-        </motion.div>
+
+          {/* Bottom Info Bar */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 2 }}
+            className="absolute bottom-8 left-8 md:left-16 lg:left-20 flex items-center gap-8 text-white/30 text-[10px] tracking-[0.3em] uppercase"
+          >
+            <span>São Paulo, BR</span>
+            <span className="w-12 h-[1px] bg-white/20" />
+            <span>Est. 2010</span>
+          </motion.div>
+        </div>
+
+        {/* Right Side - Image with Overlay */}
+        <div className="hidden lg:block absolute top-0 right-0 w-[50%] h-full">
+          <motion.div
+            initial={{ clipPath: "inset(0 100% 0 0)" }}
+            animate={{ clipPath: "inset(0 0% 0 0)" }}
+            transition={{ duration: 1.5, delay: 0.5, ease: [0.33, 1, 0.68, 1] }}
+            className="relative w-full h-full"
+          >
+            <img
+              src="https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/1765189105042-0.24789718604799715.webp"
+              alt="Arquitetura"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-black/20" />
+
+            {/* Floating Project Info */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 2.2 }}
+              className="absolute bottom-12 right-12 text-right"
+            >
+              <p className="text-white/40 text-[10px] tracking-[0.3em] uppercase mb-2">Projeto em Destaque</p>
+              <p className="text-white text-lg font-light" style={{ fontFamily: "'Playfair Display', serif" }}>Casa Jardim Paulista</p>
+              <Link
+                to="/portfolio"
+                className="inline-flex items-center gap-2 text-[#d4bbb0] text-xs tracking-wider mt-3 hover:text-white transition-colors"
+              >
+                Ver Projeto <ArrowRight className="w-3 h-3" />
+              </Link>
+            </motion.div>
+          </motion.div>
+
+          {/* Vertical Text */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 2.5 }}
+            className="absolute top-1/2 -translate-y-1/2 -left-6 rotate-[-90deg] origin-center"
+          >
+            <span className="text-white/20 text-[10px] tracking-[0.5em] uppercase whitespace-nowrap">
+              Scroll para explorar
+            </span>
+          </motion.div>
+        </div>
+
+        {/* Mobile Background Image */}
+        <div className="lg:hidden absolute inset-0 z-0">
+          <img
+            src="https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/1765189105042-0.24789718604799715.webp"
+            alt="Arquitetura"
+            className="w-full h-full object-cover opacity-30"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/90 to-[#0a0a0a]/70" />
+        </div>
+
+        {/* Decorative Elements */}
+        <motion.div
+          initial={{ scaleY: 0 }}
+          animate={{ scaleY: 1 }}
+          transition={{ duration: 1.5, delay: 1.8, ease: [0.33, 1, 0.68, 1] }}
+          className="hidden lg:block absolute top-0 left-[55%] w-[1px] h-full bg-gradient-to-b from-transparent via-white/10 to-transparent origin-top"
+        />
+
+        {/* Corner Accents */}
+        <div className="absolute top-8 right-8 w-16 h-16 border-t border-r border-white/10 hidden lg:block" />
+        <div className="absolute bottom-8 left-8 w-16 h-16 border-b border-l border-[#d4bbb0]/30 hidden lg:block" />
+
       </section>
+
 
       {/* Featured Scroll */}
       <section className="pt-20 pb-8 md:pt-32 md:pb-12 bg-white">
