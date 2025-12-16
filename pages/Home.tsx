@@ -151,9 +151,9 @@ export const Home: React.FC = () => {
             transition={{ duration: 1, delay: 2 }}
             className="absolute bottom-8 left-8 md:left-16 lg:left-20 flex items-center gap-8 text-white/30 text-[10px] tracking-[0.3em] uppercase"
           >
-            <span>São Paulo, BR</span>
+            <span>{siteContent?.office?.city || 'Brasil'}, {siteContent?.office?.state || 'BR'}</span>
             <span className="w-12 h-[1px] bg-white/20" />
-            <span>Est. 2010</span>
+            <span>Fran Siller Arquitetura</span>
           </motion.div>
         </div>
 
@@ -165,30 +165,43 @@ export const Home: React.FC = () => {
             transition={{ duration: 1.5, delay: 0.5, ease: [0.33, 1, 0.68, 1] }}
             className="relative w-full h-full"
           >
-            <img
-              src="https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/1765189105042-0.24789718604799715.webp"
-              alt="Arquitetura"
-              className="w-full h-full object-cover"
-            />
+            {/* Use first featured project image, or fallback */}
+            {(() => {
+              const featuredProject = projects.find(p => p.featured) || culturalProjects.find(p => p.featured) || projects[0];
+              const imageUrl = featuredProject?.image || 'https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/1765189105042-0.24789718604799715.webp';
+              return (
+                <img
+                  src={imageUrl}
+                  alt={featuredProject?.title || 'Arquitetura'}
+                  className="w-full h-full object-cover"
+                />
+              );
+            })()}
             <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-transparent to-transparent" />
             <div className="absolute inset-0 bg-black/20" />
 
-            {/* Floating Project Info */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 2.2 }}
-              className="absolute bottom-12 right-12 text-right"
-            >
-              <p className="text-white/40 text-[10px] tracking-[0.3em] uppercase mb-2">Projeto em Destaque</p>
-              <p className="text-white text-lg font-light" style={{ fontFamily: "'Playfair Display', serif" }}>Casa Jardim Paulista</p>
-              <Link
-                to="/portfolio"
-                className="inline-flex items-center gap-2 text-[#d4bbb0] text-xs tracking-wider mt-3 hover:text-white transition-colors"
-              >
-                Ver Projeto <ArrowRight className="w-3 h-3" />
-              </Link>
-            </motion.div>
+            {/* Floating Project Info - Uses first featured project */}
+            {(() => {
+              const featuredProject = projects.find(p => p.featured) || culturalProjects.find(p => p.featured) || projects[0];
+              const projectType = culturalProjects.find(p => p.id === featuredProject?.id) ? 'cultural' : 'project';
+              return featuredProject ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 1, delay: 2.2 }}
+                  className="absolute bottom-12 right-12 text-right"
+                >
+                  <p className="text-white/40 text-[10px] tracking-[0.3em] uppercase mb-2">Projeto em Destaque</p>
+                  <p className="text-white text-lg font-light" style={{ fontFamily: "'Playfair Display', serif" }}>{featuredProject.title}</p>
+                  <Link
+                    to={projectType === 'cultural' ? `/cultural/${featuredProject.id}` : `/project/${featuredProject.id}`}
+                    className="inline-flex items-center gap-2 text-[#d4bbb0] text-xs tracking-wider mt-3 hover:text-white transition-colors"
+                  >
+                    Ver Projeto <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </motion.div>
+              ) : null;
+            })()}
           </motion.div>
 
           {/* Vertical Text */}
@@ -206,11 +219,17 @@ export const Home: React.FC = () => {
 
         {/* Mobile Background Image */}
         <div className="lg:hidden absolute inset-0 z-0">
-          <img
-            src="https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/1765189105042-0.24789718604799715.webp"
-            alt="Arquitetura"
-            className="w-full h-full object-cover opacity-30"
-          />
+          {(() => {
+            const featuredProject = projects.find(p => p.featured) || culturalProjects.find(p => p.featured) || projects[0];
+            const imageUrl = featuredProject?.image || 'https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/1765189105042-0.24789718604799715.webp';
+            return (
+              <img
+                src={imageUrl}
+                alt={featuredProject?.title || 'Arquitetura'}
+                className="w-full h-full object-cover opacity-30"
+              />
+            );
+          })()}
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/90 to-[#0a0a0a]/70" />
         </div>
 
