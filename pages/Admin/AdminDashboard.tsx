@@ -1223,8 +1223,13 @@ export const AdminDashboard: React.FC = () => {
                                                                             </button>
                                                                         )}
                                                                         <button
-                                                                            onClick={() => { if (confirm('ATENÇÃO: Isso excluirá permanentemente o agendamento.')) deleteAppointmentPermanently(appt.id); }}
-                                                                            className="p-2 text-gray-300 hover:text-red-500 transition"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                if (confirm('ATENÇÃO: Isso excluirá permanentemente o agendamento.')) {
+                                                                                    deleteAppointmentPermanently(appt.id);
+                                                                                }
+                                                                            }}
+                                                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition cursor-pointer"
                                                                             title="Excluir permanentemente"
                                                                         >
                                                                             <Trash2 className="w-4 h-4" />
