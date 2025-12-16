@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, CheckCircle, ArrowRight, Phone, Video, MapPin, Wrench, LogIn, User } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
@@ -52,6 +52,27 @@ export const Schedule: React.FC = () => {
             });
         }
     }, [currentUser]);
+
+    // Restaurar estado da URL após login
+    const [searchParams] = useSearchParams();
+    useEffect(() => {
+        const typeParam = searchParams.get('type');
+        const dateParam = searchParams.get('date');
+        const timeParam = searchParams.get('time');
+        const addressParam = searchParams.get('address');
+
+        if (typeParam && dateParam && timeParam) {
+            // Restaurar estado do agendamento
+            setSelectedType(typeParam);
+            setSelectedDate(dateParam);
+            setSelectedTime(timeParam);
+            if (addressParam) setVisitAddress(decodeURIComponent(addressParam));
+            // Ir direto para step 3 (confirmação)
+            setStep(3);
+            // Limpar params da URL sem recarregar
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    }, [searchParams]);
 
     const officeAddress = siteContent?.office?.address || 'Endereço não disponível';
 
@@ -526,7 +547,16 @@ export const Schedule: React.FC = () => {
                                         Para confirmar seu agendamento, precisamos que você acesse sua conta ou crie uma nova.
                                     </p>
                                     <button
-                                        onClick={() => navigate('/auth')}
+                                        onClick={() => {
+                                            // Salvar estado atual na URL de redirect
+                                            const params = new URLSearchParams();
+                                            params.set('type', selectedType);
+                                            params.set('date', selectedDate);
+                                            params.set('time', selectedTime);
+                                            if (visitAddress) params.set('address', encodeURIComponent(visitAddress));
+                                            const redirectUrl = `/schedule?${params.toString()}`;
+                                            navigate(`/auth?redirect=${encodeURIComponent(redirectUrl)}`);
+                                        }}
                                         className="px-10 py-4 bg-black text-white text-sm tracking-widest uppercase hover:bg-[#d4bbb0] transition-colors inline-flex items-center gap-2"
                                     >
                                         <LogIn className="w-4 h-4" />
