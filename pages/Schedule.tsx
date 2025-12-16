@@ -76,7 +76,7 @@ export const Schedule: React.FC = () => {
 
     const officeAddress = siteContent?.office?.address || 'Endereço não disponível';
 
-    const meetingTypes: MeetingType[] = [
+    const allMeetingTypes: MeetingType[] = [
         {
             id: 'presencial',
             title: 'Reunião Presencial',
@@ -115,6 +115,15 @@ export const Schedule: React.FC = () => {
             appointmentType: 'visit'
         }
     ];
+
+    // Filter out presencial option when office is inactive
+    const isOfficeActive = siteContent?.office?.isActive !== false;
+    const meetingTypes = useMemo(() => {
+        if (!isOfficeActive) {
+            return allMeetingTypes.filter(t => t.id !== 'presencial');
+        }
+        return allMeetingTypes;
+    }, [isOfficeActive]);
 
     // Buscar próximos dias com disponibilidade usando checkAvailability
     const availableDates = useMemo(() => {

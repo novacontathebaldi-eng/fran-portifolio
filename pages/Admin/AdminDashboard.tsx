@@ -2605,6 +2605,59 @@ export const AdminDashboard: React.FC = () => {
                                     <Info className="w-5 h-5" />
                                     <span className="text-sm">Para editar endereço e contatos, vá para a aba <strong>Configurações</strong>.</span>
                                 </div>
+
+                                {/* Office Active Toggle */}
+                                <div className={`p-6 rounded-xl border-2 ${contentForm.office.isActive !== false ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'} transition-colors`}>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="font-bold text-lg flex items-center gap-2">
+                                                <Landmark className="w-5 h-5" />
+                                                Escritório Físico
+                                            </h3>
+                                            <p className="text-sm text-gray-600 mt-1">
+                                                {contentForm.office.isActive !== false
+                                                    ? 'O endereço do escritório está visível em todo o site.'
+                                                    : 'O escritório está oculto. Opções presenciais, mapa e endereço não aparecem no site.'}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                const newValue = contentForm.office.isActive === false ? true : false;
+                                                setContentForm(prev => ({
+                                                    ...prev,
+                                                    office: { ...prev.office, isActive: newValue }
+                                                }));
+                                            }}
+                                            className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm transition ${contentForm.office.isActive !== false
+                                                    ? 'bg-green-500 text-white hover:bg-green-600'
+                                                    : 'bg-red-500 text-white hover:bg-red-600'
+                                                }`}
+                                        >
+                                            {contentForm.office.isActive !== false ? (
+                                                <>
+                                                    <ToggleRight className="w-5 h-5" />
+                                                    Ativo
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <ToggleLeft className="w-5 h-5" />
+                                                    Desativado
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                    {contentForm.office.isActive === false && (
+                                        <div className="mt-4 pt-4 border-t border-red-200 text-sm text-red-700">
+                                            <strong>O que está oculto:</strong>
+                                            <ul className="list-disc list-inside mt-2 space-y-1">
+                                                <li>Opção "Reunião Presencial" na página de agendamento</li>
+                                                <li>Mapa e endereço na página de contato</li>
+                                                <li>Informações de localização no chatbot</li>
+                                                <li>Link do mapa na página inicial</li>
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
                                 <div>
                                     <div className="flex justify-between items-center mb-6">
                                         <h3 className="font-bold text-xl flex items-center gap-2"><LayoutDashboard className="w-5 h-5" /> Blocos de Conteúdo</h3>

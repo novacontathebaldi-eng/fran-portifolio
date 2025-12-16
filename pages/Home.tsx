@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 
 export const Home: React.FC = () => {
   const { projects, culturalProjects, siteContent } = useProjects();
+  const isOfficeActive = siteContent?.office?.isActive !== false;
 
   // Get hero project
   const heroConfig = siteContent?.heroProject;
@@ -290,51 +291,63 @@ export const Home: React.FC = () => {
               </Link>
             </motion.div>
 
-            {/* Contact Info */}
+            {/* Contact Info - only show location when office is active */}
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-12 border-t border-white/10"
+              className={`grid grid-cols-1 ${isOfficeActive ? 'md:grid-cols-3' : 'md:grid-cols-1'} gap-8 pt-12 border-t border-white/10`}
             >
-              <div className="text-center">
-                <MapPin className="w-5 h-5 text-[#d4bbb0] mx-auto mb-3" />
-                <p className="text-white/60 text-sm">{siteContent?.office?.address}</p>
-              </div>
-              <div className="text-center">
-                <Clock className="w-5 h-5 text-[#d4bbb0] mx-auto mb-3" />
-                <p className="text-white/60 text-sm">{siteContent?.office?.hoursDescription}</p>
-              </div>
-              <div className="text-center">
-                <a
-                  href={siteContent?.office?.mapsLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-[#d4bbb0] text-sm hover:text-white transition-colors"
-                >
-                  Ver no Mapa
-                  <ArrowRight className="w-4 h-4" />
-                </a>
-              </div>
+              {isOfficeActive && (
+                <>
+                  <div className="text-center">
+                    <MapPin className="w-5 h-5 text-[#d4bbb0] mx-auto mb-3" />
+                    <p className="text-white/60 text-sm">{siteContent?.office?.address}</p>
+                  </div>
+                  <div className="text-center">
+                    <Clock className="w-5 h-5 text-[#d4bbb0] mx-auto mb-3" />
+                    <p className="text-white/60 text-sm">{siteContent?.office?.hoursDescription}</p>
+                  </div>
+                  <div className="text-center">
+                    <a
+                      href={siteContent?.office?.mapsLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-[#d4bbb0] text-sm hover:text-white transition-colors"
+                    >
+                      Ver no Mapa
+                      <ArrowRight className="w-4 h-4" />
+                    </a>
+                  </div>
+                </>
+              )}
+              {!isOfficeActive && (
+                <div className="text-center">
+                  <Clock className="w-5 h-5 text-[#d4bbb0] mx-auto mb-3" />
+                  <p className="text-white/60 text-sm">{siteContent?.office?.hoursDescription}</p>
+                </div>
+              )}
             </motion.div>
 
           </div>
         </div>
       </section>
 
-      {/* ===== MAP ===== */}
-      <section className="h-[300px] md:h-[400px] relative">
-        <iframe
-          src={`https://maps.google.com/maps?q=${encodeURIComponent(siteContent?.office?.mapQuery || siteContent?.office?.address || '')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-          className="absolute inset-0 w-full h-full"
-          style={{ border: 0 }}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          title="Localização Fran Siller Arquitetura"
-        />
-      </section>
+      {/* ===== MAP - only show when office is active ===== */}
+      {isOfficeActive && (
+        <section className="h-[300px] md:h-[400px] relative">
+          <iframe
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(siteContent?.office?.mapQuery || siteContent?.office?.address || '')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+            className="absolute inset-0 w-full h-full"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="Localização Fran Siller Arquitetura"
+          />
+        </section>
+      )}
 
     </div>
   );

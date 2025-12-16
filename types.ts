@@ -253,6 +253,9 @@ export interface SocialLink {
 }
 
 export interface OfficeDetails {
+  // Toggle for office visibility on site
+  isActive?: boolean; // true = show office info, false = hide all office references
+
   // Address Info
   address: string; // Full string for display
   street: string;

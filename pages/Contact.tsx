@@ -13,6 +13,7 @@ export const Contact: React.FC = () => {
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const { showToast, siteContent, addMessage } = useProjects();
   const { office } = siteContent;
+  const isOfficeActive = office?.isActive !== false;
 
   // Form state
   const [formData, setFormData] = useState({
@@ -206,23 +207,26 @@ export const Contact: React.FC = () => {
                 </div>
               </a>
 
-              <a
-                href={office.mapsLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-start space-x-4 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all group"
-              >
-                <div className="p-3 bg-white rounded-full shadow-sm group-hover:shadow-md transition">
-                  <MapPin className="w-5 h-5 text-black" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm uppercase tracking-wide mb-1">Ateliê</h3>
-                  <p className="text-secondary group-hover:text-black transition">{office.address}</p>
-                  <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                    Ver no mapa <ExternalLink className="w-3 h-3" />
-                  </p>
-                </div>
-              </a>
+              {/* Office address - only show when office is active */}
+              {isOfficeActive && (
+                <a
+                  href={office.mapsLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start space-x-4 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all group"
+                >
+                  <div className="p-3 bg-white rounded-full shadow-sm group-hover:shadow-md transition">
+                    <MapPin className="w-5 h-5 text-black" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm uppercase tracking-wide mb-1">Ateliê</h3>
+                    <p className="text-secondary group-hover:text-black transition">{office.address}</p>
+                    <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                      Ver no mapa <ExternalLink className="w-3 h-3" />
+                    </p>
+                  </div>
+                </a>
+              )}
             </div>
 
             {/* Social Links - Dynamic from Database */}
@@ -445,8 +449,8 @@ export const Contact: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Map Section */}
-        {office.mapQuery && (
+        {/* Map Section - only show when office is active */}
+        {isOfficeActive && office.mapQuery && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}

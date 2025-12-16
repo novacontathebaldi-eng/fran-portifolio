@@ -369,6 +369,12 @@ Deno.serve(async (req) => {
             contextAdditions += `\n[PRODUTOS NA LOJA]: ${context.products.length} produtos disponíveis`;
         }
 
+        // Office status - if inactive, don't offer in-person meetings or show location
+        const isOfficeActive = context?.office?.isActive !== false;
+        if (!isOfficeActive) {
+            contextAdditions += `\n\n[IMPORTANTE - ESCRITÓRIO DESATIVADO]: NÃO oferece reunião presencial ou visita ao escritório. NÃO use showOfficeMap. Se perguntarem sobre endereço, diga que no momento não há escritório físico disponível e sugira videochamada ou contato por WhatsApp.`;
+        }
+
         const fullSystemInstruction = systemInstruction + contextAdditions;
 
         // Format messages

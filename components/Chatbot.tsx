@@ -453,6 +453,20 @@ const OfficeMapWidget = () => {
   const [isOpening, setIsOpening] = useState(false);
 
   const office = siteContent.office;
+
+  // Don't show if office is inactive
+  if (office?.isActive === false) {
+    return (
+      <div className="mt-4 bg-gray-50 rounded-xl border border-gray-200 p-4 text-center">
+        <p className="text-sm text-gray-500">
+          No momento não temos um escritório físico disponível para visitas.
+          <br />
+          Entre em contato pelo WhatsApp ou agende uma videochamada!
+        </p>
+      </div>
+    );
+  }
+
   const mapQuery = office.mapQuery || office.address || 'Fran Siller Arquitetura';
   const mapsUrl = office.mapsLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
 
