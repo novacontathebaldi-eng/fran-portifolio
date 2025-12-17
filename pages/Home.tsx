@@ -57,7 +57,7 @@ export const Home: React.FC = () => {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="text-[#d4bbb0] text-sm md:text-base tracking-[0.4em] uppercase mb-6 font-light"
             >
-              Arquitetura & Design de Interiores
+              Arquitetura & Design
             </motion.p>
 
             {/* Main Title - Clean & Bold */}
