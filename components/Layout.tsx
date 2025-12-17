@@ -213,29 +213,45 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             )}
           </div>
 
-          {/* Mobile Toggle Button (Animated X) */}
+          {/* Mobile Toggle Button (Animated X) - Optimized for 60fps with GPU acceleration */}
           <button
-            className={`md:hidden z-[60] relative w-12 h-12 flex items-center justify-center focus:outline-none transition-colors duration-300 pointer-events-auto ${isMenuOpen ? 'text-black' : iconClasses}`}
+            className={`md:hidden z-[60] relative w-12 h-12 flex items-center justify-center focus:outline-none pointer-events-auto ${isMenuOpen ? 'text-primary' : iconClasses}`}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label={isMenuOpen ? "Fechar Menu" : "Abrir Menu"}
           >
-            <div className="w-6 h-5 relative flex flex-col justify-between">
-              {/* Top Line - Rotate to make one leg of X */}
+            <div className="w-6 h-5 relative flex flex-col justify-center items-center">
+              {/* Top Line - Moves to center then rotates to form one leg of X */}
               <span
-                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 ${isMenuOpen ? 'top-1/2 -translate-y-1/2 rotate-45' : 'top-0 rotate-0'
-                  }`}
+                className="w-full h-0.5 bg-current rounded-full absolute will-change-transform"
+                style={{
+                  transform: isMenuOpen
+                    ? 'translateY(0) rotate(45deg)'
+                    : 'translateY(-8px) rotate(0deg)',
+                  transition: 'transform 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6)',
+                }}
               />
 
-              {/* Middle Line - Fade out */}
+              {/* Middle Line - Scales to 0 width with fade */}
               <span
-                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 top-1/2 -translate-y-1/2 ${isMenuOpen ? 'opacity-0' : 'opacity-100'
-                  }`}
+                className="w-full h-0.5 bg-current rounded-full absolute will-change-transform"
+                style={{
+                  transform: isMenuOpen ? 'scaleX(0)' : 'scaleX(1)',
+                  opacity: isMenuOpen ? 0 : 1,
+                  transition: isMenuOpen
+                    ? 'transform 0.2s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s cubic-bezier(0.4, 0, 1, 1)'
+                    : 'transform 0.3s cubic-bezier(0, 0, 0.2, 1) 0.12s, opacity 0.3s cubic-bezier(0, 0, 0.2, 1) 0.12s',
+                }}
               />
 
-              {/* Bottom Line - Rotate to make other leg of X */}
+              {/* Bottom Line - Moves to center then rotates to form other leg of X */}
               <span
-                className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out absolute left-0 ${isMenuOpen ? 'top-1/2 -translate-y-1/2 -rotate-45' : 'bottom-0 rotate-0'
-                  }`}
+                className="w-full h-0.5 bg-current rounded-full absolute will-change-transform"
+                style={{
+                  transform: isMenuOpen
+                    ? 'translateY(0) rotate(-45deg)'
+                    : 'translateY(8px) rotate(0deg)',
+                  transition: 'transform 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6)',
+                }}
               />
             </div>
           </button>
