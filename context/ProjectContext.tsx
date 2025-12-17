@@ -1503,11 +1503,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
           const row = payload.new as any;
 
-          // Update Site Content (About + Office)
+          // Update Site Content (About + Office + heroProject)
           if (row.about || row.office) {
             setSiteContent({
               about: { ...DEFAULT_SITE_CONTENT.about, ...(row.about || {}) },
-              office: { ...DEFAULT_SITE_CONTENT.office, ...(row.office || {}) }
+              office: { ...DEFAULT_SITE_CONTENT.office, ...(row.office || {}) },
+              heroProject: row.settings?.heroProject || null
             });
           }
 
