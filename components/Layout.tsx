@@ -7,6 +7,7 @@ import { useProjects } from '../context/ProjectContext';
 import { useCart } from '../context/CartContext';
 import { Chatbot } from './Chatbot';
 import InstallButton from './InstallButton';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 
 interface LayoutProps {
@@ -42,17 +43,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     setSearchOpen(false);
   }, [location]);
 
-  // Lock body scroll when menu is open
-  useEffect(() => {
-    if (isMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isMenuOpen]);
+  // Lock body scroll when menu is open - using robust hook for iOS Safari support
+  useScrollLock(isMenuOpen);
 
   // Scroll listener to detect Hero section visibility on Home page
   useEffect(() => {
@@ -252,8 +244,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           This ensures the close button inside Nav is clickable and visible. */}
       {
         isMenuOpen && (
-          <div className="fixed inset-0 bg-white/40 backdrop-blur-xl z-[45] flex flex-col pt-24 pb-8 px-6 animate-fadeIn text-primary md:hidden overflow-y-auto pointer-events-auto">
-            <div className="flex flex-col space-y-6 flex-grow">
+          <div className="fixed inset-0 bg-white/40 backdrop-blur-xl z-[45] flex flex-col pt-24 pb-8 px-6 animate-fadeIn text-primary md:hidden touch-none">
+            <div className="flex flex-col space-y-6 flex-grow overflow-y-auto overscroll-contain">
               <Link to="/" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Início</Link>
               <Link to="/about" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Sobre</Link>
               <Link to="/office" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">O Escritório</Link>
