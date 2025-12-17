@@ -1888,6 +1888,27 @@ export const AdminDashboard: React.FC = () => {
                                         </div>
                                     </div>
                                     <div>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <label className="block text-xs font-bold uppercase text-gray-500">Limite de Contexto ({settingsForm.aiConfig.contextLimit || 10} mensagens)</label>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="3"
+                                            max="20"
+                                            step="1"
+                                            value={settingsForm.aiConfig.contextLimit || 10}
+                                            onChange={(e) => handleSettingsChange('aiConfig.contextLimit', parseInt(e.target.value))}
+                                            className="w-full accent-black cursor-pointer"
+                                        />
+                                        <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                                            <span>Menos tokens (3)</span>
+                                            <span>Mais contexto (20)</span>
+                                        </div>
+                                        <p className="text-xs text-gray-400 mt-2">
+                                            Número de mensagens recentes enviadas à IA. Valores menores reduzem alucinações e custo.
+                                        </p>
+                                    </div>
+                                    <div>
                                         <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Mensagem de Boas-vindas</label>
                                         <textarea
                                             value={settingsForm.aiConfig.defaultGreeting}

@@ -376,6 +376,7 @@ export interface AIConfig {
   systemInstruction: string;
   defaultGreeting: string;
   temperature: number;
+  contextLimit: number; // Número máximo de mensagens a enviar como contexto (default: 10)
   // Provider-specific configs
   gemini: GeminiConfig;
   groq: GroqConfig;

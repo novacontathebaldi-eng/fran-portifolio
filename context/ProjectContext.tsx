@@ -118,6 +118,7 @@ const DEFAULT_SETTINGS: GlobalSettings = {
     systemInstruction: `VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA...`,
     defaultGreeting: "Olá {name}. Sou o Concierge Digital Fran Siller. Como posso tornar seu dia melhor?",
     temperature: 0.7,
+    contextLimit: 10, // Envia as últimas 10 mensagens como contexto para reduzir alucinações
     gemini: {
       model: 'gemini-2.5-flash'
     },
@@ -1826,7 +1827,18 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setCurrentChatMessages(updatedMessages);
 
     try {
-      const responseData = await chatWithConcierge(updatedMessages, {
+      // Aplicar limite de contexto (sliding window)
+      // Preserva a primeira mensagem (greeting) + últimas N-1 mensagens
+      const contextLimit = settings.aiConfig.contextLimit || 10;
+      let limitedMessages = updatedMessages;
+      if (updatedMessages.length > contextLimit) {
+        limitedMessages = [
+          updatedMessages[0], // Preserva a primeira mensagem (greeting da IA)
+          ...updatedMessages.slice(-(contextLimit - 1)) // Últimas N-1 mensagens
+        ];
+      }
+
+      const responseData = await chatWithConcierge(limitedMessages, {
         user: currentUser,
         memories: currentUser?.memories || [],
         office: siteContent.office,
