@@ -244,27 +244,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           This ensures the close button inside Nav is clickable and visible. */}
       {
         isMenuOpen && (
-          <div className="fixed inset-0 bg-white/40 backdrop-blur-xl z-[55] flex flex-col pb-8 animate-fadeIn text-primary md:hidden touch-none">
-            {/* Mobile Menu Header - Always visible with logo and close button */}
-            <div className="flex justify-between items-center px-6 py-4 shrink-0">
-              <Link to="/" onClick={handleLinkClick} className="text-xl font-serif tracking-tight font-bold uppercase text-primary">
-                FRAN<span className="text-accent">.</span>
-              </Link>
-              <button
-                className="w-12 h-12 flex items-center justify-center focus:outline-none text-primary"
-                onClick={() => setIsMenuOpen(false)}
-                aria-label="Fechar Menu"
-              >
-                <div className="w-6 h-5 relative flex flex-col justify-center">
-                  {/* X icon */}
-                  <span className="w-full h-0.5 bg-current rounded-full absolute rotate-45" />
-                  <span className="w-full h-0.5 bg-current rounded-full absolute -rotate-45" />
-                </div>
-              </button>
-            </div>
-
-            {/* Menu Content */}
-            <div className="flex flex-col space-y-6 flex-grow overflow-y-auto overscroll-contain px-6">
+          <div className="fixed inset-0 bg-white/40 backdrop-blur-xl z-[45] flex flex-col pt-24 pb-8 px-6 animate-fadeIn text-primary md:hidden touch-none">
+            <div className="flex flex-col space-y-6 flex-grow overflow-y-auto overscroll-contain">
               <Link to="/" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Início</Link>
               <Link to="/about" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Sobre</Link>
               <Link to="/office" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">O Escritório</Link>
@@ -302,7 +283,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
             </div>
 
-            <div className="mt-8 text-xs text-gray-500 uppercase tracking-widest text-center px-6">
+            <div className="mt-8 text-xs text-gray-500 uppercase tracking-widest text-center">
               Fran Siller Arquitetura
             </div>
           </div>
