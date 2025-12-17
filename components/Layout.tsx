@@ -178,8 +178,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Navigation Bar - Added transition-all duration-700 ease-in-out */}
       {/* When menu is open, add transform to force GPU and keep nav fixed at viewport top */}
-      <nav className={`fixed w-full z-50 transition-all duration-700 ease-in-out ${isMenuOpen ? 'bg-transparent !fixed !top-0 !left-0 !right-0 translate-z-0 will-change-transform' : navClasses}`}
-        style={isMenuOpen ? { transform: 'translate3d(0, 0, 0)', position: 'fixed', top: 0, left: 0, right: 0 } : undefined}
+      <nav className={`fixed w-full z-50 transition-all duration-700 ease-in-out ${(isMenuOpen || isClosing) ? 'bg-transparent !fixed !top-0 !left-0 !right-0 translate-z-0 will-change-transform' : navClasses}`}
+        style={(isMenuOpen || isClosing) ? { transform: 'translate3d(0, 0, 0)', position: 'fixed', top: 0, left: 0, right: 0 } : undefined}
       >
         <div className="container mx-auto px-6 flex justify-between items-center relative">
 
