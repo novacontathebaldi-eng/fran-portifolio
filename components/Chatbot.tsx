@@ -809,9 +809,31 @@ interface ChatbotProps {
   isOpen?: boolean;
   onToggle?: (isOpen: boolean) => void;
   hideButton?: boolean;
+  forceShow?: boolean;
 }
 
-export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onToggle, hideButton = false }) => {
+// Animation variants for the floating button
+const floatingButtonVariants = {
+  hidden: {
+    opacity: 0,
+    scale: 0.8,
+    y: 20,
+    transition: { duration: 0.2, ease: "easeIn" }
+  },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 25,
+      mass: 0.8
+    }
+  }
+};
+
+export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onToggle, hideButton = false, forceShow = false }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(true); // NEW: Show quick action buttons
@@ -1142,16 +1164,18 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {!isOpen && !hideButton && (
+      <AnimatePresence mode="wait">
+        {!isOpen && (!hideButton || forceShow) && (
           <motion.button
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
+            key="chatbot-fab"
+            variants={floatingButtonVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
             onClick={() => setIsOpen(true)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-black text-white rounded-full shadow-2xl flex items-center justify-center z-[80] hover:bg-accent hover:text-black transition-all group"
+            className="fixed bottom-6 right-6 w-14 h-14 bg-black text-white rounded-full shadow-2xl flex items-center justify-center z-[80] hover:bg-accent hover:text-black transition-colors group"
           >
             <MessageCircle className="w-6 h-6 group-hover:rotate-12 transition-transform" />
             <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>

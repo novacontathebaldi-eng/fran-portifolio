@@ -61,9 +61,9 @@ export const Home: React.FC = () => {
               <span
                 className="absolute inset-0 rounded-full"
                 style={{
-                  background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 40%, transparent 70%)',
-                  filter: 'blur(8px)',
-                  transform: 'scale(1.3, 1.8)'
+                  background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.1) 40%, transparent 70%)',
+                  filter: 'blur(10px)',
+                  transform: 'scale(1.2, 1.4)'
                 }}
               />
               <span className="relative z-10">Arquitetura & Design</span>
@@ -86,10 +86,21 @@ export const Home: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.7 }}
-              className="text-white/70 text-base md:text-lg lg:text-xl max-w-2xl mx-auto mb-12 font-light leading-relaxed"
+              className="relative text-white/70 text-base md:text-lg lg:text-xl max-w-2xl mx-auto mb-12 font-light leading-relaxed px-6 py-3"
             >
-              Cada projeto é uma jornada única. Unimos estética, funcionalidade
-              e a essência de quem vai habitar o espaço.
+              {/* Subtle dark glow behind text */}
+              <span
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.1) 40%, transparent 70%)',
+                  filter: 'blur(10px)',
+                  transform: 'scale(1.1, 1.3)'
+                }}
+              />
+              <span className="relative z-10">
+                Cada projeto é uma jornada única. Unimos estética, funcionalidade
+                e a essência de quem vai habitar o espaço.
+              </span>
             </motion.p>
 
             {/* CTA Buttons */}
@@ -115,20 +126,20 @@ export const Home: React.FC = () => {
           </div>
         </div>
 
-        {/* Featured Project Badge - Bottom Right */}
+        {/* Featured Project Badge - Center bottom on mobile, bottom-right on desktop */}
         {heroProject && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 1.2 }}
-            className="hidden md:block absolute bottom-12 right-12 text-right"
+            className="absolute bottom-20 md:bottom-12 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-12 text-center md:text-right"
           >
             <Link
               to={heroProjectType === 'cultural' ? `/cultural/${heroProject.id}` : `/project/${heroProject.id}`}
               className="group"
             >
               <p className="text-white/50 text-xs tracking-[0.3em] uppercase mb-1">Em Destaque</p>
-              <p className="text-white text-lg font-light group-hover:text-[#d4bbb0] transition-colors">
+              <p className="text-white text-base md:text-lg font-light group-hover:text-[#d4bbb0] transition-colors">
                 {heroProject.title}
               </p>
             </Link>

@@ -22,6 +22,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   // State for Chatbot visibility controlled by Footer
   const [chatOpen, setChatOpen] = useState(false);
   const [hideChatButton, setHideChatButton] = useState(false);
+  const [isHeroVisible, setIsHeroVisible] = useState(false);
   const footerRef = useRef<HTMLElement>(null);
 
   const navigate = useNavigate();
@@ -52,6 +53,27 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       document.body.style.overflow = 'unset';
     };
   }, [isMenuOpen]);
+
+  // Scroll listener to detect Hero section visibility on Home page
+  useEffect(() => {
+    const handleHeroDetection = () => {
+      // Only apply hero detection on the Home page
+      if (location.pathname !== '/') {
+        setIsHeroVisible(false);
+        return;
+      }
+
+      // Hero is considered visible when scroll is less than 85% of viewport height
+      const heroThreshold = window.innerHeight * 0.85;
+      setIsHeroVisible(window.scrollY < heroThreshold);
+    };
+
+    // Initial check
+    handleHeroDetection();
+
+    window.addEventListener('scroll', handleHeroDetection, { passive: true });
+    return () => window.removeEventListener('scroll', handleHeroDetection);
+  }, [location.pathname]);
 
   // Intersection Observer to hide Chatbot button near Footer
   useEffect(() => {
@@ -282,7 +304,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       {/* Floating Chatbot */}
-      <Chatbot isOpen={chatOpen} onToggle={setChatOpen} hideButton={hideChatButton} />
+      <Chatbot
+        isOpen={chatOpen}
+        onToggle={setChatOpen}
+        hideButton={hideChatButton || isHeroVisible}
+        forceShow={isMenuOpen}
+      />
 
       {/* Footer */}
       <footer ref={footerRef} className="bg-[#1a1a1a] text-white pt-16 pb-10">
