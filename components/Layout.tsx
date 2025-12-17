@@ -16,6 +16,7 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,7 +45,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [location]);
 
   // Lock body scroll when menu is open - using robust hook for iOS Safari support
-  useScrollLock(isMenuOpen);
+  useScrollLock(isMenuOpen || isClosing);
 
   // Scroll listener to detect Hero section visibility on Home page
   useEffect(() => {
@@ -90,8 +91,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
   }, []);
 
+  // Handle menu close with animation
+  const closeMenu = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsMenuOpen(false);
+      setIsClosing(false);
+    }, 350);
+  };
+
   const handleLinkClick = () => {
-    setIsMenuOpen(false);
+    closeMenu();
   };
 
   // Handle Search Typing (Mock Suggestion)
@@ -216,7 +226,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           {/* Mobile Toggle Button (Animated X) - Optimized for 60fps with GPU acceleration */}
           <button
             className={`md:hidden z-[60] relative w-12 h-12 flex items-center justify-center focus:outline-none pointer-events-auto ${isMenuOpen ? 'text-primary' : iconClasses}`}
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            onClick={() => isMenuOpen ? closeMenu() : setIsMenuOpen(true)}
             aria-label={isMenuOpen ? "Fechar Menu" : "Abrir Menu"}
           >
             <div className="w-6 h-5 relative flex flex-col justify-center items-center">
@@ -263,7 +273,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           This ensures the close button inside Nav is clickable and visible. */}
       {
         isMenuOpen && (
-          <div className="fixed inset-0 bg-white/40 backdrop-blur-xl z-[45] flex flex-col pt-24 pb-8 px-6 animate-fadeIn text-primary md:hidden touch-none">
+          <div className={`fixed inset-0 bg-white/40 backdrop-blur-xl z-[45] flex flex-col pt-24 pb-8 px-6 text-primary md:hidden touch-none ${isClosing ? 'animate-fadeOut' : 'animate-fadeIn'}`}>
             <div className="flex flex-col space-y-6 flex-grow overflow-y-auto overscroll-contain">
               <Link to="/" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Início</Link>
               <Link to="/about" onClick={handleLinkClick} className="text-3xl font-serif font-light hover:text-accent transition border-b border-gray-400/20 pb-4">Sobre</Link>
