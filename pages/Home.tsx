@@ -55,9 +55,18 @@ export const Home: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-[#d4bbb0] text-sm md:text-base tracking-[0.4em] uppercase mb-6 font-light"
+              className="relative text-[#d4bbb0] text-sm md:text-base tracking-[0.4em] uppercase mb-6 font-light px-6 py-2"
             >
-              Arquitetura & Design
+              {/* Subtle dark glow behind text */}
+              <span
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 40%, transparent 70%)',
+                  filter: 'blur(8px)',
+                  transform: 'scale(1.3, 1.8)'
+                }}
+              />
+              <span className="relative z-10">Arquitetura & Design</span>
             </motion.p>
 
             {/* Main Title - Clean & Bold */}
