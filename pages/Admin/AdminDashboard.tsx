@@ -12,6 +12,7 @@ import { MessagesDashboard } from './MessagesDashboard';
 import { ShopManagement } from './ShopManagement';
 import { ImageCropModal, useImageCropModal } from '../../components/ImageCropModal';
 import { AdminInviteManager } from './AdminInviteManager';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 // Real Supabase Upload
 const uploadToSupabase = async (file: File): Promise<string> => {
@@ -151,18 +152,8 @@ export const AdminDashboard: React.FC = () => {
         }
     }, [users]); // Trigger whenever users list changes in context
 
-    // Lock body scroll when mobile menu is open
-    useEffect(() => {
-        if (mobileMenuOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
-        // Cleanup on unmount
-        return () => {
-            document.body.style.overflow = '';
-        };
-    }, [mobileMenuOpen]);
+    // Lock body scroll when mobile menu is open - using robust hook for iOS Safari support
+    useScrollLock(mobileMenuOpen);
 
     const handleDelete = (id: string) => {
         if (confirm('Tem certeza que deseja excluir este projeto?')) {
@@ -670,7 +661,7 @@ export const AdminDashboard: React.FC = () => {
             {/* Mobile Overlay - Click to close sidebar */}
             {mobileMenuOpen && (
                 <div
-                    className="md:hidden fixed inset-0 bg-black/50 z-30"
+                    className="md:hidden fixed inset-0 bg-black/50 z-30 touch-none"
                     onClick={() => setMobileMenuOpen(false)}
                     aria-hidden="true"
                 />
@@ -683,7 +674,7 @@ export const AdminDashboard: React.FC = () => {
                     <p className="text-xs text-gray-500 uppercase tracking-widest mt-2">Painel Administrativo</p>
                 </div>
 
-                <nav className="flex-grow px-4 space-y-2 overflow-y-auto pb-4">
+                <nav className="flex-grow px-4 space-y-2 overflow-y-auto overscroll-contain pb-4">
                     <NavItem id="dashboard" icon={LayoutDashboard} label="Visão Geral" />
                     <NavItem id="agenda" icon={Calendar} label="Agenda" count={pendingAppointmentsCount} />
                     <NavItem id="projects" icon={FolderOpen} label="Projetos" />
@@ -2629,8 +2620,8 @@ export const AdminDashboard: React.FC = () => {
                                                 }));
                                             }}
                                             className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm transition ${contentForm.office.isActive !== false
-                                                    ? 'bg-green-500 text-white hover:bg-green-600'
-                                                    : 'bg-red-500 text-white hover:bg-red-600'
+                                                ? 'bg-green-500 text-white hover:bg-green-600'
+                                                : 'bg-red-500 text-white hover:bg-red-600'
                                                 }`}
                                         >
                                             {contentForm.office.isActive !== false ? (
