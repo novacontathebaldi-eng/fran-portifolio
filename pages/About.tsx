@@ -372,12 +372,12 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
     >
       <div className="absolute inset-0 bg-black/40" />
 
-      {/* Hero Text - VERY small on mobile to fit inside narrow clip-path */}
+      {/* Hero Text - Responsive to fit inside clipPath visible area (50% center) */}
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4">
         <motion.span
           className={`text-accent uppercase font-bold mb-1 md:mb-4 block ${isMobile
             ? 'text-[8px] tracking-[0.08em]'
-            : 'text-xs tracking-[0.25em]'
+            : 'text-[10px] md:text-xs tracking-[0.15em] md:tracking-[0.25em]'
             }`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -388,7 +388,7 @@ const CenterImage: React.FC<CenterImageProps> = ({ heroImage, heroTitle, heroSub
         <motion.h1
           className={`font-serif drop-shadow-2xl ${isMobile
             ? 'text-[13px] leading-[1.3] max-w-[140px]'
-            : 'text-4xl lg:text-6xl leading-snug max-w-2xl'
+            : 'text-xl sm:text-2xl md:text-3xl lg:text-5xl xl:text-6xl leading-tight max-w-[40vw]'
             }`}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
