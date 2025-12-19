@@ -58,6 +58,97 @@ export const About: React.FC = () => {
     );
   }
 
+  // =============================================================
+  // MOBILE VERSION: Simple static hero (like the old version)
+  // =============================================================
+  if (isMobile) {
+    return (
+      <div className="animate-fadeIn">
+        {/* Mobile Hero Section - Simple, Static */}
+        <div className="relative h-[60vh] flex items-center justify-center overflow-hidden">
+          <img
+            src={about.heroImage}
+            alt="About Hero"
+            className="absolute inset-0 w-full h-full object-cover grayscale opacity-60"
+          />
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="relative z-10 text-center text-white max-w-4xl px-6">
+            <span className="text-accent uppercase tracking-[0.2em] text-sm font-bold mb-4 block animate-slideUp">
+              {about.heroSubtitle}
+            </span>
+            <h1 className="text-4xl font-serif mb-6 leading-tight drop-shadow-2xl animate-slideUp" style={{ animationDelay: '0.1s' }}>
+              {about.heroTitle}
+            </h1>
+          </div>
+        </div>
+
+        {/* Bio Section - Mobile */}
+        <section className="py-16 bg-white">
+          <div className="container mx-auto px-6">
+            <div className="flex flex-col gap-8 items-center">
+              <div className="w-full">
+                <img src={about.profileImage} alt="Profile" className="w-full h-auto shadow-lg object-cover max-h-[400px] rounded-lg" loading="lazy" />
+              </div>
+              <div className="w-full">
+                <h2 className="text-2xl font-serif mb-4">Fran Siller</h2>
+                <p className="text-gray-500 uppercase tracking-widest text-[10px] font-bold mb-6">Arquiteta Principal & Fundadora</p>
+                <div className="prose text-secondary mb-6">
+                  <p className="whitespace-pre-wrap leading-relaxed text-sm">{about.bio}</p>
+                </div>
+                <div className="grid grid-cols-3 gap-4 border-t border-gray-100 pt-6">
+                  {about.stats.map((stat) => (
+                    <div key={stat.id} className="text-center">
+                      <span className="block text-xl font-serif text-accent mb-1">{stat.value}</span>
+                      <span className="text-[8px] uppercase text-gray-400 font-bold leading-tight">{stat.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Philosophy - Mobile */}
+        <section className="py-16 bg-[#f9f9f9]">
+          <div className="container mx-auto px-6">
+            <div className="text-center max-w-2xl mx-auto mb-10">
+              <h2 className="text-2xl font-serif mb-3">Nossos Pilares</h2>
+              <p className="text-secondary text-sm">A base fundamental sobre a qual construímos cada projeto.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              {about.pillars.map((pillar, idx) => (
+                <div key={pillar.id} className="bg-white p-6 rounded-lg shadow-sm">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center">
+                      {idx % 3 === 0 ? <Leaf className="w-5 h-5 text-black" /> : idx % 3 === 1 ? <Clock className="w-5 h-5 text-black" /> : <Users className="w-5 h-5 text-black" />}
+                    </div>
+                    <h3 className="text-base font-serif">{pillar.title}</h3>
+                  </div>
+                  <p className="text-secondary text-sm leading-relaxed">{pillar.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Recognition - Mobile */}
+        <section className="py-12 bg-white border-t border-gray-100">
+          <div className="container mx-auto px-6 text-center">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-6">Reconhecimento & Mídia</h3>
+            <div className="flex flex-wrap justify-center gap-4 opacity-50 grayscale">
+              {about.recognition.map((rec, idx) => (
+                <span key={idx} className="text-base font-serif font-bold">{rec}</span>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  // =============================================================
+  // DESKTOP VERSION: Full Parallax (EXACTLY as the working code you gave me)
+  // =============================================================
   const PageContent = (
     <div className="bg-zinc-950">
       <Hero
@@ -197,7 +288,7 @@ export const About: React.FC = () => {
   const lenisOptions = isMobile
     ? {
       syncTouch: true,
-      touchMultiplier: 0.8, // Menos sensível para não rolar tão rápido
+      touchMultiplier: 0.8,
       smoothWheel: true,
     }
     : {
@@ -341,10 +432,10 @@ const ParallaxImages: React.FC<ParallaxImagesProps> = ({ images, isMobile }) => 
 
   // Mobile: Gentle movement, STAGGERED positions (left/right alternating)
   const mobilePositions = [
-    { start: -6, end: 6, className: 'w-3/4 mr-auto ml-2' },      // Left
-    { start: 4, end: -4, className: 'w-3/4 ml-auto mr-2' },     // Right
-    { start: -5, end: 5, className: 'w-[70%] mr-auto ml-4' },   // Left
-    { start: 3, end: -5, className: 'w-3/4 ml-auto mr-4' },     // Right
+    { start: -6, end: 6, className: 'w-3/4 mr-auto ml-2' },
+    { start: 4, end: -4, className: 'w-3/4 ml-auto mr-2' },
+    { start: -5, end: 5, className: 'w-[70%] mr-auto ml-4' },
+    { start: 3, end: -5, className: 'w-3/4 ml-auto mr-4' },
   ];
 
   const positions = isMobile ? mobilePositions : desktopPositions;
@@ -413,7 +504,7 @@ const ParallaxImg: React.FC<ParallaxImgProps> = ({ className, alt, src, start, e
         style={{
           transform,
           opacity,
-          willChange: isMobile ? 'transform' : 'auto', // GPU acceleration hint for mobile
+          willChange: isMobile ? 'transform' : 'auto',
         }}
         loading="lazy"
         decoding="async"

@@ -320,8 +320,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         )
       }
 
-      {/* Main Content */}
-      <main className="flex-grow">
+      {/* Main Content - Added min-h-0 to prevent flex issues with sticky children */}
+      <main className="flex-grow min-h-0">
         {children}
       </main>
 

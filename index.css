@@ -5,10 +5,12 @@
 /* Custom scrollbar for modern feel */
 @layer base {
 
-  html,
-  body {
+  html {
     overflow-x: hidden;
   }
+
+  /* Note: overflow-x:hidden was removed from body because it breaks position:sticky used in parallax */
+
 
   ::-webkit-scrollbar {
     width: 8px;
