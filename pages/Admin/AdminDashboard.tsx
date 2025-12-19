@@ -134,7 +134,7 @@ export const AdminDashboard: React.FC = () => {
     const [aboutCropModalOpen, setAboutCropModalOpen] = useState(false);
     const [aboutCropImage, setAboutCropImage] = useState('');
     const [aboutCropFile, setAboutCropFile] = useState<File | null>(null);
-    const [pendingAboutField, setPendingAboutField] = useState<'heroImage' | 'profileImage' | null>(null);
+    const [pendingAboutField, setPendingAboutField] = useState<'heroImage' | 'profileImage' | 'homeAboutImage' | null>(null);
 
     // Delete User States
     const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
@@ -567,7 +567,7 @@ export const AdminDashboard: React.FC = () => {
     };
 
     // --- About Image Upload with Crop ---
-    const handleAboutImageSelect = async (e: React.ChangeEvent<HTMLInputElement>, field: 'heroImage' | 'profileImage') => {
+    const handleAboutImageSelect = async (e: React.ChangeEvent<HTMLInputElement>, field: 'heroImage' | 'profileImage' | 'homeAboutImage') => {
         if (!e.target.files || e.target.files.length === 0) return;
         const file = e.target.files[0];
         const dataUrl = await new Promise<string>((resolve) => {
@@ -2380,6 +2380,26 @@ export const AdminDashboard: React.FC = () => {
                                                 <input type="file" accept="image/*" onChange={(e) => handleAboutImageSelect(e, 'profileImage')} className="hidden" />
                                             </label>
                                         </div>
+
+                                        {/* Home About Image */}
+                                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                            <label className="block text-xs font-bold uppercase text-gray-500 mb-3">Foto Home "Sobre" <span className="text-[10px] text-gray-400 font-normal">(independente da página About)</span></label>
+                                            <div className="aspect-[3/4] relative rounded-lg overflow-hidden bg-gray-200 mb-3 max-h-48 mx-auto">
+                                                {(contentForm.about as any).homeAboutImage ? (
+                                                    <img src={(contentForm.about as any).homeAboutImage} alt="Home About" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                                                        <ImageIcon className="w-6 h-6 mb-1" />
+                                                        <span className="text-[10px]">Fallback: Foto Perfil</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <label className="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition cursor-pointer">
+                                                <Upload className="w-4 h-4" />
+                                                Alterar Foto
+                                                <input type="file" accept="image/*" onChange={(e) => handleAboutImageSelect(e, 'homeAboutImage')} className="hidden" />
+                                            </label>
+                                        </div>
                                     </div>
 
                                     <div>
@@ -2798,11 +2818,11 @@ export const AdminDashboard: React.FC = () => {
                 isOpen={aboutCropModalOpen}
                 onClose={() => { setAboutCropModalOpen(false); setPendingAboutField(null); }}
                 onCropComplete={handleAboutCroppedImage}
-                aspect={pendingAboutField === 'profileImage' ? 3 / 4 : 16 / 9}
-                preset={pendingAboutField === 'profileImage' ? 'avatar' : 'projectHero'}
+                aspect={pendingAboutField === 'profileImage' || pendingAboutField === 'homeAboutImage' ? 3 / 4 : 16 / 9}
+                preset={pendingAboutField === 'profileImage' || pendingAboutField === 'homeAboutImage' ? 'avatar' : 'projectHero'}
                 requireCrop={false}
                 showAspectSelector={true}
-                title={pendingAboutField === 'profileImage' ? 'Ajustar Foto do Perfil' : 'Ajustar Hero Image'}
+                title={pendingAboutField === 'profileImage' ? 'Ajustar Foto do Perfil' : pendingAboutField === 'homeAboutImage' ? 'Ajustar Foto Home Sobre' : 'Ajustar Hero Image'}
             />
 
             {/* Delete User Confirmation Modal */}

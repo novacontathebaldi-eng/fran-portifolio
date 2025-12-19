@@ -308,6 +308,7 @@ export interface SiteContent {
     pillars: PillarItem[]; // New
     recognition: string[]; // New
     parallaxProjects?: Array<{ id: string; type: 'project' | 'cultural' }>; // Projects for About page parallax
+    homeAboutImage?: string; // Foto da arquiteta exclusiva para a seção "Sobre" da home page
   };
   office: OfficeDetails; // Centralized Office Data (Source of Truth)
   // Hero Section Settings

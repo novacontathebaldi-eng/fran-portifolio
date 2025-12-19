@@ -582,7 +582,7 @@ export const Shop: React.FC = () => {
                             return (
                                 <section
                                     key={cat}
-                                    ref={el => sectionRefs.current[cat] = el}
+                                    ref={el => { sectionRefs.current[cat] = el; }}
                                     id={`category-${cat.replace(/\s+/g, '-').toLowerCase()}`}
                                     className="scroll-mt-36"
                                 >

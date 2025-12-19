@@ -354,6 +354,54 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* ===== ABOUT ARCHITECT SECTION ===== */}
+      <section className="py-20 md:py-32 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Image */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="order-2 lg:order-1"
+            >
+              <div className="aspect-[3/4] max-w-md mx-auto lg:mx-0 overflow-hidden shadow-2xl">
+                <img
+                  src={(siteContent.about as any).homeAboutImage || siteContent.about.profileImage}
+                  alt="Fran Siller - Arquiteta"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </motion.div>
+
+            {/* Content */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="order-1 lg:order-2"
+            >
+              <p className="text-[#d4bbb0] text-sm tracking-[0.3em] uppercase mb-4">Sobre a Arquiteta</p>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-light mb-6" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+                Fran Siller
+              </h2>
+              <p className="text-gray-600 text-base md:text-lg leading-relaxed mb-8 line-clamp-6">
+                {siteContent.about.bio}
+              </p>
+              <Link
+                to="/about"
+                className="inline-flex items-center gap-2 text-sm tracking-widest uppercase hover:text-[#d4bbb0] transition-colors group"
+              >
+                Conhecer Mais
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* ===== MAP - only show when office is active ===== */}
       {isOfficeActive && (
         <section className="h-[300px] md:h-[400px] relative">
