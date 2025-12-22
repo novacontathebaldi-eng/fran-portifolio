@@ -46,8 +46,8 @@ export const Home: React.FC = () => {
           <div className="absolute inset-0 bg-black/40" />
         </div>
 
-        {/* Main Content - Centered */}
-        <div className="relative z-10 flex-1 flex items-center justify-center text-center px-6">
+        {/* Main Content - Centered on desktop, moved up on mobile */}
+        <div className="relative z-10 flex-1 flex items-start pt-28 md:items-center md:pt-0 justify-center text-center px-6">
           <div className="max-w-4xl">
 
             {/* Elegant Tagline */}
@@ -132,7 +132,7 @@ export const Home: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 1.2 }}
-            className="absolute bottom-20 md:bottom-12 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-12 text-center md:text-right"
+            className="absolute bottom-28 md:bottom-12 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-12 text-center md:text-right"
           >
             <Link
               to={heroProjectType === 'cultural' ? `/cultural/${heroProject.id}` : `/project/${heroProject.id}`}
@@ -317,7 +317,7 @@ export const Home: React.FC = () => {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className={`grid grid-cols-1 ${isOfficeActive ? 'md:grid-cols-3' : 'md:grid-cols-1'} gap-8 pt-12 border-t border-white/10`}
+              className={`grid grid-cols-1 ${isOfficeActive ? 'md:grid-cols-3' : 'md:grid-cols-1'} gap-8 pt-12`}
             >
               {isOfficeActive && (
                 <>
