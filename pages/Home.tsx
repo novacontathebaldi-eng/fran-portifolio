@@ -317,7 +317,7 @@ export const Home: React.FC = () => {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className={`grid grid-cols-1 ${isOfficeActive ? 'md:grid-cols-3' : 'md:grid-cols-1'} gap-8 pt-12`}
+              className={`grid grid-cols-1 ${isOfficeActive ? 'md:grid-cols-3' : 'md:grid-cols-1'} gap-8 pt-1`}
             >
               {isOfficeActive && (
                 <>
