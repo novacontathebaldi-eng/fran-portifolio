@@ -858,7 +858,7 @@ const MessageSuccessWidget = ({ data }: { data: { name: string; email: string; p
         <div className="flex items-start gap-2">
           <Clock className="w-3 h-3 mt-0.5 shrink-0" />
           <p className="break-words">
-            Nossa equipe entrará em contato assim que possível pelo email <strong className="break-all">{data.email}</strong>
+            Responderemos assim que possível pelo email <strong className="break-all">{data.email}</strong>
             {formattedPhone && (
               <> ou pelo telefone <strong>{formattedPhone}</strong></>
             )}
