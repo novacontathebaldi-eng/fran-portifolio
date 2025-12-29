@@ -672,6 +672,7 @@ const ContactFormWidget = ({ data, messageId, updateUI }: { data: Partial<Contac
         data: {
           name: formData.name,
           email: formData.email,
+          phone: formData.phone || undefined,
           subject: finalSubject
         }
       });
@@ -810,8 +811,31 @@ const ContactFormWidget = ({ data, messageId, updateUI }: { data: Partial<Contac
 };
 
 
+// --- Função para formatar telefone brasileiro ---
+const formatBrazilianPhone = (phone: string): string => {
+  // Remove tudo que não é dígito
+  const digits = phone.replace(/\D/g, '');
+
+  // Se começa com +55, remove
+  const cleanDigits = digits.startsWith('55') && digits.length > 11 ? digits.slice(2) : digits;
+
+  // Formato brasileiro: 10 ou 11 dígitos
+  if (cleanDigits.length === 11) {
+    // Celular: (XX) XXXXX-XXXX
+    return `(${cleanDigits.slice(0, 2)}) ${cleanDigits.slice(2, 7)}-${cleanDigits.slice(7)}`;
+  } else if (cleanDigits.length === 10) {
+    // Fixo: (XX) XXXX-XXXX
+    return `(${cleanDigits.slice(0, 2)}) ${cleanDigits.slice(2, 6)}-${cleanDigits.slice(6)}`;
+  }
+
+  // Outros formatos: retorna como está ou adiciona + se internacional
+  return phone.startsWith('+') ? phone : (digits.length > 11 ? `+${digits}` : phone);
+};
+
 // --- Message Success Widget (Confirmação de Recado Enviado) ---
-const MessageSuccessWidget = ({ data }: { data: { name: string; email: string; subject?: string } }) => {
+const MessageSuccessWidget = ({ data }: { data: { name: string; email: string; phone?: string; subject?: string } }) => {
+  const formattedPhone = data.phone ? formatBrazilianPhone(data.phone) : null;
+
   return (
     <div className="mt-3 -mx-4 px-4 py-4 bg-gradient-to-b from-green-50 to-white border-t border-b border-green-100">
       <div className="flex items-start gap-3 mb-3">
@@ -835,6 +859,9 @@ const MessageSuccessWidget = ({ data }: { data: { name: string; email: string; s
           <Clock className="w-3 h-3 mt-0.5 shrink-0" />
           <p className="break-words">
             Responderemos em até 24h úteis pelo email <strong className="break-all">{data.email}</strong>
+            {formattedPhone && (
+              <> ou pelo telefone <strong>{formattedPhone}</strong></>
+            )}
           </p>
         </div>
       </div>
