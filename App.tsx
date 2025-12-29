@@ -485,16 +485,36 @@ const AppContent: React.FC = () => {
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
-  // Preload images
+  // Preload images including hero video thumbnail
+  const { siteContent } = useProjects();
+
   useEffect(() => {
     const PRELOAD_IMAGES = [
       "https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/fundo-home.png",
       "https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/img-sobre-home.png"
     ];
+
+    // Preload static images
     PRELOAD_IMAGES.forEach((src) => {
       const img = new Image();
       img.src = src;
     });
+
+    // Preload hero video thumbnail if YouTube is configured
+    if (siteContent?.heroBackground?.type === 'video' &&
+      siteContent?.heroBackground?.videoSource === 'youtube' &&
+      siteContent?.heroBackground?.videoUrl) {
+      const videoId = siteContent.heroBackground.videoUrl.match(
+        /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/
+      )?.[1];
+      if (videoId) {
+        // Preload both max and hq quality thumbnails
+        const thumbMax = new Image();
+        thumbMax.src = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        const thumbHq = new Image();
+        thumbHq.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+      }
+    }
 
     // Minimum display time
     const minTimer = setTimeout(() => setMinTimeElapsed(true), 2000);
@@ -510,7 +530,7 @@ const AppContent: React.FC = () => {
       clearTimeout(minTimer);
       clearTimeout(maxTimer);
     };
-  }, []);
+  }, [siteContent?.heroBackground]);
 
   // Complete when data is ready AND min time has passed
   useEffect(() => {

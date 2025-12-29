@@ -52,17 +52,14 @@ export const Home: React.FC = () => {
             <>
               {siteContent.heroBackground.videoSource === 'youtube' ? (
                 <>
-                  {/* YouTube Video - Desktop only autoplay works reliably */}
-                  <div className="hidden md:block absolute inset-0">
+                  {/* YouTube Video - Desktop only autoplay works (iOS Safari blocks autoplay) */}
+                  <div className="hidden md:block absolute inset-0 overflow-hidden">
                     <iframe
                       src={`https://www.youtube.com/embed/${getYouTubeId(siteContent.heroBackground.videoUrl)}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1&playlist=${getYouTubeId(siteContent.heroBackground.videoUrl)}&enablejsapi=1&origin=${window.location.origin}`}
-                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                      className="absolute pointer-events-none border-0"
                       style={{
-                        width: '100vw',
-                        height: '56.25vw', // 16:9 aspect ratio
-                        minHeight: '100vh',
-                        minWidth: '177.78vh', // 16:9 aspect ratio
-                        position: 'absolute',
+                        width: '300vw',
+                        height: '300vh',
                         top: '50%',
                         left: '50%',
                         transform: 'translate(-50%, -50%)',
@@ -72,7 +69,7 @@ export const Home: React.FC = () => {
                       title="Hero Video Background"
                     />
                   </div>
-                  {/* Mobile: Use YouTube thumbnail as fallback since autoplay doesn't work */}
+                  {/* Mobile/iOS: Use YouTube thumbnail as fallback since autoplay doesn't work on mobile browsers */}
                   <div className="md:hidden absolute inset-0">
                     <img
                       src={`https://img.youtube.com/vi/${getYouTubeId(siteContent.heroBackground.videoUrl)}/maxresdefault.jpg`}
