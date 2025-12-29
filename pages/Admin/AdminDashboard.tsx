@@ -2272,8 +2272,8 @@ export const AdminDashboard: React.FC = () => {
                                             heroBackground: { ...prev.heroBackground, type: 'project' }
                                         }))}
                                         className={`flex-1 p-4 rounded-xl border-2 transition-all ${(!contentForm.heroBackground || contentForm.heroBackground?.type === 'project')
-                                                ? 'border-accent bg-accent/5'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-accent bg-accent/5'
+                                            : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
@@ -2290,8 +2290,8 @@ export const AdminDashboard: React.FC = () => {
                                             heroBackground: { ...prev.heroBackground, type: 'video' }
                                         }))}
                                         className={`flex-1 p-4 rounded-xl border-2 transition-all ${contentForm.heroBackground?.type === 'video'
-                                                ? 'border-accent bg-accent/5'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-accent bg-accent/5'
+                                            : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
@@ -2387,8 +2387,8 @@ export const AdminDashboard: React.FC = () => {
                                                             heroBackground: { ...prev.heroBackground!, videoSource: source.value as any }
                                                         }))}
                                                         className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${contentForm.heroBackground?.videoSource === source.value
-                                                                ? 'border-accent bg-accent/5 text-black'
-                                                                : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                                            ? 'border-accent bg-accent/5 text-black'
+                                                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
                                                             }`}
                                                     >
                                                         <span className="mr-1">{source.icon}</span> {source.label}
@@ -2494,29 +2494,6 @@ export const AdminDashboard: React.FC = () => {
                                                 </div>
                                             </div>
                                         )}
-
-                                        {/* Example Video Button */}
-                                        <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="font-medium text-blue-900">Usar Vídeo de Exemplo</p>
-                                                    <p className="text-xs text-blue-700">Um vídeo de arquitetura moderno e elegante</p>
-                                                </div>
-                                                <button
-                                                    onClick={() => setContentForm(prev => ({
-                                                        ...prev,
-                                                        heroBackground: {
-                                                            type: 'video',
-                                                            videoSource: 'youtube',
-                                                            videoUrl: 'https://www.youtube.com/watch?v=c-MG9CjMKnE'
-                                                        }
-                                                    }))}
-                                                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
-                                                >
-                                                    Aplicar Exemplo
-                                                </button>
-                                            </div>
-                                        </div>
                                     </div>
                                 )}
 

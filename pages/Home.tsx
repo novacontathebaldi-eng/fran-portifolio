@@ -51,20 +51,40 @@ export const Home: React.FC = () => {
             // Video Background
             <>
               {siteContent.heroBackground.videoSource === 'youtube' ? (
-                <iframe
-                  src={`https://www.youtube.com/embed/${getYouTubeId(siteContent.heroBackground.videoUrl)}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1&playlist=${getYouTubeId(siteContent.heroBackground.videoUrl)}`}
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                  style={{
-                    width: '100vw',
-                    height: '100vh',
-                    objectFit: 'cover',
-                    transform: 'scale(1.2)', // Scale to avoid black bars
-                    transformOrigin: 'center center'
-                  }}
-                  allow="autoplay; encrypted-media"
-                  allowFullScreen
-                  title="Hero Video Background"
-                />
+                <>
+                  {/* YouTube Video - Desktop only autoplay works reliably */}
+                  <div className="hidden md:block absolute inset-0">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${getYouTubeId(siteContent.heroBackground.videoUrl)}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1&playlist=${getYouTubeId(siteContent.heroBackground.videoUrl)}&enablejsapi=1&origin=${window.location.origin}`}
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                      style={{
+                        width: '100vw',
+                        height: '56.25vw', // 16:9 aspect ratio
+                        minHeight: '100vh',
+                        minWidth: '177.78vh', // 16:9 aspect ratio
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title="Hero Video Background"
+                    />
+                  </div>
+                  {/* Mobile: Use YouTube thumbnail as fallback since autoplay doesn't work */}
+                  <div className="md:hidden absolute inset-0">
+                    <img
+                      src={`https://img.youtube.com/vi/${getYouTubeId(siteContent.heroBackground.videoUrl)}/maxresdefault.jpg`}
+                      alt="Video Background"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to hqdefault if maxresdefault doesn't exist
+                        (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${getYouTubeId(siteContent.heroBackground.videoUrl)}/hqdefault.jpg`;
+                      }}
+                    />
+                  </div>
+                </>
               ) : siteContent.heroBackground.videoSource === 'vimeo' ? (
                 <iframe
                   src={`https://player.vimeo.com/video/${getVimeoId(siteContent.heroBackground.videoUrl)}?autoplay=1&muted=1&loop=1&background=1`}
@@ -79,7 +99,7 @@ export const Home: React.FC = () => {
                   title="Hero Video Background"
                 />
               ) : (
-                // Direct video file (upload or direct URL)
+                // Direct video file (upload or direct URL) - works on all devices
                 <video
                   autoPlay
                   loop
@@ -186,8 +206,8 @@ export const Home: React.FC = () => {
           </div>
         </div>
 
-        {/* Featured Project Badge - Center bottom on mobile, bottom-right on desktop */}
-        {heroProject && (
+        {/* Featured Project Badge - ONLY show when NOT using video background */}
+        {heroProject && siteContent?.heroBackground?.type !== 'video' && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
