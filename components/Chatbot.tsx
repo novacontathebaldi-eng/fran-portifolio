@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock, LogIn, ArrowRight, Archive, History, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock, LogIn, ArrowRight, Archive, History, Loader2, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../context/ProjectContext';
 import { ChatMessage, Project } from '../types';
@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { loadBrevoConversations, openBrevoChat } from '../utils/brevoConversations';
 import ServiceRedirectWidget from './ServiceRedirectWidget';
 import { normalizeString } from '../utils/stringUtils';
+import { notifyNewChatbotNote } from '../utils/emailService';
 
 
 // --- Helper for Markdown ---
@@ -604,9 +605,10 @@ interface ContactFormData {
   phone: string;
   message: string;
   subject: string;
+  customSubject: string;
 }
 
-const ContactFormWidget = ({ data, messageId, updateUI }: { data: ContactFormData, messageId: string, updateUI: (id: string, component: any) => void }) => {
+const ContactFormWidget = ({ data, messageId, updateUI }: { data: Partial<ContactFormData>, messageId: string, updateUI: (id: string, component: any) => void }) => {
   const { siteContent, addMessage, showToast, currentUser } = useProjects();
 
   const [formData, setFormData] = useState<ContactFormData>({
@@ -614,12 +616,15 @@ const ContactFormWidget = ({ data, messageId, updateUI }: { data: ContactFormDat
     email: data.email || currentUser?.email || '',
     phone: data.phone || currentUser?.phone || '',
     message: data.message || '',
-    subject: data.subject || ''
+    subject: data.subject || '',
+    customSubject: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<ContactFormData>>({});
 
-  const subjects = siteContent.office.contactSubjects || ['Dúvidas Gerais', 'Orçamento', 'Parcerias', 'Outro'];
+  // Garantir que 'Outro assunto' está nas opções
+  const baseSubjects = siteContent.office.contactSubjects || ['Dúvidas Gerais', 'Orçamento', 'Parcerias'];
+  const subjects = baseSubjects.includes('Outro assunto') ? baseSubjects : [...baseSubjects, 'Outro assunto'];
 
   const validate = () => {
     const newErrors: Partial<ContactFormData> = {};
@@ -627,6 +632,9 @@ const ContactFormWidget = ({ data, messageId, updateUI }: { data: ContactFormDat
     if (!formData.email.trim()) newErrors.email = 'Email é obrigatório';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email inválido';
     if (!formData.message.trim()) newErrors.message = 'Mensagem é obrigatória';
+    if (formData.subject === 'Outro assunto' && !formData.customSubject.trim()) {
+      newErrors.customSubject = 'Digite o assunto';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -636,14 +644,26 @@ const ContactFormWidget = ({ data, messageId, updateUI }: { data: ContactFormDat
     if (!validate()) return;
 
     setIsSubmitting(true);
+    const finalSubject = formData.subject === 'Outro assunto' ? formData.customSubject : (formData.subject || 'Recado via Chat');
+
     try {
+      // Salvar na tabela messages
       await addMessage({
         name: formData.name,
         email: formData.email,
         phone: formData.phone || undefined,
-        subject: formData.subject || 'Recado via Chat',
+        subject: finalSubject,
         message: formData.message,
         source: 'chatbot'
+      });
+
+      // Disparar email de notificação
+      await notifyNewChatbotNote({
+        userName: formData.name,
+        userContact: formData.email,
+        message: formData.message,
+        subject: finalSubject,
+        phone: formData.phone || undefined
       });
 
       // Substituir formulário por widget de sucesso
@@ -652,7 +672,7 @@ const ContactFormWidget = ({ data, messageId, updateUI }: { data: ContactFormDat
         data: {
           name: formData.name,
           email: formData.email,
-          subject: formData.subject || 'Recado via Chat'
+          subject: finalSubject
         }
       });
 
@@ -666,115 +686,141 @@ const ContactFormWidget = ({ data, messageId, updateUI }: { data: ContactFormDat
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-3 animate-fadeIn">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-          <Send className="w-4 h-4 text-white" />
+    <div className="mt-3 -mx-4 px-4 py-4 bg-gradient-to-b from-gray-50 to-white border-t border-b border-gray-100">
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {/* Cabeçalho */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 bg-black rounded-full flex items-center justify-center shrink-0">
+            <Mail className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h4 className="font-bold text-sm text-gray-900">Deixar Recado</h4>
+            <p className="text-[11px] text-gray-500">Preencha os dados abaixo para enviar sua mensagem</p>
+          </div>
         </div>
-        <h4 className="font-bold text-sm">Deixar Recado</h4>
-      </div>
 
-      {/* Nome */}
-      <div>
-        <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Nome *</label>
-        <input
-          type="text"
-          value={formData.name}
-          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-          className={`w-full px-3 py-2 border rounded-lg text-sm ${errors.name ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:border-black transition`}
-          placeholder="Seu nome completo"
-        />
-        {errors.name && <p className="text-[10px] text-red-500 mt-0.5">{errors.name}</p>}
-      </div>
+        {/* Nome e Email - um abaixo do outro */}
+        <div className="space-y-3">
+          {/* Nome */}
+          <div>
+            <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Nome *</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              className={`w-full px-3 py-2 border rounded-lg text-sm ${errors.name ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-white'} focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition`}
+              placeholder="Seu nome completo"
+            />
+            {errors.name && <p className="text-[10px] text-red-500 mt-0.5">{errors.name}</p>}
+          </div>
 
-      {/* Email */}
-      <div>
-        <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Email *</label>
-        <input
-          type="email"
-          value={formData.email}
-          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-          className={`w-full px-3 py-2 border rounded-lg text-sm ${errors.email ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:border-black transition`}
-          placeholder="seu@email.com"
-        />
-        {errors.email && <p className="text-[10px] text-red-500 mt-0.5">{errors.email}</p>}
-      </div>
+          {/* Email */}
+          <div>
+            <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Email *</label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              className={`w-full px-3 py-2 border rounded-lg text-sm ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-white'} focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition`}
+              placeholder="seu@email.com"
+            />
+            {errors.email && <p className="text-[10px] text-red-500 mt-0.5">{errors.email}</p>}
+          </div>
+        </div>
 
-      {/* Telefone (opcional) */}
-      <div>
-        <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Telefone/WhatsApp (opcional)</label>
-        <input
-          type="tel"
-          value={formData.phone}
-          onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition"
-          placeholder="(00) 00000-0000"
-        />
-      </div>
+        {/* Grid 2 colunas para Telefone/Assunto */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Telefone (opcional) */}
+          <div>
+            <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Telefone (opcional)</label>
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition"
+              placeholder="(00) 00000-0000"
+            />
+          </div>
 
-      {/* Assunto */}
-      <div>
-        <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Assunto</label>
-        <select
-          value={formData.subject}
-          onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition bg-white"
-        >
-          <option value="">Selecione um assunto...</option>
-          {subjects.map((sub, idx) => (
-            <option key={idx} value={sub}>{sub}</option>
-          ))}
-        </select>
-      </div>
+          {/* Assunto */}
+          <div>
+            <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Assunto</label>
+            <select
+              value={formData.subject}
+              onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition"
+            >
+              <option value="">Selecione...</option>
+              {subjects.map((sub, idx) => (
+                <option key={idx} value={sub}>{sub}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-      {/* Mensagem */}
-      <div>
-        <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Sua Mensagem *</label>
-        <textarea
-          value={formData.message}
-          onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-          rows={3}
-          className={`w-full px-3 py-2 border rounded-lg text-sm resize-none ${errors.message ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:border-black transition`}
-          placeholder="Digite seu recado aqui..."
-        />
-        {errors.message && <p className="text-[10px] text-red-500 mt-0.5">{errors.message}</p>}
-      </div>
-
-      {/* Botão Enviar */}
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full bg-black text-white py-2.5 rounded-lg text-xs font-bold hover:bg-accent hover:text-black transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isSubmitting ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Enviando...
-          </>
-        ) : (
-          <>
-            <Send className="w-4 h-4" />
-            Enviar Recado
-          </>
+        {/* Campo de texto para assunto customizado */}
+        {formData.subject === 'Outro assunto' && (
+          <div className="animate-fadeIn">
+            <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Qual o assunto? *</label>
+            <input
+              type="text"
+              value={formData.customSubject}
+              onChange={(e) => setFormData(prev => ({ ...prev, customSubject: e.target.value }))}
+              className={`w-full px-3 py-2 border rounded-lg text-sm ${errors.customSubject ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-white'} focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition`}
+              placeholder="Digite o assunto do seu recado"
+            />
+            {errors.customSubject && <p className="text-[10px] text-red-500 mt-0.5">{errors.customSubject}</p>}
+          </div>
         )}
-      </button>
-    </form>
+
+        {/* Mensagem */}
+        <div>
+          <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Sua Mensagem *</label>
+          <textarea
+            value={formData.message}
+            onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+            rows={3}
+            className={`w-full px-3 py-2 border rounded-lg text-sm resize-none ${errors.message ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-white'} focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition`}
+            placeholder="Digite seu recado aqui..."
+          />
+          {errors.message && <p className="text-[10px] text-red-500 mt-0.5">{errors.message}</p>}
+        </div>
+
+        {/* Botão Enviar */}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-black text-white py-3 rounded-lg text-sm font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Enviando...
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4" />
+              Enviar Recado
+            </>
+          )}
+        </button>
+      </form>
+    </div>
   );
 };
+
 
 // --- Message Success Widget (Confirmação de Recado Enviado) ---
 const MessageSuccessWidget = ({ data }: { data: { name: string; email: string; subject?: string } }) => {
   return (
-    <div className="mt-4 bg-gray-50 border border-gray-100 rounded-xl p-5 animate-slideUp relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
-
+    <div className="mt-3 -mx-4 px-4 py-4 bg-gradient-to-b from-green-50 to-white border-t border-b border-green-100">
       <div className="flex items-start gap-3 mb-3">
-        <div className="p-2 bg-green-100 rounded-full text-green-600">
+        <div className="p-2 bg-green-100 rounded-full text-green-600 shrink-0">
           <CheckCircle className="w-5 h-5" />
         </div>
-        <div>
-          <h4 className="font-bold text-gray-900 text-sm">Recado Enviado com Sucesso!</h4>
-          <p className="text-xs text-gray-500 mt-0.5">
+        <div className="min-w-0 flex-1">
+          <h4 className="font-bold text-gray-900 text-sm">Recado Enviado!</h4>
+          <p className="text-xs text-gray-500 mt-0.5 truncate">
             {data.subject ? `Assunto: ${data.subject}` : 'Recado via Chat'}
           </p>
         </div>
@@ -785,10 +831,12 @@ const MessageSuccessWidget = ({ data }: { data: { name: string; email: string; s
       </p>
 
       <div className="bg-white border border-gray-200 rounded-lg p-3 text-xs text-gray-500">
-        <p className="flex items-center gap-2">
-          <Clock className="w-3 h-3" />
-          Responderemos em até 24h úteis pelo email <strong>{data.email}</strong>
-        </p>
+        <div className="flex items-start gap-2">
+          <Clock className="w-3 h-3 mt-0.5 shrink-0" />
+          <p className="break-words">
+            Responderemos em até 24h úteis pelo email <strong className="break-all">{data.email}</strong>
+          </p>
+        </div>
       </div>
     </div>
   );

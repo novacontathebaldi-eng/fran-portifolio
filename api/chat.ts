@@ -191,7 +191,7 @@ export async function chatWithConcierge(
               subject: call.args['subject'] || ''
             };
             responseData.uiComponent = { type: 'ContactForm', data: formData };
-            if (!responseData.text) responseData.text = "Confirme os dados para enviar seu recado:";
+            if (!responseData.text) responseData.text = "Perfeito! Preencha o formulário abaixo e sua mensagem será encaminhada para nossa equipe.";
             break;
           }
         }
@@ -208,7 +208,7 @@ export async function chatWithConcierge(
         'ProductCarousel': 'Veja nossos produtos:',
         'OfficeMap': 'Nossa localização:',
         'ServiceRedirect': 'Veja nossas opções de serviço:',
-        'ContactForm': 'Confirme os dados para enviar seu recado:',
+        'ContactForm': 'Perfeito! Preencha o formulário abaixo e sua mensagem será encaminhada para nossa equipe.',
         'MessageSuccess': 'Recado enviado com sucesso!'
       };
       responseData.text = uiTextMap[responseData.uiComponent.type] || 'Como posso ajudar mais?';

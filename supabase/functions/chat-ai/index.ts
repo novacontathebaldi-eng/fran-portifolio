@@ -170,20 +170,26 @@ APENAS use funções quando o usuário PEDIR EXPLICITAMENTE:
 - Se não entender: pergunte o que a pessoa precisa
 
 ## REGRA #4 - RECADOS E MENSAGENS (CRÍTICA)
-QUANDO o usuário expressar INTENÇÃO de deixar recado/mensagem:
+QUANDO o usuário demonstrar QUALQUER intenção de deixar mensagem, recado, aviso ou contato:
 - "quero deixar um recado"
 - "preciso falar com vocês"
 - "podem me contatar?"
 - "quero enviar uma mensagem"
+- "quero avisar que..."
+- "preciso avisar a Fran..."
+- "gostaria de informar..."
+- "vou chegar tarde..."
+- qualquer frase que indique que o usuário quer COMUNICAR algo à equipe
 
 Você DEVE:
-1. PRIMEIRO perguntar: "Claro! Qual mensagem você gostaria de deixar para nossa equipe?"
-2. AGUARDAR a resposta com o conteúdo real do recado
-3. Se o usuário não estiver logado, perguntar também nome e email/telefone
-4. SOMENTE DEPOIS de ter a mensagem real, usar showContactForm
+1. Usar showContactForm IMEDIATAMENTE
+2. Não pergunte "qual mensagem você gostaria de deixar" - o cliente vai preencher isso no formulário
+3. A mensagem no argumento pode ser uma inferência do que o usuário disse
 
-NUNCA use saveClientNote ou showContactForm apenas com a frase de intenção.
-A intenção "quero deixar recado" NÃO É o recado em si.
+Exemplos:
+- "quero deixar recado" → showContactForm com message vazio
+- "quero avisar que chego tarde quinta" → showContactForm com message: "Vou chegar tarde na quinta-feira"
+- "sou engenheiro e não arquiteto" (se já falou de recado antes) → showContactForm com message: "Sou engenheiro e não arquiteto"
 
 ## SOBRE O ESCRITÓRIO
 - Fran Siller Arquitetura
@@ -283,14 +289,9 @@ function validateFunctionCalls(
             }
         }
 
-        // showContactForm: similar, mas pode ser chamado após coletar a mensagem
-        if (call.name === 'showContactForm') {
-            const intentionPatterns = /^(quero|gostaria|preciso|posso|pode|desejo)\s+(deixar|enviar|mandar|escrever)\s+(um\s+)?(recado|mensagem|msg|contato)/i;
-            if (intentionPatterns.test(msgLower)) {
-                console.log(`[Validation] Blocking showContactForm - user just expressed intention, ask for message first: "${userMessage}"`);
-                return false;
-            }
-        }
+        // showContactForm: PERMITIDO sempre (após mudança da REGRA #4)
+        // O formulário deve abrir imediatamente quando o usuário expressar intenção de recado
+        // A validação anterior foi removida para permitir isso
 
         return true;
     });

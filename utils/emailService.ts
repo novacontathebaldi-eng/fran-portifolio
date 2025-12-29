@@ -64,6 +64,9 @@ const getBaseTemplate = (title: string, color: string, content: string) => `
     .value { font-size: 16px; margin-bottom: 12px; display: block; color: #000; }
     .footer { background: #1a1a1a; padding: 20px; text-align: center; color: #666; font-size: 12px; }
     .btn { display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; border-radius: 50px; font-weight: bold; margin-top: 20px; }
+    .btn-secondary { display: inline-block; padding: 10px 20px; background: #3B82F6; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 5px; font-size: 14px; }
+    .btn-whatsapp { background: #25D366; }
+    .action-buttons { text-align: center; margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -79,7 +82,7 @@ const getBaseTemplate = (title: string, color: string, content: string) => `
     </div>
     <div class="footer">
       <p>Fran Siller Arquitetura - Sistema de Notificações</p>
-      <p>Powered by Thebaldi</p>
+      <p>Desenvolvido por Otávio Thebaldi</p>
     </div>
   </div>
 </body>
@@ -89,7 +92,18 @@ const getBaseTemplate = (title: string, color: string, content: string) => `
 /**
  * Notificar novo recado do Chatbot (Lista 6)
  */
-export const notifyNewChatbotNote = async (data: { userName: string; userContact: string; message: string }) => {
+export const notifyNewChatbotNote = async (data: {
+  userName: string;
+  userContact: string;
+  message: string;
+  subject?: string;
+  phone?: string;
+}) => {
+  const subjectText = data.subject || 'Recado via Chat';
+  const whatsappButton = data.phone
+    ? `<a href="https://wa.me/55${data.phone.replace(/\D/g, '')}" class="btn-secondary btn-whatsapp" style="color: #ffffff;">Responder via WhatsApp</a>`
+    : '';
+
   const html = getBaseTemplate(
     'Novo Recado via Chatbot',
     '#8B5CF6', // Roxo
@@ -99,17 +113,26 @@ export const notifyNewChatbotNote = async (data: { userName: string; userContact
       <span class="label">Nome</span>
       <span class="value">${data.userName}</span>
       
-      <span class="label">Contato</span>
-      <span class="value">${data.userContact}</span>
+      <span class="label">E-mail</span>
+      <span class="value"><a href="mailto:${data.userContact}" style="color: #3B82F6;">${data.userContact}</a></span>
+      
+      ${data.phone ? `<span class="label">Telefone</span><span class="value">${data.phone}</span>` : ''}
+      
+      <span class="label">Assunto</span>
+      <span class="value">${subjectText}</span>
       
       <span class="label">Mensagem</span>
-      <span class="value">${data.message}</span>
+      <span class="value" style="white-space: pre-wrap;">${data.message}</span>
+    </div>
+    <div class="action-buttons">
+      <a href="mailto:${data.userContact}?subject=Re: ${subjectText}" class="btn-secondary" style="color: #ffffff;">Responder por E-mail</a>
+      ${whatsappButton}
     </div>
     `
   );
 
   return sendBrevoEmail({
-    subject: `💬 Novo Recado: ${data.userName}`,
+    subject: `💬 Novo Recado: ${subjectText} - ${data.userName}`,
     htmlContent: html,
     tags: ['list_6', 'chatbot_note']
   });
