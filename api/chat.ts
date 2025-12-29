@@ -191,7 +191,8 @@ export async function chatWithConcierge(
               subject: call.args['subject'] || ''
             };
             responseData.uiComponent = { type: 'ContactForm', data: formData };
-            if (!responseData.text) responseData.text = "Perfeito! Preencha o formulário abaixo e sua mensagem será encaminhada para nossa equipe.";
+            // Forçar texto adequado para o formulário (ignora texto da IA)
+            responseData.text = "Perfeito! Preencha o formulário abaixo e sua mensagem será encaminhada para nossa equipe.";
             break;
           }
         }
