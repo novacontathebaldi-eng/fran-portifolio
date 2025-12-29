@@ -2254,75 +2254,271 @@ export const AdminDashboard: React.FC = () => {
                         <div className="animate-fadeIn max-w-4xl">
                             <h2 className="text-3xl font-serif font-bold mb-8 text-black">Conteúdo do Site</h2>
 
-                            {/* Hero Project Selection */}
+                            {/* Hero Background Configuration */}
                             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
                                 <h3 className="font-bold text-xl mb-4 text-black border-b border-gray-100 pb-2 flex items-center gap-2">
                                     <Star className="w-5 h-5 text-accent" />
-                                    Projeto Destaque no Hero (Página Inicial)
+                                    Fundo do Hero (Página Inicial)
                                 </h3>
-                                <p className="text-sm text-gray-500 mb-4">
-                                    Selecione qual projeto aparecerá em destaque no Hero da página inicial. A imagem do projeto será usada como fundo.
+                                <p className="text-sm text-gray-500 mb-6">
+                                    Configure o fundo do Hero da página inicial. Escolha entre usar a imagem de um projeto ou um vídeo de fundo.
                                 </p>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Current Selection Preview */}
-                                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                                        <label className="block text-xs font-bold uppercase text-gray-500 mb-3">Projeto Atual</label>
-                                        {(() => {
-                                            const heroConfig = contentForm.heroProject;
-                                            let currentProject = null;
-                                            if (heroConfig?.id) {
-                                                currentProject = heroConfig.type === 'cultural'
-                                                    ? culturalProjects.find(p => p.id === heroConfig.id)
-                                                    : projects.find(p => p.id === heroConfig.id);
-                                            }
-                                            if (!currentProject) {
-                                                currentProject = projects.find(p => p.featured) || culturalProjects.find(p => p.featured) || projects[0];
-                                            }
-                                            return currentProject ? (
-                                                <div className="flex items-center gap-3">
-                                                    <img src={currentProject.image} alt={currentProject.title} className="w-16 h-16 object-cover rounded-lg" />
-                                                    <div>
-                                                        <p className="font-semibold text-black">{currentProject.title}</p>
-                                                        <p className="text-xs text-gray-500">{heroConfig?.id ? 'Selecionado manualmente' : 'Automático (primeiro featured)'}</p>
+                                {/* Background Type Toggle */}
+                                <div className="flex gap-4 mb-6">
+                                    <button
+                                        onClick={() => setContentForm(prev => ({
+                                            ...prev,
+                                            heroBackground: { ...prev.heroBackground, type: 'project' }
+                                        }))}
+                                        className={`flex-1 p-4 rounded-xl border-2 transition-all ${(!contentForm.heroBackground || contentForm.heroBackground?.type === 'project')
+                                                ? 'border-accent bg-accent/5'
+                                                : 'border-gray-200 hover:border-gray-300'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <ImageIcon className="w-6 h-6 text-accent" />
+                                            <div className="text-left">
+                                                <p className="font-bold text-black">Imagem de Projeto</p>
+                                                <p className="text-xs text-gray-500">Usa a imagem do projeto selecionado</p>
+                                            </div>
+                                        </div>
+                                    </button>
+                                    <button
+                                        onClick={() => setContentForm(prev => ({
+                                            ...prev,
+                                            heroBackground: { ...prev.heroBackground, type: 'video' }
+                                        }))}
+                                        className={`flex-1 p-4 rounded-xl border-2 transition-all ${contentForm.heroBackground?.type === 'video'
+                                                ? 'border-accent bg-accent/5'
+                                                : 'border-gray-200 hover:border-gray-300'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Video className="w-6 h-6 text-accent" />
+                                            <div className="text-left">
+                                                <p className="font-bold text-black">Vídeo de Fundo</p>
+                                                <p className="text-xs text-gray-500">YouTube, Vimeo ou arquivo direto</p>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </div>
+
+                                {/* Project Selection (shown when type is 'project' or undefined) */}
+                                {(!contentForm.heroBackground || contentForm.heroBackground?.type === 'project') && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Current Selection Preview */}
+                                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                            <label className="block text-xs font-bold uppercase text-gray-500 mb-3">Projeto Atual</label>
+                                            {(() => {
+                                                const heroConfig = contentForm.heroProject;
+                                                let currentProject = null;
+                                                if (heroConfig?.id) {
+                                                    currentProject = heroConfig.type === 'cultural'
+                                                        ? culturalProjects.find(p => p.id === heroConfig.id)
+                                                        : projects.find(p => p.id === heroConfig.id);
+                                                }
+                                                if (!currentProject) {
+                                                    currentProject = projects.find(p => p.featured) || culturalProjects.find(p => p.featured) || projects[0];
+                                                }
+                                                return currentProject ? (
+                                                    <div className="flex items-center gap-3">
+                                                        <img src={currentProject.image} alt={currentProject.title} className="w-16 h-16 object-cover rounded-lg" />
+                                                        <div>
+                                                            <p className="font-semibold text-black">{currentProject.title}</p>
+                                                            <p className="text-xs text-gray-500">{heroConfig?.id ? 'Selecionado manualmente' : 'Automático (primeiro featured)'}</p>
+                                                        </div>
                                                     </div>
+                                                ) : (
+                                                    <p className="text-gray-400 italic">Nenhum projeto disponível</p>
+                                                );
+                                            })()}
+                                        </div>
+
+                                        {/* Selector */}
+                                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                            <label className="block text-xs font-bold uppercase text-gray-500 mb-3">Escolher Projeto</label>
+                                            <select
+                                                value={contentForm.heroProject?.id ? `${contentForm.heroProject.type}:${contentForm.heroProject.id}` : ''}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    if (!value) {
+                                                        setContentForm(prev => ({ ...prev, heroProject: null }));
+                                                    } else {
+                                                        const [type, id] = value.split(':');
+                                                        setContentForm(prev => ({ ...prev, heroProject: { id, type: type as 'project' | 'cultural' } }));
+                                                    }
+                                                }}
+                                                className="w-full p-3 border border-gray-200 rounded-lg text-black bg-white focus:ring-2 focus:ring-accent focus:border-transparent"
+                                            >
+                                                <option value="">Automático (primeiro featured)</option>
+                                                <optgroup label="Projetos">
+                                                    {projects.map(p => (
+                                                        <option key={p.id} value={`project:${p.id}`}>{p.title}</option>
+                                                    ))}
+                                                </optgroup>
+                                                <optgroup label="Projetos Culturais">
+                                                    {culturalProjects.map(p => (
+                                                        <option key={p.id} value={`cultural:${p.id}`}>{p.title}</option>
+                                                    ))}
+                                                </optgroup>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Video Configuration (shown when type is 'video') */}
+                                {contentForm.heroBackground?.type === 'video' && (
+                                    <div className="space-y-4">
+                                        {/* Video Source Selection */}
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase text-gray-500 mb-3">Fonte do Vídeo</label>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                                {[
+                                                    { value: 'youtube', label: 'YouTube', icon: '▶️' },
+                                                    { value: 'vimeo', label: 'Vimeo', icon: '🎬' },
+                                                    { value: 'direct', label: 'Link Direto', icon: '🔗' },
+                                                    { value: 'upload', label: 'Upload', icon: '📤' }
+                                                ].map(source => (
+                                                    <button
+                                                        key={source.value}
+                                                        onClick={() => setContentForm(prev => ({
+                                                            ...prev,
+                                                            heroBackground: { ...prev.heroBackground!, videoSource: source.value as any }
+                                                        }))}
+                                                        className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${contentForm.heroBackground?.videoSource === source.value
+                                                                ? 'border-accent bg-accent/5 text-black'
+                                                                : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                                            }`}
+                                                    >
+                                                        <span className="mr-1">{source.icon}</span> {source.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Video URL Input */}
+                                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                            <label className="block text-xs font-bold uppercase text-gray-500 mb-2">
+                                                {contentForm.heroBackground?.videoSource === 'upload' ? 'Upload do Vídeo' : 'URL do Vídeo'}
+                                            </label>
+                                            {contentForm.heroBackground?.videoSource === 'upload' ? (
+                                                <div className="space-y-3">
+                                                    <input
+                                                        type="file"
+                                                        accept="video/mp4,video/webm"
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) {
+                                                                // Upload to Supabase storage
+                                                                const fileName = `hero-video-${Date.now()}.${file.name.split('.').pop()}`;
+                                                                const { data, error } = await supabase.storage
+                                                                    .from('storage-Fran')
+                                                                    .upload(fileName, file);
+                                                                if (!error && data) {
+                                                                    const { data: urlData } = supabase.storage
+                                                                        .from('storage-Fran')
+                                                                        .getPublicUrl(data.path);
+                                                                    setContentForm(prev => ({
+                                                                        ...prev,
+                                                                        heroBackground: { ...prev.heroBackground!, videoUrl: urlData.publicUrl }
+                                                                    }));
+                                                                    showToast('Vídeo enviado com sucesso!', 'success');
+                                                                } else {
+                                                                    showToast('Erro ao enviar vídeo', 'error');
+                                                                }
+                                                            }
+                                                        }}
+                                                        className="w-full p-3 border border-gray-200 rounded-lg text-black bg-white"
+                                                    />
+                                                    {contentForm.heroBackground?.videoUrl && (
+                                                        <p className="text-xs text-green-600">✓ Vídeo carregado: {contentForm.heroBackground.videoUrl.split('/').pop()}</p>
+                                                    )}
                                                 </div>
                                             ) : (
-                                                <p className="text-gray-400 italic">Nenhum projeto disponível</p>
-                                            );
-                                        })()}
-                                    </div>
+                                                <input
+                                                    type="url"
+                                                    value={contentForm.heroBackground?.videoUrl || ''}
+                                                    onChange={(e) => setContentForm(prev => ({
+                                                        ...prev,
+                                                        heroBackground: { ...prev.heroBackground!, videoUrl: e.target.value }
+                                                    }))}
+                                                    placeholder={
+                                                        contentForm.heroBackground?.videoSource === 'youtube'
+                                                            ? 'https://www.youtube.com/watch?v=...'
+                                                            : contentForm.heroBackground?.videoSource === 'vimeo'
+                                                                ? 'https://vimeo.com/...'
+                                                                : 'https://exemplo.com/video.mp4'
+                                                    }
+                                                    className="w-full p-3 border border-gray-200 rounded-lg text-black bg-white focus:ring-2 focus:ring-accent focus:border-transparent"
+                                                />
+                                            )}
+                                            <p className="text-xs text-gray-400 mt-2">
+                                                {contentForm.heroBackground?.videoSource === 'youtube' && 'Cole o link do YouTube. Ex: https://youtube.com/watch?v=...'}
+                                                {contentForm.heroBackground?.videoSource === 'vimeo' && 'Cole o link do Vimeo. Ex: https://vimeo.com/12345678'}
+                                                {contentForm.heroBackground?.videoSource === 'direct' && 'Link direto para o arquivo .mp4 ou .webm'}
+                                                {contentForm.heroBackground?.videoSource === 'upload' && 'Formatos aceitos: MP4, WebM (máx. 50MB recomendado)'}
+                                            </p>
+                                        </div>
 
-                                    {/* Selector */}
-                                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                                        <label className="block text-xs font-bold uppercase text-gray-500 mb-3">Escolher Projeto</label>
-                                        <select
-                                            value={contentForm.heroProject?.id ? `${contentForm.heroProject.type}:${contentForm.heroProject.id}` : ''}
-                                            onChange={(e) => {
-                                                const value = e.target.value;
-                                                if (!value) {
-                                                    setContentForm(prev => ({ ...prev, heroProject: null }));
-                                                } else {
-                                                    const [type, id] = value.split(':');
-                                                    setContentForm(prev => ({ ...prev, heroProject: { id, type: type as 'project' | 'cultural' } }));
-                                                }
-                                            }}
-                                            className="w-full p-3 border border-gray-200 rounded-lg text-black bg-white focus:ring-2 focus:ring-accent focus:border-transparent"
-                                        >
-                                            <option value="">Automático (primeiro featured)</option>
-                                            <optgroup label="Projetos">
-                                                {projects.map(p => (
-                                                    <option key={p.id} value={`project:${p.id}`}>{p.title}</option>
-                                                ))}
-                                            </optgroup>
-                                            <optgroup label="Projetos Culturais">
-                                                {culturalProjects.map(p => (
-                                                    <option key={p.id} value={`cultural:${p.id}`}>{p.title}</option>
-                                                ))}
-                                            </optgroup>
-                                        </select>
+                                        {/* Video Preview */}
+                                        {contentForm.heroBackground?.videoUrl && (
+                                            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                                <label className="block text-xs font-bold uppercase text-gray-500 mb-3">Prévia do Vídeo</label>
+                                                <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                                                    {contentForm.heroBackground?.videoSource === 'youtube' ? (
+                                                        <iframe
+                                                            src={`https://www.youtube.com/embed/${(() => {
+                                                                const match = contentForm.heroBackground?.videoUrl?.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/);
+                                                                return match ? match[1] : '';
+                                                            })()}?autoplay=0`}
+                                                            className="w-full h-full"
+                                                            allow="encrypted-media"
+                                                            title="Prévia do Vídeo"
+                                                        />
+                                                    ) : contentForm.heroBackground?.videoSource === 'vimeo' ? (
+                                                        <iframe
+                                                            src={`https://player.vimeo.com/video/${(() => {
+                                                                const match = contentForm.heroBackground?.videoUrl?.match(/(?:vimeo\.com\/)(\d+)/);
+                                                                return match ? match[1] : '';
+                                                            })()}`}
+                                                            className="w-full h-full"
+                                                            allow="fullscreen"
+                                                            title="Prévia do Vídeo"
+                                                        />
+                                                    ) : (
+                                                        <video controls className="w-full h-full">
+                                                            <source src={contentForm.heroBackground?.videoUrl} type="video/mp4" />
+                                                        </video>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Example Video Button */}
+                                        <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="font-medium text-blue-900">Usar Vídeo de Exemplo</p>
+                                                    <p className="text-xs text-blue-700">Um vídeo de arquitetura moderno e elegante</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => setContentForm(prev => ({
+                                                        ...prev,
+                                                        heroBackground: {
+                                                            type: 'video',
+                                                            videoSource: 'youtube',
+                                                            videoUrl: 'https://www.youtube.com/watch?v=c-MG9CjMKnE'
+                                                        }
+                                                    }))}
+                                                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+                                                >
+                                                    Aplicar Exemplo
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 {/* Save Button */}
                                 <div className="mt-6 flex justify-end">
@@ -2332,7 +2528,7 @@ export const AdminDashboard: React.FC = () => {
                                         className="flex items-center gap-2 px-6 py-3 bg-black text-white font-medium rounded-lg hover:bg-accent hover:text-black transition disabled:opacity-50"
                                     >
                                         <Save className="w-4 h-4" />
-                                        {saving ? 'Salvando...' : 'Salvar Projeto do Hero'}
+                                        {saving ? 'Salvando...' : 'Salvar Configuração do Hero'}
                                     </button>
                                 </div>
                             </div>

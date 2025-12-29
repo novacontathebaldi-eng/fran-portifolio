@@ -189,7 +189,8 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     faqItems: [],
     contactSubjects: ['Orçamento de Projeto', 'Dúvidas Gerais', 'Imprensa / Mídia', 'Parcerias']
   },
-  heroProject: null
+  heroProject: null,
+  heroBackground: { type: 'project' } // Default: use project image
 };
 
 // Helper to map DB Snake Case to App Camel Case
@@ -351,7 +352,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       setSiteContent({
         about: { ...DEFAULT_SITE_CONTENT.about, ...(settingsRow.about || {}) },
         office: { ...DEFAULT_SITE_CONTENT.office, ...(settingsRow.office || {}) },
-        heroProject: settingsRow.settings?.heroProject || null
+        heroProject: settingsRow.settings?.heroProject || null,
+        heroBackground: settingsRow.settings?.heroBackground || { type: 'project' }
       });
 
       // Update Global Settings + Schedule (bundled in 'settings' column)
@@ -692,7 +694,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       settings: {
         global: finalSettings,
         schedule: finalSchedule,
-        heroProject: finalContent.heroProject || null
+        heroProject: finalContent.heroProject || null,
+        heroBackground: finalContent.heroBackground || { type: 'project' }
       }
     };
 
@@ -777,7 +780,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       settings: {
         global: globalSettings,
         schedule: schedule,
-        heroProject: content.heroProject || null
+        heroProject: content.heroProject || null,
+        heroBackground: content.heroBackground || { type: 'project' }
       }
     };
 

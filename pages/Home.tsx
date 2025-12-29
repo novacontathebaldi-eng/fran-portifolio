@@ -4,6 +4,18 @@ import { ArrowRight, MapPin, Clock, ChevronDown } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
 import { motion } from 'framer-motion';
 
+// Helper functions to extract video IDs
+const getYouTubeId = (url: string): string => {
+  const match = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/);
+  return match ? match[1] : '';
+};
+
+const getVimeoId = (url: string): string => {
+  const match = url.match(/(?:vimeo\.com\/)(\d+)/);
+  return match ? match[1] : '';
+};
+
+
 export const Home: React.FC = () => {
   const { projects, culturalProjects, siteContent } = useProjects();
   const isOfficeActive = siteContent?.office?.isActive !== false;
@@ -33,16 +45,64 @@ export const Home: React.FC = () => {
       {/* ===== HERO SECTION - COMPLETELY NEW DESIGN ===== */}
       <section className="relative min-h-screen flex flex-col">
 
-        {/* Background Image with Overlay */}
+        {/* Background Image or Video with Overlay */}
         <div className="absolute inset-0">
-          <motion.img
-            initial={{ scale: 1.05 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 8, ease: "easeOut" }}
-            src={heroImage}
-            alt={heroProject?.title || 'Arquitetura'}
-            className="w-full h-full object-cover"
-          />
+          {siteContent?.heroBackground?.type === 'video' && siteContent?.heroBackground?.videoUrl ? (
+            // Video Background
+            <>
+              {siteContent.heroBackground.videoSource === 'youtube' ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${getYouTubeId(siteContent.heroBackground.videoUrl)}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1&playlist=${getYouTubeId(siteContent.heroBackground.videoUrl)}`}
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  style={{
+                    width: '100vw',
+                    height: '100vh',
+                    objectFit: 'cover',
+                    transform: 'scale(1.2)', // Scale to avoid black bars
+                    transformOrigin: 'center center'
+                  }}
+                  allow="autoplay; encrypted-media"
+                  allowFullScreen
+                  title="Hero Video Background"
+                />
+              ) : siteContent.heroBackground.videoSource === 'vimeo' ? (
+                <iframe
+                  src={`https://player.vimeo.com/video/${getVimeoId(siteContent.heroBackground.videoUrl)}?autoplay=1&muted=1&loop=1&background=1`}
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  style={{
+                    width: '100vw',
+                    height: '100vh',
+                    objectFit: 'cover'
+                  }}
+                  allow="autoplay; fullscreen"
+                  allowFullScreen
+                  title="Hero Video Background"
+                />
+              ) : (
+                // Direct video file (upload or direct URL)
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  poster={siteContent.heroBackground.videoPoster || heroImage}
+                  className="w-full h-full object-cover"
+                >
+                  <source src={siteContent.heroBackground.videoUrl} type="video/mp4" />
+                </video>
+              )}
+            </>
+          ) : (
+            // Default: Image Background from project
+            <motion.img
+              initial={{ scale: 1.05 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 8, ease: "easeOut" }}
+              src={heroImage}
+              alt={heroProject?.title || 'Arquitetura'}
+              className="w-full h-full object-cover"
+            />
+          )}
           <div className="absolute inset-0 bg-black/40" />
         </div>
 

@@ -297,22 +297,32 @@ export interface OfficeDetails {
   aboutText?: string;
 }
 
+// Hero Background Configuration - supports both project image and video
+export interface HeroBackground {
+  type: 'project' | 'video'; // 'project' = use project image, 'video' = use video
+  // Video settings (used when type === 'video')
+  videoUrl?: string; // URL do vídeo (YouTube, Vimeo, direto, ou upload)
+  videoSource?: 'youtube' | 'vimeo' | 'direct' | 'upload'; // Tipo de fonte do vídeo
+  videoPoster?: string; // Imagem de fallback/poster para o vídeo
+}
+
 export interface SiteContent {
   about: {
     heroTitle: string;
     heroSubtitle: string;
-    heroImage: string; // New
-    profileImage: string; // New\r\n    backgroundImage?: string; // Background image for About page
+    heroImage: string;
+    profileImage: string;
+    backgroundImage?: string;
     bio: string;
-    stats: StatItem[]; // New
-    pillars: PillarItem[]; // New
-    recognition: string[]; // New
-    parallaxProjects?: Array<{ id: string; type: 'project' | 'cultural' }>; // Projects for About page parallax
-    homeAboutImage?: string; // Foto da arquiteta exclusiva para a seção "Sobre" da home page
+    stats: StatItem[];
+    pillars: PillarItem[];
+    recognition: string[];
+    parallaxProjects?: Array<{ id: string; type: 'project' | 'cultural' }>;
+    homeAboutImage?: string;
   };
-  office: OfficeDetails; // Centralized Office Data (Source of Truth)
-  // Hero Section Settings
-  heroProject?: { id: string; type: 'project' | 'cultural' } | null; // Project to feature on homepage Hero
+  office: OfficeDetails;
+  heroProject?: { id: string; type: 'project' | 'cultural' } | null;
+  heroBackground?: HeroBackground; // New: Background configuration (image or video)
 }
 
 // Quick Action Button for Chatbot (configurable via Admin Panel)
