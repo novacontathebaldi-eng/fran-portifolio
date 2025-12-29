@@ -126,6 +126,18 @@ const toolDefinitions = [
             },
             required: ["topic", "content"]
         }
+    },
+    {
+        name: "showContactForm",
+        description: "Exibe formulário para deixar recado/mensagem. USE SOMENTE APÓS o usuário ter fornecido o conteúdo real do recado. NUNCA use quando o usuário apenas expressar intenção como 'quero deixar recado'. Primeiro pergunte qual é a mensagem, depois use esta função.",
+        parameters: {
+            type: "object",
+            properties: {
+                message: { type: "string", description: "O conteúdo real do recado que o usuário quer deixar" },
+                subject: { type: "string", description: "Assunto opcional do recado" }
+            },
+            required: ["message"]
+        }
     }
 ];
 
@@ -156,6 +168,22 @@ APENAS use funções quando o usuário PEDIR EXPLICITAMENTE:
 - Tom profissional e acolhedor
 - Português do Brasil culto
 - Se não entender: pergunte o que a pessoa precisa
+
+## REGRA #4 - RECADOS E MENSAGENS (CRÍTICA)
+QUANDO o usuário expressar INTENÇÃO de deixar recado/mensagem:
+- "quero deixar um recado"
+- "preciso falar com vocês"
+- "podem me contatar?"
+- "quero enviar uma mensagem"
+
+Você DEVE:
+1. PRIMEIRO perguntar: "Claro! Qual mensagem você gostaria de deixar para nossa equipe?"
+2. AGUARDAR a resposta com o conteúdo real do recado
+3. Se o usuário não estiver logado, perguntar também nome e email/telefone
+4. SOMENTE DEPOIS de ter a mensagem real, usar showContactForm
+
+NUNCA use saveClientNote ou showContactForm apenas com a frase de intenção.
+A intenção "quero deixar recado" NÃO É o recado em si.
 
 ## SOBRE O ESCRITÓRIO
 - Fran Siller Arquitetura
@@ -231,6 +259,35 @@ function validateFunctionCalls(
             const projectPatterns = /(projeto|portfolio|portfólio|trabalho|obra|exemplo|residencial|comercial)/i;
             if (!projectPatterns.test(msgLower)) {
                 console.log(`[Validation] Blocking showProjects - no project mention in: "${userMessage}"`);
+                return false;
+            }
+        }
+
+        // saveClientNote: BLOQUEAR se a mensagem for apenas intenção de deixar recado
+        // A IA deve perguntar o conteúdo real antes de chamar esta função
+        if (call.name === 'saveClientNote') {
+            const intentionPatterns = /^(quero|gostaria|preciso|posso|pode|desejo|pretendo)\s+(deixar|enviar|mandar|escrever|passar)\s+(um\s+)?(recado|mensagem|msg|contato|nota)/i;
+            const vagueContactPatterns = /^(quero|preciso|gostaria)\s+(falar|entrar em contato|contatar|me comunicar|conversar)/i;
+            const askContactPatterns = /^(podem|pode|vocês podem|como posso)\s+(me\s+)?(contatar|ligar|retornar|responder|entrar em contato)/i;
+
+            if (intentionPatterns.test(msgLower) || vagueContactPatterns.test(msgLower) || askContactPatterns.test(msgLower)) {
+                console.log(`[Validation] Blocking saveClientNote - message is just an intention, not actual content: "${userMessage}"`);
+                return false;
+            }
+
+            // Também bloquear se a mensagem salva é muito curta ou igual à intenção
+            const messageContent = call.args?.message || '';
+            if (messageContent.length < 10 || intentionPatterns.test(messageContent.toLowerCase())) {
+                console.log(`[Validation] Blocking saveClientNote - message content too short or is intention: "${messageContent}"`);
+                return false;
+            }
+        }
+
+        // showContactForm: similar, mas pode ser chamado após coletar a mensagem
+        if (call.name === 'showContactForm') {
+            const intentionPatterns = /^(quero|gostaria|preciso|posso|pode|desejo)\s+(deixar|enviar|mandar|escrever)\s+(um\s+)?(recado|mensagem|msg|contato)/i;
+            if (intentionPatterns.test(msgLower)) {
+                console.log(`[Validation] Blocking showContactForm - user just expressed intention, ask for message first: "${userMessage}"`);
                 return false;
             }
         }

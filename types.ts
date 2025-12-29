@@ -411,7 +411,7 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text?: string;
   uiComponent?: {
-    type: 'ProjectCarousel' | 'ContactCard' | 'LeadForm' | 'SocialLinks' | 'CalendarWidget' | 'BookingSuccess' | 'ServiceRedirect' | 'CulturalCarousel' | 'ProductCarousel' | 'OfficeMap';
+    type: 'ProjectCarousel' | 'ContactCard' | 'LeadForm' | 'SocialLinks' | 'CalendarWidget' | 'BookingSuccess' | 'ServiceRedirect' | 'CulturalCarousel' | 'ProductCarousel' | 'OfficeMap' | 'ContactForm' | 'MessageSuccess';
     data: any;
   };
   actions?: {

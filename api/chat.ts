@@ -180,6 +180,20 @@ export async function chatWithConcierge(
             responseData.uiComponent = { type: 'ServiceRedirect', data: {} };
             if (!responseData.text) responseData.text = "Veja nossas opções de serviço:";
             break;
+
+          case 'showContactForm': {
+            // Pré-preenche com dados do usuário logado
+            const formData = {
+              name: context.user?.name || '',
+              email: context.user?.email || '',
+              phone: context.user?.phone || '',
+              message: call.args['message'] || '',
+              subject: call.args['subject'] || ''
+            };
+            responseData.uiComponent = { type: 'ContactForm', data: formData };
+            if (!responseData.text) responseData.text = "Confirme os dados para enviar seu recado:";
+            break;
+          }
         }
       }
     }
@@ -193,7 +207,9 @@ export async function chatWithConcierge(
         'CulturalCarousel': 'Confira nossos projetos culturais:',
         'ProductCarousel': 'Veja nossos produtos:',
         'OfficeMap': 'Nossa localização:',
-        'ServiceRedirect': 'Veja nossas opções de serviço:'
+        'ServiceRedirect': 'Veja nossas opções de serviço:',
+        'ContactForm': 'Confirme os dados para enviar seu recado:',
+        'MessageSuccess': 'Recado enviado com sucesso!'
       };
       responseData.text = uiTextMap[responseData.uiComponent.type] || 'Como posso ajudar mais?';
     }

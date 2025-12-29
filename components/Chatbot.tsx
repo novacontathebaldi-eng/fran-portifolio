@@ -597,6 +597,203 @@ const SocialLinks = () => {
   );
 };
 
+// --- Contact Form Widget (Recados via Formulário) ---
+interface ContactFormData {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  subject: string;
+}
+
+const ContactFormWidget = ({ data, messageId, updateUI }: { data: ContactFormData, messageId: string, updateUI: (id: string, component: any) => void }) => {
+  const { siteContent, addMessage, showToast, currentUser } = useProjects();
+
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: data.name || currentUser?.name || '',
+    email: data.email || currentUser?.email || '',
+    phone: data.phone || currentUser?.phone || '',
+    message: data.message || '',
+    subject: data.subject || ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Partial<ContactFormData>>({});
+
+  const subjects = siteContent.office.contactSubjects || ['Dúvidas Gerais', 'Orçamento', 'Parcerias', 'Outro'];
+
+  const validate = () => {
+    const newErrors: Partial<ContactFormData> = {};
+    if (!formData.name.trim()) newErrors.name = 'Nome é obrigatório';
+    if (!formData.email.trim()) newErrors.email = 'Email é obrigatório';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email inválido';
+    if (!formData.message.trim()) newErrors.message = 'Mensagem é obrigatória';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setIsSubmitting(true);
+    try {
+      await addMessage({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        subject: formData.subject || 'Recado via Chat',
+        message: formData.message,
+        source: 'chatbot'
+      });
+
+      // Substituir formulário por widget de sucesso
+      updateUI(messageId, {
+        type: 'MessageSuccess',
+        data: {
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject || 'Recado via Chat'
+        }
+      });
+
+      showToast('Recado enviado com sucesso!', 'success');
+    } catch (error) {
+      console.error('Erro ao enviar recado:', error);
+      showToast('Erro ao enviar. Tente novamente.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-4 bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-3 animate-fadeIn">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+          <Send className="w-4 h-4 text-white" />
+        </div>
+        <h4 className="font-bold text-sm">Deixar Recado</h4>
+      </div>
+
+      {/* Nome */}
+      <div>
+        <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Nome *</label>
+        <input
+          type="text"
+          value={formData.name}
+          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+          className={`w-full px-3 py-2 border rounded-lg text-sm ${errors.name ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:border-black transition`}
+          placeholder="Seu nome completo"
+        />
+        {errors.name && <p className="text-[10px] text-red-500 mt-0.5">{errors.name}</p>}
+      </div>
+
+      {/* Email */}
+      <div>
+        <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Email *</label>
+        <input
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+          className={`w-full px-3 py-2 border rounded-lg text-sm ${errors.email ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:border-black transition`}
+          placeholder="seu@email.com"
+        />
+        {errors.email && <p className="text-[10px] text-red-500 mt-0.5">{errors.email}</p>}
+      </div>
+
+      {/* Telefone (opcional) */}
+      <div>
+        <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Telefone/WhatsApp (opcional)</label>
+        <input
+          type="tel"
+          value={formData.phone}
+          onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition"
+          placeholder="(00) 00000-0000"
+        />
+      </div>
+
+      {/* Assunto */}
+      <div>
+        <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Assunto</label>
+        <select
+          value={formData.subject}
+          onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition bg-white"
+        >
+          <option value="">Selecione um assunto...</option>
+          {subjects.map((sub, idx) => (
+            <option key={idx} value={sub}>{sub}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Mensagem */}
+      <div>
+        <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Sua Mensagem *</label>
+        <textarea
+          value={formData.message}
+          onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+          rows={3}
+          className={`w-full px-3 py-2 border rounded-lg text-sm resize-none ${errors.message ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:border-black transition`}
+          placeholder="Digite seu recado aqui..."
+        />
+        {errors.message && <p className="text-[10px] text-red-500 mt-0.5">{errors.message}</p>}
+      </div>
+
+      {/* Botão Enviar */}
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full bg-black text-white py-2.5 rounded-lg text-xs font-bold hover:bg-accent hover:text-black transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isSubmitting ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Enviando...
+          </>
+        ) : (
+          <>
+            <Send className="w-4 h-4" />
+            Enviar Recado
+          </>
+        )}
+      </button>
+    </form>
+  );
+};
+
+// --- Message Success Widget (Confirmação de Recado Enviado) ---
+const MessageSuccessWidget = ({ data }: { data: { name: string; email: string; subject?: string } }) => {
+  return (
+    <div className="mt-4 bg-gray-50 border border-gray-100 rounded-xl p-5 animate-slideUp relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+
+      <div className="flex items-start gap-3 mb-3">
+        <div className="p-2 bg-green-100 rounded-full text-green-600">
+          <CheckCircle className="w-5 h-5" />
+        </div>
+        <div>
+          <h4 className="font-bold text-gray-900 text-sm">Recado Enviado com Sucesso!</h4>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {data.subject ? `Assunto: ${data.subject}` : 'Recado via Chat'}
+          </p>
+        </div>
+      </div>
+
+      <p className="text-xs text-gray-600 leading-relaxed mb-3">
+        Olá <strong>{data.name.split(' ')[0]}</strong>, sua mensagem foi encaminhada para nossa equipe.
+      </p>
+
+      <div className="bg-white border border-gray-200 rounded-lg p-3 text-xs text-gray-500">
+        <p className="flex items-center gap-2">
+          <Clock className="w-3 h-3" />
+          Responderemos em até 24h úteis pelo email <strong>{data.email}</strong>
+        </p>
+      </div>
+    </div>
+  );
+};
+
 // New Success Component
 const BookingSuccess = ({ data, closeChat }: { data: any, closeChat: () => void }) => {
   const navigate = useNavigate();
@@ -1096,6 +1293,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                       {msg.uiComponent?.type === 'CulturalCarousel' && <CulturalCarousel data={msg.uiComponent.data} />}
                       {msg.uiComponent?.type === 'ProductCarousel' && <ProductCarousel />}
                       {msg.uiComponent?.type === 'OfficeMap' && <OfficeMapWidget />}
+                      {msg.uiComponent?.type === 'ContactForm' && <ContactFormWidget data={msg.uiComponent.data} messageId={msg.id} updateUI={updateMessageUI} />}
+                      {msg.uiComponent?.type === 'MessageSuccess' && <MessageSuccessWidget data={msg.uiComponent.data} />}
                     </div>
 
                     {msg.role === 'model' && (
