@@ -340,10 +340,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="md:col-span-1">
-              <div className="mb-6 flex items-center gap-3">
-                <span className="text-4xl font-serif font-bold tracking-tight">FS</span>
-                <span className="w-px h-8 bg-white/30"></span>
-                <span className="text-xs uppercase tracking-[0.2em] font-light text-gray-400">Arquitetura</span>
+              <div className="mb-6 flex flex-col items-start leading-none">
+                <span className="text-3xl font-serif font-bold tracking-widest">FS</span>
+                <span className="text-[10px] uppercase tracking-[0.25em] font-medium text-gray-500">Arquitetura</span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
                 Criando espaços que inspiram, funcionam e perduram. Baseada no Brasil, atuando globalmente.
