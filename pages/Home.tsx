@@ -60,19 +60,19 @@ export const Home: React.FC = () => {
                       style={
                         siteContent.heroBackground.videoFillVertical !== false
                           ? {
-                            // Fill Vertical Mode (default): height fills 100%, width adjusts, cuts sides if needed
+                            // Fill Vertical Mode (default): height fills 100%, cuts sides
                             width: '177.78vh', // 16:9 width based on viewport height
                             height: '100vh',
-                            minWidth: '100vw',
+                            // NO minWidth - allows cutting sides when screen is narrower
                             top: '50%',
                             left: '50%',
                             transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
                           }
                           : {
-                            // Fill Horizontal Mode: width fills 100%, height adjusts, cuts top/bottom if needed
+                            // Fill Horizontal Mode: width fills 100%, cuts top/bottom
                             width: '100vw',
                             height: '56.25vw', // 16:9 height based on viewport width
-                            minHeight: '100vh',
+                            // NO minHeight - allows cutting top/bottom when screen is taller
                             top: '50%',
                             left: '50%',
                             transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
@@ -106,7 +106,6 @@ export const Home: React.FC = () => {
                         ? {
                           width: '177.78vh',
                           height: '100vh',
-                          minWidth: '100vw',
                           top: '50%',
                           left: '50%',
                           transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
@@ -114,7 +113,6 @@ export const Home: React.FC = () => {
                         : {
                           width: '100vw',
                           height: '56.25vw',
-                          minHeight: '100vh',
                           top: '50%',
                           left: '50%',
                           transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
@@ -140,7 +138,6 @@ export const Home: React.FC = () => {
                         ? {
                           width: '177.78vh',
                           height: '100vh',
-                          minWidth: '100vw',
                           objectFit: 'cover',
                           top: '50%',
                           left: '50%',
@@ -149,7 +146,6 @@ export const Home: React.FC = () => {
                         : {
                           width: '100vw',
                           height: '56.25vw',
-                          minHeight: '100vh',
                           objectFit: 'cover',
                           top: '50%',
                           left: '50%',
