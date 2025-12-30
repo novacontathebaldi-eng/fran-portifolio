@@ -345,7 +345,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <span className="text-[10px] uppercase tracking-[0.25em] font-medium text-gray-500">Arquitetura</span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
-                Transformando sonhos em espaços. Cada projeto é uma história única de design, funcionalidade e emoção.
+                Arquitetura que escuta o lugar e respeita quem o habita.
               </p>
             </div>
             <div className="md:col-start-3">
