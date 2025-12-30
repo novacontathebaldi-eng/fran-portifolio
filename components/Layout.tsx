@@ -346,6 +346,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
               <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
                 Arquitetura que escuta o lugar e respeita quem o habita.
+                <br /><br />
+                Fran Siller atua com projetos residenciais, comerciais e culturais, valorizando o contexto regional e a identidade de cada cliente. Do conceito à execução, com envolvimento em cada etapa.
               </p>
             </div>
             <div className="md:col-start-3">
