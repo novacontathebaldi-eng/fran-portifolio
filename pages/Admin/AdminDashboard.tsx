@@ -2495,6 +2495,41 @@ export const AdminDashboard: React.FC = () => {
                                             </div>
                                         )}
 
+                                        {/* Video Fill Mode Toggle */}
+                                        {contentForm.heroBackground?.videoUrl && (
+                                            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <label className="block text-sm font-bold text-black">
+                                                            Preencher Verticalmente
+                                                        </label>
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            {contentForm.heroBackground?.videoFillVertical !== false
+                                                                ? 'Altura sempre 100%, corta laterais se necessário'
+                                                                : 'Largura sempre 100%, corta topo/baixo se necessário'}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setContentForm(prev => ({
+                                                            ...prev,
+                                                            heroBackground: {
+                                                                ...prev.heroBackground!,
+                                                                videoFillVertical: prev.heroBackground?.videoFillVertical === false ? true : false
+                                                            }
+                                                        }))}
+                                                        className="text-3xl transition-colors"
+                                                    >
+                                                        {contentForm.heroBackground?.videoFillVertical !== false ? (
+                                                            <ToggleRight className="w-10 h-10 text-accent" />
+                                                        ) : (
+                                                            <ToggleLeft className="w-10 h-10 text-gray-400" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* Video Scale Adjustment */}
                                         {contentForm.heroBackground?.videoUrl && (
                                             <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">

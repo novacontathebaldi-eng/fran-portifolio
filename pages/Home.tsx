@@ -57,15 +57,27 @@ export const Home: React.FC = () => {
                     <iframe
                       src={`https://www.youtube.com/embed/${getYouTubeId(siteContent.heroBackground.videoUrl)}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1&playlist=${getYouTubeId(siteContent.heroBackground.videoUrl)}&enablejsapi=1&origin=${window.location.origin}&vq=hd1080`}
                       className="absolute pointer-events-none border-0"
-                      style={{
-                        width: '177.78vh', // 16:9 width based on viewport height
-                        height: '100vh',
-                        minWidth: '100vw',
-                        minHeight: '56.25vw', // 16:9 height based on viewport width
-                        top: '50%',
-                        left: '50%',
-                        transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
-                      }}
+                      style={
+                        siteContent.heroBackground.videoFillVertical !== false
+                          ? {
+                            // Fill Vertical Mode (default): height fills 100%, width adjusts, cuts sides if needed
+                            width: '177.78vh', // 16:9 width based on viewport height
+                            height: '100vh',
+                            minWidth: '100vw',
+                            top: '50%',
+                            left: '50%',
+                            transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
+                          }
+                          : {
+                            // Fill Horizontal Mode: width fills 100%, height adjusts, cuts top/bottom if needed
+                            width: '100vw',
+                            height: '56.25vw', // 16:9 height based on viewport width
+                            minHeight: '100vh',
+                            top: '50%',
+                            left: '50%',
+                            transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
+                          }
+                      }
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                       title="Hero Video Background"
@@ -85,37 +97,69 @@ export const Home: React.FC = () => {
                   </div>
                 </>
               ) : siteContent.heroBackground.videoSource === 'vimeo' ? (
-                <iframe
-                  src={`https://player.vimeo.com/video/${getVimeoId(siteContent.heroBackground.videoUrl)}?autoplay=1&muted=1&loop=1&background=1`}
-                  className="absolute pointer-events-none border-0"
-                  style={{
-                    width: '177.78vh',
-                    height: '100vh',
-                    minWidth: '100vw',
-                    minHeight: '56.25vw',
-                    top: '50%',
-                    left: '50%',
-                    transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
-                  }}
-                  allow="autoplay; fullscreen"
-                  allowFullScreen
-                  title="Hero Video Background"
-                />
+                <div className="absolute inset-0 overflow-hidden">
+                  <iframe
+                    src={`https://player.vimeo.com/video/${getVimeoId(siteContent.heroBackground.videoUrl)}?autoplay=1&muted=1&loop=1&background=1`}
+                    className="absolute pointer-events-none border-0"
+                    style={
+                      siteContent.heroBackground.videoFillVertical !== false
+                        ? {
+                          width: '177.78vh',
+                          height: '100vh',
+                          minWidth: '100vw',
+                          top: '50%',
+                          left: '50%',
+                          transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
+                        }
+                        : {
+                          width: '100vw',
+                          height: '56.25vw',
+                          minHeight: '100vh',
+                          top: '50%',
+                          left: '50%',
+                          transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
+                        }
+                    }
+                    allow="autoplay; fullscreen"
+                    allowFullScreen
+                    title="Hero Video Background"
+                  />
+                </div>
               ) : (
                 // Direct video file (upload or direct URL) - works on all devices
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  poster={siteContent.heroBackground.videoPoster || heroImage}
-                  className="absolute w-full h-full object-cover"
-                  style={{
-                    transform: `scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
-                  }}
-                >
-                  <source src={siteContent.heroBackground.videoUrl} type="video/mp4" />
-                </video>
+                <div className="absolute inset-0 overflow-hidden">
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    poster={siteContent.heroBackground.videoPoster || heroImage}
+                    className="absolute"
+                    style={
+                      siteContent.heroBackground.videoFillVertical !== false
+                        ? {
+                          width: '177.78vh',
+                          height: '100vh',
+                          minWidth: '100vw',
+                          objectFit: 'cover',
+                          top: '50%',
+                          left: '50%',
+                          transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
+                        }
+                        : {
+                          width: '100vw',
+                          height: '56.25vw',
+                          minHeight: '100vh',
+                          objectFit: 'cover',
+                          top: '50%',
+                          left: '50%',
+                          transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
+                        }
+                    }
+                  >
+                    <source src={siteContent.heroBackground.videoUrl} type="video/mp4" />
+                  </video>
+                </div>
               )}
             </>
           ) : (
