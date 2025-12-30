@@ -305,7 +305,6 @@ export interface HeroBackground {
   videoSource?: 'youtube' | 'vimeo' | 'direct' | 'upload'; // Tipo de fonte do vídeo
   videoPoster?: string; // Imagem de fallback/poster para o vídeo
   videoScale?: number; // Escala do vídeo em % (100 = normal, 105 = 5% zoom, etc.) - Para ajuste fino de cobertura
-  videoFillVertical?: boolean; // true = preenche altura (corta laterais), false = preenche largura (corta topo/baixo)
 }
 
 export interface SiteContent {
