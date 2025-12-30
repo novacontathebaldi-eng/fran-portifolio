@@ -55,14 +55,16 @@ export const Home: React.FC = () => {
                   {/* YouTube Video - Desktop only autoplay works (iOS Safari blocks autoplay) */}
                   <div className="hidden md:block absolute inset-0 overflow-hidden">
                     <iframe
-                      src={`https://www.youtube.com/embed/${getYouTubeId(siteContent.heroBackground.videoUrl)}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1&playlist=${getYouTubeId(siteContent.heroBackground.videoUrl)}&enablejsapi=1&origin=${window.location.origin}`}
+                      src={`https://www.youtube.com/embed/${getYouTubeId(siteContent.heroBackground.videoUrl)}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1&playlist=${getYouTubeId(siteContent.heroBackground.videoUrl)}&enablejsapi=1&origin=${window.location.origin}&vq=hd1080`}
                       className="absolute pointer-events-none border-0"
                       style={{
-                        width: '300vw',
-                        height: '300vh',
+                        width: '177.78vh', // 16:9 width based on viewport height
+                        height: '100vh',
+                        minWidth: '100vw',
+                        minHeight: '56.25vw', // 16:9 height based on viewport width
                         top: '50%',
                         left: '50%',
-                        transform: 'translate(-50%, -50%)',
+                        transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
                       }}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
@@ -85,11 +87,15 @@ export const Home: React.FC = () => {
               ) : siteContent.heroBackground.videoSource === 'vimeo' ? (
                 <iframe
                   src={`https://player.vimeo.com/video/${getVimeoId(siteContent.heroBackground.videoUrl)}?autoplay=1&muted=1&loop=1&background=1`}
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  className="absolute pointer-events-none border-0"
                   style={{
-                    width: '100vw',
+                    width: '177.78vh',
                     height: '100vh',
-                    objectFit: 'cover'
+                    minWidth: '100vw',
+                    minHeight: '56.25vw',
+                    top: '50%',
+                    left: '50%',
+                    transform: `translate(-50%, -50%) scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
                   }}
                   allow="autoplay; fullscreen"
                   allowFullScreen
@@ -103,7 +109,10 @@ export const Home: React.FC = () => {
                   muted
                   playsInline
                   poster={siteContent.heroBackground.videoPoster || heroImage}
-                  className="w-full h-full object-cover"
+                  className="absolute w-full h-full object-cover"
+                  style={{
+                    transform: `scale(${(siteContent.heroBackground.videoScale || 100) / 100})`,
+                  }}
                 >
                   <source src={siteContent.heroBackground.videoUrl} type="video/mp4" />
                 </video>

@@ -2494,6 +2494,57 @@ export const AdminDashboard: React.FC = () => {
                                                 </div>
                                             </div>
                                         )}
+
+                                        {/* Video Scale Adjustment */}
+                                        {contentForm.heroBackground?.videoUrl && (
+                                            <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                                                <label className="block text-xs font-bold uppercase text-gray-500 mb-3">
+                                                    Ajuste de Escala (Zoom)
+                                                </label>
+                                                <p className="text-xs text-gray-400 mb-4">
+                                                    Ajuste a escala para eliminar bordas pretas. Use valores acima de 100% para ampliar o vídeo e preencher toda a área.
+                                                </p>
+                                                <div className="flex items-center gap-4">
+                                                    <input
+                                                        type="range"
+                                                        min="100"
+                                                        max="130"
+                                                        step="1"
+                                                        value={contentForm.heroBackground?.videoScale || 100}
+                                                        onChange={(e) => setContentForm(prev => ({
+                                                            ...prev,
+                                                            heroBackground: {
+                                                                ...prev.heroBackground!,
+                                                                videoScale: parseInt(e.target.value)
+                                                            }
+                                                        }))}
+                                                        className="flex-1 h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-accent"
+                                                    />
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="number"
+                                                            min="100"
+                                                            max="150"
+                                                            value={contentForm.heroBackground?.videoScale || 100}
+                                                            onChange={(e) => setContentForm(prev => ({
+                                                                ...prev,
+                                                                heroBackground: {
+                                                                    ...prev.heroBackground!,
+                                                                    videoScale: Math.max(100, Math.min(150, parseInt(e.target.value) || 100))
+                                                                }
+                                                            }))}
+                                                            className="w-16 p-2 text-center border border-gray-300 rounded-lg text-black font-medium"
+                                                        />
+                                                        <span className="text-sm text-gray-500 font-medium">%</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-between mt-2 text-xs text-gray-400">
+                                                    <span>100% (Original)</span>
+                                                    <span>115% (Recomendado)</span>
+                                                    <span>130%+</span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
