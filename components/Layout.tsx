@@ -368,7 +368,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <InstallButton />
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
+          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4 text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
               <p>&copy; 2026 Fran Siller Arquitetura. Todos os direitos reservados.</p>
               <span className="hidden md:inline text-gray-700">•</span>
