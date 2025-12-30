@@ -377,9 +377,23 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </p>
             </div>
             <div className="flex space-x-6">
-              <span className="hover:text-white cursor-pointer transition">Instagram</span>
-              <span className="hover:text-white cursor-pointer transition">LinkedIn</span>
-              <span className="hover:text-white cursor-pointer transition">Pinterest</span>
+              {(siteContent.office.socialLinks || []).length > 0 ? (
+                (siteContent.office.socialLinks || []).map((link) => (
+                  <a
+                    key={link.id}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-white cursor-pointer transition capitalize"
+                  >
+                    {link.label || link.platform}
+                  </a>
+                ))
+              ) : (
+                <>
+                  <span className="text-gray-600">Nenhuma rede social configurada</span>
+                </>
+              )}
             </div>
           </div>
         </div>
