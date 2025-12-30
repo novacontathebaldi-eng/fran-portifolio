@@ -383,8 +383,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
               <p>&copy; 2026 Fran Siller Arquitetura. Todos os direitos reservados.</p>
               <span className="hidden md:inline text-gray-700">•</span>
-              <p className="text-gray-500 hover:text-accent transition-colors">
-                Desenvolvido por <span className="font-medium">Otávio Siller Thebaldi</span>
+              <p className="text-gray-500">
+                Desenvolvido por{' '}
+                <a
+                  href="https://othebaldi.me/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium hover:text-accent transition-colors"
+                >
+                  Otávio Siller Thebaldi
+                </a>
               </p>
             </div>
             <div className="flex space-x-6">
