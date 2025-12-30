@@ -185,8 +185,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="container mx-auto px-6 flex justify-between items-center relative">
 
           {/* Logo */}
-          <Link to="/" onClick={handleLinkClick} className={`text-xl md:text-2xl font-serif tracking-tight font-bold z-[60] relative uppercase transition-colors duration-300 pointer-events-auto ${logoClasses}`}>
-            FRAN<span className="text-accent">.</span>
+          <Link to="/" onClick={handleLinkClick} className={`z-[60] relative transition-colors duration-300 pointer-events-auto flex flex-col items-center leading-none ${logoClasses}`}>
+            <span className="text-2xl md:text-3xl font-serif font-bold tracking-widest">F<span className="text-accent">S</span></span>
+            <span className="text-[8px] md:text-[9px] uppercase tracking-[0.25em] font-medium opacity-70">Arquitetura</span>
           </Link>
 
           {/* Desktop Menu */}
@@ -338,7 +339,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="md:col-span-1">
-              <h3 className="text-2xl font-serif mb-6 uppercase tracking-wider">Fran Siller.</h3>
+              <div className="mb-6 flex flex-col items-start leading-none">
+                <span className="text-3xl font-serif font-bold tracking-widest">F<span className="text-accent">S</span></span>
+                <span className="text-[10px] uppercase tracking-[0.25em] font-medium text-gray-500">Arquitetura</span>
+              </div>
               <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
                 Criando espaços que inspiram, funcionam e perduram. Baseada no Brasil, atuando globalmente.
               </p>

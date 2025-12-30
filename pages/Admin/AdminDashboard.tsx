@@ -652,7 +652,10 @@ export const AdminDashboard: React.FC = () => {
 
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 w-full bg-[#111] z-50 flex justify-between items-center p-4 border-b border-gray-800">
-                <span className="text-xl font-serif font-bold">Fran Siller.</span>
+                <div className="flex flex-col leading-none">
+                    <span className="text-xl font-serif font-bold tracking-widest">F<span className="text-accent">S</span></span>
+                    <span className="text-[7px] uppercase tracking-[0.2em] font-medium text-gray-500">Arquitetura</span>
+                </div>
                 <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-white">
                     {mobileMenuOpen ? <X /> : <Menu />}
                 </button>
@@ -670,7 +673,10 @@ export const AdminDashboard: React.FC = () => {
             {/* Sidebar */}
             <aside className={`fixed md:relative z-40 w-64 h-screen bg-[#111] border-r border-gray-800 flex flex-col transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} pt-16 md:pt-0`}>
                 <div className="p-8 hidden md:block shrink-0">
-                    <h1 className="text-2xl font-serif font-bold tracking-wider">Fran Siller<span className="text-accent">.</span></h1>
+                    <div className="flex flex-col leading-none">
+                        <span className="text-2xl font-serif font-bold tracking-widest">F<span className="text-accent">S</span></span>
+                        <span className="text-[8px] uppercase tracking-[0.2em] font-medium text-gray-500">Arquitetura</span>
+                    </div>
                     <p className="text-xs text-gray-500 uppercase tracking-widest mt-2">Painel Administrativo</p>
                 </div>
 
