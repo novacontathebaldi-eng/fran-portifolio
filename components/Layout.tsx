@@ -185,7 +185,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="container mx-auto px-6 flex justify-between items-center relative">
 
           {/* Logo */}
-          <Link to="/" onClick={handleLinkClick} className={`z-[60] relative transition-colors duration-300 pointer-events-auto flex flex-col items-center leading-none ${logoClasses}`}>
+          <Link to="/" onClick={handleLinkClick} className={`z-[60] relative transition-colors duration-300 pointer-events-auto flex flex-col items-start leading-none ${logoClasses}`}>
             <span className="text-2xl md:text-3xl font-serif font-bold tracking-widest">FS</span>
             <span className="text-[8px] md:text-[9px] uppercase tracking-[0.25em] font-medium opacity-70">Arquitetura</span>
           </Link>
