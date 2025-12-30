@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Clock, ChevronDown } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
@@ -39,14 +39,43 @@ export const Home: React.FC = () => {
   }
   const heroImage = heroProject?.image || 'https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/1765189105042-0.24789718604799715.webp';
 
+  // ===== PARALLAX SCROLL EFFECT =====
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const heroHeight = window.innerHeight;
+      // 0 = top, 1 = end of hero section
+      const progress = Math.min(scrollY / heroHeight, 1);
+      setScrollProgress(progress);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Parallax values based on scroll progress
+  const parallaxScale = 1 + scrollProgress * 0.5; // 1.0 -> 1.5 (mais zoom)
+  const parallaxBlur = scrollProgress * 8; // 0 -> 8px (blur fraco progressivo)
+
   return (
     <div className="overflow-hidden">
 
       {/* ===== HERO SECTION - COMPLETELY NEW DESIGN ===== */}
       <section className="relative min-h-screen flex flex-col">
 
-        {/* Background Image or Video with Overlay */}
-        <div className="absolute inset-0">
+        {/* Background Image or Video with Overlay - FIXED for Parallax Effect */}
+        <div
+          className="fixed inset-0 pointer-events-none"
+          style={{
+            transform: `scale(${parallaxScale})`,
+            filter: `blur(${parallaxBlur}px)`,
+            visibility: scrollProgress >= 1 ? 'hidden' : 'visible',
+            zIndex: 0,
+            willChange: 'transform, filter',
+          }}
+        >
           {siteContent?.heroBackground?.type === 'video' && siteContent?.heroBackground?.videoUrl ? (
             // Video Background
             <>
@@ -244,74 +273,28 @@ export const Home: React.FC = () => {
 
       </section>
 
-      {/* ===== FEATURED PROJECTS ===== */}
-      <section className="py-20 md:py-32 bg-white">
-        <div className="container mx-auto px-6">
-
-          {/* Section Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-16">
-            <div>
-              <p className="text-[#d4bbb0] text-sm tracking-[0.3em] uppercase mb-3">Portfólio</p>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-light" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
-                Projetos Selecionados
-              </h2>
-            </div>
-            <Link
-              to="/portfolio"
-              className="group flex items-center gap-2 text-sm tracking-widest uppercase hover:text-[#d4bbb0] transition-colors"
-            >
-              Ver Todos
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-
-          {/* Projects Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {(projects.filter(p => p.featured).length > 0
-              ? projects.filter(p => p.featured).slice(0, 6)
-              : projects.slice(0, 6)
-            ).map((project, index) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-              >
-                <Link to={`/project/${project.id}`} className="group block">
-                  <div className="aspect-[4/5] overflow-hidden bg-gray-100 mb-4">
-                    <img
-                      src={project.image}
-                      alt={project.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    />
-                  </div>
-                  <h3 className="text-xl font-light group-hover:text-[#d4bbb0] transition-colors" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
-                    {project.title}
-                  </h3>
-                  <p className="text-gray-500 text-sm mt-1">{project.location}</p>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== CULTURAL PROJECTS ===== */}
-      {culturalProjects.length > 0 && (
-        <section className="py-20 md:py-32 bg-[#f8f6f4]">
+      {/* ===== CONTENT WRAPPER - Sobe por cima do hero com sombra premium ===== */}
+      <div
+        className="relative bg-white"
+        style={{
+          zIndex: 10,
+          boxShadow: '0 -40px 80px rgba(0,0,0,0.3), 0 -10px 30px rgba(0,0,0,0.15)',
+        }}
+      >
+        {/* ===== FEATURED PROJECTS ===== */}
+        <section className="py-20 md:py-32 bg-white">
           <div className="container mx-auto px-6">
 
             {/* Section Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-16">
               <div>
-                <p className="text-[#d4bbb0] text-sm tracking-[0.3em] uppercase mb-3">Cultura & Patrimônio</p>
+                <p className="text-[#d4bbb0] text-sm tracking-[0.3em] uppercase mb-3">Portfólio</p>
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-light" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
-                  Projetos Culturais
+                  Projetos Selecionados
                 </h2>
               </div>
               <Link
-                to="/cultural"
+                to="/portfolio"
                 className="group flex items-center gap-2 text-sm tracking-widest uppercase hover:text-[#d4bbb0] transition-colors"
               >
                 Ver Todos
@@ -321,9 +304,9 @@ export const Home: React.FC = () => {
 
             {/* Projects Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {(culturalProjects.filter(p => p.featured).length > 0
-                ? culturalProjects.filter(p => p.featured).slice(0, 6)
-                : culturalProjects.slice(0, 6)
+              {(projects.filter(p => p.featured).length > 0
+                ? projects.filter(p => p.featured).slice(0, 6)
+                : projects.slice(0, 6)
               ).map((project, index) => (
                 <motion.div
                   key={project.id}
@@ -332,7 +315,7 @@ export const Home: React.FC = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
-                  <Link to={`/cultural/${project.id}`} className="group block">
+                  <Link to={`/project/${project.id}`} className="group block">
                     <div className="aspect-[4/5] overflow-hidden bg-gray-100 mb-4">
                       <img
                         src={project.image}
@@ -350,158 +333,215 @@ export const Home: React.FC = () => {
             </div>
           </div>
         </section>
-      )}
 
-      {/* ===== CONTACT SECTION - NEW DESIGN ===== */}
-      <section className="py-20 md:py-32 bg-[#1a1a1a]">
-        <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto text-center">
+        {/* ===== CULTURAL PROJECTS ===== */}
+        {culturalProjects.length > 0 && (
+          <section className="py-20 md:py-32 bg-[#f8f6f4]">
+            <div className="container mx-auto px-6">
 
-            {/* Header */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-            >
-              <p className="text-[#d4bbb0] text-sm tracking-[0.3em] uppercase mb-6">Próximo Passo</p>
-              <h2 className="text-white text-4xl md:text-5xl lg:text-6xl font-light mb-8" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
-                Vamos conversar sobre<br />
-                <span className="italic text-[#d4bbb0]">seu projeto?</span>
-              </h2>
-              <p className="text-gray-400 text-lg max-w-2xl mx-auto mb-12 font-light">
-                Estamos prontos para transformar suas ideias em realidade.
-                Entre em contato e agende uma conversa sem compromisso.
-              </p>
-            </motion.div>
+              {/* Section Header */}
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-16">
+                <div>
+                  <p className="text-[#d4bbb0] text-sm tracking-[0.3em] uppercase mb-3">Cultura & Patrimônio</p>
+                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-light" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+                    Projetos Culturais
+                  </h2>
+                </div>
+                <Link
+                  to="/cultural"
+                  className="group flex items-center gap-2 text-sm tracking-widest uppercase hover:text-[#d4bbb0] transition-colors"
+                >
+                  Ver Todos
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
 
-            {/* CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
-            >
-              <Link
-                to="/budget"
-                className="px-10 py-4 bg-[#d4bbb0] text-black text-sm tracking-widest uppercase font-medium hover:bg-white transition-colors duration-300"
+              {/* Projects Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {(culturalProjects.filter(p => p.featured).length > 0
+                  ? culturalProjects.filter(p => p.featured).slice(0, 6)
+                  : culturalProjects.slice(0, 6)
+                ).map((project, index) => (
+                  <motion.div
+                    key={project.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                  >
+                    <Link to={`/cultural/${project.id}`} className="group block">
+                      <div className="aspect-[4/5] overflow-hidden bg-gray-100 mb-4">
+                        <img
+                          src={project.image}
+                          alt={project.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                      </div>
+                      <h3 className="text-xl font-light group-hover:text-[#d4bbb0] transition-colors" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+                        {project.title}
+                      </h3>
+                      <p className="text-gray-500 text-sm mt-1">{project.location}</p>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ===== CONTACT SECTION - NEW DESIGN ===== */}
+        <section className="py-20 md:py-32 bg-[#1a1a1a]">
+          <div className="container mx-auto px-6">
+            <div className="max-w-4xl mx-auto text-center">
+
+              {/* Header */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
               >
-                Solicitar Orçamento
-              </Link>
-              <Link
-                to="/schedule"
-                className="px-10 py-4 border border-white/30 text-white text-sm tracking-widest uppercase font-light hover:border-[#d4bbb0] hover:text-[#d4bbb0] transition-all duration-300"
-              >
-                Agendar Reunião
-              </Link>
-            </motion.div>
+                <p className="text-[#d4bbb0] text-sm tracking-[0.3em] uppercase mb-6">Próximo Passo</p>
+                <h2 className="text-white text-4xl md:text-5xl lg:text-6xl font-light mb-8" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+                  Vamos conversar sobre<br />
+                  <span className="italic text-[#d4bbb0]">seu projeto?</span>
+                </h2>
+                <p className="text-gray-400 text-lg max-w-2xl mx-auto mb-12 font-light">
+                  Estamos prontos para transformar suas ideias em realidade.
+                  Entre em contato e agende uma conversa sem compromisso.
+                </p>
+              </motion.div>
 
-            {/* Contact Info - only show location when office is active */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className={`grid grid-cols-1 ${isOfficeActive ? 'md:grid-cols-3' : 'md:grid-cols-1'} gap-8 pt-1`}
-            >
-              {isOfficeActive && (
-                <>
-                  <div className="text-center">
-                    <MapPin className="w-5 h-5 text-[#d4bbb0] mx-auto mb-3" />
-                    <p className="text-white/60 text-sm">{siteContent?.office?.address}</p>
-                  </div>
+              {/* CTA */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+              >
+                <Link
+                  to="/budget"
+                  className="px-10 py-4 bg-[#d4bbb0] text-black text-sm tracking-widest uppercase font-medium hover:bg-white transition-colors duration-300"
+                >
+                  Solicitar Orçamento
+                </Link>
+                <Link
+                  to="/schedule"
+                  className="px-10 py-4 border border-white/30 text-white text-sm tracking-widest uppercase font-light hover:border-[#d4bbb0] hover:text-[#d4bbb0] transition-all duration-300"
+                >
+                  Agendar Reunião
+                </Link>
+              </motion.div>
+
+              {/* Contact Info - only show location when office is active */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+                className={`grid grid-cols-1 ${isOfficeActive ? 'md:grid-cols-3' : 'md:grid-cols-1'} gap-8 pt-1`}
+              >
+                {isOfficeActive && (
+                  <>
+                    <div className="text-center">
+                      <MapPin className="w-5 h-5 text-[#d4bbb0] mx-auto mb-3" />
+                      <p className="text-white/60 text-sm">{siteContent?.office?.address}</p>
+                    </div>
+                    <div className="text-center">
+                      <Clock className="w-5 h-5 text-[#d4bbb0] mx-auto mb-3" />
+                      <p className="text-white/60 text-sm">{siteContent?.office?.hoursDescription}</p>
+                    </div>
+                    <div className="text-center">
+                      <a
+                        href={siteContent?.office?.mapsLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-[#d4bbb0] text-sm hover:text-white transition-colors"
+                      >
+                        Ver no Mapa
+                        <ArrowRight className="w-4 h-4" />
+                      </a>
+                    </div>
+                  </>
+                )}
+                {!isOfficeActive && (
                   <div className="text-center">
                     <Clock className="w-5 h-5 text-[#d4bbb0] mx-auto mb-3" />
                     <p className="text-white/60 text-sm">{siteContent?.office?.hoursDescription}</p>
                   </div>
-                  <div className="text-center">
-                    <a
-                      href={siteContent?.office?.mapsLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-[#d4bbb0] text-sm hover:text-white transition-colors"
-                    >
-                      Ver no Mapa
-                      <ArrowRight className="w-4 h-4" />
-                    </a>
-                  </div>
-                </>
-              )}
-              {!isOfficeActive && (
-                <div className="text-center">
-                  <Clock className="w-5 h-5 text-[#d4bbb0] mx-auto mb-3" />
-                  <p className="text-white/60 text-sm">{siteContent?.office?.hoursDescription}</p>
-                </div>
-              )}
-            </motion.div>
+                )}
+              </motion.div>
 
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* ===== ABOUT ARCHITECT SECTION ===== */}
-      <section className="py-20 md:py-32 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Image */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="order-2 lg:order-1"
-            >
-              <div className="aspect-[3/4] max-w-md mx-auto lg:mx-0 overflow-hidden shadow-2xl">
-                <img
-                  src={(siteContent.about as any).homeAboutImage || siteContent.about.profileImage}
-                  alt="Fran Siller - Arquiteta"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </motion.div>
-
-            {/* Content */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="order-1 lg:order-2"
-            >
-              <p className="text-[#d4bbb0] text-sm tracking-[0.3em] uppercase mb-4">Sobre a Arquiteta</p>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-light mb-6" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
-                Fran Siller
-              </h2>
-              <p className="text-gray-600 text-base md:text-lg leading-relaxed mb-8 line-clamp-6">
-                {siteContent.about.bio}
-              </p>
-              <Link
-                to="/about"
-                className="inline-flex items-center gap-2 text-sm tracking-widest uppercase hover:text-[#d4bbb0] transition-colors group"
-              >
-                Conhecer Mais
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== MAP - only show when office is active ===== */}
-      {isOfficeActive && (
-        <section className="h-[300px] md:h-[400px] relative">
-          <iframe
-            src={`https://maps.google.com/maps?q=${encodeURIComponent(siteContent?.office?.mapQuery || siteContent?.office?.address || '')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-            className="absolute inset-0 w-full h-full"
-            style={{ border: 0 }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            title="Localização Fran Siller Arquitetura"
-          />
         </section>
-      )}
+
+        {/* ===== ABOUT ARCHITECT SECTION ===== */}
+        <section className="py-20 md:py-32 bg-white">
+          <div className="container mx-auto px-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+              {/* Image */}
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                className="order-2 lg:order-1"
+              >
+                <div className="aspect-[3/4] max-w-md mx-auto lg:mx-0 overflow-hidden shadow-2xl">
+                  <img
+                    src={(siteContent.about as any).homeAboutImage || siteContent.about.profileImage}
+                    alt="Fran Siller - Arquiteta"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </motion.div>
+
+              {/* Content */}
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="order-1 lg:order-2"
+              >
+                <p className="text-[#d4bbb0] text-sm tracking-[0.3em] uppercase mb-4">Sobre a Arquiteta</p>
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-light mb-6" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+                  Fran Siller
+                </h2>
+                <p className="text-gray-600 text-base md:text-lg leading-relaxed mb-8 line-clamp-6">
+                  {siteContent.about.bio}
+                </p>
+                <Link
+                  to="/about"
+                  className="inline-flex items-center gap-2 text-sm tracking-widest uppercase hover:text-[#d4bbb0] transition-colors group"
+                >
+                  Conhecer Mais
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* ===== MAP - only show when office is active ===== */}
+        {isOfficeActive && (
+          <section className="h-[300px] md:h-[400px] relative">
+            <iframe
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(siteContent?.office?.mapQuery || siteContent?.office?.address || '')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+              className="absolute inset-0 w-full h-full"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Localização Fran Siller Arquitetura"
+            />
+          </section>
+        )}
+
+      </div>
+      {/* Fim do Content Wrapper */}
 
     </div>
   );
