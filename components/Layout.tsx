@@ -341,17 +341,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="md:col-span-1">
               <div className="mb-6 flex flex-col items-start leading-none group cursor-default">
-                <span className="text-2xl font-serif font-bold tracking-wide flex">
+                <span className="text-xl font-serif font-bold tracking-normal flex">
                   {/* F - sempre visível */}
                   <span>F</span>
                   {/* "ran" - aparece no hover */}
-                  <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[1.8em] group-hover:opacity-100">ran</span>
+                  <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[1.5em] group-hover:opacity-100">ran</span>
                   {/* Espaço entre palavras - aparece no hover */}
-                  <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 group-hover:max-w-[0.3em]">&nbsp;</span>
+                  <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 group-hover:max-w-[0.25em]">&nbsp;</span>
                   {/* S - sempre visível */}
                   <span>S</span>
                   {/* "iller" - aparece no hover */}
-                  <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[2.5em] group-hover:opacity-100">iller</span>
+                  <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[2em] group-hover:opacity-100">iller</span>
                 </span>
                 <span className="text-[10px] uppercase tracking-[0.25em] font-medium text-gray-500">Arquitetura</span>
               </div>
