@@ -378,17 +378,30 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
             <div className="flex space-x-6">
               {(siteContent.office.socialLinks || []).length > 0 ? (
-                (siteContent.office.socialLinks || []).map((link) => (
-                  <a
-                    key={link.id}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-white cursor-pointer transition capitalize"
-                  >
-                    {link.label || link.platform}
-                  </a>
-                ))
+                (siteContent.office.socialLinks || []).map((link) => {
+                  // Tratamento especial para WhatsApp
+                  let href = link.url;
+                  if (link.platform === 'whatsapp') {
+                    const cleanNumber = link.url.replace(/\D/g, '');
+                    const message = encodeURIComponent('Olá! Vim pelo site e gostaria de mais informações.');
+                    href = `https://wa.me/${cleanNumber}?text=${message}`;
+                  } else if (!link.url.startsWith('http://') && !link.url.startsWith('https://')) {
+                    // Adiciona protocolo se não tiver
+                    href = `https://${link.url}`;
+                  }
+
+                  return (
+                    <a
+                      key={link.id}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-white cursor-pointer transition capitalize"
+                    >
+                      {link.label || link.platform}
+                    </a>
+                  );
+                })
               ) : (
                 <>
                   <span className="text-gray-600">Nenhuma rede social configurada</span>
