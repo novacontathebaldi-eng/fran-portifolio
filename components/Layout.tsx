@@ -341,7 +341,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="md:col-span-1">
               <div className="mb-6 flex flex-col items-start leading-none group cursor-default">
-                <span className="text-xl font-serif font-bold tracking-normal flex">
+                <span className="text-2xl font-serif font-bold tracking-normal flex">
                   {/* F - sempre visível */}
                   <span>F</span>
                   {/* "ran" - aparece no hover */}
@@ -353,7 +353,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   {/* "iller" - aparece no hover */}
                   <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[2em] group-hover:opacity-100">iller</span>
                 </span>
-                <span className="text-[10px] uppercase tracking-[0.25em] font-medium text-gray-500">Arquitetura</span>
+                <span className="text-xs uppercase tracking-[0.25em] font-medium text-gray-500">Arquitetura</span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
                 Arquitetura que escuta o lugar e respeita quem o habita.
