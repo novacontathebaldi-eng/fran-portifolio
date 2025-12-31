@@ -1,13 +1,7 @@
-
 // src/utils/emailService.ts
 
-interface EmailPayload {
-  subject: string;
-  htmlContent: string;
-  tags: string[];
-}
-
 import { supabase } from '../supabaseClient';
+import { getNotificationsConfig, clearNotificationsConfigCache } from './whatsappService';
 import {
   notifyWhatsAppBudget,
   notifyWhatsAppAppointment,
@@ -25,12 +19,109 @@ interface EmailPayload {
   tags: string[];
 }
 
+// ============================================================================
+// TEMPLATES PADRÃO DE EMAIL
+// ============================================================================
+
+const DEFAULT_EMAIL_TEMPLATES = {
+  newBudgetAdmin: {
+    subject: (name: string) => `💰 Novo Orçamento: ${name}`,
+    body: (name: string, city: string, services: string) => `
+      <p>Um cliente acabou de solicitar um orçamento pelo site.</p>
+      <div class="info-box">
+        <span class="label">Cliente</span>
+        <span class="value">${name}</span>
+        
+        <span class="label">Localização</span>
+        <span class="value">${city}</span>
+        
+        <span class="label">Serviços Interessados</span>
+        <span class="value">${services}</span>
+      </div>
+      <p>Acesse o painel para ver os detalhes completos, incluindo telefone e observações.</p>
+    `,
+  },
+  newAppointmentAdmin: {
+    subject: (name: string, type: string) => `📅 Agenda: ${name} - ${type}`,
+    body: (name: string, type: string, dateTime: string) => `
+      <p>Um cliente solicitou um horário na agenda.</p>
+      <div class="info-box">
+        <span class="label">Cliente</span>
+        <span class="value">${name}</span>
+        
+        <span class="label">Tipo</span>
+        <span class="value">${type}</span>
+        
+        <span class="label">Data e Hora</span>
+        <span class="value">${dateTime}</span>
+      </div>
+      <p>Este agendamento está com status <strong>Pendente</strong>. Necessário aprovação no painel.</p>
+    `,
+  },
+  newContactAdmin: {
+    subject: (subject: string, name: string) => `📬 Contato: ${subject} - ${name}`,
+    body: (name: string, email: string, phone: string, subject: string, message: string) => `
+      <p>Alguém entrou em contato através do formulário "Fale Conosco".</p>
+      <div class="info-box">
+        <span class="label">Nome</span>
+        <span class="value">${name}</span>
+        
+        <span class="label">E-mail</span>
+        <span class="value"><a href="mailto:${email}" style="color: #3B82F6;">${email}</a></span>
+        
+        ${phone ? `<span class="label">Telefone</span><span class="value">${phone}</span>` : ''}
+        
+        <span class="label">Assunto</span>
+        <span class="value">${subject}</span>
+        
+        <span class="label">Mensagem</span>
+        <span class="value" style="white-space: pre-wrap;">${message}</span>
+      </div>
+      <p>Responda diretamente pelo e-mail do cliente ou acesse o painel para gerenciar mensagens.</p>
+    `,
+  },
+  chatbotNoteAdmin: {
+    subject: (subject: string, name: string) => `💬 Novo Recado: ${subject} - ${name}`,
+    body: (name: string, email: string, phone: string, subject: string, message: string, whatsappButton: string) => `
+      <p>O assistente virtual capturou um novo recado de um visitante.</p>
+      <div class="info-box">
+        <span class="label">Nome</span>
+        <span class="value">${name}</span>
+        
+        <span class="label">E-mail</span>
+        <span class="value"><a href="mailto:${email}" style="color: #3B82F6;">${email}</a></span>
+        
+        ${phone ? `<span class="label">Telefone</span><span class="value">${phone}</span>` : ''}
+        
+        <span class="label">Assunto</span>
+        <span class="value">${subject}</span>
+        
+        <span class="label">Mensagem</span>
+        <span class="value" style="white-space: pre-wrap;">${message}</span>
+      </div>
+      <div class="action-buttons">
+        <a href="mailto:${email}?subject=Re: ${subject}" class="btn-secondary" style="color: #ffffff;">Responder por E-mail</a>
+        ${whatsappButton}
+      </div>
+    `,
+  },
+};
+
+// ============================================================================
+// FUNÇÕES AUXILIARES
+// ============================================================================
+
 /**
  * Função interna para enviar o e-mail via Supabase Edge Function
- * Removemos a exposição da API KEY no frontend.
- * A função no servidor se encarrega de usar a chave segura.
  */
 const sendBrevoEmail = async (data: EmailPayload): Promise<boolean> => {
+  // Verificar se email está habilitado
+  const config = await getNotificationsConfig();
+  if (!config.email.enabled) {
+    console.log('[Email] Envio desativado nas configurações');
+    return false;
+  }
+
   try {
     const { error } = await supabase.functions.invoke('send-email', {
       body: {
@@ -54,11 +145,9 @@ const sendBrevoEmail = async (data: EmailPayload): Promise<boolean> => {
   }
 };
 
-
-// ============================================================================
-// TEMPLATES E FUNÇÕES PÚBLICAS
-// ============================================================================
-
+/**
+ * Template base HTML para emails
+ */
 const getBaseTemplate = (title: string, color: string, content: string) => `
 <!DOCTYPE html>
 <html>
@@ -100,7 +189,22 @@ const getBaseTemplate = (title: string, color: string, content: string) => `
 `;
 
 /**
- * Notificar novo recado do Chatbot (Lista 6)
+ * Processa template customizado substituindo variáveis
+ */
+const processTemplate = (template: string, vars: Record<string, string>): string => {
+  let result = template;
+  for (const [key, value] of Object.entries(vars)) {
+    result = result.replace(new RegExp(`{{${key}}}`, 'g'), value);
+  }
+  return result;
+};
+
+// ============================================================================
+// FUNÇÕES PÚBLICAS DE NOTIFICAÇÃO
+// ============================================================================
+
+/**
+ * Notificar novo recado do Chatbot
  */
 export const notifyNewChatbotNote = async (data: {
   userName: string;
@@ -109,40 +213,43 @@ export const notifyNewChatbotNote = async (data: {
   subject?: string;
   phone?: string;
 }) => {
+  const config = await getNotificationsConfig();
   const subjectText = data.subject || 'Recado via Chat';
   const whatsappButton = data.phone
     ? `<a href="https://wa.me/55${data.phone.replace(/\D/g, '')}" class="btn-secondary btn-whatsapp" style="color: #ffffff;">Responder via WhatsApp</a>`
     : '';
 
-  const html = getBaseTemplate(
-    'Novo Recado via Chatbot',
-    '#8B5CF6', // Roxo
-    `
-    <p>O assistente virtual capturou um novo recado de um visitante.</p>
-    <div class="info-box">
-      <span class="label">Nome</span>
-      <span class="value">${data.userName}</span>
-      
-      <span class="label">E-mail</span>
-      <span class="value"><a href="mailto:${data.userContact}" style="color: #3B82F6;">${data.userContact}</a></span>
-      
-      ${data.phone ? `<span class="label">Telefone</span><span class="value">${data.phone}</span>` : ''}
-      
-      <span class="label">Assunto</span>
-      <span class="value">${subjectText}</span>
-      
-      <span class="label">Mensagem</span>
-      <span class="value" style="white-space: pre-wrap;">${data.message}</span>
-    </div>
-    <div class="action-buttons">
-      <a href="mailto:${data.userContact}?subject=Re: ${subjectText}" class="btn-secondary" style="color: #ffffff;">Responder por E-mail</a>
-      ${whatsappButton}
-    </div>
-    `
-  );
+  // Verificar se há template customizado
+  const customTemplate = config.email.templates.chatbotNoteAdmin;
+
+  let emailSubject: string;
+  let bodyContent: string;
+
+  if (customTemplate.subject && customTemplate.body) {
+    emailSubject = processTemplate(customTemplate.subject, { assunto: subjectText, nome: data.userName });
+    bodyContent = processTemplate(customTemplate.body, {
+      nome: data.userName,
+      email: data.userContact,
+      telefone: data.phone || '',
+      assunto: subjectText,
+      mensagem: data.message,
+    });
+  } else {
+    emailSubject = DEFAULT_EMAIL_TEMPLATES.chatbotNoteAdmin.subject(subjectText, data.userName);
+    bodyContent = DEFAULT_EMAIL_TEMPLATES.chatbotNoteAdmin.body(
+      data.userName,
+      data.userContact,
+      data.phone || '',
+      subjectText,
+      data.message,
+      whatsappButton
+    );
+  }
+
+  const html = getBaseTemplate('Novo Recado via Chatbot', '#8B5CF6', bodyContent);
 
   return sendBrevoEmail({
-    subject: `💬 Novo Recado: ${subjectText} - ${data.userName}`,
+    subject: emailSubject,
     htmlContent: html,
     tags: ['list_6', 'chatbot_note']
   }).then(emailSent => {
@@ -160,30 +267,33 @@ export const notifyNewChatbotNote = async (data: {
 };
 
 /**
- * Notificar novo orçamento (Lista 7)
+ * Notificar novo orçamento
  */
 export const notifyNewBudgetRequest = async (data: { clientName: string; city: string; services: string[]; clientPhone?: string }) => {
-  const html = getBaseTemplate(
-    'Nova Solicitação de Orçamento',
-    '#EC4899', // Rosa
-    `
-    <p>Um cliente acabou de solicitar um orçamento pelo site.</p>
-    <div class="info-box">
-      <span class="label">Cliente</span>
-      <span class="value">${data.clientName}</span>
-      
-      <span class="label">Localização</span>
-      <span class="value">${data.city}</span>
-      
-      <span class="label">Serviços Interessados</span>
-      <span class="value">${data.services.join(', ')}</span>
-    </div>
-    <p>Acesse o painel para ver os detalhes completos, incluindo telefone e observações.</p>
-    `
-  );
+  const config = await getNotificationsConfig();
+  const services = data.services.join(', ');
+
+  const customTemplate = config.email.templates.newBudgetAdmin;
+
+  let emailSubject: string;
+  let bodyContent: string;
+
+  if (customTemplate.subject && customTemplate.body) {
+    emailSubject = processTemplate(customTemplate.subject, { nome: data.clientName });
+    bodyContent = processTemplate(customTemplate.body, {
+      nome: data.clientName,
+      cidade: data.city,
+      servicos: services,
+    });
+  } else {
+    emailSubject = DEFAULT_EMAIL_TEMPLATES.newBudgetAdmin.subject(data.clientName);
+    bodyContent = DEFAULT_EMAIL_TEMPLATES.newBudgetAdmin.body(data.clientName, data.city, services);
+  }
+
+  const html = getBaseTemplate('Nova Solicitação de Orçamento', '#EC4899', bodyContent);
 
   return sendBrevoEmail({
-    subject: `💰 Novo Orçamento: ${data.clientName}`,
+    subject: emailSubject,
     htmlContent: html,
     tags: ['list_7', 'budget_request']
   }).then(emailSent => {
@@ -202,31 +312,35 @@ export const notifyNewBudgetRequest = async (data: { clientName: string; city: s
 };
 
 /**
- * Notificar novo agendamento (Lista 8)
+ * Notificar novo agendamento
  */
 export const notifyNewAppointment = async (data: { clientName: string; date: string; time: string; type: string; clientPhone?: string }) => {
+  const config = await getNotificationsConfig();
   const typeLabel = data.type === 'visit' ? 'Visita Técnica' : 'Reunião';
-  const html = getBaseTemplate(
-    'Novo Agendamento Solicitado',
-    '#10B981', // Verde
-    `
-    <p>Um cliente solicitou um horário na agenda.</p>
-    <div class="info-box">
-      <span class="label">Cliente</span>
-      <span class="value">${data.clientName}</span>
-      
-      <span class="label">Tipo</span>
-      <span class="value">${typeLabel}</span>
-      
-      <span class="label">Data e Hora</span>
-      <span class="value">${new Date(data.date + 'T00:00:00').toLocaleDateString('pt-BR')} às ${data.time}</span>
-    </div>
-    <p>Este agendamento está com status <strong>Pendente</strong>. Necessário aprovação no painel.</p>
-    `
-  );
+  const dateTime = `${new Date(data.date + 'T00:00:00').toLocaleDateString('pt-BR')} às ${data.time}`;
+
+  const customTemplate = config.email.templates.newAppointmentAdmin;
+
+  let emailSubject: string;
+  let bodyContent: string;
+
+  if (customTemplate.subject && customTemplate.body) {
+    emailSubject = processTemplate(customTemplate.subject, { nome: data.clientName, tipo: typeLabel });
+    bodyContent = processTemplate(customTemplate.body, {
+      nome: data.clientName,
+      tipo: typeLabel,
+      data: new Date(data.date + 'T00:00:00').toLocaleDateString('pt-BR'),
+      hora: data.time,
+    });
+  } else {
+    emailSubject = DEFAULT_EMAIL_TEMPLATES.newAppointmentAdmin.subject(data.clientName, typeLabel);
+    bodyContent = DEFAULT_EMAIL_TEMPLATES.newAppointmentAdmin.body(data.clientName, typeLabel, dateTime);
+  }
+
+  const html = getBaseTemplate('Novo Agendamento Solicitado', '#10B981', bodyContent);
 
   return sendBrevoEmail({
-    subject: `📅 Agenda: ${data.clientName} - ${typeLabel}`,
+    subject: emailSubject,
     htmlContent: html,
     tags: ['list_8', 'new_appointment']
   }).then(emailSent => {
@@ -256,32 +370,36 @@ export const notifyNewContactMessage = async (data: {
   subject: string;
   message: string;
 }) => {
-  const html = getBaseTemplate(
-    'Nova Mensagem de Contato',
-    '#3B82F6', // Azul
-    `
-    <p>Alguém entrou em contato através do formulário "Fale Conosco".</p>
-    <div class="info-box">
-      <span class="label">Nome</span>
-      <span class="value">${data.name}</span>
-      
-      <span class="label">E-mail</span>
-      <span class="value"><a href="mailto:${data.email}" style="color: #3B82F6;">${data.email}</a></span>
-      
-      ${data.phone ? `<span class="label">Telefone</span><span class="value">${data.phone}</span>` : ''}
-      
-      <span class="label">Assunto</span>
-      <span class="value">${data.subject}</span>
-      
-      <span class="label">Mensagem</span>
-      <span class="value" style="white-space: pre-wrap;">${data.message}</span>
-    </div>
-    <p>Responda diretamente pelo e-mail do cliente ou acesse o painel para gerenciar mensagens.</p>
-    `
-  );
+  const config = await getNotificationsConfig();
+  const customTemplate = config.email.templates.newContactAdmin;
+
+  let emailSubject: string;
+  let bodyContent: string;
+
+  if (customTemplate.subject && customTemplate.body) {
+    emailSubject = processTemplate(customTemplate.subject, { assunto: data.subject, nome: data.name });
+    bodyContent = processTemplate(customTemplate.body, {
+      nome: data.name,
+      email: data.email,
+      telefone: data.phone || '',
+      assunto: data.subject,
+      mensagem: data.message,
+    });
+  } else {
+    emailSubject = DEFAULT_EMAIL_TEMPLATES.newContactAdmin.subject(data.subject, data.name);
+    bodyContent = DEFAULT_EMAIL_TEMPLATES.newContactAdmin.body(
+      data.name,
+      data.email,
+      data.phone || '',
+      data.subject,
+      data.message
+    );
+  }
+
+  const html = getBaseTemplate('Nova Mensagem de Contato', '#3B82F6', bodyContent);
 
   return sendBrevoEmail({
-    subject: `📬 Contato: ${data.subject} - ${data.name}`,
+    subject: emailSubject,
     htmlContent: html,
     tags: ['contact_form', 'fale_conosco']
   }).then(emailSent => {
@@ -297,3 +415,6 @@ export const notifyNewContactMessage = async (data: {
     return emailSent;
   });
 };
+
+// Re-export para uso externo
+export { clearNotificationsConfigCache, getNotificationsConfig };

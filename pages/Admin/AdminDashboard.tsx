@@ -13,6 +13,8 @@ import { ShopManagement } from './ShopManagement';
 import { ImageCropModal, useImageCropModal } from '../../components/ImageCropModal';
 import { AdminInviteManager } from './AdminInviteManager';
 import { useScrollLock } from '../../hooks/useScrollLock';
+import { DispatchesDashboard } from './DispatchesDashboard';
+import { Send } from 'lucide-react';
 
 // Real Supabase Upload
 const uploadToSupabase = async (file: File): Promise<string> => {
@@ -41,8 +43,8 @@ export const AdminDashboard: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
     // TABS: Synced with URL query params for better navigation
-    type AdminTab = 'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'clients' | 'agenda' | 'office' | 'budgets' | 'shop' | 'invites' | 'contact-messages';
-    const validTabs: AdminTab[] = ['dashboard', 'projects', 'cultural', 'content', 'settings', 'ai-config', 'messages', 'clients', 'agenda', 'office', 'budgets', 'shop', 'invites', 'contact-messages'];
+    type AdminTab = 'dashboard' | 'projects' | 'cultural' | 'content' | 'settings' | 'ai-config' | 'messages' | 'clients' | 'agenda' | 'office' | 'budgets' | 'shop' | 'invites' | 'contact-messages' | 'dispatches';
+    const validTabs: AdminTab[] = ['dashboard', 'projects', 'cultural', 'content', 'settings', 'ai-config', 'messages', 'clients', 'agenda', 'office', 'budgets', 'shop', 'invites', 'contact-messages', 'dispatches'];
 
     // Get tab from URL or default to 'dashboard'
     const urlTab = searchParams.get('tab') as AdminTab;
@@ -693,6 +695,7 @@ export const AdminDashboard: React.FC = () => {
                     <NavItem id="office" icon={MapPin} label="Escritório (Site)" />
                     <NavItem id="content" icon={FileText} label="Conteúdo Site" />
                     <NavItem id="invites" icon={Gift} label="Convites" />
+                    <NavItem id="dispatches" icon={Send} label="Disparos" />
                     <NavItem id="settings" icon={Settings} label="Configurações" />
                 </nav>
 
@@ -1357,6 +1360,13 @@ export const AdminDashboard: React.FC = () => {
                     {activeTab === 'invites' && (
                         <div className="animate-fadeIn">
                             <AdminInviteManager />
+                        </div>
+                    )}
+
+                    {/* Dispatches (Notifications) View */}
+                    {activeTab === 'dispatches' && (
+                        <div className="animate-fadeIn">
+                            <DispatchesDashboard />
                         </div>
                     )}
 

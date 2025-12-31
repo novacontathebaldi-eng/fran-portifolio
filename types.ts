@@ -345,8 +345,155 @@ export interface ChatbotConfig {
   showQuickActionsOnOpen: boolean;
 }
 
+// ==================== NOTIFICATIONS CONFIG ====================
+
+// Variáveis disponíveis para templates
+export interface TemplateVariables {
+  nome?: string;
+  data?: string;
+  hora?: string;
+  tipo?: string;
+  servicos?: string;
+  cidade?: string;
+  assunto?: string;
+  mensagem?: string;
+  email?: string;
+  telefone?: string;
+}
+
+// Templates WhatsApp customizáveis (null = usar padrão do código)
+export interface WhatsAppTemplates {
+  welcome: string | null;
+  budgetConfirmationClient: string | null;
+  appointmentConfirmationClient: string | null;
+  contactConfirmationClient: string | null;
+  chatbotConfirmationClient: string | null;
+  reminderClient: string | null;
+  reminderAdmin: string | null;
+  newBudgetAdmin: string | null;
+  newAppointmentAdmin: string | null;
+  newContactAdmin: string | null;
+  chatbotNoteAdmin: string | null;
+}
+
+// Template de email customizável
+export interface EmailTemplate {
+  subject: string | null;
+  body: string | null;
+}
+
+// Templates de Email customizáveis
+export interface EmailTemplates {
+  newBudgetAdmin: EmailTemplate;
+  newContactAdmin: EmailTemplate;
+  chatbotNoteAdmin: EmailTemplate;
+  newAppointmentAdmin: EmailTemplate;
+}
+
+// Configuração completa de notificações
+export interface NotificationsConfig {
+  whatsapp: {
+    enabled: boolean;
+    adminPhones: string[];
+    notifyAdmin: {
+      enabled: boolean;
+      budget: boolean;
+      appointment: boolean;
+      contact: boolean;
+      chatbot: boolean;
+    };
+    notifyClient: {
+      enabled: boolean;
+      welcome: boolean;
+      budgetConfirmation: boolean;
+      appointmentConfirmation: boolean;
+      contactConfirmation: boolean;
+    };
+    reminders: {
+      enabled: boolean;
+      daysInAdvance: 1 | 2 | 3;
+      client: {
+        enabled: boolean;
+        time: string; // "HH:mm"
+      };
+      admin: {
+        enabled: boolean;
+        time: string; // "HH:mm"
+      };
+    };
+    templates: WhatsAppTemplates;
+  };
+  email: {
+    enabled: boolean;
+    templates: EmailTemplates;
+  };
+}
+
+// Registro de disparo para histórico
+export interface DispatchLogEntry {
+  id: string;
+  timestamp: string;
+  type: 'whatsapp' | 'email';
+  recipient: string; // Parcialmente mascarado
+  templateKey: string;
+  status: 'success' | 'failed';
+  error?: string;
+}
+
+// Default config para inicialização
+export const defaultNotificationsConfig: NotificationsConfig = {
+  whatsapp: {
+    enabled: true,
+    adminPhones: ['352691214222'],
+    notifyAdmin: {
+      enabled: true,
+      budget: true,
+      appointment: true,
+      contact: true,
+      chatbot: true,
+    },
+    notifyClient: {
+      enabled: true,
+      welcome: true,
+      budgetConfirmation: true,
+      appointmentConfirmation: true,
+      contactConfirmation: true,
+    },
+    reminders: {
+      enabled: true,
+      daysInAdvance: 1,
+      client: { enabled: true, time: '09:00' },
+      admin: { enabled: true, time: '08:00' },
+    },
+    templates: {
+      welcome: null,
+      budgetConfirmationClient: null,
+      appointmentConfirmationClient: null,
+      contactConfirmationClient: null,
+      chatbotConfirmationClient: null,
+      reminderClient: null,
+      reminderAdmin: null,
+      newBudgetAdmin: null,
+      newAppointmentAdmin: null,
+      newContactAdmin: null,
+      chatbotNoteAdmin: null,
+    },
+  },
+  email: {
+    enabled: true,
+    templates: {
+      newBudgetAdmin: { subject: null, body: null },
+      newContactAdmin: { subject: null, body: null },
+      chatbotNoteAdmin: { subject: null, body: null },
+      newAppointmentAdmin: { subject: null, body: null },
+    },
+  },
+};
+
+// ==================== END NOTIFICATIONS CONFIG ====================
+
 // Dashboard Widget for Customizable Admin Overview
-export type DashboardTabId = 'dashboard' | 'agenda' | 'projects' | 'cultural' | 'clients' | 'ai-config' | 'budgets' | 'messages' | 'contact-messages' | 'office' | 'content' | 'settings' | 'shop' | 'invites';
+export type DashboardTabId = 'dashboard' | 'agenda' | 'projects' | 'cultural' | 'clients' | 'ai-config' | 'budgets' | 'messages' | 'contact-messages' | 'office' | 'content' | 'settings' | 'shop' | 'invites' | 'dispatches';
 
 export interface DashboardWidget {
   id: string;
