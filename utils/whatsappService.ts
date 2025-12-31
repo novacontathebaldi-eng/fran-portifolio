@@ -1,12 +1,7 @@
 // src/utils/whatsappService.ts
-// Serviço para enviar notificações via WhatsApp usando WuzAPI
+// Serviço para enviar notificações via WhatsApp usando Edge Function do Supabase
 
 import { supabase } from '../supabaseClient';
-
-// Configuração da API WuzAPI
-const WUZAPI_URL = 'http://54.94.205.227:8080';
-const WUZAPI_INSTANCE = 'fransiller';
-const WUZAPI_TOKEN = 'MeuWhatsToken2025';
 
 interface WhatsAppConfig {
     enabled: boolean;
@@ -70,32 +65,31 @@ export const clearWhatsAppConfigCache = () => {
 };
 
 /**
- * Envia uma mensagem via WuzAPI
+ * Envia uma mensagem via Edge Function do Supabase (contorna CORS)
  */
-const sendWhatsAppMessage = async (phone: string, message: string): Promise<boolean> => {
+const sendWhatsAppMessage = async (phone: string, message: string, type?: string): Promise<boolean> => {
     try {
-        // Formatar número (remover +, espaços, etc.)
-        const formattedPhone = phone.replace(/\D/g, '');
+        console.log(`[WhatsApp] Enviando via Edge Function para: ${phone}`);
 
-        const response = await fetch(`${WUZAPI_URL}/chat/send/text/${WUZAPI_INSTANCE}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'token': WUZAPI_TOKEN,
-            },
-            body: JSON.stringify({
-                phone: formattedPhone,
+        const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+            body: {
+                phone: phone,
                 message: message,
-            }),
+                type: type
+            }
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('[WhatsApp] Erro na API:', response.status, errorText);
+        if (error) {
+            console.error('[WhatsApp] Edge Function Error:', error);
             return false;
         }
 
-        console.log('[WhatsApp] Mensagem enviada com sucesso para:', formattedPhone);
+        if (!data?.success) {
+            console.error('[WhatsApp] Falha no envio:', data?.error);
+            return false;
+        }
+
+        console.log('[WhatsApp] Mensagem enviada com sucesso!');
         return true;
     } catch (error) {
         console.error('[WhatsApp] Erro ao enviar mensagem:', error);
@@ -126,7 +120,7 @@ export const notifyWhatsAppBudget = async (data: {
 
 Acesse o painel admin para ver detalhes completos.`;
 
-    return sendWhatsAppMessage(config.recipientPhone, message);
+    return sendWhatsAppMessage(config.recipientPhone, message, 'budget');
 };
 
 /**
@@ -157,7 +151,7 @@ export const notifyWhatsAppAppointment = async (data: {
 
 Status: Pendente - Requer aprovação no painel.`;
 
-    return sendWhatsAppMessage(config.recipientPhone, message);
+    return sendWhatsAppMessage(config.recipientPhone, message, 'appointment');
 };
 
 /**
@@ -188,7 +182,7 @@ export const notifyWhatsAppContact = async (data: {
 💬 Mensagem:
 ${data.message.substring(0, 500)}${data.message.length > 500 ? '...' : ''}`;
 
-    return sendWhatsAppMessage(config.recipientPhone, message);
+    return sendWhatsAppMessage(config.recipientPhone, message, 'contact');
 };
 
 /**
@@ -220,7 +214,7 @@ export const notifyWhatsAppChatbot = async (data: {
 💬 Mensagem:
 ${data.message.substring(0, 500)}${data.message.length > 500 ? '...' : ''}`;
 
-    return sendWhatsAppMessage(config.recipientPhone, message);
+    return sendWhatsAppMessage(config.recipientPhone, message, 'chatbot');
 };
 
 // Exportar tipo para uso no admin
