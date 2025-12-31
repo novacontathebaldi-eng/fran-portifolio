@@ -15,14 +15,11 @@ interface WhatsAppConfig {
     notifyChatbot: boolean;
 }
 
-// Cache da configuração para evitar múltiplas consultas
+// Cache da configuração
 let cachedConfig: WhatsAppConfig | null = null;
 let cacheTime = 0;
-const CACHE_DURATION = 60000; // 1 minuto
+const CACHE_DURATION = 60000;
 
-/**
- * Obtém a configuração do WhatsApp do banco de dados
- */
 export const getWhatsAppConfig = async (): Promise<WhatsAppConfig> => {
     if (cachedConfig && Date.now() - cacheTime < CACHE_DURATION) {
         return cachedConfig;
@@ -63,7 +60,8 @@ export const clearWhatsAppConfigCache = () => {
 };
 
 /**
- * Envia uma mensagem via n8n Webhook
+ * Envia mensagem via n8n Webhook
+ * O n8n recebe { phone, message } e converte para { Phone, Body } ao chamar WuzAPI
  */
 const sendWhatsAppMessage = async (phone: string, message: string): Promise<boolean> => {
     try {
