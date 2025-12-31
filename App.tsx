@@ -6,6 +6,7 @@ import { Layout } from './components/Layout';
 import { ProjectProvider, useProjects } from './context/ProjectContext';
 import { CartProvider } from './context/CartContext';
 import { LoadingScreen } from './components/loading';
+import { CookieBanner } from './components/CookieBanner';
 
 // Lazy load with automatic retry - reloads page once if chunk fails (e.g., after deploy)
 // This prevents 404 errors when old cached index.html references old chunk hashes
@@ -67,6 +68,10 @@ const Checkout = lazyWithRetry(() => import('./pages/Shop/Checkout').then(module
 
 // Claim Invite Page (Public - for new client registration via invite code)
 const ClaimInvite = lazyWithRetry(() => import('./pages/ClaimInvite').then(module => ({ default: module.ClaimInvite })));
+
+// Legal Pages
+const PrivacyPolicy = lazyWithRetry(() => import('./pages/PrivacyPolicy').then(module => ({ default: module.PrivacyPolicy })));
+const Terms = lazyWithRetry(() => import('./pages/Terms').then(module => ({ default: module.Terms })));
 
 // --- Error Boundary Component ---
 interface ErrorBoundaryProps {
@@ -300,6 +305,10 @@ const AnimatedRoutes: React.FC = () => {
 
           {/* Auth Routes - NO LAYOUT/HEADER */}
           <Route path="/auth/*" element={<Auth />} />
+
+          {/* Legal Pages */}
+          <Route path="/politica-privacidade" element={<Layout><PrivacyPolicy /></Layout>} />
+          <Route path="/termos" element={<Layout><Terms /></Layout>} />
 
           {/* Claim Invite - Public route for new client registration */}
           <Route path="/claim/:code" element={<ClaimInvite />} />
@@ -550,6 +559,7 @@ const AppContent: React.FC = () => {
           <RouteLogger />
           <GlobalToast />
           <AnimatedRoutes />
+          <CookieBanner />
         </ErrorBoundary>
       </Router>
 

@@ -260,8 +260,25 @@ const Register: React.FC = () => {
           </div>
         </div>
 
-        <div className="text-xs text-gray-500">
-          Ao se registrar, você concorda com nossos <button type="button" className="underline">Termos de Serviço</button> e <button type="button" className="underline">Política de Privacidade</button>.
+        <div className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            id="acceptTerms"
+            name="acceptTerms"
+            required
+            className="mt-1 w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+          />
+          <label htmlFor="acceptTerms" className="text-xs text-gray-500 leading-relaxed">
+            Li e aceito a{' '}
+            <a href="/#/politica-privacidade" target="_blank" rel="noopener noreferrer" className="underline text-black hover:text-gray-600">
+              Política de Privacidade
+            </a>{' '}
+            e os{' '}
+            <a href="/#/termos" target="_blank" rel="noopener noreferrer" className="underline text-black hover:text-gray-600">
+              Termos de Uso
+            </a>.
+            Autorizo o envio de notificações via WhatsApp.
+          </label>
         </div>
 
         <button disabled={loading} className="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-accent transition disabled:opacity-50 flex items-center justify-center">
