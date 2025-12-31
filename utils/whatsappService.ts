@@ -495,5 +495,5 @@ export const testWhatsAppConnection = async (): Promise<{ success: boolean; erro
 // EXPORTS
 // =============================================
 
-export { NotificationsConfig } from '../types';
+export type { NotificationsConfig } from '../types';
 export { DEFAULT_TEMPLATES };
