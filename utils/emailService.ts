@@ -13,6 +13,9 @@ import {
   confirmChatbotToClient
 } from './whatsappService';
 
+// Delay helper para evitar sobrecarga do SQLite do WuzAPI
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 interface EmailPayload {
   subject: string;
   htmlContent: string;
@@ -252,12 +255,13 @@ export const notifyNewChatbotNote = async (data: {
     subject: emailSubject,
     htmlContent: html,
     tags: ['list_6', 'chatbot_note']
-  }).then(emailSent => {
+  }).then(async emailSent => {
     // Notificar admin via WhatsApp
-    notifyWhatsAppChatbot(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
-    // Confirmar recebimento para o cliente
+    await notifyWhatsAppChatbot(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
+    // Delay de 2s antes de enviar para cliente
     if (data.phone) {
-      confirmChatbotToClient({
+      await delay(2000);
+      await confirmChatbotToClient({
         clientName: data.userName,
         clientPhone: data.phone
       }).catch(e => console.error('[WhatsApp Cliente] Erro:', e));
@@ -296,12 +300,13 @@ export const notifyNewBudgetRequest = async (data: { clientName: string; city: s
     subject: emailSubject,
     htmlContent: html,
     tags: ['list_7', 'budget_request']
-  }).then(emailSent => {
+  }).then(async emailSent => {
     // Notificar admin via WhatsApp
-    notifyWhatsAppBudget(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
-    // Confirmar recebimento para o cliente
+    await notifyWhatsAppBudget(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
+    // Delay de 2s antes de enviar para cliente
     if (data.clientPhone) {
-      confirmBudgetToClient({
+      await delay(2000);
+      await confirmBudgetToClient({
         clientName: data.clientName,
         clientPhone: data.clientPhone,
         services: data.services
@@ -343,12 +348,13 @@ export const notifyNewAppointment = async (data: { clientName: string; date: str
     subject: emailSubject,
     htmlContent: html,
     tags: ['list_8', 'new_appointment']
-  }).then(emailSent => {
+  }).then(async emailSent => {
     // Notificar admin via WhatsApp
-    notifyWhatsAppAppointment(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
-    // Confirmar recebimento para o cliente
+    await notifyWhatsAppAppointment(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
+    // Delay de 2s antes de enviar para cliente
     if (data.clientPhone) {
-      confirmAppointmentToClient({
+      await delay(2000);
+      await confirmAppointmentToClient({
         clientName: data.clientName,
         clientPhone: data.clientPhone,
         date: data.date,
@@ -402,12 +408,13 @@ export const notifyNewContactMessage = async (data: {
     subject: emailSubject,
     htmlContent: html,
     tags: ['contact_form', 'fale_conosco']
-  }).then(emailSent => {
+  }).then(async emailSent => {
     // Notificar admin via WhatsApp
-    notifyWhatsAppContact(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
-    // Confirmar recebimento para o cliente
+    await notifyWhatsAppContact(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
+    // Delay de 2s antes de enviar para cliente
     if (data.phone) {
-      confirmContactToClient({
+      await delay(2000);
+      await confirmContactToClient({
         clientName: data.name,
         clientPhone: data.phone
       }).catch(e => console.error('[WhatsApp Cliente] Erro:', e));
