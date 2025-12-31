@@ -232,4 +232,36 @@ export const confirmChatbotToClient = async (data: {
     return sendWhatsAppMessage(data.clientPhone, message);
 };
 
+/**
+ * Envia mensagem de boas-vindas para novos clientes cadastrados
+ */
+export const sendWelcomeMessage = async (data: {
+    clientName: string;
+    clientPhone: string;
+}): Promise<boolean> => {
+    const config = await getWhatsAppConfig();
+    if (!config.enabled || !config.sendClientConfirmation) return false;
+    if (!data.clientPhone) return false;
+
+    const firstName = data.clientName.split(' ')[0];
+
+    const message = `🎉 *Bem-vindo(a), ${firstName}!*
+
+Sua conta na *Fran Siller Arquitetura* foi criada com sucesso!
+
+Agora você pode:
+✨ Solicitar orçamentos personalizados
+📅 Agendar reuniões e visitas técnicas
+💬 Conversar com nossa assistente virtual
+📁 Acompanhar seus projetos
+
+Acesse: https://fransiller.othebaldi.me
+
+Estamos à disposição para transformar seus sonhos em realidade! 🏠
+
+_Fran Siller Arquitetura_`;
+
+    return sendWhatsAppMessage(data.clientPhone, message);
+};
+
 export type { WhatsAppConfig };

@@ -3,6 +3,7 @@ import { Project, User, SiteContent, GlobalSettings, Message, ClientMemory, Chat
 import { chatWithConcierge } from '../api/chat';
 import { supabase } from '../supabaseClient';
 import { notifyNewAppointment } from '../utils/emailService';
+import { sendWelcomeMessage } from '../utils/whatsappService';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -670,6 +671,14 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       // Fetch full profile to ensure state is ready
       const user = await fetchFullUserProfile(data.user.id);
       setCurrentUser(user);
+
+      // Enviar mensagem de boas-vindas via WhatsApp
+      if (phone) {
+        sendWelcomeMessage({
+          clientName: name,
+          clientPhone: phone
+        }).catch(err => console.error('[WhatsApp] Erro ao enviar boas-vindas:', err));
+      }
     }
 
     setIsLoadingAuth(false);
