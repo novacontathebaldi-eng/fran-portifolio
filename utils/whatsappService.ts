@@ -1,7 +1,10 @@
 // src/utils/whatsappService.ts
-// Serviço para enviar notificações via WhatsApp usando Edge Function do Supabase
+// Serviço para enviar notificações via WhatsApp usando n8n Webhook
 
 import { supabase } from '../supabaseClient';
+
+// n8n Webhook URL
+const N8N_WEBHOOK_URL = 'http://54.94.205.227:5678/webhook/send-whatsapp';
 
 interface WhatsAppConfig {
     enabled: boolean;
@@ -21,12 +24,10 @@ const CACHE_DURATION = 60000; // 1 minuto
  * Obtém a configuração do WhatsApp do banco de dados
  */
 export const getWhatsAppConfig = async (): Promise<WhatsAppConfig> => {
-    // Usar cache se válido
     if (cachedConfig && Date.now() - cacheTime < CACHE_DURATION) {
         return cachedConfig;
     }
 
-    // Configuração padrão
     const defaultConfig: WhatsAppConfig = {
         enabled: true,
         recipientPhone: '352691214222',
@@ -56,36 +57,31 @@ export const getWhatsAppConfig = async (): Promise<WhatsAppConfig> => {
     }
 };
 
-/**
- * Limpa o cache da configuração (chamar ao atualizar config)
- */
 export const clearWhatsAppConfigCache = () => {
     cachedConfig = null;
     cacheTime = 0;
 };
 
 /**
- * Envia uma mensagem via Edge Function do Supabase (contorna CORS)
+ * Envia uma mensagem via n8n Webhook
  */
-const sendWhatsAppMessage = async (phone: string, message: string, type?: string): Promise<boolean> => {
+const sendWhatsAppMessage = async (phone: string, message: string): Promise<boolean> => {
     try {
-        console.log(`[WhatsApp] Enviando via Edge Function para: ${phone}`);
+        console.log(`[WhatsApp] Enviando via n8n Webhook para: ${phone}`);
 
-        const { data, error } = await supabase.functions.invoke('send-whatsapp', {
-            body: {
+        const response = await fetch(N8N_WEBHOOK_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
                 phone: phone,
                 message: message,
-                type: type
-            }
+            }),
         });
 
-        if (error) {
-            console.error('[WhatsApp] Edge Function Error:', error);
-            return false;
-        }
-
-        if (!data?.success) {
-            console.error('[WhatsApp] Falha no envio:', data?.error);
+        if (!response.ok) {
+            console.error('[WhatsApp] Erro no webhook:', response.status);
             return false;
         }
 
@@ -97,35 +93,18 @@ const sendWhatsAppMessage = async (phone: string, message: string, type?: string
     }
 };
 
-/**
- * Notifica novo orçamento via WhatsApp
- */
 export const notifyWhatsAppBudget = async (data: {
     clientName: string;
     city: string;
     services: string[];
 }): Promise<boolean> => {
     const config = await getWhatsAppConfig();
+    if (!config.enabled || !config.notifyBudget) return false;
 
-    if (!config.enabled || !config.notifyBudget) {
-        console.log('[WhatsApp] Notificação de orçamento desativada');
-        return false;
-    }
-
-    const message = `💰 *Novo Orçamento*
-
-👤 Cliente: ${data.clientName}
-📍 Cidade: ${data.city}
-🔧 Serviços: ${data.services.join(', ')}
-
-Acesse o painel admin para ver detalhes completos.`;
-
-    return sendWhatsAppMessage(config.recipientPhone, message, 'budget');
+    const message = `💰 *Novo Orçamento*\n\n👤 Cliente: ${data.clientName}\n📍 Cidade: ${data.city}\n🔧 Serviços: ${data.services.join(', ')}\n\nAcesse o painel admin para ver detalhes.`;
+    return sendWhatsAppMessage(config.recipientPhone, message);
 };
 
-/**
- * Notifica novo agendamento via WhatsApp
- */
 export const notifyWhatsAppAppointment = async (data: {
     clientName: string;
     date: string;
@@ -133,30 +112,14 @@ export const notifyWhatsAppAppointment = async (data: {
     type: string;
 }): Promise<boolean> => {
     const config = await getWhatsAppConfig();
-
-    if (!config.enabled || !config.notifyAppointment) {
-        console.log('[WhatsApp] Notificação de agendamento desativada');
-        return false;
-    }
+    if (!config.enabled || !config.notifyAppointment) return false;
 
     const typeLabel = data.type === 'visit' ? 'Visita Técnica' : 'Reunião';
     const formattedDate = new Date(data.date + 'T00:00:00').toLocaleDateString('pt-BR');
-
-    const message = `📅 *Novo Agendamento*
-
-👤 Cliente: ${data.clientName}
-📋 Tipo: ${typeLabel}
-📆 Data: ${formattedDate}
-⏰ Horário: ${data.time}
-
-Status: Pendente - Requer aprovação no painel.`;
-
-    return sendWhatsAppMessage(config.recipientPhone, message, 'appointment');
+    const message = `📅 *Novo Agendamento*\n\n👤 Cliente: ${data.clientName}\n📋 Tipo: ${typeLabel}\n📆 Data: ${formattedDate}\n⏰ Horário: ${data.time}\n\nStatus: Pendente`;
+    return sendWhatsAppMessage(config.recipientPhone, message);
 };
 
-/**
- * Notifica nova mensagem de contato via WhatsApp
- */
 export const notifyWhatsAppContact = async (data: {
     name: string;
     email: string;
@@ -165,29 +128,13 @@ export const notifyWhatsAppContact = async (data: {
     message: string;
 }): Promise<boolean> => {
     const config = await getWhatsAppConfig();
-
-    if (!config.enabled || !config.notifyContact) {
-        console.log('[WhatsApp] Notificação de contato desativada');
-        return false;
-    }
+    if (!config.enabled || !config.notifyContact) return false;
 
     const phoneInfo = data.phone ? `\n📞 Tel: ${data.phone}` : '';
-
-    const message = `📬 *Nova Mensagem de Contato*
-
-👤 Nome: ${data.name}
-✉️ Email: ${data.email}${phoneInfo}
-📝 Assunto: ${data.subject}
-
-💬 Mensagem:
-${data.message.substring(0, 500)}${data.message.length > 500 ? '...' : ''}`;
-
-    return sendWhatsAppMessage(config.recipientPhone, message, 'contact');
+    const message = `📬 *Nova Mensagem*\n\n👤 Nome: ${data.name}\n✉️ Email: ${data.email}${phoneInfo}\n📝 Assunto: ${data.subject}\n\n💬 ${data.message.substring(0, 300)}${data.message.length > 300 ? '...' : ''}`;
+    return sendWhatsAppMessage(config.recipientPhone, message);
 };
 
-/**
- * Notifica novo recado do chatbot via WhatsApp
- */
 export const notifyWhatsAppChatbot = async (data: {
     userName: string;
     userContact: string;
@@ -196,26 +143,12 @@ export const notifyWhatsAppChatbot = async (data: {
     phone?: string;
 }): Promise<boolean> => {
     const config = await getWhatsAppConfig();
-
-    if (!config.enabled || !config.notifyChatbot) {
-        console.log('[WhatsApp] Notificação de chatbot desativada');
-        return false;
-    }
+    if (!config.enabled || !config.notifyChatbot) return false;
 
     const phoneInfo = data.phone ? `\n📞 Tel: ${data.phone}` : '';
     const subjectText = data.subject || 'Recado via Chat';
-
-    const message = `💬 *Novo Recado via Chatbot*
-
-👤 Nome: ${data.userName}
-✉️ Contato: ${data.userContact}${phoneInfo}
-📝 Assunto: ${subjectText}
-
-💬 Mensagem:
-${data.message.substring(0, 500)}${data.message.length > 500 ? '...' : ''}`;
-
-    return sendWhatsAppMessage(config.recipientPhone, message, 'chatbot');
+    const message = `💬 *Novo Recado*\n\n👤 Nome: ${data.userName}\n✉️ Contato: ${data.userContact}${phoneInfo}\n📝 Assunto: ${subjectText}\n\n💬 ${data.message.substring(0, 300)}${data.message.length > 300 ? '...' : ''}`;
+    return sendWhatsAppMessage(config.recipientPhone, message);
 };
 
-// Exportar tipo para uso no admin
 export type { WhatsAppConfig };
