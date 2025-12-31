@@ -34,8 +34,8 @@ export const Terms: React.FC = () => {
 
                         <div className="prose prose-gray max-w-none">
                             <p className="text-lg text-gray-600 leading-relaxed mb-8">
-                                Ao acessar e utilizar o site da <strong>Fran Siller Arquitetura</strong>, você concorda
-                                com os termos e condições descritos abaixo. Leia atentamente antes de prosseguir.
+                                Ao utilizar o site da <strong>Fran Siller Arquitetura</strong>, você concorda
+                                com os termos descritos abaixo. Leia atentamente.
                             </p>
 
                             {/* Section 1 */}
@@ -46,9 +46,8 @@ export const Terms: React.FC = () => {
                                 <div>
                                     <h2 className="text-xl font-bold mb-3">1. Aceitação dos Termos</h2>
                                     <p className="text-gray-600">
-                                        Ao criar uma conta ou utilizar nossos serviços, você declara ter lido,
-                                        compreendido e concordado com estes Termos de Uso e nossa Política de Privacidade.
-                                        Se você não concordar, por favor não utilize nosso site.
+                                        Ao criar uma conta, você declara ter lido e concordado com estes Termos e nossa
+                                        Política de Privacidade. Se não concordar, não utilize nosso site.
                                     </p>
                                 </div>
                             </div>
@@ -66,7 +65,7 @@ export const Terms: React.FC = () => {
                                         <li>Solicitar orçamentos para projetos de arquitetura</li>
                                         <li>Agendar reuniões e visitas técnicas</li>
                                         <li>Entrar em contato com nossa equipe</li>
-                                        <li>Acompanhar seus projetos (para clientes com conta)</li>
+                                        <li>Acompanhar seus projetos (para clientes)</li>
                                     </ul>
                                 </div>
                             </div>
@@ -77,12 +76,12 @@ export const Terms: React.FC = () => {
                                     <AlertTriangle className="w-5 h-5 text-amber-600" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold mb-3">3. Responsabilidades do Usuário</h2>
+                                    <h2 className="text-xl font-bold mb-3">3. Suas Responsabilidades</h2>
                                     <p className="text-gray-600 mb-3">Ao utilizar nosso site, você se compromete a:</p>
                                     <ul className="list-disc list-inside text-gray-600 space-y-2">
                                         <li>Fornecer informações verdadeiras e atualizadas</li>
                                         <li>Manter a confidencialidade de sua senha</li>
-                                        <li>Não utilizar o site para fins ilegais ou fraudulentos</li>
+                                        <li>Não utilizar o site para fins ilegais</li>
                                         <li>Respeitar os direitos de propriedade intelectual</li>
                                     </ul>
                                 </div>
@@ -95,12 +94,11 @@ export const Terms: React.FC = () => {
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-bold mb-3">4. Condutas Proibidas</h2>
-                                    <p className="text-gray-600 mb-3">É expressamente proibido:</p>
+                                    <p className="text-gray-600 mb-3">É proibido:</p>
                                     <ul className="list-disc list-inside text-gray-600 space-y-2">
                                         <li>Copiar ou reproduzir conteúdo do site sem autorização</li>
                                         <li>Tentar acessar áreas restritas sem permissão</li>
-                                        <li>Enviar conteúdo ofensivo, difamatório ou ilegal</li>
-                                        <li>Utilizar bots ou scripts automatizados</li>
+                                        <li>Enviar conteúdo ofensivo ou difamatório</li>
                                     </ul>
                                 </div>
                             </div>
@@ -113,9 +111,8 @@ export const Terms: React.FC = () => {
                                 <div>
                                     <h2 className="text-xl font-bold mb-3">5. Propriedade Intelectual</h2>
                                     <p className="text-gray-600">
-                                        Todo o conteúdo do site, incluindo textos, imagens, logotipos, projetos e design,
-                                        é de propriedade exclusiva da Fran Siller Arquitetura e está protegido por leis
-                                        de direitos autorais. A reprodução sem autorização é proibida.
+                                        Todo o conteúdo do site, incluindo textos, imagens, logotipos e projetos,
+                                        é de propriedade da Fran Siller Arquitetura e está protegido por direitos autorais.
                                     </p>
                                 </div>
                             </div>
@@ -126,11 +123,11 @@ export const Terms: React.FC = () => {
                                     <FileText className="w-5 h-5 text-gray-600" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold mb-3">6. Limitação de Responsabilidade</h2>
+                                    <h2 className="text-xl font-bold mb-3">6. Disponibilidade</h2>
                                     <p className="text-gray-600">
-                                        O site é fornecido "como está". Não garantimos disponibilidade ininterrupta
-                                        ou ausência de erros. A Fran Siller Arquitetura não se responsabiliza por
-                                        danos decorrentes do uso do site, exceto quando exigido por lei.
+                                        Nos esforçamos para manter o site sempre disponível e funcionando corretamente.
+                                        Eventualmente, podem ocorrer manutenções programadas ou interrupções técnicas.
+                                        Nestes casos, trabalharemos para restabelecer o serviço o mais rápido possível.
                                     </p>
                                 </div>
                             </div>
@@ -143,8 +140,8 @@ export const Terms: React.FC = () => {
                                 <div>
                                     <h2 className="text-xl font-bold mb-3">7. Lei Aplicável</h2>
                                     <p className="text-gray-600">
-                                        Estes termos são regidos pelas leis da República Federativa do Brasil.
-                                        O foro de Santa Leopoldina/ES é eleito para dirimir quaisquer controvérsias.
+                                        Estes termos são regidos pelas leis brasileiras. Para dúvidas ou questões,
+                                        entre em contato conosco antes de qualquer medida: contato@fransiller.com.br
                                     </p>
                                 </div>
                             </div>
@@ -152,8 +149,7 @@ export const Terms: React.FC = () => {
                             {/* Footer */}
                             <div className="border-t border-gray-100 pt-6 mt-8">
                                 <p className="text-sm text-gray-500">
-                                    Estes termos podem ser atualizados a qualquer momento. A continuidade de uso
-                                    do site após alterações constitui aceitação dos novos termos.
+                                    Estes termos podem ser atualizados. Recomendamos revisão periódica.
                                 </p>
                             </div>
                         </div>

@@ -46,13 +46,15 @@ export const PrivacyPolicy: React.FC = () => {
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-bold mb-3">1. Dados que Coletamos</h2>
-                                    <p className="text-gray-600 mb-3">Coletamos os seguintes dados quando você utiliza nosso site:</p>
+                                    <p className="text-gray-600 mb-3">Coletamos apenas os dados necessários para prestação dos serviços:</p>
                                     <ul className="list-disc list-inside text-gray-600 space-y-2">
-                                        <li><strong>Dados de cadastro:</strong> Nome, e-mail, telefone</li>
+                                        <li><strong>Dados de cadastro:</strong> Nome, e-mail e telefone (fornecidos por você)</li>
                                         <li><strong>Dados de contato:</strong> Mensagens enviadas pelo formulário ou chat</li>
-                                        <li><strong>Dados de navegação:</strong> Páginas visitadas, tempo de permanência</li>
                                         <li><strong>Dados de projetos:</strong> Informações fornecidas para orçamentos e agendamentos</li>
                                     </ul>
+                                    <p className="text-gray-600 mt-3 text-sm italic">
+                                        Não coletamos dados de navegação nem utilizamos rastreadores de terceiros.
+                                    </p>
                                 </div>
                             </div>
 
@@ -64,7 +66,7 @@ export const PrivacyPolicy: React.FC = () => {
                                 <div>
                                     <h2 className="text-xl font-bold mb-3">2. Comunicações via WhatsApp</h2>
                                     <p className="text-gray-600 mb-3">
-                                        Ao fornecer seu número de telefone, você autoriza o envio de mensagens via WhatsApp para:
+                                        Ao fornecer seu número de telefone e criar conta, você autoriza o envio de mensagens para:
                                     </p>
                                     <ul className="list-disc list-inside text-gray-600 space-y-2">
                                         <li>Confirmação de cadastro e boas-vindas</li>
@@ -72,8 +74,8 @@ export const PrivacyPolicy: React.FC = () => {
                                         <li>Confirmação de reuniões e visitas agendadas</li>
                                         <li>Respostas às suas mensagens de contato</li>
                                     </ul>
-                                    <p className="text-gray-600 mt-3">
-                                        <strong>Não enviamos mensagens promocionais sem seu consentimento explícito.</strong>
+                                    <p className="text-gray-600 mt-3 font-medium">
+                                        ⚠️ Não enviamos mensagens promocionais ou de marketing.
                                     </p>
                                 </div>
                             </div>
@@ -85,15 +87,13 @@ export const PrivacyPolicy: React.FC = () => {
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-bold mb-3">3. Cookies</h2>
-                                    <p className="text-gray-600 mb-3">Utilizamos cookies para:</p>
+                                    <p className="text-gray-600 mb-3">Utilizamos apenas cookies essenciais para:</p>
                                     <ul className="list-disc list-inside text-gray-600 space-y-2">
-                                        <li>Manter você conectado à sua conta</li>
-                                        <li>Lembrar suas preferências de navegação</li>
-                                        <li>Melhorar a performance do site</li>
-                                        <li>Analisar o uso do site (analytics)</li>
+                                        <li>Manter você conectado à sua conta (sessão de login)</li>
+                                        <li>Lembrar sua preferência sobre cookies</li>
                                     </ul>
-                                    <p className="text-gray-600 mt-3">
-                                        Você pode desativar cookies nas configurações do seu navegador.
+                                    <p className="text-gray-600 mt-3 text-sm">
+                                        O site funciona normalmente mesmo se você recusar cookies - apenas precisará fazer login novamente a cada visita.
                                     </p>
                                 </div>
                             </div>
@@ -107,7 +107,7 @@ export const PrivacyPolicy: React.FC = () => {
                                     <h2 className="text-xl font-bold mb-3">4. Segurança dos Dados</h2>
                                     <p className="text-gray-600">
                                         Seus dados são armazenados de forma segura utilizando criptografia e protocolos
-                                        de segurança modernos. Apenas colaboradores autorizados têm acesso às informações
+                                        de segurança modernos (Supabase). Apenas a equipe autorizada tem acesso às informações
                                         necessárias para prestação dos serviços.
                                     </p>
                                 </div>
@@ -126,7 +126,6 @@ export const PrivacyPolicy: React.FC = () => {
                                         <li>Corrigir dados incompletos ou desatualizados</li>
                                         <li>Solicitar a exclusão de seus dados</li>
                                         <li>Revogar consentimentos previamente fornecidos</li>
-                                        <li>Solicitar portabilidade dos dados</li>
                                     </ul>
                                 </div>
                             </div>
@@ -139,7 +138,7 @@ export const PrivacyPolicy: React.FC = () => {
                                 <div>
                                     <h2 className="text-xl font-bold mb-3">6. Contato</h2>
                                     <p className="text-gray-600">
-                                        Para exercer seus direitos ou esclarecer dúvidas sobre esta política, entre em contato:
+                                        Para exercer seus direitos ou esclarecer dúvidas, entre em contato:
                                     </p>
                                     <p className="text-gray-600 mt-2">
                                         <strong>E-mail:</strong> contato@fransiller.com.br<br />
