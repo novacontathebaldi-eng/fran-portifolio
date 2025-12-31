@@ -1,10 +1,7 @@
 // src/utils/whatsappService.ts
-// Serviço para enviar notificações via WhatsApp usando n8n Webhook
+// Serviço para enviar notificações via WhatsApp usando Edge Function do Supabase
 
 import { supabase } from '../supabaseClient';
-
-// n8n Webhook URL
-const N8N_WEBHOOK_URL = 'http://54.94.205.227:5678/webhook/send-whatsapp';
 
 interface WhatsAppConfig {
     enabled: boolean;
@@ -15,7 +12,6 @@ interface WhatsAppConfig {
     notifyChatbot: boolean;
 }
 
-// Cache da configuração
 let cachedConfig: WhatsAppConfig | null = null;
 let cacheTime = 0;
 const CACHE_DURATION = 60000;
@@ -48,8 +44,7 @@ export const getWhatsAppConfig = async (): Promise<WhatsAppConfig> => {
         cachedConfig = { ...defaultConfig, ...data.settings.global.whatsappConfig } as WhatsAppConfig;
         cacheTime = Date.now();
         return cachedConfig;
-    } catch (error) {
-        console.error('[WhatsApp] Erro ao buscar config:', error);
+    } catch {
         return defaultConfig;
     }
 };
@@ -60,33 +55,30 @@ export const clearWhatsAppConfigCache = () => {
 };
 
 /**
- * Envia mensagem via n8n Webhook
- * O n8n recebe { phone, message } e converte para { Phone, Body } ao chamar WuzAPI
+ * Envia mensagem via Edge Function do Supabase (chama WuzAPI do servidor)
  */
 const sendWhatsAppMessage = async (phone: string, message: string): Promise<boolean> => {
     try {
-        console.log(`[WhatsApp] Enviando via n8n Webhook para: ${phone}`);
+        console.log(`[WhatsApp] Enviando via Edge Function para: ${phone}`);
 
-        const response = await fetch(N8N_WEBHOOK_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                phone: phone,
-                message: message,
-            }),
+        const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+            body: { phone, message }
         });
 
-        if (!response.ok) {
-            console.error('[WhatsApp] Erro no webhook:', response.status);
+        if (error) {
+            console.error('[WhatsApp] Edge Function error:', error);
             return false;
         }
 
-        console.log('[WhatsApp] Mensagem enviada com sucesso!');
+        if (!data?.success) {
+            console.error('[WhatsApp] Falha:', data?.error);
+            return false;
+        }
+
+        console.log('[WhatsApp] ✅ Mensagem enviada com sucesso!');
         return true;
-    } catch (error) {
-        console.error('[WhatsApp] Erro ao enviar mensagem:', error);
+    } catch (err) {
+        console.error('[WhatsApp] Erro:', err);
         return false;
     }
 };
