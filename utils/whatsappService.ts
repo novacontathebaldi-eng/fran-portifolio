@@ -226,7 +226,13 @@ const sendWhatsAppMessage = async (phone: string, message: string): Promise<bool
 };
 
 /**
+ * Helper: Delay entre envios para evitar sobrecarga do WuzAPI
+ */
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
  * Envia mensagem para todos os telefones de admin
+ * Inclui delay de 1.5s entre cada envio para evitar travamento do SQLite do WuzAPI
  */
 const sendToAllAdmins = async (message: string): Promise<{ sent: number; failed: number }> => {
     const config = await getNotificationsConfig();
@@ -235,7 +241,14 @@ const sendToAllAdmins = async (message: string): Promise<{ sent: number; failed:
     let sent = 0;
     let failed = 0;
 
-    for (const phone of phones) {
+    for (let i = 0; i < phones.length; i++) {
+        const phone = phones[i];
+
+        // Delay antes de enviar (exceto no primeiro)
+        if (i > 0) {
+            await delay(1500); // 1.5 segundos entre cada envio
+        }
+
         const success = await sendWhatsAppMessage(phone, message);
         if (success) sent++;
         else failed++;
