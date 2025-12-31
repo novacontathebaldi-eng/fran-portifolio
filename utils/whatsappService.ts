@@ -165,11 +165,36 @@ const processTemplate = (template: string, vars: Record<string, string>): string
 // =============================================
 
 /**
+ * Normaliza número de telefone para formato internacional
+ * - Remove caracteres não numéricos
+ * - Adiciona código do Brasil (55) se necessário
+ */
+const normalizePhoneNumber = (phone: string): string => {
+    let cleaned = phone.replace(/\D/g, '');
+
+    // Se começa com +, já é internacional, só limpa
+    if (phone.startsWith('+')) {
+        return cleaned;
+    }
+
+    // Se tem 10-11 dígitos e começa com DDD válido do Brasil (1x-9x), adiciona 55
+    if (cleaned.length >= 10 && cleaned.length <= 11) {
+        const ddd = parseInt(cleaned.substring(0, 2));
+        // DDDs brasileiros são de 11 a 99
+        if (ddd >= 11 && ddd <= 99) {
+            cleaned = '55' + cleaned;
+        }
+    }
+
+    return cleaned;
+};
+
+/**
  * Envia mensagem via Edge Function do Supabase
  */
 const sendWhatsAppMessage = async (phone: string, message: string): Promise<boolean> => {
     try {
-        const cleanPhone = phone.replace(/\D/g, '');
+        const cleanPhone = normalizePhoneNumber(phone);
 
         if (!cleanPhone || cleanPhone.length < 10) {
             console.log('[WhatsApp] Número inválido:', phone);
@@ -475,20 +500,47 @@ export const sendReminderToAdmins = async (data: {
 // TESTE DE CONEXÃO
 // =============================================
 
-export const testWhatsAppConnection = async (): Promise<{ success: boolean; error?: string }> => {
-    const config = await getNotificationsConfig();
-    const phones = config.whatsapp.adminPhones || [];
+/**
+ * Testa conexão WhatsApp enviando mensagem para todos os números de admin
+ * @param phonesToTest - Lista opcional de números para testar (se não fornecido, busca do banco)
+ */
+export const testWhatsAppConnection = async (phonesToTest?: string[]): Promise<{ success: boolean; sent: number; failed: number; error?: string }> => {
+    let phones: string[];
 
-    if (phones.length === 0) {
-        return { success: false, error: 'Nenhum número de admin configurado' };
+    if (phonesToTest && phonesToTest.length > 0) {
+        // Usa lista fornecida (estado local)
+        phones = phonesToTest;
+    } else {
+        // Busca do banco
+        const config = await getNotificationsConfig();
+        phones = config.whatsapp.adminPhones || [];
     }
 
-    const testPhone = phones[0];
-    const success = await sendWhatsAppMessage(testPhone, '✅ *Teste de Conexão WhatsApp*\n\nEsta é uma mensagem de teste do sistema de notificações.\n\n_Fran Siller Arquitetura_');
+    if (phones.length === 0) {
+        return { success: false, sent: 0, failed: 0, error: 'Nenhum número de admin configurado' };
+    }
 
-    return success
-        ? { success: true }
-        : { success: false, error: 'Falha ao enviar mensagem de teste' };
+    const testMessage = '✅ *Teste de Conexão WhatsApp*\n\nEsta é uma mensagem de teste do sistema de notificações.\n\n_Fran Siller Arquitetura_';
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const phone of phones) {
+        console.log(`[WhatsApp Test] Testando número: ${phone}`);
+        const success = await sendWhatsAppMessage(phone, testMessage);
+        if (success) {
+            sent++;
+        } else {
+            failed++;
+        }
+    }
+
+    return {
+        success: sent > 0,
+        sent,
+        failed,
+        error: sent === 0 ? 'Nenhuma mensagem enviada com sucesso' : undefined
+    };
 };
 
 // =============================================
