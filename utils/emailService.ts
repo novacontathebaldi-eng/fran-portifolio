@@ -8,6 +8,12 @@ interface EmailPayload {
 }
 
 import { supabase } from '../supabaseClient';
+import {
+  notifyWhatsAppBudget,
+  notifyWhatsAppAppointment,
+  notifyWhatsAppContact,
+  notifyWhatsAppChatbot
+} from './whatsappService';
 
 interface EmailPayload {
   subject: string;
@@ -135,6 +141,10 @@ export const notifyNewChatbotNote = async (data: {
     subject: `💬 Novo Recado: ${subjectText} - ${data.userName}`,
     htmlContent: html,
     tags: ['list_6', 'chatbot_note']
+  }).then(emailSent => {
+    // Enviar também via WhatsApp (não bloqueia o retorno)
+    notifyWhatsAppChatbot(data).catch(e => console.error('[WhatsApp] Erro:', e));
+    return emailSent;
   });
 };
 
@@ -165,6 +175,10 @@ export const notifyNewBudgetRequest = async (data: { clientName: string; city: s
     subject: `💰 Novo Orçamento: ${data.clientName}`,
     htmlContent: html,
     tags: ['list_7', 'budget_request']
+  }).then(emailSent => {
+    // Enviar também via WhatsApp (não bloqueia o retorno)
+    notifyWhatsAppBudget(data).catch(e => console.error('[WhatsApp] Erro:', e));
+    return emailSent;
   });
 };
 
@@ -196,6 +210,10 @@ export const notifyNewAppointment = async (data: { clientName: string; date: str
     subject: `📅 Agenda: ${data.clientName} - ${typeLabel}`,
     htmlContent: html,
     tags: ['list_8', 'new_appointment']
+  }).then(emailSent => {
+    // Enviar também via WhatsApp (não bloqueia o retorno)
+    notifyWhatsAppAppointment(data).catch(e => console.error('[WhatsApp] Erro:', e));
+    return emailSent;
   });
 };
 
@@ -237,5 +255,9 @@ export const notifyNewContactMessage = async (data: {
     subject: `📬 Contato: ${data.subject} - ${data.name}`,
     htmlContent: html,
     tags: ['contact_form', 'fale_conosco']
+  }).then(emailSent => {
+    // Enviar também via WhatsApp (não bloqueia o retorno)
+    notifyWhatsAppContact(data).catch(e => console.error('[WhatsApp] Erro:', e));
+    return emailSent;
   });
 };

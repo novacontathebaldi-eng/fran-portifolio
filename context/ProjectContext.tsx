@@ -137,6 +137,15 @@ const DEFAULT_SETTINGS: GlobalSettings = {
     transferToHumanEnabled: false,
     fallbackMessage: 'Desculpe, não consegui entender. Posso te ajudar de outra forma?',
     showQuickActionsOnOpen: true
+  },
+  // WhatsApp Notification Config
+  whatsappConfig: {
+    enabled: true,
+    recipientPhone: '352691214222',
+    notifyBudget: true,
+    notifyAppointment: true,
+    notifyContact: true,
+    notifyChatbot: true
   }
 };
 

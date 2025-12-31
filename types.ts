@@ -359,11 +359,22 @@ export interface DashboardWidget {
   countKey?: 'projects' | 'culturalProjects' | 'appointments' | 'messages' | 'contactMessages' | 'budgets';
 }
 
+// WhatsApp Notification Config (configurable via Admin Panel)
+export interface WhatsAppConfig {
+  enabled: boolean;
+  recipientPhone: string; // Número que receberá as notificações
+  notifyBudget: boolean; // Notificar novos orçamentos
+  notifyAppointment: boolean; // Notificar novos agendamentos
+  notifyContact: boolean; // Notificar mensagens de contato
+  notifyChatbot: boolean; // Notificar recados do chatbot
+}
+
 export interface GlobalSettings {
   enableShop: boolean;
   aiConfig: AIConfig;
   chatbotConfig?: ChatbotConfig;
   dashboardWidgets?: DashboardWidget[];
+  whatsappConfig?: WhatsAppConfig; // NEW: WhatsApp notification settings
 }
 
 // ==================== AI PROVIDER TYPES ====================
