@@ -10,6 +10,8 @@ interface WhatsAppConfig {
     notifyAppointment: boolean;
     notifyContact: boolean;
     notifyChatbot: boolean;
+    // Configurações de confirmação para clientes
+    sendClientConfirmation: boolean;
 }
 
 let cachedConfig: WhatsAppConfig | null = null;
@@ -28,6 +30,7 @@ export const getWhatsAppConfig = async (): Promise<WhatsAppConfig> => {
         notifyAppointment: true,
         notifyContact: true,
         notifyChatbot: true,
+        sendClientConfirmation: true, // Enviar confirmações para clientes
     };
 
     try {
@@ -55,14 +58,22 @@ export const clearWhatsAppConfigCache = () => {
 };
 
 /**
- * Envia mensagem via Edge Function do Supabase (chama WuzAPI do servidor)
+ * Envia mensagem via Edge Function do Supabase
  */
 const sendWhatsAppMessage = async (phone: string, message: string): Promise<boolean> => {
     try {
-        console.log(`[WhatsApp] Enviando via Edge Function para: ${phone}`);
+        // Limpar número (remover +, espaços, etc)
+        const cleanPhone = phone.replace(/\D/g, '');
+
+        if (!cleanPhone || cleanPhone.length < 10) {
+            console.log('[WhatsApp] Número inválido:', phone);
+            return false;
+        }
+
+        console.log(`[WhatsApp] Enviando para: ${cleanPhone}`);
 
         const { data, error } = await supabase.functions.invoke('send-whatsapp', {
-            body: { phone, message }
+            body: { phone: cleanPhone, message }
         });
 
         if (error) {
@@ -75,7 +86,7 @@ const sendWhatsAppMessage = async (phone: string, message: string): Promise<bool
             return false;
         }
 
-        console.log('[WhatsApp] ✅ Mensagem enviada com sucesso!');
+        console.log('[WhatsApp] ✅ Mensagem enviada!');
         return true;
     } catch (err) {
         console.error('[WhatsApp] Erro:', err);
@@ -83,10 +94,15 @@ const sendWhatsAppMessage = async (phone: string, message: string): Promise<bool
     }
 };
 
+// =============================================
+// NOTIFICAÇÕES PARA O ADMIN (seu número)
+// =============================================
+
 export const notifyWhatsAppBudget = async (data: {
     clientName: string;
     city: string;
     services: string[];
+    clientPhone?: string;
 }): Promise<boolean> => {
     const config = await getWhatsAppConfig();
     if (!config.enabled || !config.notifyBudget) return false;
@@ -139,6 +155,81 @@ export const notifyWhatsAppChatbot = async (data: {
     const subjectText = data.subject || 'Recado via Chat';
     const message = `💬 *Novo Recado*\n\n👤 Nome: ${data.userName}\n✉️ Contato: ${data.userContact}${phoneInfo}\n📝 Assunto: ${subjectText}\n\n💬 ${data.message.substring(0, 300)}${data.message.length > 300 ? '...' : ''}`;
     return sendWhatsAppMessage(config.recipientPhone, message);
+};
+
+// =============================================
+// CONFIRMAÇÕES PARA O CLIENTE (número do cliente)
+// =============================================
+
+/**
+ * Envia confirmação de orçamento recebido para o cliente
+ */
+export const confirmBudgetToClient = async (data: {
+    clientName: string;
+    clientPhone: string;
+    services: string[];
+}): Promise<boolean> => {
+    const config = await getWhatsAppConfig();
+    if (!config.enabled || !config.sendClientConfirmation) return false;
+    if (!data.clientPhone) return false;
+
+    const message = `✅ *Olá ${data.clientName}!*\n\nRecebemos sua solicitação de orçamento para:\n🔧 ${data.services.join(', ')}\n\nNossa equipe analisará seu pedido e retornará em breve com todos os detalhes.\n\n_Fran Siller Arquitetura_`;
+    return sendWhatsAppMessage(data.clientPhone, message);
+};
+
+/**
+ * Envia confirmação de agendamento para o cliente
+ */
+export const confirmAppointmentToClient = async (data: {
+    clientName: string;
+    clientPhone: string;
+    date: string;
+    time: string;
+    type: string;
+}): Promise<boolean> => {
+    const config = await getWhatsAppConfig();
+    if (!config.enabled || !config.sendClientConfirmation) return false;
+    if (!data.clientPhone) return false;
+
+    const typeLabel = data.type === 'visit' ? 'Visita Técnica' : 'Reunião Online';
+    const formattedDate = new Date(data.date + 'T00:00:00').toLocaleDateString('pt-BR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+    });
+
+    const message = `✅ *Olá ${data.clientName}!*\n\nSua solicitação de *${typeLabel}* foi recebida!\n\n📆 Data: ${formattedDate}\n⏰ Horário: ${data.time}\n\n⏳ Aguarde a confirmação da nossa equipe.\n\n_Fran Siller Arquitetura_`;
+    return sendWhatsAppMessage(data.clientPhone, message);
+};
+
+/**
+ * Envia confirmação de mensagem recebida para o cliente
+ */
+export const confirmContactToClient = async (data: {
+    clientName: string;
+    clientPhone: string;
+}): Promise<boolean> => {
+    const config = await getWhatsAppConfig();
+    if (!config.enabled || !config.sendClientConfirmation) return false;
+    if (!data.clientPhone) return false;
+
+    const message = `✅ *Olá ${data.clientName}!*\n\nRecebemos sua mensagem e retornaremos em breve.\n\nObrigada pelo contato!\n\n_Fran Siller Arquitetura_`;
+    return sendWhatsAppMessage(data.clientPhone, message);
+};
+
+/**
+ * Envia confirmação de recado do chatbot para o cliente
+ */
+export const confirmChatbotToClient = async (data: {
+    clientName: string;
+    clientPhone: string;
+}): Promise<boolean> => {
+    const config = await getWhatsAppConfig();
+    if (!config.enabled || !config.sendClientConfirmation) return false;
+    if (!data.clientPhone) return false;
+
+    const message = `✅ *Olá ${data.clientName}!*\n\nRecebemos seu recado e logo entraremos em contato!\n\nObrigada! 😊\n\n_Fran Siller Arquitetura_`;
+    return sendWhatsAppMessage(data.clientPhone, message);
 };
 
 export type { WhatsAppConfig };

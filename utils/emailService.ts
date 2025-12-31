@@ -12,7 +12,11 @@ import {
   notifyWhatsAppBudget,
   notifyWhatsAppAppointment,
   notifyWhatsAppContact,
-  notifyWhatsAppChatbot
+  notifyWhatsAppChatbot,
+  confirmBudgetToClient,
+  confirmAppointmentToClient,
+  confirmContactToClient,
+  confirmChatbotToClient
 } from './whatsappService';
 
 interface EmailPayload {
@@ -142,8 +146,15 @@ export const notifyNewChatbotNote = async (data: {
     htmlContent: html,
     tags: ['list_6', 'chatbot_note']
   }).then(emailSent => {
-    // Enviar também via WhatsApp (não bloqueia o retorno)
-    notifyWhatsAppChatbot(data).catch(e => console.error('[WhatsApp] Erro:', e));
+    // Notificar admin via WhatsApp
+    notifyWhatsAppChatbot(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
+    // Confirmar recebimento para o cliente
+    if (data.phone) {
+      confirmChatbotToClient({
+        clientName: data.userName,
+        clientPhone: data.phone
+      }).catch(e => console.error('[WhatsApp Cliente] Erro:', e));
+    }
     return emailSent;
   });
 };
@@ -151,7 +162,7 @@ export const notifyNewChatbotNote = async (data: {
 /**
  * Notificar novo orçamento (Lista 7)
  */
-export const notifyNewBudgetRequest = async (data: { clientName: string; city: string; services: string[] }) => {
+export const notifyNewBudgetRequest = async (data: { clientName: string; city: string; services: string[]; clientPhone?: string }) => {
   const html = getBaseTemplate(
     'Nova Solicitação de Orçamento',
     '#EC4899', // Rosa
@@ -176,8 +187,16 @@ export const notifyNewBudgetRequest = async (data: { clientName: string; city: s
     htmlContent: html,
     tags: ['list_7', 'budget_request']
   }).then(emailSent => {
-    // Enviar também via WhatsApp (não bloqueia o retorno)
-    notifyWhatsAppBudget(data).catch(e => console.error('[WhatsApp] Erro:', e));
+    // Notificar admin via WhatsApp
+    notifyWhatsAppBudget(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
+    // Confirmar recebimento para o cliente
+    if (data.clientPhone) {
+      confirmBudgetToClient({
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        services: data.services
+      }).catch(e => console.error('[WhatsApp Cliente] Erro:', e));
+    }
     return emailSent;
   });
 };
@@ -185,7 +204,7 @@ export const notifyNewBudgetRequest = async (data: { clientName: string; city: s
 /**
  * Notificar novo agendamento (Lista 8)
  */
-export const notifyNewAppointment = async (data: { clientName: string; date: string; time: string; type: string }) => {
+export const notifyNewAppointment = async (data: { clientName: string; date: string; time: string; type: string; clientPhone?: string }) => {
   const typeLabel = data.type === 'visit' ? 'Visita Técnica' : 'Reunião';
   const html = getBaseTemplate(
     'Novo Agendamento Solicitado',
@@ -211,8 +230,18 @@ export const notifyNewAppointment = async (data: { clientName: string; date: str
     htmlContent: html,
     tags: ['list_8', 'new_appointment']
   }).then(emailSent => {
-    // Enviar também via WhatsApp (não bloqueia o retorno)
-    notifyWhatsAppAppointment(data).catch(e => console.error('[WhatsApp] Erro:', e));
+    // Notificar admin via WhatsApp
+    notifyWhatsAppAppointment(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
+    // Confirmar recebimento para o cliente
+    if (data.clientPhone) {
+      confirmAppointmentToClient({
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        date: data.date,
+        time: data.time,
+        type: data.type
+      }).catch(e => console.error('[WhatsApp Cliente] Erro:', e));
+    }
     return emailSent;
   });
 };
@@ -256,8 +285,15 @@ export const notifyNewContactMessage = async (data: {
     htmlContent: html,
     tags: ['contact_form', 'fale_conosco']
   }).then(emailSent => {
-    // Enviar também via WhatsApp (não bloqueia o retorno)
-    notifyWhatsAppContact(data).catch(e => console.error('[WhatsApp] Erro:', e));
+    // Notificar admin via WhatsApp
+    notifyWhatsAppContact(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
+    // Confirmar recebimento para o cliente
+    if (data.phone) {
+      confirmContactToClient({
+        clientName: data.name,
+        clientPhone: data.phone
+      }).catch(e => console.error('[WhatsApp Cliente] Erro:', e));
+    }
     return emailSent;
   });
 };

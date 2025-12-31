@@ -1099,7 +1099,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         clientName: appt.clientName,
         date: appt.date,
         time: appt.time,
-        type: appt.type
+        type: appt.type,
+        clientPhone: currentUser?.phone
       }).catch(err => console.error('[Brevo] Erro ao enviar email de agendamento:', err));
 
     } else {
