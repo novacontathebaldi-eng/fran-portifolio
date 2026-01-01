@@ -316,24 +316,42 @@ export const notifyNewBudgetRequest = async (data: { clientName: string; city: s
 
   const html = getBaseTemplate('Nova Solicitação de Orçamento', '#EC4899', bodyContent);
 
-  return sendBrevoEmail({
+  // Enviar email (rápido)
+  const emailSent = await sendBrevoEmail({
     subject: emailSubject,
     htmlContent: html,
     tags: ['list_7', 'budget_request']
-  }).then(async emailSent => {
-    // Notificar admin via WhatsApp
-    await notifyWhatsAppBudget(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
-    // Delay de 2s antes de enviar para cliente
-    if (data.clientPhone) {
-      await delay(2000);
-      await confirmBudgetToClient({
-        clientName: data.clientName,
-        clientPhone: data.clientPhone,
-        services: data.services
-      }).catch(e => console.error('[WhatsApp Cliente] Erro:', e));
-    }
-    return emailSent;
   });
+
+  // Preparar notificações WhatsApp para a fila
+  const config2 = await getNotificationsConfig();
+  const adminPhones = config2.whatsapp.adminPhones || [];
+
+  if (config2.whatsapp.enabled) {
+    const notifications: Array<{ type: 'whatsapp'; phone: string; message: string }> = [];
+
+    // Mensagem para admins
+    if (config2.whatsapp.notifyAdmin.enabled && config2.whatsapp.notifyAdmin.budget && adminPhones.length > 0) {
+      const adminMessage = `💰 *Novo Orçamento*\n\n👤 Cliente: ${data.clientName}\n📍 Cidade: ${data.city}\n🔧 Serviços: ${services}\n\nAcesse o painel admin para ver detalhes.`;
+
+      for (const phone of adminPhones) {
+        notifications.push({ type: 'whatsapp', phone, message: adminMessage });
+      }
+    }
+
+    // Mensagem de confirmação para cliente
+    if (config2.whatsapp.notifyClient.enabled && config2.whatsapp.notifyClient.budgetConfirmation && data.clientPhone) {
+      const clientMessage = `✅ *Olá ${data.clientName}!*\n\nRecebemos sua solicitação de orçamento para:\n🔧 ${services}\n\nNossa equipe analisará seu pedido e retornará em breve com todos os detalhes.\n\n_Fran Siller Arquitetura_`;
+      notifications.push({ type: 'whatsapp', phone: data.clientPhone, message: clientMessage });
+    }
+
+    // Adicionar à fila (retorna IMEDIATAMENTE)
+    if (notifications.length > 0) {
+      queueNotifications(notifications).catch(e => console.error('[Queue] Erro:', e));
+    }
+  }
+
+  return emailSent;
 };
 
 /**
@@ -364,26 +382,48 @@ export const notifyNewAppointment = async (data: { clientName: string; date: str
 
   const html = getBaseTemplate('Novo Agendamento Solicitado', '#10B981', bodyContent);
 
-  return sendBrevoEmail({
+  // Enviar email (rápido)
+  const emailSent = await sendBrevoEmail({
     subject: emailSubject,
     htmlContent: html,
     tags: ['list_8', 'new_appointment']
-  }).then(async emailSent => {
-    // Notificar admin via WhatsApp
-    await notifyWhatsAppAppointment(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
-    // Delay de 2s antes de enviar para cliente
-    if (data.clientPhone) {
-      await delay(2000);
-      await confirmAppointmentToClient({
-        clientName: data.clientName,
-        clientPhone: data.clientPhone,
-        date: data.date,
-        time: data.time,
-        type: data.type
-      }).catch(e => console.error('[WhatsApp Cliente] Erro:', e));
-    }
-    return emailSent;
   });
+
+  // Preparar notificações WhatsApp para a fila
+  const config2 = await getNotificationsConfig();
+  const adminPhones = config2.whatsapp.adminPhones || [];
+
+  const formattedDate = new Date(data.date + 'T00:00:00').toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long'
+  });
+
+  if (config2.whatsapp.enabled) {
+    const notifications: Array<{ type: 'whatsapp'; phone: string; message: string }> = [];
+
+    // Mensagem para admins
+    if (config2.whatsapp.notifyAdmin.enabled && config2.whatsapp.notifyAdmin.appointment && adminPhones.length > 0) {
+      const adminMessage = `📅 *Novo Agendamento*\n\n👤 Cliente: ${data.clientName}\n📋 Tipo: ${typeLabel}\n📆 Data: ${formattedDate}\n⏰ Horário: ${data.time}\n\nStatus: Pendente`;
+
+      for (const phone of adminPhones) {
+        notifications.push({ type: 'whatsapp', phone, message: adminMessage });
+      }
+    }
+
+    // Mensagem de confirmação para cliente
+    if (config2.whatsapp.notifyClient.enabled && config2.whatsapp.notifyClient.appointmentConfirmation && data.clientPhone) {
+      const clientMessage = `✅ *Olá ${data.clientName}!*\n\nSua solicitação de *${typeLabel}* foi recebida!\n\n📆 Data: ${formattedDate}\n⏰ Horário: ${data.time}\n\n⏳ Aguarde a confirmação da nossa equipe.\n\n_Fran Siller Arquitetura_`;
+      notifications.push({ type: 'whatsapp', phone: data.clientPhone, message: clientMessage });
+    }
+
+    // Adicionar à fila (retorna IMEDIATAMENTE)
+    if (notifications.length > 0) {
+      queueNotifications(notifications).catch(e => console.error('[Queue] Erro:', e));
+    }
+  }
+
+  return emailSent;
 };
 
 /**
@@ -424,23 +464,43 @@ export const notifyNewContactMessage = async (data: {
 
   const html = getBaseTemplate('Nova Mensagem de Contato', '#3B82F6', bodyContent);
 
-  return sendBrevoEmail({
+  // Enviar email (rápido)
+  const emailSent = await sendBrevoEmail({
     subject: emailSubject,
     htmlContent: html,
     tags: ['contact_form', 'fale_conosco']
-  }).then(async emailSent => {
-    // Notificar admin via WhatsApp
-    await notifyWhatsAppContact(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
-    // Delay de 2s antes de enviar para cliente
-    if (data.phone) {
-      await delay(2000);
-      await confirmContactToClient({
-        clientName: data.name,
-        clientPhone: data.phone
-      }).catch(e => console.error('[WhatsApp Cliente] Erro:', e));
-    }
-    return emailSent;
   });
+
+  // Preparar notificações WhatsApp para a fila
+  const config2 = await getNotificationsConfig();
+  const adminPhones = config2.whatsapp.adminPhones || [];
+
+  if (config2.whatsapp.enabled) {
+    const notifications: Array<{ type: 'whatsapp'; phone: string; message: string }> = [];
+
+    // Mensagem para admins
+    if (config2.whatsapp.notifyAdmin.enabled && config2.whatsapp.notifyAdmin.contact && adminPhones.length > 0) {
+      const phoneInfo = data.phone ? `\n📞 Tel: ${data.phone}` : '';
+      const adminMessage = `📬 *Nova Mensagem*\n\n👤 Nome: ${data.name}\n✉️ Email: ${data.email}${phoneInfo}\n📝 Assunto: ${data.subject}\n\n💬 ${data.message.substring(0, 300)}${data.message.length > 300 ? '...' : ''}`;
+
+      for (const phone of adminPhones) {
+        notifications.push({ type: 'whatsapp', phone, message: adminMessage });
+      }
+    }
+
+    // Mensagem de confirmação para cliente
+    if (config2.whatsapp.notifyClient.enabled && data.phone) {
+      const clientMessage = `✅ *Olá ${data.name}!*\n\nRecebemos sua mensagem e retornaremos em breve.\n\nObrigada pelo contato!\n\n_Fran Siller Arquitetura_`;
+      notifications.push({ type: 'whatsapp', phone: data.phone, message: clientMessage });
+    }
+
+    // Adicionar à fila (retorna IMEDIATAMENTE)
+    if (notifications.length > 0) {
+      queueNotifications(notifications).catch(e => console.error('[Queue] Erro:', e));
+    }
+  }
+
+  return emailSent;
 };
 
 // Re-export para uso externo
