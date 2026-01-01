@@ -245,11 +245,36 @@ const sendWhatsAppMessage = async (phone: string, message: string): Promise<bool
  * Helper: Delay entre envios para evitar sobrecarga do WuzAPI
  */
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+/**
+ * URL do proxy NGINX na VPS que repassa para o WuzAPI
+ * Isso elimina a latência das Edge Functions
+ */
+const WUZAPI_PROXY_URL = 'http://54.232.81.168/api/whatsapp';
+const WUZAPI_TOKEN = 'MeuWhatsToken2025';
 
 /**
- * Adiciona notificações à fila para processamento em background
- * RETORNA IMEDIATAMENTE - não precisa esperar os envios completarem
- * O pg_cron processa a fila a cada minuto, mas também chamamos process-queue imediatamente
+ * Normaliza número de telefone para formato internacional brasileiro
+ */
+const normalizePhoneForWuzAPI = (phone: string): string => {
+    let cleaned = phone.replace(/\D/g, '');
+    if (!cleaned) return '';
+
+    // Se tem 8-9 dígitos, adiciona DDD padrão (27) e código do Brasil
+    if (cleaned.length === 8 || cleaned.length === 9) {
+        cleaned = '5527' + cleaned;
+    }
+    // Se tem 10-11 dígitos, adiciona código do Brasil
+    else if (cleaned.length === 10 || cleaned.length === 11) {
+        cleaned = '55' + cleaned;
+    }
+    // Se já tem 12-13 dígitos, assume que já está completo
+
+    return cleaned;
+};
+
+/**
+ * Envia notificações diretamente via proxy NGINX → WuzAPI
+ * MUITO MAIS RÁPIDO que Edge Functions (< 1 segundo vs 75+ segundos)
  */
 export const queueNotifications = async (notifications: Array<{
     type: 'whatsapp';
@@ -260,35 +285,53 @@ export const queueNotifications = async (notifications: Array<{
         return true;
     }
 
-    try {
-        console.log(`[Queue] Adicionando ${notifications.length} notificações à fila...`);
+    console.log(`[WhatsApp] Enviando ${notifications.length} mensagens via proxy...`);
 
-        // 1. Adicionar à fila (retorna rápido - só insere no banco)
-        const { data, error } = await supabase.functions.invoke('add-to-queue', {
-            body: { notifications }
-        });
+    // Enviar todas em sequência (fire-and-forget para UI, mas processa em background)
+    const sendAll = async () => {
+        for (let i = 0; i < notifications.length; i++) {
+            const notif = notifications[i];
+            const normalizedPhone = normalizePhoneForWuzAPI(notif.phone);
 
-        if (error) {
-            console.error('[Queue] Erro ao adicionar:', error);
-            return false;
+            if (!normalizedPhone) {
+                console.error(`[WhatsApp] Número inválido: ${notif.phone}`);
+                continue;
+            }
+
+            try {
+                const response = await fetch(`${WUZAPI_PROXY_URL}/chat/send/text`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'token': WUZAPI_TOKEN,
+                    },
+                    body: JSON.stringify({
+                        Phone: normalizedPhone,
+                        Body: notif.message,
+                    }),
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    console.log(`[WhatsApp] ✅ Enviado para ${normalizedPhone}`);
+                } else {
+                    console.error(`[WhatsApp] ❌ Falha para ${normalizedPhone}:`, result.error);
+                }
+            } catch (err) {
+                console.error(`[WhatsApp] Erro para ${normalizedPhone}:`, err);
+            }
+
+            // Delay de 1s entre mensagens para não sobrecarregar
+            if (i < notifications.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
         }
+    };
 
-        console.log('[Queue] ✅ Notificações adicionadas:', data);
+    // Fire-and-forget: não bloqueia a UI
+    sendAll().catch(console.error);
 
-        // 2. Disparar processamento imediato (fire-and-forget)
-        supabase.functions.invoke('process-queue', {
-            body: {}
-        }).then(() => {
-            console.log('[Queue] Processamento iniciado em background');
-        }).catch(() => {
-            // Ignorar erros - pg_cron vai processar de qualquer forma
-        });
-
-        return true;
-    } catch (err) {
-        console.error('[Queue] Erro:', err);
-        return false;
-    }
+    return true;
 };
 
 
