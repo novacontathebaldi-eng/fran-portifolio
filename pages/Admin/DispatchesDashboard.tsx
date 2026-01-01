@@ -6,7 +6,7 @@ import {
     MessageSquare, Mail, Send, Phone, Plus, Trash2, TestTube,
     ToggleLeft, ToggleRight, Clock, Bell, User, Users, Settings,
     ChevronDown, ChevronRight, RefreshCw, Loader2, Check, X,
-    FileText, Save, RotateCcw, History, AlertCircle
+    FileText, Save, RotateCcw, History, AlertCircle, Power
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useProjects } from '../../context/ProjectContext';
@@ -19,6 +19,7 @@ import {
     getNotificationsConfig,
     clearNotificationsConfigCache,
     testWhatsAppConnection,
+    restartWuzAPI,
     DEFAULT_TEMPLATES
 } from '../../utils/whatsappService';
 
@@ -239,6 +240,7 @@ export const DispatchesDashboard: React.FC = () => {
     const [newPhone, setNewPhone] = useState('');
     const [dispatchLog, setDispatchLog] = useState<DispatchLogEntry[]>([]);
     const [activeTemplateTab, setActiveTemplateTab] = useState<'whatsapp-client' | 'whatsapp-admin' | 'email'>('whatsapp-client');
+    const [restarting, setRestarting] = useState(false);
 
     // Count upcoming appointments
     const upcomingAppointments = appointments.filter(a => {
@@ -400,6 +402,36 @@ export const DispatchesDashboard: React.FC = () => {
         }
     };
 
+    // Restart WuzAPI
+    const handleRestartWuzAPI = async () => {
+        setRestarting(true);
+        try {
+            const result = await restartWuzAPI();
+            if (result.success) {
+                showToast('WuzAPI reiniciado com sucesso!', 'success');
+                addLogEntry({
+                    type: 'whatsapp',
+                    recipient: 'Sistema',
+                    templateKey: 'restart',
+                    status: 'success'
+                });
+            } else {
+                showToast(`Erro ao reiniciar: ${result.message}`, 'error');
+                addLogEntry({
+                    type: 'whatsapp',
+                    recipient: 'Sistema',
+                    templateKey: 'restart',
+                    status: 'failed',
+                    error: result.message
+                });
+            }
+        } catch (error) {
+            showToast('Erro de conexão ao reiniciar', 'error');
+        } finally {
+            setRestarting(false);
+        }
+    };
+
     // Phone management
     const handleAddPhone = () => {
         const cleaned = newPhone.replace(/\D/g, '');
@@ -553,7 +585,15 @@ export const DispatchesDashboard: React.FC = () => {
                         className="flex items-center gap-2 px-4 py-2 border border-green-500 text-green-600 rounded-lg hover:bg-green-50 disabled:opacity-50"
                     >
                         {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <TestTube className="w-4 h-4" />}
-                        Testar Conexão WhatsApp
+                        Testar Conexão
+                    </button>
+                    <button
+                        onClick={handleRestartWuzAPI}
+                        disabled={restarting}
+                        className="flex items-center gap-2 px-4 py-2 border border-orange-500 text-orange-600 rounded-lg hover:bg-orange-50 disabled:opacity-50"
+                    >
+                        {restarting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Power className="w-4 h-4" />}
+                        Reiniciar WuzAPI
                     </button>
                 </div>
 

@@ -557,8 +557,46 @@ export const testWhatsAppConnection = async (phonesToTest?: string[]): Promise<{
 };
 
 // =============================================
+// WUZAPI RESTART REMOTO
+// =============================================
+
+const WUZAPI_RESTART_URL = 'http://54.94.205.227:8090/restart';
+const WUZAPI_RESTART_SECRET = 'FranSillerRestart2025';
+
+/**
+ * Reinicia o WuzAPI remotamente via servidor HTTP no VPS
+ */
+export const restartWuzAPI = async (): Promise<{ success: boolean; message: string }> => {
+    try {
+        console.log('[WuzAPI] Solicitando restart remoto...');
+
+        const response = await fetch(WUZAPI_RESTART_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ secret: WUZAPI_RESTART_SECRET }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            console.log('[WuzAPI] ✅ Restart realizado com sucesso!');
+            return { success: true, message: 'WuzAPI reiniciado com sucesso!' };
+        } else {
+            console.error('[WuzAPI] ❌ Erro no restart:', data.error || data.message);
+            return { success: false, message: data.error || data.message || 'Erro desconhecido' };
+        }
+    } catch (error) {
+        console.error('[WuzAPI] ❌ Erro ao conectar:', error);
+        return { success: false, message: `Erro de conexão: ${error}` };
+    }
+};
+
+// =============================================
 // EXPORTS
 // =============================================
 
 export type { NotificationsConfig } from '../types';
 export { DEFAULT_TEMPLATES };
+
