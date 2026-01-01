@@ -291,43 +291,6 @@ export const queueNotifications = async (notifications: Array<{
     }
 };
 
-/**
- * Envia múltiplas notificações via Edge Function com processamento em background
- * RETORNA IMEDIATAMENTE - não precisa esperar os envios completarem
- * Isso permite que o cliente feche a página e as mensagens ainda serão enviadas
- */
-export const queueNotifications = async (notifications: Array<{
-    type: 'whatsapp';
-    phone: string;
-    message: string;
-}>): Promise<boolean> => {
-    if (!notifications || notifications.length === 0) {
-        return true;
-    }
-
-    try {
-        console.log(`[WhatsApp Queue] Enfileirando ${notifications.length} notificações...`);
-
-        // Fire-and-forget: não esperar resposta
-        supabase.functions.invoke('queue-notifications', {
-            body: { notifications }
-        }).then(({ data, error }) => {
-            if (error) {
-                console.error('[WhatsApp Queue] Erro:', error);
-            } else {
-                console.log('[WhatsApp Queue] ✅ Notificações enfileiradas:', data);
-            }
-        }).catch(err => {
-            console.error('[WhatsApp Queue] Erro de rede:', err);
-        });
-
-        // Retornar IMEDIATAMENTE
-        return true;
-    } catch (err) {
-        console.error('[WhatsApp Queue] Erro:', err);
-        return false;
-    }
-};
 
 /**
  * Envia mensagem para todos os telefones de admin
