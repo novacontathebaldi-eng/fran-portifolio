@@ -1,15 +1,9 @@
 // src/utils/whatsappService.ts
-// Serviço para enviar notificações via WhatsApp - CHAMADA DIRETA ao WuzAPI
+// Serviço para enviar notificações via WhatsApp usando Edge Function do Supabase
+// A Edge Function mantém o token seguro no servidor
 
 import { supabase } from '../supabaseClient';
 import { NotificationsConfig, defaultNotificationsConfig } from '../types';
-
-// =============================================
-// CONFIGURAÇÃO WUZAPI DIRETO
-// =============================================
-
-const WUZAPI_URL = 'http://54.232.81.168:8080';
-const WUZAPI_TOKEN = 'MeuWhatsToken2025';
 
 // =============================================
 // CONFIGURAÇÃO E CACHE
