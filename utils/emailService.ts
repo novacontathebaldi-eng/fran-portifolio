@@ -1,7 +1,7 @@
 // src/utils/emailService.ts
 
 import { supabase } from '../supabaseClient';
-import { getNotificationsConfig, clearNotificationsConfigCache } from './whatsappService';
+import { getNotificationsConfig, clearNotificationsConfigCache, queueNotifications } from './whatsappService';
 import {
   notifyWhatsAppBudget,
   notifyWhatsAppAppointment,
@@ -12,6 +12,7 @@ import {
   confirmContactToClient,
   confirmChatbotToClient
 } from './whatsappService';
+import { defaultNotificationsConfig } from '../types';
 
 // Delay helper para evitar sobrecarga do SQLite do WuzAPI
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

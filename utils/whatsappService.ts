@@ -247,6 +247,89 @@ const sendWhatsAppMessage = async (phone: string, message: string): Promise<bool
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
+ * Adiciona notificações à fila para processamento em background
+ * RETORNA IMEDIATAMENTE - não precisa esperar os envios completarem
+ * O pg_cron processa a fila a cada minuto, mas também chamamos process-queue imediatamente
+ */
+export const queueNotifications = async (notifications: Array<{
+    type: 'whatsapp';
+    phone: string;
+    message: string;
+}>): Promise<boolean> => {
+    if (!notifications || notifications.length === 0) {
+        return true;
+    }
+
+    try {
+        console.log(`[Queue] Adicionando ${notifications.length} notificações à fila...`);
+
+        // 1. Adicionar à fila (retorna rápido - só insere no banco)
+        const { data, error } = await supabase.functions.invoke('add-to-queue', {
+            body: { notifications }
+        });
+
+        if (error) {
+            console.error('[Queue] Erro ao adicionar:', error);
+            return false;
+        }
+
+        console.log('[Queue] ✅ Notificações adicionadas:', data);
+
+        // 2. Disparar processamento imediato (fire-and-forget)
+        supabase.functions.invoke('process-queue', {
+            body: {}
+        }).then(() => {
+            console.log('[Queue] Processamento iniciado em background');
+        }).catch(() => {
+            // Ignorar erros - pg_cron vai processar de qualquer forma
+        });
+
+        return true;
+    } catch (err) {
+        console.error('[Queue] Erro:', err);
+        return false;
+    }
+};
+
+/**
+ * Envia múltiplas notificações via Edge Function com processamento em background
+ * RETORNA IMEDIATAMENTE - não precisa esperar os envios completarem
+ * Isso permite que o cliente feche a página e as mensagens ainda serão enviadas
+ */
+export const queueNotifications = async (notifications: Array<{
+    type: 'whatsapp';
+    phone: string;
+    message: string;
+}>): Promise<boolean> => {
+    if (!notifications || notifications.length === 0) {
+        return true;
+    }
+
+    try {
+        console.log(`[WhatsApp Queue] Enfileirando ${notifications.length} notificações...`);
+
+        // Fire-and-forget: não esperar resposta
+        supabase.functions.invoke('queue-notifications', {
+            body: { notifications }
+        }).then(({ data, error }) => {
+            if (error) {
+                console.error('[WhatsApp Queue] Erro:', error);
+            } else {
+                console.log('[WhatsApp Queue] ✅ Notificações enfileiradas:', data);
+            }
+        }).catch(err => {
+            console.error('[WhatsApp Queue] Erro de rede:', err);
+        });
+
+        // Retornar IMEDIATAMENTE
+        return true;
+    } catch (err) {
+        console.error('[WhatsApp Queue] Erro:', err);
+        return false;
+    }
+};
+
+/**
  * Envia mensagem para todos os telefones de admin
  * Inclui delay de 1.5s entre cada envio para evitar travamento do SQLite do WuzAPI
  */
