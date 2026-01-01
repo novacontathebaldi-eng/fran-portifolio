@@ -1,8 +1,15 @@
 // src/utils/whatsappService.ts
-// Serviço para enviar notificações via WhatsApp usando Edge Function do Supabase
+// Serviço para enviar notificações via WhatsApp - CHAMADA DIRETA ao WuzAPI
 
 import { supabase } from '../supabaseClient';
 import { NotificationsConfig, defaultNotificationsConfig } from '../types';
+
+// =============================================
+// CONFIGURAÇÃO WUZAPI DIRETO
+// =============================================
+
+const WUZAPI_URL = 'http://54.232.81.168:8080';
+const WUZAPI_TOKEN = 'MeuWhatsToken2025';
 
 // =============================================
 // CONFIGURAÇÃO E CACHE
@@ -190,7 +197,8 @@ const normalizePhoneNumber = (phone: string): string => {
 };
 
 /**
- * Envia mensagem via Edge Function do Supabase
+ * Envia mensagem diretamente ao WuzAPI (sem passar pela Edge Function)
+ * Isso elimina a latência de 75-150 segundos causada pela rede entre Supabase e VPS
  */
 const sendWhatsAppMessage = async (phone: string, message: string): Promise<boolean> => {
     try {
@@ -203,14 +211,19 @@ const sendWhatsAppMessage = async (phone: string, message: string): Promise<bool
 
         console.log(`[WhatsApp] Enviando para: ${cleanPhone}`);
 
-        const { data, error } = await supabase.functions.invoke('send-whatsapp', {
-            body: { phone: cleanPhone, message }
+        const response = await fetch(`${WUZAPI_URL}/chat/send/text`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'token': WUZAPI_TOKEN,
+            },
+            body: JSON.stringify({
+                Phone: cleanPhone,
+                Body: message,
+            }),
         });
 
-        if (error) {
-            console.error('[WhatsApp] Edge Function error:', error);
-            return false;
-        }
+        const data = await response.json();
 
         if (!data?.success) {
             console.error('[WhatsApp] Falha:', data?.error);
