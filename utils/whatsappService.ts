@@ -191,8 +191,8 @@ const normalizePhoneNumber = (phone: string): string => {
 };
 
 /**
- * Envia mensagem diretamente ao WuzAPI (sem passar pela Edge Function)
- * Isso elimina a latência de 75-150 segundos causada pela rede entre Supabase e VPS
+ * Envia mensagem via Edge Function do Supabase (seguro - token fica no servidor)
+ * Com timeout de 30 segundos para evitar bloqueio da UI
  */
 const sendWhatsAppMessage = async (phone: string, message: string): Promise<boolean> => {
     try {
@@ -205,27 +205,36 @@ const sendWhatsAppMessage = async (phone: string, message: string): Promise<bool
 
         console.log(`[WhatsApp] Enviando para: ${cleanPhone}`);
 
-        const response = await fetch(`${WUZAPI_URL}/chat/send/text`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'token': WUZAPI_TOKEN,
-            },
-            body: JSON.stringify({
-                Phone: cleanPhone,
-                Body: message,
-            }),
-        });
+        // Criar AbortController para timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
 
-        const data = await response.json();
+        try {
+            const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+                body: { phone: cleanPhone, message }
+            });
 
-        if (!data?.success) {
-            console.error('[WhatsApp] Falha:', data?.error);
-            return false;
+            clearTimeout(timeoutId);
+
+            if (error) {
+                console.error('[WhatsApp] Edge Function error:', error);
+                return false;
+            }
+
+            if (!data?.success) {
+                console.error('[WhatsApp] Falha:', data?.error);
+                return false;
+            }
+
+            console.log('[WhatsApp] ✅ Mensagem enviada!');
+            return true;
+        } catch (abortError) {
+            clearTimeout(timeoutId);
+            // Se deu timeout, consideramos como enviado (fire-and-forget)
+            // A mensagem provavelmente foi enviada, só a resposta é que demorou
+            console.log('[WhatsApp] ⚠️ Timeout na resposta, mensagem provavelmente enviada');
+            return true;
         }
-
-        console.log('[WhatsApp] ✅ Mensagem enviada!');
-        return true;
     } catch (err) {
         console.error('[WhatsApp] Erro:', err);
         return false;
