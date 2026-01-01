@@ -249,7 +249,7 @@ export const DispatchesDashboard: React.FC = () => {
         targetDate.setDate(targetDate.getDate() + (config.whatsapp.reminders.daysInAdvance || 1));
         targetDate.setHours(0, 0, 0, 0);
         date.setHours(0, 0, 0, 0);
-        return date.getTime() === targetDate.getTime() && a.status === 'confirmed';
+        return date.getTime() === targetDate.getTime() && (a.status === 'confirmed' || a.status === 'pending');
     }).length;
 
     // Load config
@@ -378,11 +378,13 @@ export const DispatchesDashboard: React.FC = () => {
 
             if (error) throw error;
 
-            const sent = target === 'client' ? data.client?.sent : data.admin?.sent;
-            const failed = target === 'client' ? data.client?.failed : data.admin?.failed;
+            console.log('[Reminders] Response:', data);
+
+            const sent = data?.[target]?.sent ?? 0;
+            const failed = data?.[target]?.failed ?? 0;
 
             showToast(
-                `Lembretes ${target === 'client' ? 'para clientes' : 'para admins'}: ${sent} enviados, ${failed} falhas`,
+                `Lembretes ${target === 'client' ? 'para clientes' : 'para admins'}: ${sent} enviado(s), ${failed} falha(s)`,
                 sent > 0 ? 'success' : 'info'
             );
 
