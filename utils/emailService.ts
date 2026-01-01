@@ -252,23 +252,42 @@ export const notifyNewChatbotNote = async (data: {
 
   const html = getBaseTemplate('Novo Recado via Chatbot', '#8B5CF6', bodyContent);
 
-  return sendBrevoEmail({
+  // Enviar email (rápido)
+  const emailSent = await sendBrevoEmail({
     subject: emailSubject,
     htmlContent: html,
     tags: ['list_6', 'chatbot_note']
-  }).then(async emailSent => {
-    // Notificar admin via WhatsApp
-    await notifyWhatsAppChatbot(data).catch(e => console.error('[WhatsApp Admin] Erro:', e));
-    // Delay de 2s antes de enviar para cliente
-    if (data.phone) {
-      await delay(2000);
-      await confirmChatbotToClient({
-        clientName: data.userName,
-        clientPhone: data.phone
-      }).catch(e => console.error('[WhatsApp Cliente] Erro:', e));
-    }
-    return emailSent;
   });
+
+  // Preparar notificações WhatsApp para a fila
+  const config2 = await getNotificationsConfig();
+  const adminPhones = config2.whatsapp.adminPhones || [];
+
+  if (config2.whatsapp.enabled) {
+    const notifications: Array<{ type: 'whatsapp'; phone: string; message: string }> = [];
+
+    // Mensagem para admins
+    if (config2.whatsapp.notifyAdmin.enabled && config2.whatsapp.notifyAdmin.chatbot && adminPhones.length > 0) {
+      const adminMessage = `💬 *Novo Recado*\n\n👤 Nome: ${data.userName}\n✉️ Contato: ${data.userContact}${data.phone ? `\n📞 Tel: ${data.phone}` : ''}\n📝 Assunto: ${subjectText}\n\n💬 ${data.message.substring(0, 300)}${data.message.length > 300 ? '...' : ''}`;
+
+      for (const phone of adminPhones) {
+        notifications.push({ type: 'whatsapp', phone, message: adminMessage });
+      }
+    }
+
+    // Mensagem de confirmação para cliente
+    if (config2.whatsapp.notifyClient.enabled && data.phone) {
+      const clientMessage = `✅ *Olá ${data.userName}!*\n\nRecebemos seu recado e logo entraremos em contato!\n\nObrigada! 😊\n\n_Fran Siller Arquitetura_`;
+      notifications.push({ type: 'whatsapp', phone: data.phone, message: clientMessage });
+    }
+
+    // Adicionar à fila (retorna IMEDIATAMENTE)
+    if (notifications.length > 0) {
+      queueNotifications(notifications).catch(e => console.error('[Queue] Erro:', e));
+    }
+  }
+
+  return emailSent;
 };
 
 /**
