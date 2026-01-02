@@ -1,7 +1,7 @@
 // src/utils/emailService.ts
 
 import { supabase } from '../supabaseClient';
-import { getNotificationsConfig, clearNotificationsConfigCache, queueNotifications } from './whatsappService';
+import { getNotificationsConfig, clearNotificationsConfigCache, queueNotifications, DEFAULT_TEMPLATES, processTemplate as processWhatsAppTemplate } from './whatsappService';
 import {
   notifyWhatsAppBudget,
   notifyWhatsAppAppointment,
@@ -268,7 +268,11 @@ export const notifyNewChatbotNote = async (data: {
 
     // Mensagem para admins
     if (config2.whatsapp.notifyAdmin.enabled && config2.whatsapp.notifyAdmin.chatbot && adminPhones.length > 0) {
-      const adminMessage = `💬 *Novo Recado*\n\n👤 Nome: ${data.userName}\n✉️ Contato: ${data.userContact}${data.phone ? `\n📞 Tel: ${data.phone}` : ''}\n📝 Assunto: ${subjectText}\n\n💬 ${data.message.substring(0, 300)}${data.message.length > 300 ? '...' : ''}`;
+      // Usar template customizado se existir, senão usar padrão
+      const customTemplate = config2.whatsapp.templates.chatbotNoteAdmin;
+      const adminMessage = customTemplate
+        ? processWhatsAppTemplate(customTemplate, { nome: data.userName, email: data.userContact, telefone: data.phone || '', assunto: subjectText, mensagem: data.message.substring(0, 300) + (data.message.length > 300 ? '...' : '') })
+        : DEFAULT_TEMPLATES.chatbotNoteAdmin(data.userName, data.userContact, data.phone || '', subjectText, data.message);
 
       for (const phone of adminPhones) {
         notifications.push({ type: 'whatsapp', phone, message: adminMessage });
@@ -276,8 +280,13 @@ export const notifyNewChatbotNote = async (data: {
     }
 
     // Mensagem de confirmação para cliente
+    // Mensagem de confirmação para cliente
     if (config2.whatsapp.notifyClient.enabled && data.phone) {
-      const clientMessage = `✅ *Olá ${data.userName}!*\n\nRecebemos seu recado e logo entraremos em contato!\n\nObrigada! 😊\n\n_Fran Siller Arquitetura_`;
+      // Usar template customizado se existir, senão usar padrão
+      const customClientTemplate = config2.whatsapp.templates.chatbotConfirmationClient;
+      const clientMessage = customClientTemplate
+        ? processWhatsAppTemplate(customClientTemplate, { nome: data.userName })
+        : DEFAULT_TEMPLATES.chatbotConfirmationClient(data.userName);
       notifications.push({ type: 'whatsapp', phone: data.phone, message: clientMessage });
     }
 
@@ -332,7 +341,11 @@ export const notifyNewBudgetRequest = async (data: { clientName: string; city: s
 
     // Mensagem para admins
     if (config2.whatsapp.notifyAdmin.enabled && config2.whatsapp.notifyAdmin.budget && adminPhones.length > 0) {
-      const adminMessage = `💰 *Novo Orçamento*\n\n👤 Cliente: ${data.clientName}\n📍 Cidade: ${data.city}\n🔧 Serviços: ${services}\n\nAcesse o painel admin para ver detalhes.`;
+      // Usar template customizado se existir, senão usar padrão
+      const customTemplate = config2.whatsapp.templates.newBudgetAdmin;
+      const adminMessage = customTemplate
+        ? processWhatsAppTemplate(customTemplate, { nome: data.clientName, cidade: data.city, servicos: services })
+        : DEFAULT_TEMPLATES.newBudgetAdmin(data.clientName, data.city, services);
 
       for (const phone of adminPhones) {
         notifications.push({ type: 'whatsapp', phone, message: adminMessage });
@@ -341,7 +354,11 @@ export const notifyNewBudgetRequest = async (data: { clientName: string; city: s
 
     // Mensagem de confirmação para cliente
     if (config2.whatsapp.notifyClient.enabled && config2.whatsapp.notifyClient.budgetConfirmation && data.clientPhone) {
-      const clientMessage = `✅ *Olá ${data.clientName}!*\n\nRecebemos sua solicitação de orçamento para:\n🔧 ${services}\n\nNossa equipe analisará seu pedido e retornará em breve com todos os detalhes.\n\n_Fran Siller Arquitetura_`;
+      // Usar template customizado se existir, senão usar padrão
+      const customClientTemplate = config2.whatsapp.templates.budgetConfirmationClient;
+      const clientMessage = customClientTemplate
+        ? processWhatsAppTemplate(customClientTemplate, { nome: data.clientName, servicos: services })
+        : DEFAULT_TEMPLATES.budgetConfirmationClient(data.clientName, services);
       notifications.push({ type: 'whatsapp', phone: data.clientPhone, message: clientMessage });
     }
 
@@ -404,7 +421,11 @@ export const notifyNewAppointment = async (data: { clientName: string; date: str
 
     // Mensagem para admins
     if (config2.whatsapp.notifyAdmin.enabled && config2.whatsapp.notifyAdmin.appointment && adminPhones.length > 0) {
-      const adminMessage = `📅 *Novo Agendamento*\n\n👤 Cliente: ${data.clientName}\n📋 Tipo: ${typeLabel}\n📆 Data: ${formattedDate}\n⏰ Horário: ${data.time}\n\nStatus: Pendente`;
+      // Usar template customizado se existir, senão usar padrão
+      const customTemplate = config2.whatsapp.templates.newAppointmentAdmin;
+      const adminMessage = customTemplate
+        ? processWhatsAppTemplate(customTemplate, { nome: data.clientName, tipo: typeLabel, data: formattedDate, hora: data.time })
+        : DEFAULT_TEMPLATES.newAppointmentAdmin(data.clientName, typeLabel, formattedDate, data.time);
 
       for (const phone of adminPhones) {
         notifications.push({ type: 'whatsapp', phone, message: adminMessage });
@@ -413,7 +434,11 @@ export const notifyNewAppointment = async (data: { clientName: string; date: str
 
     // Mensagem de confirmação para cliente
     if (config2.whatsapp.notifyClient.enabled && config2.whatsapp.notifyClient.appointmentConfirmation && data.clientPhone) {
-      const clientMessage = `✅ *Olá ${data.clientName}!*\n\nSua solicitação de *${typeLabel}* foi recebida!\n\n📆 Data: ${formattedDate}\n⏰ Horário: ${data.time}\n\n⏳ Aguarde a confirmação da nossa equipe.\n\n_Fran Siller Arquitetura_`;
+      // Usar template customizado se existir, senão usar padrão
+      const customClientTemplate = config2.whatsapp.templates.appointmentConfirmationClient;
+      const clientMessage = customClientTemplate
+        ? processWhatsAppTemplate(customClientTemplate, { nome: data.clientName, tipo: typeLabel, data: formattedDate, hora: data.time })
+        : DEFAULT_TEMPLATES.appointmentConfirmationClient(data.clientName, typeLabel, formattedDate, data.time);
       notifications.push({ type: 'whatsapp', phone: data.clientPhone, message: clientMessage });
     }
 
@@ -480,8 +505,11 @@ export const notifyNewContactMessage = async (data: {
 
     // Mensagem para admins
     if (config2.whatsapp.notifyAdmin.enabled && config2.whatsapp.notifyAdmin.contact && adminPhones.length > 0) {
-      const phoneInfo = data.phone ? `\n📞 Tel: ${data.phone}` : '';
-      const adminMessage = `📬 *Nova Mensagem*\n\n👤 Nome: ${data.name}\n✉️ Email: ${data.email}${phoneInfo}\n📝 Assunto: ${data.subject}\n\n💬 ${data.message.substring(0, 300)}${data.message.length > 300 ? '...' : ''}`;
+      // Usar template customizado se existir, senão usar padrão
+      const customTemplate = config2.whatsapp.templates.newContactAdmin;
+      const adminMessage = customTemplate
+        ? processWhatsAppTemplate(customTemplate, { nome: data.name, email: data.email, telefone: data.phone || '', assunto: data.subject, mensagem: data.message.substring(0, 300) + (data.message.length > 300 ? '...' : '') })
+        : DEFAULT_TEMPLATES.newContactAdmin(data.name, data.email, data.phone || '', data.subject, data.message);
 
       for (const phone of adminPhones) {
         notifications.push({ type: 'whatsapp', phone, message: adminMessage });
@@ -490,7 +518,11 @@ export const notifyNewContactMessage = async (data: {
 
     // Mensagem de confirmação para cliente
     if (config2.whatsapp.notifyClient.enabled && data.phone) {
-      const clientMessage = `✅ *Olá ${data.name}!*\n\nRecebemos sua mensagem e retornaremos em breve.\n\nObrigada pelo contato!\n\n_Fran Siller Arquitetura_`;
+      // Usar template customizado se existir, senão usar padrão
+      const customClientTemplate = config2.whatsapp.templates.contactConfirmationClient;
+      const clientMessage = customClientTemplate
+        ? processWhatsAppTemplate(customClientTemplate, { nome: data.name })
+        : DEFAULT_TEMPLATES.contactConfirmationClient(data.name);
       notifications.push({ type: 'whatsapp', phone: data.phone, message: clientMessage });
     }
 

@@ -93,10 +93,10 @@ export const getWhatsAppConfig = getNotificationsConfig;
 export const clearWhatsAppConfigCache = clearNotificationsConfigCache;
 
 // =============================================
-// TEMPLATES PADRÃO
+// TEMPLATES PADRÃO (exportado para uso em outros módulos)
 // =============================================
 
-const DEFAULT_TEMPLATES = {
+export const DEFAULT_TEMPLATES = {
     // CLIENTE
     welcome: (name: string) => `🎉 *Bem-vindo(a), ${name}!*
 
@@ -152,8 +152,9 @@ _Fran Siller Arquitetura_`,
 
 /**
  * Processa template customizado substituindo variáveis
+ * Exportado para uso em outros módulos (emailService)
  */
-const processTemplate = (template: string, vars: Record<string, string>): string => {
+export const processTemplate = (template: string, vars: Record<string, string>): string => {
     let result = template;
     for (const [key, value] of Object.entries(vars)) {
         result = result.replace(new RegExp(`{{${key}}}`, 'g'), value);
@@ -698,5 +699,3 @@ export const restartWuzAPI = async (): Promise<{ success: boolean; message: stri
 // =============================================
 
 export type { NotificationsConfig } from '../types';
-export { DEFAULT_TEMPLATES };
-
