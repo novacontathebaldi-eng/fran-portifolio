@@ -132,6 +132,8 @@ interface WhatsAppTemplateEditorProps {
     value: string | null;
     defaultValue: string;
     onChange: (value: string | null) => void;
+    onSave?: () => Promise<void>; // Callback para salvar diretamente no banco
+    isSaving?: boolean; // Estado de salvamento
 }
 
 /**
@@ -172,7 +174,9 @@ const WhatsAppTemplateEditor: React.FC<WhatsAppTemplateEditorProps> = ({
     variables,
     value,
     defaultValue,
-    onChange
+    onChange,
+    onSave,
+    isSaving = false
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localValue, setLocalValue] = useState(value || defaultValue);
@@ -183,15 +187,24 @@ const WhatsAppTemplateEditor: React.FC<WhatsAppTemplateEditorProps> = ({
         setLocalValue(value || defaultValue);
     }, [value, defaultValue]);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         onChange(localValue === defaultValue ? null : localValue);
         setIsEditing(false);
+        // Salvar diretamente no banco se callback disponível
+        if (onSave) {
+            // Pequeno delay para garantir que o state foi atualizado antes de salvar
+            setTimeout(() => onSave(), 50);
+        }
     };
 
-    const handleRestore = () => {
+    const handleRestore = async () => {
         setLocalValue(defaultValue);
         onChange(null);
         setIsEditing(false);
+        // Salvar diretamente no banco se callback disponível
+        if (onSave) {
+            setTimeout(() => onSave(), 50);
+        }
     };
 
     const handleCancel = () => {
@@ -999,6 +1012,8 @@ export const DispatchesDashboard: React.FC = () => {
                                 value={config.whatsapp.templates.welcome}
                                 defaultValue={DEFAULT_TEMPLATES.welcome('{{nome}}')}
                                 onChange={(v) => updateWhatsApp('templates.welcome', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
                             />
                             <WhatsAppTemplateEditor
                                 templateKey="budgetConfirmationClient"
@@ -1008,6 +1023,8 @@ export const DispatchesDashboard: React.FC = () => {
                                 value={config.whatsapp.templates.budgetConfirmationClient}
                                 defaultValue={DEFAULT_TEMPLATES.budgetConfirmationClient('{{nome}}', '{{servicos}}')}
                                 onChange={(v) => updateWhatsApp('templates.budgetConfirmationClient', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
                             />
                             <WhatsAppTemplateEditor
                                 templateKey="appointmentConfirmationClient"
@@ -1017,6 +1034,8 @@ export const DispatchesDashboard: React.FC = () => {
                                 value={config.whatsapp.templates.appointmentConfirmationClient}
                                 defaultValue={DEFAULT_TEMPLATES.appointmentConfirmationClient('{{nome}}', '{{tipo}}', '{{data}}', '{{hora}}')}
                                 onChange={(v) => updateWhatsApp('templates.appointmentConfirmationClient', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
                             />
                             <WhatsAppTemplateEditor
                                 templateKey="contactConfirmationClient"
@@ -1026,6 +1045,8 @@ export const DispatchesDashboard: React.FC = () => {
                                 value={config.whatsapp.templates.contactConfirmationClient}
                                 defaultValue={DEFAULT_TEMPLATES.contactConfirmationClient('{{nome}}')}
                                 onChange={(v) => updateWhatsApp('templates.contactConfirmationClient', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
                             />
                             <WhatsAppTemplateEditor
                                 templateKey="reminderClient"
@@ -1035,6 +1056,8 @@ export const DispatchesDashboard: React.FC = () => {
                                 value={config.whatsapp.templates.reminderClient}
                                 defaultValue={DEFAULT_TEMPLATES.reminderClient('{{nome}}', '{{tipo}}', '{{data}}', '{{hora}}')}
                                 onChange={(v) => updateWhatsApp('templates.reminderClient', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
                             />
                         </>
                     )}
@@ -1049,6 +1072,8 @@ export const DispatchesDashboard: React.FC = () => {
                                 value={config.whatsapp.templates.newBudgetAdmin}
                                 defaultValue={DEFAULT_TEMPLATES.newBudgetAdmin('{{nome}}', '{{cidade}}', '{{servicos}}')}
                                 onChange={(v) => updateWhatsApp('templates.newBudgetAdmin', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
                             />
                             <WhatsAppTemplateEditor
                                 templateKey="newAppointmentAdmin"
@@ -1058,6 +1083,8 @@ export const DispatchesDashboard: React.FC = () => {
                                 value={config.whatsapp.templates.newAppointmentAdmin}
                                 defaultValue={DEFAULT_TEMPLATES.newAppointmentAdmin('{{nome}}', '{{tipo}}', '{{data}}', '{{hora}}')}
                                 onChange={(v) => updateWhatsApp('templates.newAppointmentAdmin', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
                             />
                             <WhatsAppTemplateEditor
                                 templateKey="newContactAdmin"
@@ -1067,6 +1094,8 @@ export const DispatchesDashboard: React.FC = () => {
                                 value={config.whatsapp.templates.newContactAdmin}
                                 defaultValue={DEFAULT_TEMPLATES.newContactAdmin('{{nome}}', '{{email}}', '{{telefone}}', '{{assunto}}', '{{mensagem}}')}
                                 onChange={(v) => updateWhatsApp('templates.newContactAdmin', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
                             />
                             <WhatsAppTemplateEditor
                                 templateKey="chatbotNoteAdmin"
@@ -1076,6 +1105,8 @@ export const DispatchesDashboard: React.FC = () => {
                                 value={config.whatsapp.templates.chatbotNoteAdmin}
                                 defaultValue={DEFAULT_TEMPLATES.chatbotNoteAdmin('{{nome}}', '{{email}}', '{{telefone}}', '{{assunto}}', '{{mensagem}}')}
                                 onChange={(v) => updateWhatsApp('templates.chatbotNoteAdmin', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
                             />
                             <WhatsAppTemplateEditor
                                 templateKey="reminderAdmin"
@@ -1085,6 +1116,8 @@ export const DispatchesDashboard: React.FC = () => {
                                 value={config.whatsapp.templates.reminderAdmin}
                                 defaultValue={DEFAULT_TEMPLATES.reminderAdmin('{{nome}}', '{{tipo}}', '{{data}}', '{{hora}}')}
                                 onChange={(v) => updateWhatsApp('templates.reminderAdmin', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
                             />
                         </>
                     )}
