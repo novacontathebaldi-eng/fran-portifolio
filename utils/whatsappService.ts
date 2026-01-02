@@ -130,11 +130,17 @@ _Fran Siller Arquitetura_`,
         `📅 *Lembrete de ${type}*\n\nOlá ${name}!\n\nLembramos que você tem um(a) *${type}* agendado(a) para:\n\n📆 Data: ${date}\n⏰ Horário: ${time}\n\nEm caso de dúvidas ou necessidade de reagendamento, entre em contato conosco.\n\n_Fran Siller Arquitetura_`,
 
     // ADMIN
-    newBudgetAdmin: (name: string, city: string, services: string) =>
-        `💰 *Novo Orçamento*\n\n👤 Cliente: ${name}\n📍 Cidade: ${city}\n🔧 Serviços: ${services}\n\nAcesse o painel admin para ver detalhes.`,
+    newBudgetAdmin: (name: string, city: string, services: string, email?: string, phone?: string) => {
+        const emailInfo = email ? `\n✉️ Email: ${email}` : '';
+        const phoneInfo = phone ? `\n📞 Tel./WhatsApp: ${phone}` : '';
+        return `💰 *Novo Orçamento*\n\n👤 Cliente: ${name}${emailInfo}${phoneInfo}\n📍 Cidade: ${city}\n🔧 Serviços: ${services}\n\nAcesse o painel admin para ver detalhes.`;
+    },
 
-    newAppointmentAdmin: (name: string, type: string, date: string, time: string) =>
-        `📅 *Novo Agendamento*\n\n👤 Cliente: ${name}\n📋 Tipo: ${type}\n📆 Data: ${date}\n⏰ Horário: ${time}\n\nStatus: Pendente`,
+    newAppointmentAdmin: (name: string, type: string, date: string, time: string, email?: string, phone?: string) => {
+        const emailInfo = email ? `\n✉️ Email: ${email}` : '';
+        const phoneInfo = phone ? `\n📞 Tel./WhatsApp: ${phone}` : '';
+        return `📅 *Novo Agendamento*\n\n👤 Cliente: ${name}${emailInfo}${phoneInfo}\n📋 Tipo: ${type}\n📆 Data: ${date}\n⏰ Horário: ${time}\n\nStatus: Pendente`;
+    },
 
     newContactAdmin: (name: string, email: string, phone: string, subject: string, message: string) => {
         const phoneInfo = phone ? `\n📞 Tel: ${phone}` : '';
@@ -146,8 +152,11 @@ _Fran Siller Arquitetura_`,
         return `💬 *Novo Recado*\n\n👤 Nome: ${name}\n✉️ Contato: ${contact}${phoneInfo}\n📝 Assunto: ${subject}\n\n💬 ${message.substring(0, 300)}${message.length > 300 ? '...' : ''}`;
     },
 
-    reminderAdmin: (name: string, type: string, date: string, time: string) =>
-        `🔔 *Lembrete de ${type}*\n\nVocê tem um(a) ${type} agendado(a):\n\n👤 Cliente: ${name}\n📆 Data: ${date}\n⏰ Horário: ${time}`,
+    reminderAdmin: (name: string, type: string, date: string, time: string, email?: string, phone?: string) => {
+        const emailInfo = email ? `\n✉️ Email: ${email}` : '';
+        const phoneInfo = phone ? `\n📞 Tel./WhatsApp: ${phone}` : '';
+        return `🔔 *Lembrete de ${type}*\n\nVocê tem um(a) ${type} agendado(a):\n\n👤 Cliente: ${name}${emailInfo}${phoneInfo}\n📆 Data: ${date}\n⏰ Horário: ${time}`;
+    },
 };
 
 /**

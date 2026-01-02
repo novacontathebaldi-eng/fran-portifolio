@@ -302,7 +302,7 @@ export const notifyNewChatbotNote = async (data: {
 /**
  * Notificar novo orçamento
  */
-export const notifyNewBudgetRequest = async (data: { clientName: string; city: string; services: string[]; clientPhone?: string }) => {
+export const notifyNewBudgetRequest = async (data: { clientName: string; city: string; services: string[]; clientPhone?: string; clientEmail?: string }) => {
   const config = await getNotificationsConfig();
   const services = data.services.join(', ');
 
@@ -344,8 +344,8 @@ export const notifyNewBudgetRequest = async (data: { clientName: string; city: s
       // Usar template customizado se existir, senão usar padrão
       const customTemplate = config2.whatsapp.templates.newBudgetAdmin;
       const adminMessage = customTemplate
-        ? processWhatsAppTemplate(customTemplate, { nome: data.clientName, cidade: data.city, servicos: services })
-        : DEFAULT_TEMPLATES.newBudgetAdmin(data.clientName, data.city, services);
+        ? processWhatsAppTemplate(customTemplate, { nome: data.clientName, cidade: data.city, servicos: services, email: data.clientEmail || '', telefone: data.clientPhone || '' })
+        : DEFAULT_TEMPLATES.newBudgetAdmin(data.clientName, data.city, services, data.clientEmail || '', data.clientPhone || '');
 
       for (const phone of adminPhones) {
         notifications.push({ type: 'whatsapp', phone, message: adminMessage });
@@ -374,7 +374,7 @@ export const notifyNewBudgetRequest = async (data: { clientName: string; city: s
 /**
  * Notificar novo agendamento
  */
-export const notifyNewAppointment = async (data: { clientName: string; date: string; time: string; type: string; clientPhone?: string }) => {
+export const notifyNewAppointment = async (data: { clientName: string; date: string; time: string; type: string; clientPhone?: string; clientEmail?: string }) => {
   const config = await getNotificationsConfig();
   const typeLabel = data.type === 'visit' ? 'Visita Técnica' : 'Reunião';
   const dateTime = `${new Date(data.date + 'T00:00:00').toLocaleDateString('pt-BR')} às ${data.time}`;
@@ -424,8 +424,8 @@ export const notifyNewAppointment = async (data: { clientName: string; date: str
       // Usar template customizado se existir, senão usar padrão
       const customTemplate = config2.whatsapp.templates.newAppointmentAdmin;
       const adminMessage = customTemplate
-        ? processWhatsAppTemplate(customTemplate, { nome: data.clientName, tipo: typeLabel, data: formattedDate, hora: data.time })
-        : DEFAULT_TEMPLATES.newAppointmentAdmin(data.clientName, typeLabel, formattedDate, data.time);
+        ? processWhatsAppTemplate(customTemplate, { nome: data.clientName, tipo: typeLabel, data: formattedDate, hora: data.time, email: data.clientEmail || '', telefone: data.clientPhone || '' })
+        : DEFAULT_TEMPLATES.newAppointmentAdmin(data.clientName, typeLabel, formattedDate, data.time, data.clientEmail || '', data.clientPhone || '');
 
       for (const phone of adminPhones) {
         notifications.push({ type: 'whatsapp', phone, message: adminMessage });

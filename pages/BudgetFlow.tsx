@@ -161,7 +161,8 @@ export const BudgetFlow: React.FC = () => {
         clientName: formData.clientName,
         city: `${formData.projectCity}/${formData.projectState}`,
         services: serviceNames,
-        clientPhone: formData.clientPhone
+        clientPhone: formData.clientPhone,
+        clientEmail: formData.clientEmail
       }).catch(err => console.error('[Brevo] Erro ao enviar email de orçamento:', err));
 
       setSubmitted(true);

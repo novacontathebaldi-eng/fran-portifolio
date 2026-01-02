@@ -1068,9 +1068,9 @@ export const DispatchesDashboard: React.FC = () => {
                                 templateKey="newBudgetAdmin"
                                 label="Novo Orçamento"
                                 description="Notificação de novo orçamento para admin"
-                                variables={['nome', 'cidade', 'servicos']}
+                                variables={['nome', 'email', 'telefone', 'cidade', 'servicos']}
                                 value={config.whatsapp.templates.newBudgetAdmin}
-                                defaultValue={DEFAULT_TEMPLATES.newBudgetAdmin('{{nome}}', '{{cidade}}', '{{servicos}}')}
+                                defaultValue={DEFAULT_TEMPLATES.newBudgetAdmin('{{nome}}', '{{cidade}}', '{{servicos}}', '{{email}}', '{{telefone}}')}
                                 onChange={(v) => updateWhatsApp('templates.newBudgetAdmin', v)}
                                 onSave={saveConfig}
                                 isSaving={saving}
@@ -1079,9 +1079,9 @@ export const DispatchesDashboard: React.FC = () => {
                                 templateKey="newAppointmentAdmin"
                                 label="Novo Agendamento"
                                 description="Notificação de novo agendamento para admin"
-                                variables={['nome', 'tipo', 'data', 'hora']}
+                                variables={['nome', 'email', 'telefone', 'tipo', 'data', 'hora']}
                                 value={config.whatsapp.templates.newAppointmentAdmin}
-                                defaultValue={DEFAULT_TEMPLATES.newAppointmentAdmin('{{nome}}', '{{tipo}}', '{{data}}', '{{hora}}')}
+                                defaultValue={DEFAULT_TEMPLATES.newAppointmentAdmin('{{nome}}', '{{tipo}}', '{{data}}', '{{hora}}', '{{email}}', '{{telefone}}')}
                                 onChange={(v) => updateWhatsApp('templates.newAppointmentAdmin', v)}
                                 onSave={saveConfig}
                                 isSaving={saving}
@@ -1112,9 +1112,9 @@ export const DispatchesDashboard: React.FC = () => {
                                 templateKey="reminderAdmin"
                                 label="Lembrete de Reunião"
                                 description="Lembrete enviado ao admin antes da reunião"
-                                variables={['nome', 'tipo', 'data', 'hora']}
+                                variables={['nome', 'email', 'telefone', 'tipo', 'data', 'hora']}
                                 value={config.whatsapp.templates.reminderAdmin}
-                                defaultValue={DEFAULT_TEMPLATES.reminderAdmin('{{nome}}', '{{tipo}}', '{{data}}', '{{hora}}')}
+                                defaultValue={DEFAULT_TEMPLATES.reminderAdmin('{{nome}}', '{{tipo}}', '{{data}}', '{{hora}}', '{{email}}', '{{telefone}}')}
                                 onChange={(v) => updateWhatsApp('templates.reminderAdmin', v)}
                                 onSave={saveConfig}
                                 isSaving={saving}
