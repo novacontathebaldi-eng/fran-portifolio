@@ -249,7 +249,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
  * URL do proxy NGINX na VPS que repassa para o WuzAPI
  * Isso elimina a latência das Edge Functions
  */
-const WUZAPI_PROXY_URL = 'http://54.232.81.168/api/whatsapp';
+const WUZAPI_PROXY_URL = 'https://api.fransiller.othebaldi.me';
 const WUZAPI_TOKEN = 'MeuWhatsToken2025';
 
 /**
