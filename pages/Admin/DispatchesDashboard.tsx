@@ -6,7 +6,8 @@ import {
     MessageSquare, Mail, Send, Phone, Plus, Trash2, TestTube,
     ToggleLeft, ToggleRight, Clock, Bell, User, Users, Settings,
     ChevronDown, ChevronRight, RefreshCw, Loader2, Check, X,
-    FileText, Save, RotateCcw, History, AlertCircle, Power
+    FileText, Save, RotateCcw, History, AlertCircle, Power,
+    Bold, Italic, Strikethrough, Code, Eye
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useProjects } from '../../context/ProjectContext';
@@ -120,10 +121,10 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 };
 
 // ============================================================================
-// TEMPLATE EDITOR
+// WHATSAPP TEMPLATE EDITOR - Com Preview e Formatação
 // ============================================================================
 
-interface TemplateEditorProps {
+interface WhatsAppTemplateEditorProps {
     templateKey: string;
     label: string;
     description: string;
@@ -133,7 +134,38 @@ interface TemplateEditorProps {
     onChange: (value: string | null) => void;
 }
 
-const TemplateEditor: React.FC<TemplateEditorProps> = ({
+/**
+ * Converte formatação WhatsApp para HTML para preview
+ * *texto* → <strong>texto</strong>
+ * _texto_ → <em>texto</em>
+ * ~texto~ → <s>texto</s>
+ * `texto` → <code>texto</code>
+ */
+const whatsappToHtml = (text: string): string => {
+    if (!text) return '';
+
+    let result = text
+        // Escape HTML primeiro
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        // Negrito: *texto*
+        .replace(/\*([^*]+)\*/g, '<strong class="font-bold">$1</strong>')
+        // Itálico: _texto_
+        .replace(/_([^_]+)_/g, '<em class="italic">$1</em>')
+        // Tachado: ~texto~
+        .replace(/~([^~]+)~/g, '<s class="line-through">$1</s>')
+        // Monoespaçado: `texto`
+        .replace(/`([^`]+)`/g, '<code class="bg-gray-200 px-1 rounded font-mono text-sm">$1</code>')
+        // Variáveis: {{nome}}
+        .replace(/\{\{([^}]+)\}\}/g, '<span class="bg-amber-100 text-amber-800 px-1 rounded text-xs font-mono">{{$1}}</span>')
+        // Quebras de linha
+        .replace(/\n/g, '<br/>');
+
+    return result;
+};
+
+const WhatsAppTemplateEditor: React.FC<WhatsAppTemplateEditorProps> = ({
     templateKey,
     label,
     description,
@@ -144,6 +176,12 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localValue, setLocalValue] = useState(value || defaultValue);
+    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+    // Sincronizar localValue quando value muda externamente
+    React.useEffect(() => {
+        setLocalValue(value || defaultValue);
+    }, [value, defaultValue]);
 
     const handleSave = () => {
         onChange(localValue === defaultValue ? null : localValue);
@@ -156,9 +194,76 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
         setIsEditing(false);
     };
 
+    const handleCancel = () => {
+        setLocalValue(value || defaultValue);
+        setIsEditing(false);
+    };
+
+    // Inserir variável na posição do cursor
+    const insertVariable = (varName: string) => {
+        const textarea = textareaRef.current;
+        if (!textarea) {
+            setLocalValue(prev => prev + `{{${varName}}}`);
+            return;
+        }
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = localValue;
+        const insertion = `{{${varName}}}`;
+
+        setLocalValue(text.substring(0, start) + insertion + text.substring(end));
+
+        // Reposicionar cursor após inserção
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + insertion.length, start + insertion.length);
+        }, 0);
+    };
+
+    // Aplicar formatação ao texto selecionado
+    const applyFormat = (prefix: string, suffix: string) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = localValue;
+        const selectedText = text.substring(start, end);
+
+        if (selectedText) {
+            // Texto selecionado - envolver com formatação
+            const newText = text.substring(0, start) + prefix + selectedText + suffix + text.substring(end);
+            setLocalValue(newText);
+
+            // Reposicionar cursor
+            setTimeout(() => {
+                textarea.focus();
+                textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+            }, 0);
+        } else {
+            // Sem seleção - inserir marcadores e posicionar cursor entre eles
+            const newText = text.substring(0, start) + prefix + suffix + text.substring(end);
+            setLocalValue(newText);
+
+            setTimeout(() => {
+                textarea.focus();
+                textarea.setSelectionRange(start + prefix.length, start + prefix.length);
+            }, 0);
+        }
+    };
+
+    const formatButtons = [
+        { icon: Bold, label: 'Negrito', prefix: '*', suffix: '*', title: 'Negrito (*texto*)' },
+        { icon: Italic, label: 'Itálico', prefix: '_', suffix: '_', title: 'Itálico (_texto_)' },
+        { icon: Strikethrough, label: 'Tachado', prefix: '~', suffix: '~', title: 'Tachado (~texto~)' },
+        { icon: Code, label: 'Código', prefix: '`', suffix: '`', title: 'Monoespaçado (`texto`)' },
+    ];
+
     return (
-        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-            <div className="flex items-center justify-between mb-2">
+        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200">
                 <div>
                     <h4 className="font-medium text-gray-900">{label}</h4>
                     <p className="text-xs text-gray-500">{description}</p>
@@ -170,7 +275,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                         </span>
                     )}
                     <button
-                        onClick={() => setIsEditing(!isEditing)}
+                        onClick={() => isEditing ? handleCancel() : setIsEditing(true)}
                         className="text-sm text-accent hover:underline"
                     >
                         {isEditing ? 'Cancelar' : 'Editar'}
@@ -179,45 +284,98 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
             </div>
 
             {isEditing ? (
-                <div className="space-y-3">
-                    <div className="flex flex-wrap gap-1">
-                        <span className="text-xs text-gray-500">Variáveis:</span>
-                        {variables.map(v => (
-                            <button
-                                key={v}
-                                onClick={() => setLocalValue(prev => prev + `{{${v}}}`)}
-                                className="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-0.5 rounded font-mono"
-                            >
-                                {`{{${v}}}`}
-                            </button>
-                        ))}
+                <div className="p-4 space-y-3">
+                    {/* Toolbar */}
+                    <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-gray-200">
+                        {/* Format Buttons */}
+                        <div className="flex items-center gap-1 pr-3 border-r border-gray-300">
+                            {formatButtons.map(({ icon: Icon, label, prefix, suffix, title }) => (
+                                <button
+                                    key={label}
+                                    type="button"
+                                    onClick={() => applyFormat(prefix, suffix)}
+                                    title={title}
+                                    className="p-1.5 rounded hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition-colors"
+                                >
+                                    <Icon className="w-4 h-4" />
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Variables */}
+                        <div className="flex flex-wrap items-center gap-1">
+                            <span className="text-xs text-gray-500 mr-1">Variáveis:</span>
+                            {variables.map(v => (
+                                <button
+                                    key={v}
+                                    type="button"
+                                    onClick={() => insertVariable(v)}
+                                    className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-2 py-0.5 rounded font-mono transition-colors"
+                                >
+                                    {`{{${v}}}`}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                    <textarea
-                        value={localValue}
-                        onChange={(e) => setLocalValue(e.target.value)}
-                        rows={6}
-                        className="w-full p-3 border border-gray-300 rounded-lg text-sm font-mono resize-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                    />
-                    <div className="flex justify-end gap-2">
+
+                    {/* Editor Area - Split View */}
+                    <div className="grid md:grid-cols-2 gap-4">
+                        {/* Textarea (Raw) */}
+                        <div>
+                            <div className="flex items-center gap-1 mb-1.5 text-xs text-gray-500">
+                                <FileText className="w-3 h-3" />
+                                <span>Código</span>
+                            </div>
+                            <textarea
+                                ref={textareaRef}
+                                value={localValue}
+                                onChange={(e) => setLocalValue(e.target.value)}
+                                rows={8}
+                                className="w-full p-3 border border-gray-300 rounded-lg text-sm font-mono resize-none focus:ring-2 focus:ring-accent focus:border-transparent bg-gray-50"
+                                placeholder="Digite o template aqui..."
+                            />
+                        </div>
+
+                        {/* Preview (Formatted) */}
+                        <div>
+                            <div className="flex items-center gap-1 mb-1.5 text-xs text-gray-500">
+                                <Eye className="w-3 h-3" />
+                                <span>Preview</span>
+                            </div>
+                            <div
+                                className="w-full h-[208px] p-3 border border-gray-300 rounded-lg text-sm overflow-y-auto bg-white"
+                                dangerouslySetInnerHTML={{ __html: whatsappToHtml(localValue) }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
                         <button
+                            type="button"
                             onClick={handleRestore}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900"
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
                         >
                             <RotateCcw className="w-4 h-4" />
                             Restaurar Padrão
                         </button>
                         <button
+                            type="button"
                             onClick={handleSave}
-                            className="flex items-center gap-1 px-4 py-1.5 bg-accent text-black rounded-lg text-sm font-medium hover:bg-accent/90"
+                            className="flex items-center gap-1 px-4 py-1.5 bg-accent text-black rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors"
                         >
                             <Save className="w-4 h-4" />
-                            Salvar
+                            Salvar Template
                         </button>
                     </div>
                 </div>
             ) : (
-                <div className="text-sm text-gray-600 whitespace-pre-wrap bg-white p-3 rounded border border-gray-200 max-h-32 overflow-y-auto font-mono">
-                    {value || defaultValue}
+                /* Preview Mode (Collapsed) */
+                <div className="p-4">
+                    <div
+                        className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded border border-gray-200 max-h-32 overflow-y-auto"
+                        dangerouslySetInnerHTML={{ __html: whatsappToHtml(value || defaultValue) }}
+                    />
                 </div>
             )}
         </div>
@@ -477,10 +635,11 @@ export const DispatchesDashboard: React.FC = () => {
         showToast('Histórico limpo', 'info');
     };
 
-    // Update config helpers
+    // Update config helpers - usando deep copy para garantir imutabilidade
     const updateWhatsApp = (path: string, value: any) => {
         setConfig(prev => {
-            const newConfig = { ...prev };
+            // Deep copy para garantir que React detecte mudanças em objetos aninhados
+            const newConfig = JSON.parse(JSON.stringify(prev)) as typeof prev;
             const parts = path.split('.');
             let obj: any = newConfig.whatsapp;
             for (let i = 0; i < parts.length - 1; i++) {
@@ -493,7 +652,8 @@ export const DispatchesDashboard: React.FC = () => {
 
     const updateEmail = (path: string, value: any) => {
         setConfig(prev => {
-            const newConfig = { ...prev };
+            // Deep copy para garantir que React detecte mudanças em objetos aninhados
+            const newConfig = JSON.parse(JSON.stringify(prev)) as typeof prev;
             const parts = path.split('.');
             let obj: any = newConfig.email;
             for (let i = 0; i < parts.length - 1; i++) {
@@ -831,7 +991,7 @@ export const DispatchesDashboard: React.FC = () => {
                 <div className="space-y-4">
                     {activeTemplateTab === 'whatsapp-client' && (
                         <>
-                            <TemplateEditor
+                            <WhatsAppTemplateEditor
                                 templateKey="welcome"
                                 label="Boas-vindas"
                                 description="Mensagem enviada ao criar conta"
@@ -840,7 +1000,7 @@ export const DispatchesDashboard: React.FC = () => {
                                 defaultValue={DEFAULT_TEMPLATES.welcome('{{nome}}')}
                                 onChange={(v) => updateWhatsApp('templates.welcome', v)}
                             />
-                            <TemplateEditor
+                            <WhatsAppTemplateEditor
                                 templateKey="budgetConfirmationClient"
                                 label="Confirmação de Orçamento"
                                 description="Confirmação enviada ao cliente após solicitar orçamento"
@@ -849,7 +1009,7 @@ export const DispatchesDashboard: React.FC = () => {
                                 defaultValue={DEFAULT_TEMPLATES.budgetConfirmationClient('{{nome}}', '{{servicos}}')}
                                 onChange={(v) => updateWhatsApp('templates.budgetConfirmationClient', v)}
                             />
-                            <TemplateEditor
+                            <WhatsAppTemplateEditor
                                 templateKey="appointmentConfirmationClient"
                                 label="Confirmação de Agendamento"
                                 description="Confirmação enviada ao cliente após agendar reunião"
@@ -858,7 +1018,7 @@ export const DispatchesDashboard: React.FC = () => {
                                 defaultValue={DEFAULT_TEMPLATES.appointmentConfirmationClient('{{nome}}', '{{tipo}}', '{{data}}', '{{hora}}')}
                                 onChange={(v) => updateWhatsApp('templates.appointmentConfirmationClient', v)}
                             />
-                            <TemplateEditor
+                            <WhatsAppTemplateEditor
                                 templateKey="contactConfirmationClient"
                                 label="Confirmação de Contato"
                                 description="Confirmação enviada ao cliente após enviar formulário"
@@ -867,7 +1027,7 @@ export const DispatchesDashboard: React.FC = () => {
                                 defaultValue={DEFAULT_TEMPLATES.contactConfirmationClient('{{nome}}')}
                                 onChange={(v) => updateWhatsApp('templates.contactConfirmationClient', v)}
                             />
-                            <TemplateEditor
+                            <WhatsAppTemplateEditor
                                 templateKey="reminderClient"
                                 label="Lembrete de Reunião"
                                 description="Lembrete enviado ao cliente antes da reunião"
@@ -881,7 +1041,7 @@ export const DispatchesDashboard: React.FC = () => {
 
                     {activeTemplateTab === 'whatsapp-admin' && (
                         <>
-                            <TemplateEditor
+                            <WhatsAppTemplateEditor
                                 templateKey="newBudgetAdmin"
                                 label="Novo Orçamento"
                                 description="Notificação de novo orçamento para admin"
@@ -890,7 +1050,7 @@ export const DispatchesDashboard: React.FC = () => {
                                 defaultValue={DEFAULT_TEMPLATES.newBudgetAdmin('{{nome}}', '{{cidade}}', '{{servicos}}')}
                                 onChange={(v) => updateWhatsApp('templates.newBudgetAdmin', v)}
                             />
-                            <TemplateEditor
+                            <WhatsAppTemplateEditor
                                 templateKey="newAppointmentAdmin"
                                 label="Novo Agendamento"
                                 description="Notificação de novo agendamento para admin"
@@ -899,7 +1059,7 @@ export const DispatchesDashboard: React.FC = () => {
                                 defaultValue={DEFAULT_TEMPLATES.newAppointmentAdmin('{{nome}}', '{{tipo}}', '{{data}}', '{{hora}}')}
                                 onChange={(v) => updateWhatsApp('templates.newAppointmentAdmin', v)}
                             />
-                            <TemplateEditor
+                            <WhatsAppTemplateEditor
                                 templateKey="newContactAdmin"
                                 label="Novo Contato"
                                 description="Notificação de nova mensagem de contato"
@@ -908,7 +1068,7 @@ export const DispatchesDashboard: React.FC = () => {
                                 defaultValue={DEFAULT_TEMPLATES.newContactAdmin('{{nome}}', '{{email}}', '{{telefone}}', '{{assunto}}', '{{mensagem}}')}
                                 onChange={(v) => updateWhatsApp('templates.newContactAdmin', v)}
                             />
-                            <TemplateEditor
+                            <WhatsAppTemplateEditor
                                 templateKey="chatbotNoteAdmin"
                                 label="Recado do Chatbot"
                                 description="Notificação de recado capturado pelo chatbot"
@@ -917,7 +1077,7 @@ export const DispatchesDashboard: React.FC = () => {
                                 defaultValue={DEFAULT_TEMPLATES.chatbotNoteAdmin('{{nome}}', '{{email}}', '{{telefone}}', '{{assunto}}', '{{mensagem}}')}
                                 onChange={(v) => updateWhatsApp('templates.chatbotNoteAdmin', v)}
                             />
-                            <TemplateEditor
+                            <WhatsAppTemplateEditor
                                 templateKey="reminderAdmin"
                                 label="Lembrete de Reunião"
                                 description="Lembrete enviado ao admin antes da reunião"
