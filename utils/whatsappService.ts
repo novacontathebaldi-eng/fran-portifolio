@@ -260,6 +260,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 /**
  * Envia notificações via Edge Function do Supabase (SEGURO)
  * O token WUZAPI fica no servidor, nunca exposto ao cliente
+ * Usa fire-and-forget para não bloquear a UI
  */
 export const queueNotifications = async (notifications: Array<{
     type: 'whatsapp';
@@ -272,28 +273,34 @@ export const queueNotifications = async (notifications: Array<{
 
     console.log(`[WhatsApp] Enviando ${notifications.length} mensagens via Edge Function...`);
 
-    try {
-        // Usar Edge Function add-to-queue para adicionar à fila
-        // O processo-queue (cron) ou envio direto via send-whatsapp fará o envio real
-        const { error } = await supabase.functions.invoke('add-to-queue', {
-            body: { notifications }
-        });
+    // Fire-and-forget: processa em background para não bloquear a UI
+    const sendAll = async () => {
+        for (let i = 0; i < notifications.length; i++) {
+            const notif = notifications[i];
 
-        if (error) {
-            console.error('[WhatsApp] Erro ao adicionar à fila:', error);
-            // Fallback: enviar diretamente via send-whatsapp
-            for (const notif of notifications) {
-                await sendWhatsAppMessage(notif.phone, notif.message);
+            // Delay entre envios (exceto no primeiro) para evitar sobrecarga do WuzAPI
+            if (i > 0) {
+                await delay(1500);
             }
-        } else {
-            console.log('[WhatsApp] ✅ Mensagens adicionadas à fila para processamento');
-        }
 
-        return true;
-    } catch (err) {
-        console.error('[WhatsApp] Erro:', err);
-        return false;
-    }
+            try {
+                const success = await sendWhatsAppMessage(notif.phone, notif.message);
+                if (success) {
+                    console.log(`[WhatsApp] ✅ Enviado para ${notif.phone}`);
+                } else {
+                    console.error(`[WhatsApp] ❌ Falha para ${notif.phone}`);
+                }
+            } catch (err) {
+                console.error(`[WhatsApp] Erro para ${notif.phone}:`, err);
+            }
+        }
+        console.log('[WhatsApp] ✅ Processamento de mensagens concluído');
+    };
+
+    // Iniciar processamento em background (não bloqueia)
+    sendAll().catch(console.error);
+
+    return true;
 };
 
 
