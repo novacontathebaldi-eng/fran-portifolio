@@ -7,7 +7,7 @@ import {
     ToggleLeft, ToggleRight, Clock, Bell, User, Users, Settings,
     ChevronDown, ChevronRight, RefreshCw, Loader2, Check, X,
     FileText, Save, RotateCcw, History, AlertCircle, Power,
-    Bold, Italic, Strikethrough, Code, Eye
+    Bold, Italic, Strikethrough, Code, Eye, Link, Type, AlignLeft, Heading
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useProjects } from '../../context/ProjectContext';
@@ -23,6 +23,10 @@ import {
     restartWuzAPI,
     DEFAULT_TEMPLATES
 } from '../../utils/whatsappService';
+import {
+    DEFAULT_EMAIL_TEMPLATES,
+    getBaseTemplate
+} from '../../utils/emailService';
 
 // ============================================================================
 // TOGGLE COMPONENT
@@ -394,6 +398,292 @@ const WhatsAppTemplateEditor: React.FC<WhatsAppTemplateEditorProps> = ({
         </div>
     );
 };
+
+// ============================================================================
+// EMAIL TEMPLATE EDITOR COMPONENT
+// ============================================================================
+
+interface EmailTemplateEditorProps {
+    templateKey: string;
+    label: string;
+    description: string;
+    variables: string[];
+    subjectValue: string | null;
+    subjectDefault: string;
+    bodyValue: string | null;
+    bodyDefault: string;
+    headerTitle: string;
+    headerColor: string;
+    onSubjectChange: (value: string | null) => void;
+    onBodyChange: (value: string | null) => void;
+    onSave?: () => Promise<void>;
+    isSaving?: boolean;
+}
+
+/**
+ * Converte variáveis {{...}} para spans destacados no preview
+ */
+const highlightVariables = (html: string): string => {
+    return html.replace(/\{\{(\w+)\}\}/g, '<span style="background: #dbeafe; color: #1e40af; padding: 1px 4px; border-radius: 3px; font-family: monospace; font-size: 12px;">{{$1}}</span>');
+};
+
+const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
+    templateKey,
+    label,
+    description,
+    variables,
+    subjectValue,
+    subjectDefault,
+    bodyValue,
+    bodyDefault,
+    headerTitle,
+    headerColor,
+    onSubjectChange,
+    onBodyChange,
+    onSave,
+    isSaving = false
+}) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [localSubject, setLocalSubject] = useState(subjectValue || subjectDefault);
+    const [localBody, setLocalBody] = useState(bodyValue || bodyDefault);
+    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+    // Sincronizar valores quando mudam externamente
+    React.useEffect(() => {
+        setLocalSubject(subjectValue || subjectDefault);
+        setLocalBody(bodyValue || bodyDefault);
+    }, [subjectValue, subjectDefault, bodyValue, bodyDefault]);
+
+    const handleSave = async () => {
+        onSubjectChange(localSubject === subjectDefault ? null : localSubject);
+        onBodyChange(localBody === bodyDefault ? null : localBody);
+        setIsEditing(false);
+        if (onSave) {
+            setTimeout(() => onSave(), 50);
+        }
+    };
+
+    const handleRestore = async () => {
+        setLocalSubject(subjectDefault);
+        setLocalBody(bodyDefault);
+        onSubjectChange(null);
+        onBodyChange(null);
+        setIsEditing(false);
+        if (onSave) {
+            setTimeout(() => onSave(), 50);
+        }
+    };
+
+    const handleCancel = () => {
+        setLocalSubject(subjectValue || subjectDefault);
+        setLocalBody(bodyValue || bodyDefault);
+        setIsEditing(false);
+    };
+
+    // Inserir variável na posição do cursor
+    const insertVariable = (varName: string) => {
+        const textarea = textareaRef.current;
+        if (!textarea) {
+            setLocalBody(prev => prev + `{{${varName}}}`);
+            return;
+        }
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = localBody;
+        const insertion = `{{${varName}}}`;
+
+        setLocalBody(text.substring(0, start) + insertion + text.substring(end));
+
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + insertion.length, start + insertion.length);
+        }, 0);
+    };
+
+    // Inserir HTML na posição do cursor
+    const insertHtml = (before: string, after: string, placeholder?: string) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = localBody;
+        const selectedText = text.substring(start, end) || placeholder || '';
+
+        const newText = text.substring(0, start) + before + selectedText + after + text.substring(end);
+        setLocalBody(newText);
+
+        setTimeout(() => {
+            textarea.focus();
+            const cursorPos = start + before.length + selectedText.length;
+            textarea.setSelectionRange(cursorPos, cursorPos);
+        }, 0);
+    };
+
+    const formatButtons = [
+        { icon: Bold, label: 'Negrito', onClick: () => insertHtml('<strong>', '</strong>', 'texto'), title: 'Negrito' },
+        { icon: Italic, label: 'Itálico', onClick: () => insertHtml('<em>', '</em>', 'texto'), title: 'Itálico' },
+        { icon: Link, label: 'Link', onClick: () => insertHtml('<a href="URL" style="color: #3B82F6;">', '</a>', 'texto do link'), title: 'Link' },
+        { icon: Type, label: 'Parágrafo', onClick: () => insertHtml('<p>', '</p>', 'texto'), title: 'Parágrafo' },
+        { icon: AlignLeft, label: 'Info Box', onClick: () => insertHtml('<div class="info-box">\n  <span class="label">Título</span>\n  <span class="value">', '</span>\n</div>'), title: 'Caixa de Info' },
+    ];
+
+    // Gerar preview completo do email
+    const generatePreview = () => {
+        const contentWithHighlights = highlightVariables(localBody);
+        return getBaseTemplate(headerTitle, headerColor, contentWithHighlights);
+    };
+
+    const isCustomized = subjectValue !== null || bodyValue !== null;
+
+    return (
+        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200">
+                <div>
+                    <h4 className="font-medium text-gray-900">{label}</h4>
+                    <p className="text-xs text-gray-500">{description}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    {isCustomized && (
+                        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">
+                            Customizado
+                        </span>
+                    )}
+                    <button
+                        onClick={() => isEditing ? handleCancel() : setIsEditing(true)}
+                        className="text-sm text-accent hover:underline"
+                    >
+                        {isEditing ? 'Cancelar' : 'Editar'}
+                    </button>
+                </div>
+            </div>
+
+            {isEditing ? (
+                <div className="p-4 space-y-4">
+                    {/* Subject Field */}
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Assunto do Email</label>
+                        <input
+                            type="text"
+                            value={localSubject}
+                            onChange={(e) => setLocalSubject(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-accent focus:border-transparent"
+                            placeholder="Assunto do email..."
+                        />
+                    </div>
+
+                    {/* Variables */}
+                    <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
+                        <span className="text-xs text-gray-500 flex items-center mr-1">Variáveis:</span>
+                        {variables.map(v => (
+                            <button
+                                key={v}
+                                type="button"
+                                onClick={() => insertVariable(v)}
+                                className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded hover:bg-blue-100 font-mono"
+                            >
+                                {`{{${v}}}`}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Format Toolbar */}
+                    <div className="flex flex-wrap gap-1 p-2 bg-gray-100 rounded-lg border border-gray-200">
+                        {formatButtons.map(({ icon: Icon, label, onClick, title }) => (
+                            <button
+                                key={label}
+                                type="button"
+                                onClick={onClick}
+                                title={title}
+                                className="p-1.5 rounded hover:bg-gray-200 transition-colors text-gray-700"
+                            >
+                                <Icon className="w-4 h-4" />
+                            </button>
+                        ))}
+                        <div className="border-l border-gray-300 mx-1" />
+                        <button
+                            type="button"
+                            onClick={() => insertHtml('<a class="btn-secondary" href="URL" style="color: #ffffff;">', '</a>', 'Texto do Botão')}
+                            title="Botão"
+                            className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                        >
+                            + Botão
+                        </button>
+                    </div>
+
+                    {/* Body Editor & Preview */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Code Editor */}
+                        <div>
+                            <div className="flex items-center gap-1 mb-1.5 text-xs text-gray-500">
+                                <Code className="w-3 h-3" />
+                                <span>HTML</span>
+                            </div>
+                            <textarea
+                                ref={textareaRef}
+                                value={localBody}
+                                onChange={(e) => setLocalBody(e.target.value)}
+                                rows={12}
+                                className="w-full p-3 border border-gray-300 rounded-lg text-xs font-mono resize-none focus:ring-2 focus:ring-accent focus:border-transparent bg-gray-50"
+                                spellCheck={false}
+                            />
+                        </div>
+
+                        {/* Preview */}
+                        <div>
+                            <div className="flex items-center gap-1 mb-1.5 text-xs text-gray-500">
+                                <Eye className="w-3 h-3" />
+                                <span>Preview</span>
+                            </div>
+                            <iframe
+                                srcDoc={generatePreview()}
+                                title="Email Preview"
+                                className="w-full h-[290px] border border-gray-300 rounded-lg bg-white"
+                                sandbox="allow-same-origin"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
+                        <button
+                            type="button"
+                            onClick={handleRestore}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                        >
+                            <RotateCcw className="w-4 h-4" />
+                            Restaurar Padrão
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="flex items-center gap-1 px-4 py-1.5 bg-accent text-black rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
+                        >
+                            <Save className="w-4 h-4" />
+                            {isSaving ? 'Salvando...' : 'Salvar Template'}
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                /* Preview Mode (Collapsed) */
+                <div className="p-4">
+                    <div className="text-xs text-gray-500 mb-2">
+                        <strong>Assunto:</strong> {subjectValue || subjectDefault}
+                    </div>
+                    <iframe
+                        srcDoc={getBaseTemplate(headerTitle, headerColor, highlightVariables(bodyValue || bodyDefault))}
+                        title="Email Preview"
+                        className="w-full h-40 border border-gray-200 rounded-lg bg-white"
+                        sandbox="allow-same-origin"
+                    />
+                </div>
+            )}
+        </div>
+    );
+}
 
 // ============================================================================
 // MAIN COMPONENT
@@ -1123,11 +1413,72 @@ export const DispatchesDashboard: React.FC = () => {
                     )}
 
                     {activeTemplateTab === 'email' && (
-                        <div className="text-center py-8 text-gray-500">
-                            <Mail className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                            <p>Templates de e-mail seguem o padrão HTML do sistema.</p>
-                            <p className="text-sm mt-1">Customização disponível em versões futuras.</p>
-                        </div>
+                        <>
+                            <EmailTemplateEditor
+                                templateKey="newBudgetAdmin"
+                                label="Novo Orçamento"
+                                description="Email enviado ao admin quando um cliente solicita orçamento"
+                                variables={['nome', 'cidade', 'servicos']}
+                                subjectValue={config.email.templates.newBudgetAdmin.subject}
+                                subjectDefault="💰 Novo Orçamento: {{nome}}"
+                                bodyValue={config.email.templates.newBudgetAdmin.body}
+                                bodyDefault={DEFAULT_EMAIL_TEMPLATES.newBudgetAdmin.body('{{nome}}', '{{cidade}}', '{{servicos}}')}
+                                headerTitle="Nova Solicitação de Orçamento"
+                                headerColor="#EC4899"
+                                onSubjectChange={(v) => updateEmail('templates.newBudgetAdmin.subject', v)}
+                                onBodyChange={(v) => updateEmail('templates.newBudgetAdmin.body', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
+                            />
+                            <EmailTemplateEditor
+                                templateKey="newAppointmentAdmin"
+                                label="Novo Agendamento"
+                                description="Email enviado ao admin quando um cliente solicita agendamento"
+                                variables={['nome', 'tipo', 'data', 'hora']}
+                                subjectValue={config.email.templates.newAppointmentAdmin.subject}
+                                subjectDefault="📅 Agenda: {{nome}} - {{tipo}}"
+                                bodyValue={config.email.templates.newAppointmentAdmin.body}
+                                bodyDefault={DEFAULT_EMAIL_TEMPLATES.newAppointmentAdmin.body('{{nome}}', '{{tipo}}', '{{data}} às {{hora}}')}
+                                headerTitle="Novo Agendamento Solicitado"
+                                headerColor="#10B981"
+                                onSubjectChange={(v) => updateEmail('templates.newAppointmentAdmin.subject', v)}
+                                onBodyChange={(v) => updateEmail('templates.newAppointmentAdmin.body', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
+                            />
+                            <EmailTemplateEditor
+                                templateKey="newContactAdmin"
+                                label="Novo Contato"
+                                description="Email enviado ao admin quando alguém usa o formulário Fale Conosco"
+                                variables={['nome', 'email', 'telefone', 'assunto', 'mensagem']}
+                                subjectValue={config.email.templates.newContactAdmin.subject}
+                                subjectDefault="📬 Contato: {{assunto}} - {{nome}}"
+                                bodyValue={config.email.templates.newContactAdmin.body}
+                                bodyDefault={DEFAULT_EMAIL_TEMPLATES.newContactAdmin.body('{{nome}}', '{{email}}', '{{telefone}}', '{{assunto}}', '{{mensagem}}')}
+                                headerTitle="Nova Mensagem de Contato"
+                                headerColor="#3B82F6"
+                                onSubjectChange={(v) => updateEmail('templates.newContactAdmin.subject', v)}
+                                onBodyChange={(v) => updateEmail('templates.newContactAdmin.body', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
+                            />
+                            <EmailTemplateEditor
+                                templateKey="chatbotNoteAdmin"
+                                label="Recado do Chatbot"
+                                description="Email enviado ao admin quando o chatbot captura um recado"
+                                variables={['nome', 'email', 'telefone', 'assunto', 'mensagem']}
+                                subjectValue={config.email.templates.chatbotNoteAdmin.subject}
+                                subjectDefault="💬 Novo Recado: {{assunto}} - {{nome}}"
+                                bodyValue={config.email.templates.chatbotNoteAdmin.body}
+                                bodyDefault={DEFAULT_EMAIL_TEMPLATES.chatbotNoteAdmin.body('{{nome}}', '{{email}}', '{{telefone}}', '{{assunto}}', '{{mensagem}}', '')}
+                                headerTitle="Novo Recado via Chatbot"
+                                headerColor="#8B5CF6"
+                                onSubjectChange={(v) => updateEmail('templates.chatbotNoteAdmin.subject', v)}
+                                onBodyChange={(v) => updateEmail('templates.chatbotNoteAdmin.body', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
+                            />
+                        </>
                     )}
                 </div>
             </CollapsibleSection>

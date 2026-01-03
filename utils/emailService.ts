@@ -24,10 +24,10 @@ interface EmailPayload {
 }
 
 // ============================================================================
-// TEMPLATES PADRÃO DE EMAIL
+// TEMPLATES PADRÃO DE EMAIL (exportado para uso em outros módulos)
 // ============================================================================
 
-const DEFAULT_EMAIL_TEMPLATES = {
+export const DEFAULT_EMAIL_TEMPLATES = {
   newBudgetAdmin: {
     subject: (name: string) => `💰 Novo Orçamento: ${name}`,
     body: (name: string, city: string, services: string) => `
@@ -150,9 +150,9 @@ const sendBrevoEmail = async (data: EmailPayload): Promise<boolean> => {
 };
 
 /**
- * Template base HTML para emails
+ * Template base HTML para emails (exportado para preview)
  */
-const getBaseTemplate = (title: string, color: string, content: string) => `
+export const getBaseTemplate = (title: string, color: string, content: string) => `
 <!DOCTYPE html>
 <html>
 <head>
