@@ -3,6 +3,7 @@
 // A Edge Function mantém o token seguro no servidor
 
 import { supabase } from '../supabaseClient';
+import { maskPhone } from './logUtils';
 import { NotificationsConfig, defaultNotificationsConfig } from '../types';
 
 // =============================================
@@ -210,11 +211,11 @@ const sendWhatsAppMessage = async (phone: string, message: string): Promise<bool
         const cleanPhone = normalizePhoneNumber(phone);
 
         if (!cleanPhone || cleanPhone.length < 10) {
-            console.log('[WhatsApp] Número inválido:', phone);
+            console.log('[WhatsApp] Número inválido:', maskPhone(phone));
             return false;
         }
 
-        console.log(`[WhatsApp] Enviando para: ${cleanPhone}`);
+        console.log(`[WhatsApp] Enviando para: ${maskPhone(cleanPhone)}`);
 
         // Criar AbortController para timeout
         const controller = new AbortController();
@@ -286,12 +287,12 @@ export const queueNotifications = async (notifications: Array<{
             try {
                 const success = await sendWhatsAppMessage(notif.phone, notif.message);
                 if (success) {
-                    console.log(`[WhatsApp] ✅ Enviado para ${notif.phone}`);
+                    console.log(`[WhatsApp] ✅ Enviado para ${maskPhone(notif.phone)}`);
                 } else {
-                    console.error(`[WhatsApp] ❌ Falha para ${notif.phone}`);
+                    console.error(`[WhatsApp] ❌ Falha para ${maskPhone(notif.phone)}`);
                 }
             } catch (err) {
-                console.error(`[WhatsApp] Erro para ${notif.phone}:`, err);
+                console.error(`[WhatsApp] Erro para ${maskPhone(notif.phone)}:`, err);
             }
         }
         console.log('[WhatsApp] ✅ Processamento de mensagens concluído');
@@ -613,7 +614,7 @@ export const testWhatsAppConnection = async (phonesToTest?: string[]): Promise<{
     let failed = 0;
 
     for (const phone of phones) {
-        console.log(`[WhatsApp Test] Testando número: ${phone}`);
+        console.log(`[WhatsApp Test] Testando número: ${maskPhone(phone)}`);
         const success = await sendWhatsAppMessage(phone, testMessage);
         if (success) {
             sent++;
