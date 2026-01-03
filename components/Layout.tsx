@@ -36,7 +36,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     // Increased threshold to 50px for a more deliberate transition
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    // Listen for custom event to open chat from other components
+    const handleOpenChat = () => setChatOpen(true);
+    window.addEventListener('open-chatbot', handleOpenChat);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('open-chatbot', handleOpenChat);
+    };
   }, []);
 
   useEffect(() => {

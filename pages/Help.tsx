@@ -1149,7 +1149,7 @@ export const Help: React.FC = () => {
                                                 </li>
                                             </ul>
                                             <button
-                                                onClick={() => openBrevoChat()}
+                                                onClick={() => window.dispatchEvent(new Event('open-chatbot'))}
                                                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors text-sm"
                                             >
                                                 <MessageCircle className="w-4 h-4" />
