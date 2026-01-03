@@ -5,87 +5,101 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// WuzAPI Configuration
-const WUZAPI_URL = 'http://54.94.205.227:8080';
-const WUZAPI_INSTANCE = 'fransiller';
-const WUZAPI_TOKEN = 'MeuWhatsToken2025';
-const DEFAULT_RECIPIENT = '352691214222';
+// WuzAPI Configuration - usar variáveis de ambiente para maior segurança
+const WUZAPI_URL = Deno.env.get('WUZAPI_URL') || 'http://54.232.81.168:8080';
+const WUZAPI_TOKEN = Deno.env.get('WUZAPI_TOKEN') || '';
+const DEFAULT_DDD = '27';
+const DEFAULT_COUNTRY = '55';
 
-interface SendWhatsAppRequest {
-    phone?: string;
-    message: string;
-    type?: 'budget' | 'appointment' | 'contact' | 'chatbot';
+function normalizePhone(phone: string): string {
+    let cleaned = phone.replace(/\D/g, '');
+    if (!cleaned) return '';
+
+    const length = cleaned.length;
+
+    if (length === 8) {
+        cleaned = DEFAULT_COUNTRY + DEFAULT_DDD + cleaned;
+    } else if (length === 9) {
+        cleaned = DEFAULT_COUNTRY + DEFAULT_DDD + cleaned;
+    } else if (length === 10 || length === 11) {
+        cleaned = DEFAULT_COUNTRY + cleaned;
+    }
+
+    return cleaned;
 }
 
 Deno.serve(async (req) => {
-    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders });
     }
 
     try {
-        const body: SendWhatsAppRequest = await req.json();
-        const { phone, message, type } = body;
+        const { phone: rawPhone, message } = await req.json();
+        const phone = normalizePhone(rawPhone || '');
 
-        if (!message) {
+        if (!phone || phone.length < 10) {
+            console.log(`[send-whatsapp] Número inválido após normalização: ${rawPhone}`);
             return new Response(JSON.stringify({
                 success: false,
-                error: 'Message is required'
+                error: 'Número de telefone inválido'
             }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 400,
+                status: 200,
             });
         }
 
-        // Use provided phone or default recipient
-        const recipientPhone = (phone || DEFAULT_RECIPIENT).replace(/\D/g, '');
+        if (!message) {
+            return new Response(JSON.stringify({ success: false, error: 'Message is required' }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200,
+            });
+        }
 
-        console.log(`[send-whatsapp] Sending to ${recipientPhone} | Type: ${type || 'generic'}`);
+        if (!WUZAPI_TOKEN) {
+            console.error('[send-whatsapp] WUZAPI_TOKEN não configurado');
+            return new Response(JSON.stringify({
+                success: false,
+                error: 'WUZAPI_TOKEN não configurado'
+            }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200,
+            });
+        }
 
-        // Send message via WuzAPI
-        const response = await fetch(`${WUZAPI_URL}/chat/send/text/${WUZAPI_INSTANCE}`, {
+        console.log(`[send-whatsapp] Enviando para ${phone} (original: ${rawPhone})`);
+
+        const response = await fetch(`${WUZAPI_URL}/chat/send/text`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'token': WUZAPI_TOKEN,
             },
             body: JSON.stringify({
-                phone: recipientPhone,
-                message: message,
+                Phone: phone,
+                Body: message,
             }),
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('[send-whatsapp] WuzAPI Error:', response.status, errorText);
-            return new Response(JSON.stringify({
-                success: false,
-                error: `WuzAPI error: ${response.status}`
-            }), {
+        const result = await response.json();
+        console.log('[send-whatsapp] WuzAPI response:', JSON.stringify(result));
+
+        if (!result.success) {
+            return new Response(JSON.stringify({ success: false, error: result.error || 'WuzAPI error' }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 500,
+                status: 200,
             });
         }
 
-        const result = await response.json();
-        console.log('[send-whatsapp] Message sent successfully:', result);
-
-        return new Response(JSON.stringify({
-            success: true,
-            data: result
-        }), {
+        return new Response(JSON.stringify({ success: true, data: result }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
         });
 
     } catch (error) {
         console.error('[send-whatsapp] Error:', error);
-        return new Response(JSON.stringify({
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error'
-        }), {
+        return new Response(JSON.stringify({ success: false, error: String(error) }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 500,
+            status: 200,
         });
     }
 });

@@ -256,36 +256,10 @@ const sendWhatsAppMessage = async (phone: string, message: string): Promise<bool
  * Helper: Delay entre envios para evitar sobrecarga do WuzAPI
  */
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-/**
- * URL do proxy NGINX na VPS que repassa para o WuzAPI
- * Isso elimina a latência das Edge Functions
- */
-const WUZAPI_PROXY_URL = 'https://api.fransiller.othebaldi.me';
-const WUZAPI_TOKEN = 'MeuWhatsToken2025';
 
 /**
- * Normaliza número de telefone para formato internacional brasileiro
- */
-const normalizePhoneForWuzAPI = (phone: string): string => {
-    let cleaned = phone.replace(/\D/g, '');
-    if (!cleaned) return '';
-
-    // Se tem 8-9 dígitos, adiciona DDD padrão (27) e código do Brasil
-    if (cleaned.length === 8 || cleaned.length === 9) {
-        cleaned = '5527' + cleaned;
-    }
-    // Se tem 10-11 dígitos, adiciona código do Brasil
-    else if (cleaned.length === 10 || cleaned.length === 11) {
-        cleaned = '55' + cleaned;
-    }
-    // Se já tem 12-13 dígitos, assume que já está completo
-
-    return cleaned;
-};
-
-/**
- * Envia notificações diretamente via proxy NGINX → WuzAPI
- * MUITO MAIS RÁPIDO que Edge Functions (< 1 segundo vs 75+ segundos)
+ * Envia notificações via Edge Function do Supabase (SEGURO)
+ * O token WUZAPI fica no servidor, nunca exposto ao cliente
  */
 export const queueNotifications = async (notifications: Array<{
     type: 'whatsapp';
@@ -296,53 +270,30 @@ export const queueNotifications = async (notifications: Array<{
         return true;
     }
 
-    console.log(`[WhatsApp] Enviando ${notifications.length} mensagens via proxy...`);
+    console.log(`[WhatsApp] Enviando ${notifications.length} mensagens via Edge Function...`);
 
-    // Enviar todas em sequência (fire-and-forget para UI, mas processa em background)
-    const sendAll = async () => {
-        for (let i = 0; i < notifications.length; i++) {
-            const notif = notifications[i];
-            const normalizedPhone = normalizePhoneForWuzAPI(notif.phone);
+    try {
+        // Usar Edge Function add-to-queue para adicionar à fila
+        // O processo-queue (cron) ou envio direto via send-whatsapp fará o envio real
+        const { error } = await supabase.functions.invoke('add-to-queue', {
+            body: { notifications }
+        });
 
-            if (!normalizedPhone) {
-                console.error(`[WhatsApp] Número inválido: ${notif.phone}`);
-                continue;
+        if (error) {
+            console.error('[WhatsApp] Erro ao adicionar à fila:', error);
+            // Fallback: enviar diretamente via send-whatsapp
+            for (const notif of notifications) {
+                await sendWhatsAppMessage(notif.phone, notif.message);
             }
-
-            try {
-                const response = await fetch(`${WUZAPI_PROXY_URL}/chat/send/text`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'token': WUZAPI_TOKEN,
-                    },
-                    body: JSON.stringify({
-                        Phone: normalizedPhone,
-                        Body: notif.message,
-                    }),
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    console.log(`[WhatsApp] ✅ Enviado para ${normalizedPhone}`);
-                } else {
-                    console.error(`[WhatsApp] ❌ Falha para ${normalizedPhone}:`, result.error);
-                }
-            } catch (err) {
-                console.error(`[WhatsApp] Erro para ${normalizedPhone}:`, err);
-            }
-
-            // Delay de 1s entre mensagens para não sobrecarregar
-            if (i < notifications.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
+        } else {
+            console.log('[WhatsApp] ✅ Mensagens adicionadas à fila para processamento');
         }
-    };
 
-    // Fire-and-forget: não bloqueia a UI
-    sendAll().catch(console.error);
-
-    return true;
+        return true;
+    } catch (err) {
+        console.error('[WhatsApp] Erro:', err);
+        return false;
+    }
 };
 
 
