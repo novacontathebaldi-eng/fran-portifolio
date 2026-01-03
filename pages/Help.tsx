@@ -85,6 +85,244 @@ const drawerVariants = {
 };
 
 // ============================================
+// NEW INTERFACES FOR PROMPT 2
+// ============================================
+
+interface InteractiveStepProps {
+    step: number;
+    title: string;
+    description: string;
+    action?: {
+        label: string;
+        href?: string;
+        onClick?: () => void;
+    };
+    icon?: React.ReactNode;
+    highlight?: boolean;
+}
+
+interface Problem {
+    issue: string;
+    solution: string;
+    action?: { label: string; href: string };
+}
+
+interface TroubleshootingTableProps {
+    problems: Problem[];
+}
+
+interface FeatureCardProps {
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+    features: string[];
+    actionLabel?: string;
+    actionHref?: string;
+}
+
+interface SiteMapItemProps {
+    icon: React.ReactNode;
+    label: string;
+    href: string;
+    description?: string;
+    children?: React.ReactNode;
+    isConditional?: boolean;
+    conditionMet?: boolean;
+}
+
+// ============================================
+// INTERACTIVE STEP COMPONENT
+// ============================================
+
+const InteractiveStep: React.FC<InteractiveStepProps> = ({
+    step,
+    title,
+    description,
+    action,
+    icon,
+    highlight = false
+}) => {
+    const navigate = useNavigate();
+
+    const handleAction = () => {
+        if (action?.onClick) {
+            action.onClick();
+        } else if (action?.href) {
+            navigate(action.href);
+        }
+    };
+
+    return (
+        <div className={`flex gap-4 p-4 rounded-xl transition-colors ${highlight ? 'bg-accent/10 border border-accent/20' : 'bg-gray-50'}`}>
+            <div className="flex-shrink-0">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${highlight ? 'bg-accent text-black' : 'bg-black text-white'}`}>
+                    {icon || step}
+                </div>
+            </div>
+            <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-black mb-1">{title}</h4>
+                <p className="text-sm text-gray-600 mb-3">{description}</p>
+                {action && (
+                    <button
+                        onClick={handleAction}
+                        className="inline-flex items-center gap-2 text-sm font-medium text-black hover:text-accent transition-colors group"
+                    >
+                        {action.label}
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// ============================================
+// TROUBLESHOOTING TABLE COMPONENT
+// ============================================
+
+const TroubleshootingTable: React.FC<TroubleshootingTableProps> = ({ problems }) => {
+    const navigate = useNavigate();
+
+    return (
+        <div className="overflow-hidden rounded-xl border border-gray-200">
+            <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                    <tr>
+                        <th className="text-left p-4 font-bold text-gray-700 border-b">Problema</th>
+                        <th className="text-left p-4 font-bold text-gray-700 border-b">Solução</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {problems.map((problem, index) => (
+                        <tr key={index} className="border-b last:border-0 hover:bg-gray-50 transition-colors">
+                            <td className="p-4 text-gray-600 align-top">
+                                <div className="flex items-start gap-2">
+                                    <XCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                                    <span>{problem.issue}</span>
+                                </div>
+                            </td>
+                            <td className="p-4 text-gray-600 align-top">
+                                <div className="flex items-start gap-2">
+                                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                        <span>{problem.solution}</span>
+                                        {problem.action && (
+                                            <button
+                                                onClick={() => navigate(problem.action!.href)}
+                                                className="block mt-2 text-xs font-medium text-accent hover:underline"
+                                            >
+                                                {problem.action.label} →
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+// ============================================
+// FEATURE CARD COMPONENT
+// ============================================
+
+const FeatureCard: React.FC<FeatureCardProps> = ({
+    icon,
+    title,
+    description,
+    features,
+    actionLabel,
+    actionHref
+}) => {
+    const navigate = useNavigate();
+
+    return (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow">
+            <div className="flex items-start gap-4 mb-4">
+                <div className="p-2 bg-gray-100 rounded-lg text-gray-600">
+                    {icon}
+                </div>
+                <div>
+                    <h4 className="font-bold text-black">{title}</h4>
+                    <p className="text-sm text-gray-500">{description}</p>
+                </div>
+            </div>
+            <ul className="space-y-2 mb-4">
+                {features.map((feature, index) => (
+                    <li key={index} className="flex items-center gap-2 text-sm text-gray-600">
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        {feature}
+                    </li>
+                ))}
+            </ul>
+            {actionLabel && actionHref && (
+                <button
+                    onClick={() => navigate(actionHref)}
+                    className="text-sm font-medium text-black hover:text-accent transition-colors flex items-center gap-1"
+                >
+                    {actionLabel}
+                    <ArrowRight className="w-4 h-4" />
+                </button>
+            )}
+        </div>
+    );
+};
+
+// ============================================
+// SITE MAP ITEM COMPONENT
+// ============================================
+
+const SiteMapItem: React.FC<SiteMapItemProps> = ({
+    icon,
+    label,
+    href,
+    description,
+    children,
+    isConditional = false,
+    conditionMet = true
+}) => {
+    const navigate = useNavigate();
+    const [isHovered, setIsHovered] = useState(false);
+
+    if (isConditional && !conditionMet) return null;
+
+    return (
+        <div className="relative">
+            <button
+                onClick={() => navigate(href)}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-left group"
+            >
+                <span className="text-gray-500">{icon}</span>
+                <span className="font-medium text-gray-700 group-hover:text-black transition-colors">
+                    {label}
+                </span>
+                {isConditional && (
+                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                        Condicional
+                    </span>
+                )}
+                <ArrowRight className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 ml-auto transition-opacity" />
+            </button>
+            {description && isHovered && (
+                <div className="absolute right-0 top-full mt-1 z-10 bg-black text-white text-xs p-2 rounded-lg shadow-lg max-w-48 whitespace-normal">
+                    {description}
+                </div>
+            )}
+            {children && (
+                <div className="ml-8 pl-4 border-l-2 border-gray-200 space-y-1">
+                    {children}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ============================================
 // QUICK ACTION CARD COMPONENT
 // ============================================
 
@@ -698,9 +936,214 @@ export const Help: React.FC = () => {
                                 isActive={activeSection === 'navegacao'}
                                 defaultOpen={false}
                             >
-                                <div className="text-gray-600 space-y-4">
-                                    <p>Conteúdo desta seção será adicionado no Prompt 2.</p>
-                                    <p className="text-sm text-gray-400">Inclui: Mapa do site, menus, navegação via chatbot.</p>
+                                <div className="space-y-8">
+                                    {/* Mapa do Site */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                                            <MapPin className="w-5 h-5 text-accent" />
+                                            Mapa do Site
+                                        </h3>
+                                        <p className="text-gray-600 mb-4">
+                                            Confira todas as páginas disponíveis no site. Clique em qualquer item para navegar diretamente.
+                                        </p>
+                                        <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                                            <SiteMapItem
+                                                icon={<Home className="w-4 h-4" />}
+                                                label="Início"
+                                                href="/"
+                                                description="Página principal do site"
+                                            />
+                                            <SiteMapItem
+                                                icon={<User className="w-4 h-4" />}
+                                                label="Sobre a Fran Siller"
+                                                href="/about"
+                                                description="Conheça a arquiteta"
+                                            />
+                                            <SiteMapItem
+                                                icon={<FolderOpen className="w-4 h-4" />}
+                                                label="Portfólio"
+                                                href="/portfolio"
+                                                description="Projetos realizados"
+                                            >
+                                                <SiteMapItem
+                                                    icon={<FileText className="w-4 h-4" />}
+                                                    label="Detalhes do Projeto"
+                                                    href="/portfolio"
+                                                    description="Veja cada projeto em detalhes"
+                                                />
+                                            </SiteMapItem>
+                                            <SiteMapItem
+                                                icon={<Image className="w-4 h-4" />}
+                                                label="Projetos Culturais"
+                                                href="/cultural"
+                                                description="Arte e cultura"
+                                            />
+                                            <SiteMapItem
+                                                icon={<Briefcase className="w-4 h-4" />}
+                                                label="Serviços"
+                                                href="/services"
+                                                description="Solicite um orçamento"
+                                            />
+                                            <SiteMapItem
+                                                icon={<Calendar className="w-4 h-4" />}
+                                                label="Agendar Reunião"
+                                                href="/schedule"
+                                                description="Marque uma conversa"
+                                            />
+                                            <SiteMapItem
+                                                icon={<MapPin className="w-4 h-4" />}
+                                                label="O Escritório"
+                                                href="/office"
+                                                description="Conheça nosso espaço"
+                                                isConditional
+                                                conditionMet={isOfficeActive}
+                                            />
+                                            <SiteMapItem
+                                                icon={<ShoppingBag className="w-4 h-4" />}
+                                                label="Loja"
+                                                href="/shop"
+                                                description="Produtos exclusivos"
+                                                isConditional
+                                                conditionMet={isShopEnabled}
+                                            >
+                                                {isShopEnabled && (
+                                                    <>
+                                                        <SiteMapItem
+                                                            icon={<ShoppingBag className="w-4 h-4" />}
+                                                            label="Carrinho"
+                                                            href="/cart"
+                                                        />
+                                                        <SiteMapItem
+                                                            icon={<ShoppingBag className="w-4 h-4" />}
+                                                            label="Checkout"
+                                                            href="/checkout"
+                                                        />
+                                                    </>
+                                                )}
+                                            </SiteMapItem>
+                                            <SiteMapItem
+                                                icon={<Mail className="w-4 h-4" />}
+                                                label="Contato"
+                                                href="/contact"
+                                                description="Fale conosco"
+                                            />
+                                            <SiteMapItem
+                                                icon={<LogIn className="w-4 h-4" />}
+                                                label="Login / Cadastro"
+                                                href="/auth"
+                                                description="Acesse sua conta"
+                                            />
+                                            <SiteMapItem
+                                                icon={<User className="w-4 h-4" />}
+                                                label="Área do Cliente"
+                                                href="/profile"
+                                                description="Seu espaço exclusivo"
+                                            />
+                                            <SiteMapItem
+                                                icon={<Shield className="w-4 h-4" />}
+                                                label="Páginas Legais"
+                                                href="/termos"
+                                            >
+                                                <SiteMapItem
+                                                    icon={<FileText className="w-4 h-4" />}
+                                                    label="Termos de Uso"
+                                                    href="/termos"
+                                                />
+                                                <SiteMapItem
+                                                    icon={<Shield className="w-4 h-4" />}
+                                                    label="Política de Privacidade"
+                                                    href="/politica-privacidade"
+                                                />
+                                                <SiteMapItem
+                                                    icon={<HelpCircle className="w-4 h-4" />}
+                                                    label="Central de Ajuda"
+                                                    href="/help"
+                                                />
+                                            </SiteMapItem>
+                                        </div>
+                                    </div>
+
+                                    {/* Navegação via Menu */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                                            <Menu className="w-5 h-5 text-accent" />
+                                            Navegação via Menu
+                                        </h3>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <div className="bg-gray-50 rounded-xl p-4">
+                                                <h4 className="font-bold text-black mb-2">💻 No Desktop</h4>
+                                                <ul className="text-sm text-gray-600 space-y-2">
+                                                    <li className="flex items-start gap-2">
+                                                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                                        <span>Menu fixo na parte superior da tela</span>
+                                                    </li>
+                                                    <li className="flex items-start gap-2">
+                                                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                                        <span>Links para todas as seções principais</span>
+                                                    </li>
+                                                    <li className="flex items-start gap-2">
+                                                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                                        <span>Ícones de busca, perfil e carrinho à direita</span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <div className="bg-gray-50 rounded-xl p-4">
+                                                <h4 className="font-bold text-black mb-2">📱 No Mobile</h4>
+                                                <ul className="text-sm text-gray-600 space-y-2">
+                                                    <li className="flex items-start gap-2">
+                                                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                                        <span>Toque no ícone ☰ (hambúrguer) no canto superior direito</span>
+                                                    </li>
+                                                    <li className="flex items-start gap-2">
+                                                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                                        <span>Menu abre em tela cheia com todas as opções</span>
+                                                    </li>
+                                                    <li className="flex items-start gap-2">
+                                                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                                        <span>Toque no X para fechar o menu</span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Navegação via Chatbot */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                                            <MessageCircle className="w-5 h-5 text-accent" />
+                                            Navegação via Assistente Virtual
+                                        </h3>
+                                        <p className="text-gray-600 mb-4">
+                                            Nosso assistente virtual pode te ajudar a navegar pelo site de forma conversacional:
+                                        </p>
+                                        <div className="bg-gradient-to-r from-black/5 to-accent/5 rounded-xl p-5">
+                                            <ul className="text-sm text-gray-600 space-y-3 mb-4">
+                                                <li className="flex items-start gap-3">
+                                                    <span className="bg-accent text-black rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                                                    <span>Mostrar projetos do portfólio com filtros personalizados</span>
+                                                </li>
+                                                <li className="flex items-start gap-3">
+                                                    <span className="bg-accent text-black rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                                                    <span>Agendar reuniões diretamente pelo chat</span>
+                                                </li>
+                                                <li className="flex items-start gap-3">
+                                                    <span className="bg-accent text-black rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                                                    <span>Tirar dúvidas sobre serviços e valores</span>
+                                                </li>
+                                                <li className="flex items-start gap-3">
+                                                    <span className="bg-accent text-black rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">4</span>
+                                                    <span>Navegar para qualquer página específica</span>
+                                                </li>
+                                            </ul>
+                                            <button
+                                                onClick={() => openBrevoChat()}
+                                                className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors text-sm"
+                                            >
+                                                <MessageCircle className="w-4 h-4" />
+                                                Experimentar o Assistente Virtual
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </HelpSection>
 
@@ -711,9 +1154,175 @@ export const Help: React.FC = () => {
                                 icon={<LogIn className="w-5 h-5" />}
                                 isActive={activeSection === 'autenticacao'}
                             >
-                                <div className="text-gray-600 space-y-4">
-                                    <p>Conteúdo desta seção será adicionado no Prompt 2.</p>
-                                    <p className="text-sm text-gray-400">Inclui: Registro, login, recuperação de senha, problemas comuns.</p>
+                                <div className="space-y-8">
+                                    {/* Criar Conta */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                                            <User className="w-5 h-5 text-accent" />
+                                            Como Criar uma Conta
+                                        </h3>
+                                        <div className="space-y-3">
+                                            <InteractiveStep
+                                                step={1}
+                                                title="Acesse a página de registro"
+                                                description="Clique no botão abaixo ou acesse através do menu superior."
+                                                action={{
+                                                    label: "Criar minha conta",
+                                                    href: "/auth"
+                                                }}
+                                            />
+                                            <InteractiveStep
+                                                step={2}
+                                                title="Preencha seus dados"
+                                                description="Nome completo, e-mail válido, telefone (WhatsApp) para notificações, e senha (mínimo 6 caracteres)."
+                                            />
+                                            <InteractiveStep
+                                                step={3}
+                                                title="Confirme e pronto!"
+                                                description="Você receberá uma mensagem de boas-vindas no WhatsApp e já pode acessar a área do cliente."
+                                                icon={<CheckCircle className="w-5 h-5" />}
+                                                highlight
+                                            />
+                                        </div>
+                                        <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                            <div className="flex items-start gap-3">
+                                                <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                                <div className="text-sm text-amber-800">
+                                                    <strong>Dica:</strong> Use o mesmo e-mail e telefone que pretende usar para comunicações sobre projetos.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Fazer Login */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                                            <LogIn className="w-5 h-5 text-accent" />
+                                            Como Fazer Login
+                                        </h3>
+                                        <div className="space-y-3">
+                                            <InteractiveStep
+                                                step={1}
+                                                title="Acesse a página de login"
+                                                description="Clique no ícone de usuário no menu ou use o botão abaixo."
+                                                action={{
+                                                    label: "Fazer Login",
+                                                    href: "/auth"
+                                                }}
+                                            />
+                                            <InteractiveStep
+                                                step={2}
+                                                title="Escolha como entrar"
+                                                description="Digite seu e-mail e senha cadastrados. Se disponível, você também pode entrar com Google."
+                                            />
+                                            <InteractiveStep
+                                                step={3}
+                                                title="Acesse sua área"
+                                                description="Após o login, você será redirecionado para a Área do Cliente."
+                                                icon={<CheckCircle className="w-5 h-5" />}
+                                                highlight
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Esqueci a Senha */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                                            <Settings className="w-5 h-5 text-accent" />
+                                            Esqueci Minha Senha
+                                        </h3>
+                                        <div className="p-4 bg-red-50 rounded-xl border border-red-200 mb-4">
+                                            <div className="flex items-start gap-3">
+                                                <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                                <div className="text-sm text-red-800">
+                                                    <strong>Atenção:</strong> O link de recuperação expira em 1 hora e só pode ser usado uma vez!
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <InteractiveStep
+                                                step={1}
+                                                title="Clique em 'Esqueceu a senha?'"
+                                                description="Na página de login, encontre o link abaixo do formulário."
+                                            />
+                                            <InteractiveStep
+                                                step={2}
+                                                title="Digite seu e-mail cadastrado"
+                                                description="Informe o e-mail que você usou para criar sua conta."
+                                            />
+                                            <InteractiveStep
+                                                step={3}
+                                                title="Verifique seu e-mail"
+                                                description="Você receberá um link de recuperação. Verifique também a pasta de spam."
+                                            />
+                                            <InteractiveStep
+                                                step={4}
+                                                title="Crie uma nova senha"
+                                                description="Escolha uma senha nova com no mínimo 6 caracteres e confirme."
+                                                icon={<CheckCircle className="w-5 h-5" />}
+                                                highlight
+                                            />
+                                        </div>
+                                        <div className="mt-4 p-4 bg-green-50 rounded-xl border border-green-200">
+                                            <div className="flex items-start gap-3">
+                                                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                                <div className="text-sm text-green-800">
+                                                    <strong>Pronto!</strong> Você pode fazer login com a nova senha imediatamente.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Problemas Comuns */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                                            <AlertTriangle className="w-5 h-5 text-accent" />
+                                            Problemas Comuns de Login
+                                        </h3>
+                                        <TroubleshootingTable
+                                            problems={[
+                                                {
+                                                    issue: '"E-mail ou senha incorretos"',
+                                                    solution: 'Verifique se digitou corretamente. Senhas diferenciam maiúsculas de minúsculas.',
+                                                    action: { label: 'Recuperar senha', href: '/auth' }
+                                                },
+                                                {
+                                                    issue: '"Email não confirmado"',
+                                                    solution: 'Verifique sua caixa de entrada e pasta de spam. O e-mail de confirmação pode demorar alguns minutos.'
+                                                },
+                                                {
+                                                    issue: 'Link de recuperação expirou',
+                                                    solution: 'Solicite um novo link. Links de recuperação duram apenas 1 hora e só funcionam uma vez.',
+                                                    action: { label: 'Solicitar novo link', href: '/auth' }
+                                                },
+                                                {
+                                                    issue: 'Não recebo o e-mail',
+                                                    solution: 'Verifique a pasta de spam. Aguarde alguns minutos e tente novamente. Certifique-se que o e-mail está correto.'
+                                                },
+                                                {
+                                                    issue: 'Botão de login não funciona',
+                                                    solution: 'Tente atualizar a página (F5) ou limpar o cache do navegador. Use um navegador atualizado.'
+                                                }
+                                            ]}
+                                        />
+                                    </div>
+
+                                    {/* CTA para ajuda */}
+                                    {!currentUser && (
+                                        <div className="p-5 bg-black text-white rounded-xl">
+                                            <h4 className="font-bold text-lg mb-2">Pronto para começar?</h4>
+                                            <p className="text-white/70 text-sm mb-4">
+                                                Crie sua conta agora e tenha acesso a recursos exclusivos.
+                                            </p>
+                                            <Link
+                                                to="/auth"
+                                                className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-black rounded-full font-medium hover:bg-white transition-colors text-sm"
+                                            >
+                                                <User className="w-4 h-4" />
+                                                Criar Minha Conta
+                                            </Link>
+                                        </div>
+                                    )}
                                 </div>
                             </HelpSection>
 
@@ -724,9 +1333,191 @@ export const Help: React.FC = () => {
                                 icon={<User className="w-5 h-5" />}
                                 isActive={activeSection === 'area-cliente'}
                             >
-                                <div className="text-gray-600 space-y-4">
-                                    <p>Conteúdo desta seção será adicionado no Prompt 2.</p>
-                                    <p className="text-sm text-gray-400">Inclui: Perfil, endereços, orçamentos, agendamentos, projetos.</p>
+                                <div className="space-y-8">
+                                    {/* Acesso Rápido */}
+                                    {currentUser ? (
+                                        <div className="p-5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-3 bg-green-100 rounded-full">
+                                                    <CheckCircle className="w-6 h-6 text-green-600" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="font-bold text-green-800">Você está logado!</h4>
+                                                    <p className="text-sm text-green-600">
+                                                        Acesse sua área do cliente para gerenciar seu perfil e acompanhar seus projetos.
+                                                    </p>
+                                                </div>
+                                                <Link
+                                                    to="/profile"
+                                                    className="px-4 py-2 bg-green-600 text-white rounded-full text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
+                                                >
+                                                    Acessar Minha Área
+                                                    <ArrowRight className="w-4 h-4" />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="p-5 bg-gray-50 border border-gray-200 rounded-xl">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-3 bg-gray-200 rounded-full">
+                                                    <User className="w-6 h-6 text-gray-500" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="font-bold text-gray-800">Faça login para acessar</h4>
+                                                    <p className="text-sm text-gray-600">
+                                                        Entre na sua conta ou crie uma nova para acessar todos os recursos exclusivos.
+                                                    </p>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <Link
+                                                        to="/auth"
+                                                        className="px-4 py-2 bg-black text-white rounded-full text-sm font-medium hover:bg-gray-800 transition-colors"
+                                                    >
+                                                        Fazer Login
+                                                    </Link>
+                                                    <Link
+                                                        to="/auth"
+                                                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
+                                                    >
+                                                        Criar Conta
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* O que é a Área do Cliente */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                                            <HelpCircle className="w-5 h-5 text-accent" />
+                                            O que é a Área do Cliente?
+                                        </h3>
+                                        <p className="text-gray-600 mb-4">
+                                            A Área do Cliente é seu espaço exclusivo para gerenciar tudo relacionado à sua conta e projetos:
+                                        </p>
+                                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                                <FileText className="w-5 h-5 text-accent" />
+                                                <span className="text-sm text-gray-700">Acompanhar orçamentos</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                                <Calendar className="w-5 h-5 text-accent" />
+                                                <span className="text-sm text-gray-700">Gerenciar agendamentos</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                                <FolderOpen className="w-5 h-5 text-accent" />
+                                                <span className="text-sm text-gray-700">Acessar arquivos de projetos</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                                <User className="w-5 h-5 text-accent" />
+                                                <span className="text-sm text-gray-700">Atualizar seu perfil</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                                <MapPin className="w-5 h-5 text-accent" />
+                                                <span className="text-sm text-gray-700">Gerenciar endereços</span>
+                                            </div>
+                                            {isShopEnabled && (
+                                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                                    <ShoppingBag className="w-5 h-5 text-accent" />
+                                                    <span className="text-sm text-gray-700">Ver histórico de pedidos</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Abas da Área do Cliente */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                                            <Settings className="w-5 h-5 text-accent" />
+                                            Funcionalidades Disponíveis
+                                        </h3>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <FeatureCard
+                                                icon={<User className="w-5 h-5" />}
+                                                title="Perfil"
+                                                description="Suas informações pessoais"
+                                                features={[
+                                                    "Foto de perfil personalizável",
+                                                    "Nome e informações de contato",
+                                                    "Dados para comunicação"
+                                                ]}
+                                                actionLabel="Editar Perfil"
+                                                actionHref="/profile"
+                                            />
+                                            <FeatureCard
+                                                icon={<MapPin className="w-5 h-5" />}
+                                                title="Endereços"
+                                                description="Locais para projetos e entregas"
+                                                features={[
+                                                    "Cadastre múltiplos endereços",
+                                                    "Use para orçamentos",
+                                                    "Facilite entregas da loja"
+                                                ]}
+                                                actionLabel="Ver Endereços"
+                                                actionHref="/profile"
+                                            />
+                                            <FeatureCard
+                                                icon={<FileText className="w-5 h-5" />}
+                                                title="Orçamentos"
+                                                description="Solicitações de projeto"
+                                                features={[
+                                                    "Lista de todos os orçamentos",
+                                                    "Status atualizado em tempo real",
+                                                    "Histórico completo"
+                                                ]}
+                                                actionLabel="Ver Orçamentos"
+                                                actionHref="/profile"
+                                            />
+                                            <FeatureCard
+                                                icon={<Calendar className="w-5 h-5" />}
+                                                title="Agendamentos"
+                                                description="Reuniões e visitas"
+                                                features={[
+                                                    "Próximos compromissos",
+                                                    "Reagendar quando necessário",
+                                                    "Notificações automáticas"
+                                                ]}
+                                                actionLabel="Ver Agendamentos"
+                                                actionHref="/profile"
+                                            />
+                                            <FeatureCard
+                                                icon={<FolderOpen className="w-5 h-5" />}
+                                                title="Projetos"
+                                                description="Arquivos compartilhados"
+                                                features={[
+                                                    "Pastas organizadas por projeto",
+                                                    "Download de arquivos",
+                                                    "Visualização de documentos"
+                                                ]}
+                                                actionLabel="Ver Projetos"
+                                                actionHref="/profile"
+                                            />
+                                            {isShopEnabled && (
+                                                <FeatureCard
+                                                    icon={<ShoppingBag className="w-5 h-5" />}
+                                                    title="Pedidos"
+                                                    description="Compras na loja"
+                                                    features={[
+                                                        "Histórico de compras",
+                                                        "Status de entrega",
+                                                        "Detalhes das compras"
+                                                    ]}
+                                                    actionLabel="Ver Pedidos"
+                                                    actionHref="/profile"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Dica */}
+                                    <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                                        <div className="flex items-start gap-3">
+                                            <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                                            <div className="text-sm text-blue-800">
+                                                <strong>Dica:</strong> Mantenha seus dados sempre atualizados para receber notificações importantes sobre seus projetos via WhatsApp e e-mail.
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </HelpSection>
 
@@ -837,7 +1628,15 @@ export const Help: React.FC = () => {
                                 </button>
                             </div>
                             <p className="mt-6 text-xs text-gray-400">
-                                Desenvolvido com 💛 por Otávio Thebaldi
+                                Desenvolvido por{' '}
+                                <a
+                                    href="https://othebaldi.me/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:text-accent transition-colors"
+                                >
+                                    Otávio Siller Thebaldi
+                                </a>
                             </p>
                         </motion.div>
                     </main>
