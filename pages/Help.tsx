@@ -8,7 +8,7 @@ import {
     Settings, FileText, Shield, Home, Briefcase, Calendar,
     ShoppingBag, FolderOpen, MapPin, Image, Clock, ArrowRight,
     ExternalLink, CheckCircle, XCircle, AlertTriangle, Info,
-    Headphones, Send, Store, X, Menu
+    Headphones, Send, Store, X, Menu, Video, RefreshCw
 } from 'lucide-react';
 import { openBrevoChat } from '../utils/brevoConversations';
 
@@ -743,6 +743,8 @@ export const Help: React.FC = () => {
     // Check if shop is enabled
     const isShopEnabled = settings?.enableShop ?? false;
     const isOfficeActive = siteContent?.office?.isActive !== false;
+    const isOfficeEnabled = isOfficeActive; // Alias for clarity
+    const hoursDescription = siteContent?.office?.hoursDescription || '';
 
     // Table of Contents Items
     const tocItems: TableOfContentsItem[] = useMemo(() => [
@@ -1455,7 +1457,7 @@ export const Help: React.FC = () => {
                                                     "Dados para comunicação"
                                                 ]}
                                                 actionLabel="Editar Perfil"
-                                                actionHref="/profile"
+                                                actionHref="/profile/settings"
                                             />
                                             <FeatureCard
                                                 icon={<MapPin className="w-5 h-5" />}
@@ -1467,7 +1469,7 @@ export const Help: React.FC = () => {
                                                     "Facilite entregas da loja"
                                                 ]}
                                                 actionLabel="Ver Endereços"
-                                                actionHref="/profile"
+                                                actionHref="/profile/settings"
                                             />
                                             <FeatureCard
                                                 icon={<FileText className="w-5 h-5" />}
@@ -1479,7 +1481,7 @@ export const Help: React.FC = () => {
                                                     "Histórico completo"
                                                 ]}
                                                 actionLabel="Ver Orçamentos"
-                                                actionHref="/profile"
+                                                actionHref="/profile/budgets"
                                             />
                                             <FeatureCard
                                                 icon={<Calendar className="w-5 h-5" />}
@@ -1491,7 +1493,7 @@ export const Help: React.FC = () => {
                                                     "Notificações automáticas"
                                                 ]}
                                                 actionLabel="Ver Agendamentos"
-                                                actionHref="/profile"
+                                                actionHref="/profile/schedule"
                                             />
                                             <FeatureCard
                                                 icon={<FolderOpen className="w-5 h-5" />}
@@ -1503,7 +1505,7 @@ export const Help: React.FC = () => {
                                                     "Visualização de documentos"
                                                 ]}
                                                 actionLabel="Ver Projetos"
-                                                actionHref="/profile"
+                                                actionHref="/profile/projects"
                                             />
                                             {isShopEnabled && (
                                                 <FeatureCard
@@ -1516,7 +1518,7 @@ export const Help: React.FC = () => {
                                                         "Detalhes das compras"
                                                     ]}
                                                     actionLabel="Ver Pedidos"
-                                                    actionHref="/profile"
+                                                    actionHref="/profile/orders"
                                                 />
                                             )}
                                         </div>
@@ -1541,9 +1543,178 @@ export const Help: React.FC = () => {
                                 icon={<FileText className="w-5 h-5" />}
                                 isActive={activeSection === 'orcamento'}
                             >
-                                <div className="text-gray-600 space-y-4">
-                                    <p>Conteúdo desta seção será adicionado no Prompt 3.</p>
-                                    <p className="text-sm text-gray-400">Inclui: Passo a passo, status, dúvidas frequentes.</p>
+                                <div className="space-y-8">
+                                    {/* Visão Geral */}
+                                    <div className="bg-gradient-to-r from-accent/10 to-transparent p-6 rounded-xl border border-accent/20">
+                                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                                            <FileText className="w-5 h-5 text-accent" />
+                                            Visão Geral do Sistema de Orçamentos
+                                        </h3>
+                                        <p className="text-gray-600 mb-4">
+                                            O sistema de orçamentos permite que você solicite propostas de forma rápida e organizada.
+                                        </p>
+                                        <div className="grid sm:grid-cols-2 gap-3 mb-4">
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                                <span>Selecione os serviços desejados por categoria</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                                <span>Informe a localização do projeto</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                                <span>Adicione observações específicas</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                                <span>Acompanhe o status em tempo real</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm text-gray-500 bg-white/50 px-3 py-2 rounded-lg w-fit">
+                                            <Clock className="w-4 h-4" />
+                                            <span>Tempo estimado: 3-5 minutos</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Passo a Passo */}
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-4">Passo a Passo</h3>
+                                        <div className="space-y-4">
+                                            <InteractiveStep
+                                                step={1}
+                                                title="Acesse a página de Serviços"
+                                                description="Clique em 'Serviços' no menu principal ou use o botão 'Solicitar Orçamento' na página inicial."
+                                                action={{ label: "Ver Serviços", href: "/services" }}
+                                            />
+                                            <InteractiveStep
+                                                step={2}
+                                                title="Selecione os Serviços"
+                                                description="Os serviços são organizados por categoria. Clique nos que deseja incluir - você pode selecionar múltiplos serviços. Categorias disponíveis: Projetos Residenciais, Comerciais, Interiores, Paisagismo, Reformas e Consultoria."
+                                            />
+                                            <InteractiveStep
+                                                step={3}
+                                                title="Informe a Localização"
+                                                description="Digite o endereço completo do projeto. Cidade e Estado são extraídos automaticamente. Essa informação é importante para cálculo de deslocamento."
+                                            />
+                                            <InteractiveStep
+                                                step={4}
+                                                title="Preencha seus Dados"
+                                                description={currentUser
+                                                    ? "✅ Você está logado! Seus dados serão preenchidos automaticamente."
+                                                    : "Como visitante, preencha seu nome, e-mail e telefone. Se estiver logado, os dados são preenchidos automaticamente."}
+                                                action={!currentUser ? { label: "Fazer Login", href: "/auth" } : undefined}
+                                            />
+                                            <InteractiveStep
+                                                step={5}
+                                                title="Adicione Observações (Opcional)"
+                                                description="Use o campo livre para detalhar seu projeto, informar prazos ou necessidades especiais."
+                                            />
+                                            <InteractiveStep
+                                                step={6}
+                                                title="Envie e Acompanhe"
+                                                description="Clique em 'Solicitar Orçamento'. Você receberá confirmação por e-mail e WhatsApp (se configurado). Acompanhe o andamento na sua Área do Cliente."
+                                                action={{ label: "Meus Orçamentos", href: "/profile/budgets" }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Status do Orçamento */}
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-4">Status do Orçamento</h3>
+                                        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-gray-50">
+                                                    <tr>
+                                                        <th className="text-left px-4 py-3 font-bold">Status</th>
+                                                        <th className="text-left px-4 py-3 font-bold">Significado</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100">
+                                                    <tr>
+                                                        <td className="px-4 py-3">
+                                                            <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold">
+                                                                🟡 Pendente
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-gray-600">Aguardando análise da equipe</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td className="px-4 py-3">
+                                                            <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
+                                                                🔵 Analisando
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-gray-600">Em avaliação pelo escritório</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td className="px-4 py-3">
+                                                            <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-bold">
+                                                                🟢 Orçado
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-gray-600">Proposta pronta - verifique os detalhes</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td className="px-4 py-3">
+                                                            <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
+                                                                ✅ Concluído
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-gray-600">Orçamento finalizado</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td className="px-4 py-3">
+                                                            <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-bold">
+                                                                ⚫ Cancelado
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-gray-600">Cancelado pelo cliente ou escritório</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* FAQ */}
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-4">Dúvidas Frequentes</h3>
+                                        <TroubleshootingTable
+                                            problems={[
+                                                {
+                                                    issue: "Quanto tempo demora para receber o orçamento?",
+                                                    solution: "Geralmente 2-5 dias úteis, dependendo da complexidade do projeto."
+                                                },
+                                                {
+                                                    issue: "Posso alterar meu pedido depois de enviar?",
+                                                    solution: "Sim! Entre em contato pelo chat ou WhatsApp para solicitar alterações."
+                                                },
+                                                {
+                                                    issue: "O orçamento é gratuito?",
+                                                    solution: "Sim, a solicitação inicial é sem compromisso."
+                                                }
+                                            ]}
+                                        />
+                                    </div>
+
+                                    {/* CTA */}
+                                    <div className="flex flex-wrap gap-3">
+                                        <Link
+                                            to="/services"
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors text-sm"
+                                        >
+                                            <FileText className="w-4 h-4" />
+                                            Solicitar Orçamento
+                                        </Link>
+                                        {currentUser && (
+                                            <Link
+                                                to="/profile/budgets"
+                                                className="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-full font-medium hover:bg-gray-50 transition-colors text-sm"
+                                            >
+                                                Meus Orçamentos
+                                            </Link>
+                                        )}
+                                    </div>
                                 </div>
                             </HelpSection>
 
@@ -1554,9 +1725,238 @@ export const Help: React.FC = () => {
                                 icon={<Calendar className="w-5 h-5" />}
                                 isActive={activeSection === 'agendamento'}
                             >
-                                <div className="text-gray-600 space-y-4">
-                                    <p>Conteúdo desta seção será adicionado no Prompt 3.</p>
-                                    <p className="text-sm text-gray-400">Inclui: Tipos de reunião, processo, gerenciamento.</p>
+                                <div className="space-y-8">
+                                    {/* Tipos de Reunião */}
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-4">Tipos de Reunião Disponíveis</h3>
+                                        <div className="grid sm:grid-cols-2 gap-4">
+                                            {/* Videochamada */}
+                                            <div className="bg-blue-50 p-5 rounded-xl border border-blue-100">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                        <Video className="w-5 h-5 text-blue-600" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold">Videochamada</h4>
+                                                        <span className="text-xs text-blue-600">~45 minutos</span>
+                                                    </div>
+                                                </div>
+                                                <ul className="text-sm text-gray-600 space-y-1">
+                                                    <li>• Via Google Meet</li>
+                                                    <li>• Conheça o escritório virtualmente</li>
+                                                    <li>• Ideal para consultoria inicial</li>
+                                                </ul>
+                                            </div>
+
+                                            {/* Reunião Presencial - Condicional */}
+                                            {isOfficeEnabled && (
+                                                <div className="bg-purple-50 p-5 rounded-xl border border-purple-100">
+                                                    <div className="flex items-center gap-3 mb-3">
+                                                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                                                            <MapPin className="w-5 h-5 text-purple-600" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-bold">Reunião Presencial</h4>
+                                                            <span className="text-xs text-purple-600">~1 hora</span>
+                                                        </div>
+                                                    </div>
+                                                    <ul className="text-sm text-gray-600 space-y-1">
+                                                        <li>• No escritório Fran Siller</li>
+                                                        <li>• Conheça o espaço pessoalmente</li>
+                                                        <li>• Ideal para apresentação de projetos</li>
+                                                    </ul>
+                                                </div>
+                                            )}
+
+                                            {/* Ligação Telefônica */}
+                                            <div className="bg-green-50 p-5 rounded-xl border border-green-100">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                                        <Phone className="w-5 h-5 text-green-600" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold">Ligação Telefônica</h4>
+                                                        <span className="text-xs text-green-600">~30 minutos</span>
+                                                    </div>
+                                                </div>
+                                                <ul className="text-sm text-gray-600 space-y-1">
+                                                    <li>• Conversa rápida por telefone</li>
+                                                    <li>• Para dúvidas específicas</li>
+                                                    <li>• Resolução ágil</li>
+                                                </ul>
+                                            </div>
+
+                                            {/* Visita Técnica */}
+                                            <div className="bg-orange-50 p-5 rounded-xl border border-orange-100">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                                        <Home className="w-5 h-5 text-orange-600" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold">Visita Técnica</h4>
+                                                        <span className="text-xs text-orange-600">~1h30</span>
+                                                    </div>
+                                                </div>
+                                                <ul className="text-sm text-gray-600 space-y-1">
+                                                    <li>• No local do seu projeto</li>
+                                                    <li>• Análise presencial do espaço</li>
+                                                    <li>• Ideal para reformas e construções</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4">
+                                            <Link
+                                                to="/schedule"
+                                                className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors text-sm"
+                                            >
+                                                <Calendar className="w-4 h-4" />
+                                                Agendar Agora
+                                            </Link>
+                                        </div>
+                                    </div>
+
+                                    {/* Processo de Agendamento */}
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-4">Processo de Agendamento</h3>
+                                        <div className="space-y-4">
+                                            <InteractiveStep
+                                                step={1}
+                                                title="Escolha o Tipo de Reunião"
+                                                description="Selecione uma das opções disponíveis: Videochamada, Ligação Telefônica ou Visita Técnica."
+                                            />
+                                            <InteractiveStep
+                                                step={2}
+                                                title="Para Visita Técnica: Informe o Endereço"
+                                                description="Digite o endereço do local a ser visitado. Se estiver logado, pode usar um endereço já cadastrado na sua conta."
+                                            />
+                                            <InteractiveStep
+                                                step={3}
+                                                title="Escolha a Data"
+                                                description={`Veja o calendário com dias disponíveis. Dias bloqueados aparecem desabilitados. ${hoursDescription ? `Horário de funcionamento: ${hoursDescription}.` : ''}`}
+                                            />
+                                            <InteractiveStep
+                                                step={4}
+                                                title="Selecione o Horário"
+                                                description="Horários disponíveis aparecem em destaque. Horários ocupados ficam indisponíveis."
+                                            />
+                                            <InteractiveStep
+                                                step={5}
+                                                title="Confirme seus Dados"
+                                                description={currentUser
+                                                    ? "✅ Você está logado! Confirme seus dados de contato."
+                                                    : "Será solicitado login ou registro para confirmar o agendamento."}
+                                                action={!currentUser ? { label: "Fazer Login", href: "/auth" } : undefined}
+                                            />
+                                            <InteractiveStep
+                                                step={6}
+                                                title="Receba a Confirmação"
+                                                description="Você receberá confirmação por e-mail e WhatsApp. O status será 'Pendente' até confirmação do escritório."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Gerenciar Agendamentos */}
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-4">Gerenciar seus Agendamentos</h3>
+                                        <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                            <p className="text-gray-600 mb-4">Na sua Área do Cliente, você pode:</p>
+                                            <div className="grid sm:grid-cols-2 gap-3">
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    <CheckCircle className="w-4 h-4 text-green-500" />
+                                                    <span>Ver todos os agendamentos</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    <RefreshCw className="w-4 h-4 text-blue-500" />
+                                                    <span>Solicitar reagendamento</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    <X className="w-4 h-4 text-red-500" />
+                                                    <span>Cancelar (com antecedência)</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    <FileText className="w-4 h-4 text-gray-500" />
+                                                    <span>Ver notas e detalhes</span>
+                                                </div>
+                                            </div>
+                                            {currentUser && (
+                                                <Link
+                                                    to="/profile/schedule"
+                                                    className="inline-flex items-center gap-2 mt-4 text-sm text-black font-medium hover:text-accent transition-colors"
+                                                >
+                                                    Acessar Meus Agendamentos <ArrowRight className="w-4 h-4" />
+                                                </Link>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Status do Agendamento */}
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-4">Status do Agendamento</h3>
+                                        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-gray-50">
+                                                    <tr>
+                                                        <th className="text-left px-4 py-3 font-bold">Status</th>
+                                                        <th className="text-left px-4 py-3 font-bold">Significado</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100">
+                                                    <tr>
+                                                        <td className="px-4 py-3">
+                                                            <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold">
+                                                                🟡 Pendente
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-gray-600">Aguardando confirmação do escritório</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td className="px-4 py-3">
+                                                            <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-bold">
+                                                                🟢 Confirmado
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-gray-600">Data e horário confirmados</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td className="px-4 py-3">
+                                                            <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
+                                                                🔵 Reagendando
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-gray-600">Alteração de horário em andamento</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td className="px-4 py-3">
+                                                            <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-bold">
+                                                                ⚫ Cancelado
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-gray-600">Agendamento cancelado</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* CTA */}
+                                    <div className="flex flex-wrap gap-3">
+                                        <Link
+                                            to="/schedule"
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors text-sm"
+                                        >
+                                            <Calendar className="w-4 h-4" />
+                                            Agendar Reunião
+                                        </Link>
+                                        {currentUser && (
+                                            <Link
+                                                to="/profile/schedule"
+                                                className="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-full font-medium hover:bg-gray-50 transition-colors text-sm"
+                                            >
+                                                Meus Agendamentos
+                                            </Link>
+                                        )}
+                                    </div>
                                 </div>
                             </HelpSection>
 
