@@ -1290,7 +1290,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#111] rounded-full"></span>
                 </div>
                 <div>
-                  <h3 className="font-serif font-bold text-sm tracking-wide">Concierge Fran Siller</h3>
+                  <h3 className="font-serif font-bold text-sm tracking-wide">Assistente da Fran</h3>
                   <span className="text-[10px] text-gray-400 block">Sempre disponível para você.</span>
                 </div>
               </div>
@@ -1450,6 +1450,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="fixed bottom-6 right-6 w-14 h-14 bg-black text-white rounded-full shadow-2xl flex items-center justify-center z-[80] hover:bg-accent hover:text-black transition-colors group"
+            title="Assistente Virtual"
           >
             <MessageCircle className="w-6 h-6 group-hover:rotate-12 transition-transform" />
             <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>

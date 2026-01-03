@@ -309,7 +309,7 @@ const SiteMapItem: React.FC<SiteMapItemProps> = ({
                 <ArrowRight className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 ml-auto transition-opacity" />
             </button>
             {description && isHovered && (
-                <div className="absolute right-0 top-full mt-1 z-10 bg-black text-white text-xs p-2 rounded-lg shadow-lg max-w-48 whitespace-normal">
+                <div className="absolute right-0 top-full mt-1 z-20 bg-black text-white text-xs p-2 rounded-lg shadow-lg max-w-48 whitespace-normal">
                     {description}
                 </div>
             )}
@@ -484,6 +484,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, results, onResultClick 
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
                 inputRef.current?.focus();
+                // Ensure the input is scrolled into view if needed
+                inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
             if (e.key === 'Escape') {
                 inputRef.current?.blur();
@@ -617,6 +619,12 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({
                         {categoryItems.map(item => (
                             <li key={item.id}>
                                 <button
+                                    ref={el => {
+                                        if (activeSection === item.id && el) {
+                                            // Scroll to keep active item visible in the container
+                                            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                        }
+                                    }}
                                     onClick={() => onItemClick(item.id)}
                                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeSection === item.id
                                         ? 'bg-black text-white'
@@ -752,8 +760,13 @@ export const Help: React.FC = () => {
     // Scroll tracking for active section
     useEffect(() => {
         const handleScroll = () => {
-            // Show back to top button
-            setShowBackToTop(window.scrollY > 400);
+            // Calculate footer position to hide back to top button
+            const footer = document.querySelector('footer');
+            const footerRect = footer?.getBoundingClientRect();
+            const isFooterVisible = footerRect ? footerRect.top < window.innerHeight : false;
+
+            // Show back to top button if scrolled down AND footer is not fully overlapping
+            setShowBackToTop(window.scrollY > 400 && !isFooterVisible);
 
             // Find active section based on scroll position
             const sections = tocItems.map(item => ({

@@ -143,7 +143,7 @@ const toolDefinitions = [
 
 // === SYSTEM INSTRUCTION - REFORÇADO ===
 const DEFAULT_SYSTEM_INSTRUCTION = `
-Você é o Concierge Digital da Fran Siller Arquitetura.
+Você é o Assistente Virtual da Fran Siller Arquitetura.
 
 ## REGRA #1 - A MAIS IMPORTANTE
 NUNCA, EM HIPÓTESE ALGUMA, use funções para:
@@ -504,7 +504,7 @@ Deno.serve(async (req) => {
 
         if (formattedMessages.length === 0) {
             return new Response(JSON.stringify({
-                text: "Olá! Sou o concierge digital. Como posso ajudar?",
+                text: "Olá! Sou o assistente virtual. Como posso ajudar?",
                 functionCalls: []
             }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },

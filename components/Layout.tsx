@@ -371,7 +371,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <li><Link to="/about" className="hover:text-white transition block">Filosofia</Link></li>
                 <li><Link to="/contact" className="hover:text-white transition block">Contato</Link></li>
                 <li><Link to="/help" className="hover:text-white transition block">Central de Ajuda</Link></li>
-                <li><button onClick={() => setChatOpen(true)} className="hover:text-white transition block text-left w-full">Concierge Digital</button></li>
+                <li><button onClick={() => setChatOpen(true)} className="hover:text-white transition block text-left w-full">Assistente Virtual</button></li>
               </ul>
             </div>
             <div>
