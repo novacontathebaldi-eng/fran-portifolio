@@ -73,6 +73,9 @@ const ClaimInvite = lazyWithRetry(() => import('./pages/ClaimInvite').then(modul
 const PrivacyPolicy = lazyWithRetry(() => import('./pages/PrivacyPolicy').then(module => ({ default: module.PrivacyPolicy })));
 const Terms = lazyWithRetry(() => import('./pages/Terms').then(module => ({ default: module.Terms })));
 
+// Help Page
+const Help = lazyWithRetry(() => import('./pages/Help').then(module => ({ default: module.Help })));
+
 // --- Error Boundary Component ---
 interface ErrorBoundaryProps {
   children?: ReactNode;
@@ -309,6 +312,9 @@ const AnimatedRoutes: React.FC = () => {
           {/* Legal Pages */}
           <Route path="/politica-privacidade" element={<Layout><PrivacyPolicy /></Layout>} />
           <Route path="/termos" element={<Layout><Terms /></Layout>} />
+
+          {/* Help Page */}
+          <Route path="/help" element={<Layout><Help /></Layout>} />
 
           {/* Claim Invite - Public route for new client registration */}
           <Route path="/claim/:code" element={<ClaimInvite />} />
