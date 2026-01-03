@@ -28,6 +28,50 @@ function normalizePhone(phone: string): string {
     return cleaned;
 }
 
+async function attemptReconnect(): Promise<boolean> {
+    try {
+        console.log('[send-whatsapp] Tentando reconectar sessão...');
+        const response = await fetch(`${WUZAPI_URL}/session/connect`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'token': WUZAPI_TOKEN,
+            },
+        });
+        const data = await response.json();
+        console.log('[send-whatsapp] Resposta reconexão:', JSON.stringify(data));
+
+        // Aguardar um pouco para conexão estabilizar
+        await new Promise(r => setTimeout(r, 3000));
+        return true;
+    } catch (error) {
+        console.error('[send-whatsapp] Erro na reconexão:', error);
+        return false;
+    }
+}
+
+async function sendMessage(phone: string, message: string): Promise<{ success: boolean; data?: unknown; error?: string }> {
+    const response = await fetch(`${WUZAPI_URL}/chat/send/text`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'token': WUZAPI_TOKEN,
+        },
+        body: JSON.stringify({
+            Phone: phone,
+            Body: message,
+        }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+        return { success: false, error: result.error || `HTTP ${response.status}` };
+    }
+
+    return { success: true, data: result };
+}
+
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders });
@@ -68,20 +112,26 @@ Deno.serve(async (req) => {
 
         console.log(`[send-whatsapp] Enviando para ${phone} (original: ${rawPhone})`);
 
-        const response = await fetch(`${WUZAPI_URL}/chat/send/text`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'token': WUZAPI_TOKEN,
-            },
-            body: JSON.stringify({
-                Phone: phone,
-                Body: message,
-            }),
-        });
+        // Primeira tentativa
+        let result = await sendMessage(phone, message);
 
-        const result = await response.json();
-        console.log('[send-whatsapp] WuzAPI response:', JSON.stringify(result));
+        // Se falhou com erro de sessão, tentar reconectar e enviar novamente
+        if (!result.success && result.error) {
+            const sessionErrors = ['not connected', 'no session', 'logged out', 'disconnected'];
+            const isSessionError = sessionErrors.some(e => result.error!.toLowerCase().includes(e));
+
+            if (isSessionError) {
+                console.log('[send-whatsapp] ⚠️ Sessão perdida detectada, tentando reconectar...');
+
+                const reconnected = await attemptReconnect();
+                if (reconnected) {
+                    console.log('[send-whatsapp] Retentando envio após reconexão...');
+                    result = await sendMessage(phone, message);
+                }
+            }
+        }
+
+        console.log('[send-whatsapp] Resultado final:', JSON.stringify(result));
 
         if (!result.success) {
             return new Response(JSON.stringify({ success: false, error: result.error || 'WuzAPI error' }), {
@@ -90,7 +140,7 @@ Deno.serve(async (req) => {
             });
         }
 
-        return new Response(JSON.stringify({ success: true, data: result }), {
+        return new Response(JSON.stringify({ success: true, data: result.data }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
         });
