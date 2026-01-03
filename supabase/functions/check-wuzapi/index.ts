@@ -10,9 +10,11 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// WuzAPI Configuration - IP FIXO
-const WUZAPI_URL = Deno.env.get('WUZAPI_URL') || 'http://54.232.81.168:8080';
-const WUZAPI_TOKEN = Deno.env.get('WUZAPI_TOKEN') || 'MeuWhatsToken2025';
+// WuzAPI Configuration - usando APENAS variáveis de ambiente (secrets)
+const WUZAPI_URL = Deno.env.get('WUZAPI_URL');
+const WUZAPI_TOKEN = Deno.env.get('WUZAPI_TOKEN');
+
+// Configurações de restart (estas são menos críticas, podem ficar no código)
 const VPS_RESTART_URL = 'http://54.232.81.168:8090/restart';
 const RESTART_SECRET = 'FranSillerRestart2025';
 
@@ -38,7 +40,7 @@ async function checkWuzAPIStatus(): Promise<WuzAPIStatus> {
         const response = await fetch(`${WUZAPI_URL}/session/status`, {
             method: 'GET',
             headers: {
-                'token': WUZAPI_TOKEN,
+                'token': WUZAPI_TOKEN!,
             },
         });
 
@@ -66,17 +68,16 @@ async function attemptReconnect(): Promise<boolean> {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'token': WUZAPI_TOKEN,
+                'token': WUZAPI_TOKEN!,
             },
+            body: JSON.stringify({}),
         });
 
         const data = await response.json();
         console.log('[check-wuzapi] Resposta da reconexão:', JSON.stringify(data));
 
-        // Aguardar um pouco para a conexão estabilizar
         await new Promise(r => setTimeout(r, 5000));
 
-        // Verificar se reconectou
         const status = await checkWuzAPIStatus();
         return status.Connected && status.LoggedIn;
     } catch (error) {
@@ -112,7 +113,6 @@ async function logHealthCheck(
     result: HealthCheckResult
 ): Promise<void> {
     try {
-        // Verifica se a tabela existe antes de inserir
         const { error } = await supabase
             .from('wuzapi_health_logs')
             .insert({
@@ -124,7 +124,6 @@ async function logHealthCheck(
             });
 
         if (error) {
-            // Se a tabela não existir, apenas loga no console
             console.log('[check-wuzapi] Log não salvo (tabela pode não existir):', error.message);
         }
     } catch {
@@ -137,15 +136,27 @@ Deno.serve(async (req) => {
         return new Response('ok', { headers: corsHeaders });
     }
 
+    // Verificar se as variáveis de ambiente estão configuradas
+    if (!WUZAPI_URL || !WUZAPI_TOKEN) {
+        console.error('[check-wuzapi] ERRO: Variáveis de ambiente não configuradas');
+        return new Response(JSON.stringify({
+            success: false,
+            error: 'Configuração do servidor incompleta',
+            action: 'none',
+            actionSuccess: false,
+        }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+        });
+    }
+
     try {
         console.log('[check-wuzapi] Iniciando verificação de saúde...');
 
-        // Initialize Supabase client
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        // 1. Verificar status atual
         const status = await checkWuzAPIStatus();
         console.log('[check-wuzapi] Status atual:', JSON.stringify(status));
 
@@ -158,38 +169,36 @@ Deno.serve(async (req) => {
             actionSuccess: true,
         };
 
-        // 2. Se não estiver conectado ou logado, tentar reconectar
         if (!status.Connected || !status.LoggedIn) {
-            console.log('[check-wuzapi] ⚠️ Sessão não conectada, tentando reconectar...');
+            console.log('[check-wuzapi] Sessão não conectada, tentando reconectar...');
             result.action = 'reconnect';
 
             const reconnected = await attemptReconnect();
 
             if (reconnected) {
-                console.log('[check-wuzapi] ✅ Reconexão bem-sucedida!');
+                console.log('[check-wuzapi] Reconexão bem-sucedida!');
                 result.actionSuccess = true;
                 result.connected = true;
                 result.loggedIn = true;
             } else {
-                console.log('[check-wuzapi] ❌ Reconexão falhou, tentando restart...');
+                console.log('[check-wuzapi] Reconexão falhou, tentando restart...');
                 result.action = 'restart';
 
                 const restarted = await attemptRestart();
                 result.actionSuccess = restarted;
 
                 if (restarted) {
-                    console.log('[check-wuzapi] ✅ Restart solicitado com sucesso!');
+                    console.log('[check-wuzapi] Restart solicitado com sucesso!');
                 } else {
-                    console.log('[check-wuzapi] ❌ Restart falhou!');
+                    console.log('[check-wuzapi] Restart falhou!');
                     result.success = false;
                     result.error = 'Falha na reconexão e restart';
                 }
             }
         } else {
-            console.log('[check-wuzapi] ✅ WuzAPI conectado e funcionando!');
+            console.log('[check-wuzapi] WuzAPI conectado e funcionando!');
         }
 
-        // 3. Registrar log
         await logHealthCheck(supabase, result);
 
         return new Response(JSON.stringify(result), {

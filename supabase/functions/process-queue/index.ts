@@ -10,9 +10,9 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// WuzAPI Configuration - IP FIXO
-const WUZAPI_URL = 'http://54.232.81.168:8080';
-const WUZAPI_TOKEN = Deno.env.get('WUZAPI_TOKEN') || 'MeuWhatsToken2025';
+// WuzAPI Configuration - usando APENAS variáveis de ambiente (secrets)
+const WUZAPI_URL = Deno.env.get('WUZAPI_URL');
+const WUZAPI_TOKEN = Deno.env.get('WUZAPI_TOKEN');
 const DEFAULT_DDD = '27';
 const DEFAULT_COUNTRY = '55';
 
@@ -40,7 +40,7 @@ async function checkWuzAPIHealth(): Promise<WuzAPIStatus> {
     try {
         const response = await fetch(`${WUZAPI_URL}/session/status`, {
             method: 'GET',
-            headers: { 'token': WUZAPI_TOKEN },
+            headers: { 'token': WUZAPI_TOKEN! },
         });
 
         if (!response.ok) {
@@ -65,13 +65,13 @@ async function attemptReconnect(): Promise<boolean> {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'token': WUZAPI_TOKEN,
+                'token': WUZAPI_TOKEN!,
             },
+            body: JSON.stringify({}),
         });
         const data = await response.json();
         console.log('[process-queue] Resposta reconexão:', JSON.stringify(data));
 
-        // Aguardar conexão estabilizar
         await new Promise(r => setTimeout(r, 5000));
         return true;
     } catch (error) {
@@ -89,7 +89,7 @@ async function sendWhatsApp(phone: string, message: string): Promise<{ success: 
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'token': WUZAPI_TOKEN,
+                'token': WUZAPI_TOKEN!,
             },
             body: JSON.stringify({
                 Phone: normalizedPhone,
@@ -115,25 +115,39 @@ Deno.serve(async (req) => {
         return new Response('ok', { headers: corsHeaders });
     }
 
+    // Verificar se as variáveis de ambiente estão configuradas
+    if (!WUZAPI_URL || !WUZAPI_TOKEN) {
+        console.error('[process-queue] ERRO: Variáveis de ambiente não configuradas');
+        return new Response(JSON.stringify({
+            success: false,
+            error: 'Configuração do servidor incompleta',
+            processed: 0,
+            sent: 0,
+            failed: 0,
+        }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+        });
+    }
+
     try {
         console.log('[process-queue] Iniciando processamento...');
 
-        // Initialize Supabase client
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        // 1. Verificar saúde do WuzAPI ANTES de processar
+        // Verificar saúde do WuzAPI ANTES de processar
         const health = await checkWuzAPIHealth();
         console.log('[process-queue] Saúde WuzAPI:', JSON.stringify(health));
 
         if (!health.Connected || !health.LoggedIn) {
-            console.log('[process-queue] ⚠️ WuzAPI desconectado, tentando reconectar...');
+            console.log('[process-queue] WuzAPI desconectado, tentando reconectar...');
 
             const reconnected = await attemptReconnect();
 
             if (!reconnected) {
-                console.log('[process-queue] ❌ Reconexão falhou, abortando processamento');
+                console.log('[process-queue] Reconexão falhou, abortando processamento');
                 return new Response(JSON.stringify({
                     success: false,
                     error: 'WuzAPI não conectado',
@@ -146,10 +160,9 @@ Deno.serve(async (req) => {
                 });
             }
 
-            // Verificar novamente após reconexão
             const healthAfter = await checkWuzAPIHealth();
             if (!healthAfter.Connected || !healthAfter.LoggedIn) {
-                console.log('[process-queue] ❌ Ainda desconectado após reconexão');
+                console.log('[process-queue] Ainda desconectado após reconexão');
                 return new Response(JSON.stringify({
                     success: false,
                     error: 'Falha na reconexão do WuzAPI',
@@ -162,10 +175,10 @@ Deno.serve(async (req) => {
                 });
             }
 
-            console.log('[process-queue] ✅ Reconexão bem-sucedida!');
+            console.log('[process-queue] Reconexão bem-sucedida!');
         }
 
-        // 2. Buscar itens pendentes (limitar para evitar timeout)
+        // Buscar itens pendentes
         const { data: items, error: fetchError } = await supabase
             .from('notification_queue')
             .select('*')
@@ -204,9 +217,7 @@ Deno.serve(async (req) => {
         let sent = 0;
         let failed = 0;
 
-        // 3. Processar cada item
         for (const item of items) {
-            // Marcar como 'processing' primeiro
             await supabase
                 .from('notification_queue')
                 .update({
@@ -224,7 +235,6 @@ Deno.serve(async (req) => {
             }
 
             if (result.success) {
-                // Marcar como 'sent'
                 await supabase
                     .from('notification_queue')
                     .update({
@@ -233,9 +243,8 @@ Deno.serve(async (req) => {
                     })
                     .eq('id', item.id);
                 sent++;
-                console.log(`[process-queue] ✅ Enviado: ${item.id}`);
+                console.log(`[process-queue] Enviado: ${item.id}`);
             } else {
-                // Marcar como 'failed' ou voltar para 'pending' se ainda tem tentativas
                 const newStatus = item.attempts + 1 >= 3 ? 'failed' : 'pending';
                 await supabase
                     .from('notification_queue')
@@ -245,10 +254,9 @@ Deno.serve(async (req) => {
                     })
                     .eq('id', item.id);
                 failed++;
-                console.log(`[process-queue] ❌ Falha: ${item.id} - ${result.error}`);
+                console.log(`[process-queue] Falha: ${item.id} - ${result.error}`);
             }
 
-            // Delay entre envios para não sobrecarregar
             if (items.indexOf(item) < items.length - 1) {
                 await new Promise(r => setTimeout(r, 1500));
             }
@@ -258,7 +266,7 @@ Deno.serve(async (req) => {
 
         return new Response(JSON.stringify({
             success: true,
-            message: `Processamento completo`,
+            message: 'Processamento completo',
             processed: items.length,
             sent,
             failed
