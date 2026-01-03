@@ -1358,9 +1358,9 @@ export const DispatchesDashboard: React.FC = () => {
                                 templateKey="newBudgetAdmin"
                                 label="Novo Orçamento"
                                 description="Notificação de novo orçamento para admin"
-                                variables={['nome', 'email', 'telefone', 'cidade', 'servicos']}
+                                variables={['nome', 'email', 'telefone', 'cidade', 'servicos', 'observacoes']}
                                 value={config.whatsapp.templates.newBudgetAdmin}
-                                defaultValue={DEFAULT_TEMPLATES.newBudgetAdmin('{{nome}}', '{{cidade}}', '{{servicos}}', '{{email}}', '{{telefone}}')}
+                                defaultValue={DEFAULT_TEMPLATES.newBudgetAdmin('{{nome}}', '{{cidade}}', '{{servicos}}', '{{email}}', '{{telefone}}', '{{observacoes}}')}
                                 onChange={(v) => updateWhatsApp('templates.newBudgetAdmin', v)}
                                 onSave={saveConfig}
                                 isSaving={saving}
@@ -1418,11 +1418,11 @@ export const DispatchesDashboard: React.FC = () => {
                                 templateKey="newBudgetAdmin"
                                 label="Novo Orçamento"
                                 description="Email enviado ao admin quando um cliente solicita orçamento"
-                                variables={['nome', 'cidade', 'servicos']}
+                                variables={['nome', 'cidade', 'servicos', 'observacoes']}
                                 subjectValue={config.email.templates.newBudgetAdmin.subject}
                                 subjectDefault="💰 Novo Orçamento: {{nome}}"
                                 bodyValue={config.email.templates.newBudgetAdmin.body}
-                                bodyDefault={DEFAULT_EMAIL_TEMPLATES.newBudgetAdmin.body('{{nome}}', '{{cidade}}', '{{servicos}}')}
+                                bodyDefault={DEFAULT_EMAIL_TEMPLATES.newBudgetAdmin.body('{{nome}}', '{{cidade}}', '{{servicos}}', '{{observacoes}}')}
                                 headerTitle="Nova Solicitação de Orçamento"
                                 headerColor="#EC4899"
                                 onSubjectChange={(v) => updateEmail('templates.newBudgetAdmin.subject', v)}

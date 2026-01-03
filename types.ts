@@ -359,6 +359,7 @@ export interface TemplateVariables {
   mensagem?: string;
   email?: string;
   telefone?: string;
+  observacoes?: string;
 }
 
 // Templates WhatsApp customizáveis (null = usar padrão do código)

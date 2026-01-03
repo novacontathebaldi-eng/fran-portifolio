@@ -30,7 +30,7 @@ interface EmailPayload {
 export const DEFAULT_EMAIL_TEMPLATES = {
   newBudgetAdmin: {
     subject: (name: string) => `💰 Novo Orçamento: ${name}`,
-    body: (name: string, city: string, services: string) => `
+    body: (name: string, city: string, services: string, observations: string) => `
       <p>Um cliente acabou de solicitar um orçamento pelo site.</p>
       <div class="info-box">
         <span class="label">Cliente</span>
@@ -41,8 +41,12 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         
         <span class="label">Serviços Interessados</span>
         <span class="value">${services}</span>
+        ${observations ? `
+        <span class="label">Observações do Cliente</span>
+        <span class="value" style="white-space: pre-wrap;">${observations}</span>
+        ` : ''}
       </div>
-      <p>Acesse o painel para ver os detalhes completos, incluindo telefone e observações.</p>
+      <p>Acesse o painel para ver os detalhes completos, incluindo telefone e e-mail.</p>
     `,
   },
   newAppointmentAdmin: {
@@ -302,7 +306,7 @@ export const notifyNewChatbotNote = async (data: {
 /**
  * Notificar novo orçamento
  */
-export const notifyNewBudgetRequest = async (data: { clientName: string; city: string; services: string[]; clientPhone?: string; clientEmail?: string }) => {
+export const notifyNewBudgetRequest = async (data: { clientName: string; city: string; services: string[]; clientPhone?: string; clientEmail?: string; observations?: string }) => {
   const config = await getNotificationsConfig();
   const services = data.services.join(', ');
 
@@ -317,10 +321,11 @@ export const notifyNewBudgetRequest = async (data: { clientName: string; city: s
       nome: data.clientName,
       cidade: data.city,
       servicos: services,
+      observacoes: data.observations || '',
     });
   } else {
     emailSubject = DEFAULT_EMAIL_TEMPLATES.newBudgetAdmin.subject(data.clientName);
-    bodyContent = DEFAULT_EMAIL_TEMPLATES.newBudgetAdmin.body(data.clientName, data.city, services);
+    bodyContent = DEFAULT_EMAIL_TEMPLATES.newBudgetAdmin.body(data.clientName, data.city, services, data.observations || '');
   }
 
   const html = getBaseTemplate('Nova Solicitação de Orçamento', '#EC4899', bodyContent);
@@ -344,8 +349,8 @@ export const notifyNewBudgetRequest = async (data: { clientName: string; city: s
       // Usar template customizado se existir, senão usar padrão
       const customTemplate = config2.whatsapp.templates.newBudgetAdmin;
       const adminMessage = customTemplate
-        ? processWhatsAppTemplate(customTemplate, { nome: data.clientName, cidade: data.city, servicos: services, email: data.clientEmail || '', telefone: data.clientPhone || '' })
-        : DEFAULT_TEMPLATES.newBudgetAdmin(data.clientName, data.city, services, data.clientEmail || '', data.clientPhone || '');
+        ? processWhatsAppTemplate(customTemplate, { nome: data.clientName, cidade: data.city, servicos: services, email: data.clientEmail || '', telefone: data.clientPhone || '', observacoes: data.observations || '' })
+        : DEFAULT_TEMPLATES.newBudgetAdmin(data.clientName, data.city, services, data.clientEmail || '', data.clientPhone || '', data.observations || '');
 
       for (const phone of adminPhones) {
         notifications.push({ type: 'whatsapp', phone, message: adminMessage });

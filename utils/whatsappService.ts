@@ -130,10 +130,11 @@ _Fran Siller Arquitetura_`,
         `📅 *Lembrete de ${type}*\n\nOlá ${name}!\n\nLembramos que você tem um(a) *${type}* agendado(a) para:\n\n📆 Data: ${date}\n⏰ Horário: ${time}\n\nEm caso de dúvidas ou necessidade de reagendamento, entre em contato conosco.\n\n_Fran Siller Arquitetura_`,
 
     // ADMIN
-    newBudgetAdmin: (name: string, city: string, services: string, email?: string, phone?: string) => {
+    newBudgetAdmin: (name: string, city: string, services: string, email?: string, phone?: string, observations?: string) => {
         const emailInfo = email ? `\n✉️ Email: ${email}` : '';
         const phoneInfo = phone ? `\n📞 Tel./WhatsApp: ${phone}` : '';
-        return `💰 *Novo Orçamento*\n\n👤 Cliente: ${name}${emailInfo}${phoneInfo}\n📍 Cidade: ${city}\n🔧 Serviços: ${services}\n\nAcesse o painel admin para ver detalhes.`;
+        const obsInfo = observations ? `\n\n📝 *Observações:*\n${observations}` : '';
+        return `💰 *Novo Orçamento*\n\n👤 Cliente: ${name}${emailInfo}${phoneInfo}\n📍 Cidade: ${city}\n🔧 Serviços: ${services}${obsInfo}\n\nAcesse o painel admin para ver detalhes.`;
     },
 
     newAppointmentAdmin: (name: string, type: string, date: string, time: string, email?: string, phone?: string) => {
