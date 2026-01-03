@@ -66,14 +66,26 @@ export const BudgetFlow: React.FC = () => {
     fetchServices();
   }, []);
 
-  // Auto-preencher dados se usuário estiver logado
+  // Auto-preencher dados se usuário estiver logado (incluindo endereço)
   useEffect(() => {
     if (currentUser) {
+      // Pega o primeiro endereço do usuário como padrão (se existir)
+      const defaultAddress = currentUser.addresses?.[0];
+
+      // Monta o endereço completo para exibição
+      const fullAddress = defaultAddress
+        ? `${defaultAddress.street}, ${defaultAddress.number}${defaultAddress.complement ? `, ${defaultAddress.complement}` : ''} - ${defaultAddress.district}`
+        : '';
+
       setFormData(prev => ({
         ...prev,
         clientName: currentUser.name || '',
         clientEmail: currentUser.email || '',
-        clientPhone: currentUser.phone || ''
+        clientPhone: currentUser.phone || '',
+        // Preenche os campos de localização com o endereço do usuário
+        projectLocationFull: fullAddress,
+        projectCity: defaultAddress?.city || '',
+        projectState: defaultAddress?.state || ''
       }));
     }
   }, [currentUser]);

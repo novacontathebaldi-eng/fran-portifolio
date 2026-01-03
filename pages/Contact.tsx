@@ -1,6 +1,6 @@
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Instagram, Linkedin, Send, MessageCircle, Loader2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,7 +11,7 @@ export const Contact: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
-  const { showToast, siteContent, addMessage } = useProjects();
+  const { showToast, siteContent, addMessage, currentUser } = useProjects();
   const { office } = siteContent;
   const isOfficeActive = office?.isActive !== false;
 
@@ -37,6 +37,18 @@ export const Contact: React.FC = () => {
 
   const faqItems = office.faqItems?.length ? office.faqItems : defaultFaqItems;
   const subjects = office.contactSubjects?.length ? office.contactSubjects : defaultSubjects;
+
+  // Auto-preencher dados se usuário estiver logado
+  useEffect(() => {
+    if (currentUser) {
+      setFormData(prev => ({
+        ...prev,
+        name: currentUser.name || '',
+        email: currentUser.email || '',
+        phone: currentUser.phone || ''
+      }));
+    }
+  }, [currentUser]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
