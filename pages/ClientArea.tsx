@@ -1,15 +1,40 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useProjects } from '../context/ProjectContext';
 import { Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Lock, Receipt, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Project, ClientMemory, ClientFolder, Address, User, Appointment } from '../types';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { ClientBudgetsView } from './Client/ClientBudgetsView';
 import { ClientBudgetDetail } from './Client/ClientBudgetDetail';
 import { ClientOrdersView } from './Client/ClientOrdersView';
 import { ImageCropModal, useImageCropModal } from '../components/ImageCropModal';
+
+// Route <-> Tab Mapping
+type TabType = 'profile' | 'projects' | 'docs' | 'settings' | 'favs' | 'memories' | 'schedule' | 'budgets' | 'orders';
+
+const routeToTab: Record<string, TabType> = {
+  'projects': 'projects',
+  'schedule': 'schedule',
+  'files': 'docs',
+  'memories': 'memories',
+  'budgets': 'budgets',
+  'orders': 'orders',
+  'settings': 'profile',
+};
+
+const tabToRoute: Record<TabType, string> = {
+  'projects': 'projects',
+  'schedule': 'schedule',
+  'docs': 'files',
+  'memories': 'memories',
+  'budgets': 'budgets',
+  'orders': 'orders',
+  'profile': 'settings',
+  'settings': 'settings',
+  'favs': 'projects',
+};
 
 // Real Supabase Upload
 const uploadToSupabase = async (file: File): Promise<string> => {
@@ -34,9 +59,33 @@ const uploadToSupabase = async (file: File): Promise<string> => {
 
 export const ClientArea: React.FC = () => {
   const { currentUser, logout, projects: allProjects, clientMemories, addClientMemory, updateClientMemory, deleteClientMemory, appointments, updateAppointmentStatus, updateAppointment, updateUser, showToast, siteContent, checkAvailability, settings, addAddress, updateAddress, deleteAddress } = useProjects();
-  const [activeTab, setActiveTab] = useState<'profile' | 'projects' | 'docs' | 'settings' | 'favs' | 'memories' | 'schedule' | 'budgets' | 'orders'>('projects');
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Extract section from URL path (e.g., /profile/schedule -> schedule)
+  const getTabFromUrl = (): TabType => {
+    const pathParts = location.pathname.split('/');
+    const section = pathParts[2] || 'projects'; // Default to projects
+    return routeToTab[section] || 'projects';
+  };
+
+  const [activeTab, setActiveTab] = useState<TabType>(getTabFromUrl);
+
+  // Sync URL -> Tab when URL changes (e.g., browser back/forward)
+  useEffect(() => {
+    const tabFromUrl = getTabFromUrl();
+    if (tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [location.pathname]);
+
+  // Helper to navigate to a tab (updates URL)
+  const navigateToTab = (tab: TabType) => {
+    const route = tabToRoute[tab];
+    navigate(`/profile/${route}`, { replace: true });
+    setActiveTab(tab);
+  };
 
   // Profile & Address State
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -264,33 +313,33 @@ export const ClientArea: React.FC = () => {
         {/* Barra de Abas - Sticky que fica grudada no header */}
         <div className="sticky top-16 z-40 bg-white border-y border-gray-100 mb-8 -mx-6 px-6 md:mx-0 md:px-0 shadow-sm w-[calc(100%+3rem)] md:w-full">
           <nav className="flex items-center space-x-2 md:space-x-4 overflow-x-auto no-scrollbar py-3 md:py-4">
-            <button onClick={() => setActiveTab('projects')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'projects' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+            <button onClick={() => navigateToTab('projects')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'projects' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
               <Package className="w-4 h-4" />
               <span className="whitespace-nowrap">Projetos</span>
             </button>
-            <button onClick={() => setActiveTab('schedule')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'schedule' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+            <button onClick={() => navigateToTab('schedule')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'schedule' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
               <Calendar className="w-4 h-4" />
               <span className="whitespace-nowrap">Agendamentos</span>
             </button>
-            <button onClick={() => setActiveTab('docs')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'docs' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+            <button onClick={() => navigateToTab('docs')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'docs' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
               <FileText className="w-4 h-4" />
               <span className="whitespace-nowrap">Arquivos</span>
             </button>
-            <button onClick={() => setActiveTab('memories')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'memories' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+            <button onClick={() => navigateToTab('memories')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'memories' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
               <Brain className="w-4 h-4" />
               <span className="whitespace-nowrap">IA & Memórias</span>
             </button>
-            <button onClick={() => setActiveTab('budgets')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'budgets' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+            <button onClick={() => navigateToTab('budgets')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'budgets' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
               <Receipt className="w-4 h-4" />
               <span className="whitespace-nowrap">Orçamentos</span>
             </button>
             {settings.enableShop && (
-              <button onClick={() => setActiveTab('orders')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'orders' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+              <button onClick={() => navigateToTab('orders')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'orders' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
                 <ShoppingBag className="w-4 h-4" />
                 <span className="whitespace-nowrap">Pedidos</span>
               </button>
             )}
-            <button onClick={() => setActiveTab('profile')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'profile' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
+            <button onClick={() => navigateToTab('profile')} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full transition text-sm border ${activeTab === 'profile' ? 'bg-black text-white border-black font-bold' : 'text-gray-500 hover:border-black hover:text-black border-transparent'}`}>
               <UserCircle className="w-4 h-4" />
               <span className="whitespace-nowrap">Perfil</span>
             </button>
