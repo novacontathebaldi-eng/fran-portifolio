@@ -1533,6 +1533,238 @@ export const Help: React.FC = () => {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Detalhes Expandidos das Funcionalidades */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                                            <Book className="w-5 h-5 text-accent" />
+                                            Guia Detalhado por Seção
+                                        </h3>
+
+                                        <div className="space-y-4">
+                                            {/* 6.1 Perfil */}
+                                            <div className="bg-gray-50 rounded-xl border border-gray-100 p-5">
+                                                <h4 className="font-bold text-black mb-3 flex items-center gap-2">
+                                                    <User className="w-4 h-4 text-accent" />
+                                                    Perfil - Seus Dados
+                                                </h4>
+                                                <div className="space-y-3 text-sm text-gray-600">
+                                                    <div>
+                                                        <strong className="text-black">📷 Foto de Perfil:</strong>
+                                                        <ul className="mt-1 ml-4 space-y-1">
+                                                            <li>• Clique na foto atual (ou ícone padrão)</li>
+                                                            <li>• Selecione uma imagem do seu dispositivo</li>
+                                                            <li>• Ajuste o recorte se necessário</li>
+                                                            <li>• A foto é salva automaticamente</li>
+                                                        </ul>
+                                                    </div>
+                                                    <div>
+                                                        <strong className="text-black">📝 Informações Pessoais:</strong>
+                                                        <ul className="mt-1 ml-4 space-y-1">
+                                                            <li>• Nome completo</li>
+                                                            <li>• E-mail (não editável - é o login)</li>
+                                                            <li>• Telefone/WhatsApp</li>
+                                                            <li>• CPF/CNPJ (opcional)</li>
+                                                            <li>• Data de nascimento (opcional)</li>
+                                                            <li>• Bio/Descrição pessoal</li>
+                                                        </ul>
+                                                    </div>
+                                                    <div className="flex gap-2 mt-3">
+                                                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Salvar Alterações</span>
+                                                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">Sair da Conta</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* 6.2 Endereços */}
+                                            <div className="bg-gray-50 rounded-xl border border-gray-100 p-5">
+                                                <h4 className="font-bold text-black mb-3 flex items-center gap-2">
+                                                    <MapPin className="w-4 h-4 text-accent" />
+                                                    Endereços
+                                                </h4>
+                                                <div className="space-y-3 text-sm text-gray-600">
+                                                    <div>
+                                                        <strong className="text-black">Por que cadastrar endereços?</strong>
+                                                        <ul className="mt-1 ml-4 space-y-1">
+                                                            <li>• Agiliza o preenchimento de orçamentos</li>
+                                                            <li>• Usado para visitas técnicas</li>
+                                                            {isShopEnabled && <li>• Endereço de entrega para loja</li>}
+                                                        </ul>
+                                                    </div>
+                                                    <div>
+                                                        <strong className="text-black">Como adicionar:</strong>
+                                                        <ul className="mt-1 ml-4 space-y-1">
+                                                            <li>1. Clique em "+ Novo Endereço"</li>
+                                                            <li>2. Dê um apelido (ex: "Casa", "Trabalho")</li>
+                                                            <li>3. Digite o CEP (preenche automático)</li>
+                                                            <li>4. Complete os dados e clique em "Salvar"</li>
+                                                        </ul>
+                                                    </div>
+                                                    <div className="flex gap-2 mt-3">
+                                                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">✏️ Editar</span>
+                                                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">🗑️ Excluir</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* 6.3 Orçamentos */}
+                                            <div className="bg-gray-50 rounded-xl border border-gray-100 p-5">
+                                                <h4 className="font-bold text-black mb-3 flex items-center gap-2">
+                                                    <FileText className="w-4 h-4 text-accent" />
+                                                    Orçamentos (Meus Orçamentos)
+                                                </h4>
+                                                <div className="space-y-3 text-sm text-gray-600">
+                                                    <div>
+                                                        <strong className="text-black">Visualização:</strong>
+                                                        <ul className="mt-1 ml-4 space-y-1">
+                                                            <li>• Lista com todos os orçamentos solicitados</li>
+                                                            <li>• Ordenados por data (mais recentes primeiro)</li>
+                                                            <li>• Filtro por status</li>
+                                                            <li>• Busca por serviço</li>
+                                                        </ul>
+                                                    </div>
+                                                    <div>
+                                                        <strong className="text-black">Cada orçamento mostra:</strong>
+                                                        <ul className="mt-1 ml-4 space-y-1">
+                                                            <li>• Data da solicitação</li>
+                                                            <li>• Serviços selecionados</li>
+                                                            <li>• Localização do projeto</li>
+                                                            <li>• Status atual</li>
+                                                            <li>• Botão "Ver Detalhes"</li>
+                                                        </ul>
+                                                    </div>
+                                                    {currentUser && (
+                                                        <Link
+                                                            to="/profile/budgets"
+                                                            className="inline-flex items-center gap-2 mt-2 text-sm text-accent font-medium hover:underline"
+                                                        >
+                                                            Acessar Meus Orçamentos <ArrowRight className="w-3 h-3" />
+                                                        </Link>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* 6.4 Agendamentos */}
+                                            <div className="bg-gray-50 rounded-xl border border-gray-100 p-5">
+                                                <h4 className="font-bold text-black mb-3 flex items-center gap-2">
+                                                    <Calendar className="w-4 h-4 text-accent" />
+                                                    Agendamentos (Minha Agenda)
+                                                </h4>
+                                                <div className="space-y-3 text-sm text-gray-600">
+                                                    <div>
+                                                        <strong className="text-black">Visualização:</strong>
+                                                        <ul className="mt-1 ml-4 space-y-1">
+                                                            <li>• Próximos agendamentos em destaque</li>
+                                                            <li>• Histórico de reuniões passadas</li>
+                                                            <li>• Filtro por tipo e status</li>
+                                                        </ul>
+                                                    </div>
+                                                    <div>
+                                                        <strong className="text-black">Ações disponíveis:</strong>
+                                                        <ul className="mt-1 ml-4 space-y-1">
+                                                            <li>🔄 <strong>Reagendar:</strong> Escolha nova data e aguarde confirmação</li>
+                                                            <li>❌ <strong>Cancelar:</strong> Com antecedência, informe o motivo</li>
+                                                            <li>📝 <strong>Ver detalhes:</strong> Notas e informações completas</li>
+                                                        </ul>
+                                                    </div>
+                                                    {currentUser && (
+                                                        <Link
+                                                            to="/profile/schedule"
+                                                            className="inline-flex items-center gap-2 mt-2 text-sm text-accent font-medium hover:underline"
+                                                        >
+                                                            Acessar Minha Agenda <ArrowRight className="w-3 h-3" />
+                                                        </Link>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* 6.5 Projetos */}
+                                            <div className="bg-gray-50 rounded-xl border border-gray-100 p-5">
+                                                <h4 className="font-bold text-black mb-3 flex items-center gap-2">
+                                                    <FolderOpen className="w-4 h-4 text-accent" />
+                                                    Projetos (Meus Arquivos)
+                                                </h4>
+                                                <div className="space-y-3 text-sm text-gray-600">
+                                                    <div>
+                                                        <strong className="text-black">O que são as pastas de projeto?</strong>
+                                                        <p className="mt-1">O escritório pode compartilhar arquivos com você:</p>
+                                                        <ul className="mt-1 ml-4 space-y-1">
+                                                            <li>• Plantas baixas</li>
+                                                            <li>• Renders 3D</li>
+                                                            <li>• Documentos técnicos</li>
+                                                            <li>• Memoriais descritivos</li>
+                                                            <li>• Fotos de acompanhamento</li>
+                                                        </ul>
+                                                    </div>
+                                                    <div>
+                                                        <strong className="text-black">Tipos de arquivo suportados:</strong>
+                                                        <div className="flex flex-wrap gap-2 mt-2">
+                                                            <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">📄 PDF</span>
+                                                            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">🖼️ JPG/PNG</span>
+                                                            <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">🎥 MP4</span>
+                                                            <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium">📐 DWG/CAD</span>
+                                                            <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">🏗️ RVT/IFC</span>
+                                                        </div>
+                                                    </div>
+                                                    {currentUser && (
+                                                        <Link
+                                                            to="/profile/projects"
+                                                            className="inline-flex items-center gap-2 mt-2 text-sm text-accent font-medium hover:underline"
+                                                        >
+                                                            Acessar Meus Arquivos <ArrowRight className="w-3 h-3" />
+                                                        </Link>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* 6.6 Pedidos (Condicional) */}
+                                            {isShopEnabled && (
+                                                <div className="bg-gray-50 rounded-xl border border-gray-100 p-5">
+                                                    <h4 className="font-bold text-black mb-3 flex items-center gap-2">
+                                                        <ShoppingBag className="w-4 h-4 text-accent" />
+                                                        Pedidos (Minhas Compras)
+                                                    </h4>
+                                                    <div className="space-y-3 text-sm text-gray-600">
+                                                        <div>
+                                                            <strong className="text-black">Visualização:</strong>
+                                                            <ul className="mt-1 ml-4 space-y-1">
+                                                                <li>• Lista de todos os pedidos</li>
+                                                                <li>• Status de cada pedido</li>
+                                                                <li>• Valor total</li>
+                                                            </ul>
+                                                        </div>
+                                                        <div>
+                                                            <strong className="text-black">Status do Pedido:</strong>
+                                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">🟡 Pendente</span>
+                                                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">🟢 Pago</span>
+                                                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">📦 Enviado</span>
+                                                                <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded text-xs font-medium">✅ Entregue</span>
+                                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">⚫ Cancelado</span>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <strong className="text-black">Detalhes do pedido incluem:</strong>
+                                                            <ul className="mt-1 ml-4 space-y-1">
+                                                                <li>• Itens comprados</li>
+                                                                <li>• Endereço de entrega</li>
+                                                                <li>• Método de pagamento</li>
+                                                                <li>• Código de rastreio (quando enviado)</li>
+                                                            </ul>
+                                                        </div>
+                                                        {currentUser && (
+                                                            <Link
+                                                                to="/profile/orders"
+                                                                className="inline-flex items-center gap-2 mt-2 text-sm text-accent font-medium hover:underline"
+                                                            >
+                                                                Acessar Minhas Compras <ArrowRight className="w-3 h-3" />
+                                                            </Link>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </HelpSection>
 
@@ -1738,7 +1970,7 @@ export const Help: React.FC = () => {
                                                     </div>
                                                     <div>
                                                         <h4 className="font-bold">Videochamada</h4>
-                                                        <span className="text-xs text-blue-600">~45 minutos</span>
+                                                        <span className="text-xs text-blue-600">~30 minutos (estimado)</span>
                                                     </div>
                                                 </div>
                                                 <ul className="text-sm text-gray-600 space-y-1">
@@ -1757,7 +1989,7 @@ export const Help: React.FC = () => {
                                                         </div>
                                                         <div>
                                                             <h4 className="font-bold">Reunião Presencial</h4>
-                                                            <span className="text-xs text-purple-600">~1 hora</span>
+                                                            <span className="text-xs text-purple-600">~45 minutos (estimado)</span>
                                                         </div>
                                                     </div>
                                                     <ul className="text-sm text-gray-600 space-y-1">
@@ -1776,7 +2008,7 @@ export const Help: React.FC = () => {
                                                     </div>
                                                     <div>
                                                         <h4 className="font-bold">Ligação Telefônica</h4>
-                                                        <span className="text-xs text-green-600">~30 minutos</span>
+                                                        <span className="text-xs text-green-600">~15 minutos (estimado)</span>
                                                     </div>
                                                 </div>
                                                 <ul className="text-sm text-gray-600 space-y-1">
@@ -1794,7 +2026,7 @@ export const Help: React.FC = () => {
                                                     </div>
                                                     <div>
                                                         <h4 className="font-bold">Visita Técnica</h4>
-                                                        <span className="text-xs text-orange-600">~1h30</span>
+                                                        <span className="text-xs text-orange-600">varia conforme projeto</span>
                                                     </div>
                                                 </div>
                                                 <ul className="text-sm text-gray-600 space-y-1">
@@ -1802,6 +2034,15 @@ export const Help: React.FC = () => {
                                                     <li>• Análise presencial do espaço</li>
                                                     <li>• Ideal para reformas e construções</li>
                                                 </ul>
+                                            </div>
+                                        </div>
+                                        {/* Nota sobre tempos */}
+                                        <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                            <div className="flex items-start gap-2">
+                                                <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                                                <p className="text-xs text-amber-800">
+                                                    <strong>Sobre os tempos:</strong> As durações indicadas são estimativas e podem variar conforme a complexidade do projeto e as necessidades de cada reunião.
+                                                </p>
                                             </div>
                                         </div>
 
