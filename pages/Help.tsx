@@ -463,12 +463,12 @@ const HelpSection: React.FC<HelpSectionProps> = ({
     const [isOpen, setIsOpen] = useState(defaultOpen);
     const sectionRef = useRef<HTMLDivElement>(null);
 
-    // Sincronizar com forceOpen externo
+    // Sincronizar com forceOpen externo (apenas abrir, não impede fechar)
     useEffect(() => {
-        if (forceOpen && !isOpen) {
+        if (forceOpen) {
             setIsOpen(true);
         }
-    }, [forceOpen, isOpen]);
+    }, [forceOpen]);
 
     const handleToggle = () => {
         const newState = !isOpen;
@@ -481,8 +481,18 @@ const HelpSection: React.FC<HelpSectionProps> = ({
         if (window.location.hash === `#${id}`) {
             setIsOpen(true);
             setTimeout(() => {
-                sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+                if (sectionRef.current) {
+                    const isMobile = window.innerWidth < 1024;
+                    const headerOffset = isMobile ? 140 : 120;
+                    const elementPosition = sectionRef.current.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 150);
         }
     }, [id]);
 
@@ -1114,24 +1124,48 @@ export const Help: React.FC = () => {
             setTimeout(() => {
                 const element = document.getElementById(sectionId);
                 if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    const isMobile = window.innerWidth < 1024;
+                    const headerOffset = isMobile ? 140 : 120;
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
                     setActiveSection(sectionId);
                 }
-            }, 100);
+            }, 150);
         }
     }, [location.hash]);
 
-    // Navigate to section and open it
+    // Navigate to section and toggle it open
     const handleNavigateToSection = useCallback((sectionId: string) => {
         const element = document.getElementById(sectionId);
         if (element) {
-            // Abrir a seção clicada
-            setOpenSections(prev => new Set([...prev, sectionId]));
+            // Toggle: se já está aberto, apenas faz scroll; senão abre
+            setOpenSections(prev => {
+                const newSet = new Set(prev);
+                if (!newSet.has(sectionId)) {
+                    newSet.add(sectionId);
+                }
+                return newSet;
+            });
 
-            // Aguardar abertura e então fazer scroll
+            // Calcular offset: header (80px) + barra sticky mobile (56px em telas pequenas)
+            const isMobile = window.innerWidth < 1024;
+            const headerOffset = isMobile ? 140 : 120; // header + sticky no mobile, só header no desktop
+
+            // Aguardar abertura e então fazer scroll com offset
             setTimeout(() => {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+                const elementPosition = element.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+            }, 150);
 
             setActiveSection(sectionId);
             window.history.replaceState(null, '', `#/help#${sectionId}`);
