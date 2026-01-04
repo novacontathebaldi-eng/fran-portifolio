@@ -8,7 +8,8 @@ import {
     Settings, FileText, Shield, Home, Briefcase, Calendar,
     ShoppingBag, FolderOpen, MapPin, Image, Clock, ArrowRight,
     ExternalLink, CheckCircle, XCircle, AlertTriangle, Info,
-    Headphones, Send, Store, X, Menu, Video, RefreshCw
+    Headphones, Send, Store, X, Menu, Video, RefreshCw,
+    Lightbulb, BookOpen
 } from 'lucide-react';
 import { openBrevoChat } from '../utils/brevoConversations';
 import { sendWhatsAppMessage, getNotificationsConfig, processTemplate, DEFAULT_TEMPLATES } from '../utils/whatsappService';
@@ -83,6 +84,27 @@ const drawerVariants = {
     hidden: { y: '100%', opacity: 0 },
     visible: { y: 0, opacity: 1, transition: { type: 'spring', damping: 25, stiffness: 300 } },
     exit: { y: '100%', opacity: 0, transition: { duration: 0.2 } }
+};
+
+// Animation variants for the Tour floating button (same as Chatbot)
+const tourButtonVariants = {
+    hidden: {
+        opacity: 0,
+        scale: 0.8,
+        y: 20,
+        transition: { duration: 0.2, ease: "easeIn" }
+    },
+    visible: {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        transition: {
+            type: "spring",
+            stiffness: 400,
+            damping: 25,
+            mass: 0.8
+        }
+    }
 };
 
 // ============================================
@@ -773,7 +795,7 @@ export const Help: React.FC = () => {
     // State
     const [activeSection, setActiveSection] = useState('');
     const [showMobileTOC, setShowMobileTOC] = useState(false);
-    const [showBackToTop, setShowBackToTop] = useState(false);
+    const [showTourButton, setShowTourButton] = useState(true);
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 
     // Refs for scroll tracking
@@ -798,15 +820,75 @@ export const Help: React.FC = () => {
     const [showTour, setShowTour] = useState(false);
     const [tourStep, setTourStep] = useState(0);
 
-    // Tour steps configuration
+    // Tour steps configuration - Expanded with detailed content and tips
     const tourSteps = useMemo(() => [
-        { target: 'hero', title: '📚 Bem-vindo à Central de Ajuda!', content: 'Aqui você encontra tudo sobre o site Fran Siller Arquitetura.' },
-        { target: 'navegacao', title: '🧭 Navegação do Site', content: 'Conheça todas as páginas e recursos disponíveis.' },
-        { target: 'autenticacao', title: '🔐 Login e Conta', content: 'Saiba como criar conta, fazer login e recuperar sua senha.' },
-        { target: 'area-cliente', title: '👤 Área do Cliente', content: 'Gerencie seu perfil, endereços, orçamentos e agendamentos.' },
-        { target: 'suporte', title: '💬 Suporte e Contato', content: 'Entre em contato conosco por chat, WhatsApp ou formulário.' },
-        { target: 'faq', title: '❓ FAQ', content: 'Respostas para as perguntas mais frequentes.' },
-    ], []);
+        {
+            target: 'hero',
+            title: '👋 Bem-vindo à Central de Ajuda!',
+            content: 'Este guia interativo vai te mostrar tudo sobre o site da Fran Siller Arquitetura.',
+            tip: 'Você pode iniciar este tour a qualquer momento clicando no botão flutuante.'
+        },
+        {
+            target: 'navegacao',
+            title: '🧭 Navegação do Site',
+            content: 'Conheça todas as páginas disponíveis: Portfólio, Projetos Culturais, Sobre, Contato e mais.',
+            tip: 'Use o menu no topo ou os links rápidos para navegar.'
+        },
+        {
+            target: 'autenticacao',
+            title: '🔐 Sua Conta',
+            content: 'Aprenda a criar conta, fazer login e recuperar sua senha caso esqueça.',
+            tip: 'Com uma conta, você pode acompanhar orçamentos e agendar reuniões!'
+        },
+        {
+            target: 'area-cliente',
+            title: '👤 Área do Cliente',
+            content: 'Gerencie seu perfil, endereços salvos e visualize seu histórico completo.',
+            tip: 'Todas as suas informações ficam seguras e organizadas em um só lugar.'
+        },
+        {
+            target: 'orcamento',
+            title: '📋 Solicitar Orçamento',
+            content: 'Veja o passo a passo para solicitar um orçamento de projeto arquitetônico.',
+            tip: 'Orçamentos são personalizados e sem compromisso!'
+        },
+        {
+            target: 'agendamento',
+            title: '📅 Agendar Reunião',
+            content: 'Aprenda a agendar reuniões presenciais ou por videoconferência.',
+            tip: 'Reuniões virtuais duram em média 30 minutos, presenciais até 1 hora.'
+        },
+        ...(isShopEnabled ? [{
+            target: 'loja',
+            title: '🛍️ Loja Online',
+            content: 'Navegue pela loja, adicione itens ao carrinho e finalize suas compras.',
+            tip: 'Pagamentos seguros via PIX, cartão ou boleto bancário.'
+        }] : []),
+        {
+            target: 'suporte',
+            title: '💬 Suporte e Contato',
+            content: 'Conheça todas as formas de entrar em contato conosco: chat, WhatsApp ou formulário.',
+            tip: isHumanSupportEnabled ? 'Chat ao vivo disponível durante o horário comercial!' : 'Use o assistente virtual 24h ou envie uma mensagem.'
+        },
+        {
+            target: 'politicas',
+            title: '📜 Políticas e Termos',
+            content: 'Seus direitos segundo a LGPD, política de privacidade e termos de uso do site.',
+            tip: 'Valorizamos sua privacidade e protegemos seus dados pessoais.'
+        },
+        {
+            target: 'faq',
+            title: '❓ Perguntas Frequentes',
+            content: 'Respostas rápidas para as dúvidas mais comuns sobre o escritório, projetos e site.',
+            tip: 'Clique nas perguntas para expandir as respostas!'
+        },
+        {
+            target: 'help-footer',
+            title: '🎉 Tour Concluído!',
+            content: 'Você conheceu todas as seções da Central de Ajuda. Se precisar de mais ajuda, use os canais de contato!',
+            tip: 'Obrigado por fazer o tour! Estamos à disposição.'
+        },
+    ], [isShopEnabled, isHumanSupportEnabled]);
 
     // Verificar se é primeira visita para mostrar tour
     useEffect(() => {
@@ -923,13 +1005,13 @@ export const Help: React.FC = () => {
     // Scroll tracking for active section
     useEffect(() => {
         const handleScroll = () => {
-            // Calculate footer position to hide back to top button
+            // Calculate footer position to hide Tour button when footer is visible
             const footer = document.querySelector('footer');
             const footerRect = footer?.getBoundingClientRect();
             const isFooterVisible = footerRect ? footerRect.top < window.innerHeight : false;
 
-            // Show back to top button if scrolled down AND footer is not fully overlapping
-            setShowBackToTop(window.scrollY > 400 && !isFooterVisible);
+            // Show tour button if scrolled down AND footer is not visible
+            setShowTourButton(window.scrollY > 100 && !isFooterVisible);
 
             // Find active section based on scroll position
             const sections = tocItems.map(item => ({
@@ -3311,91 +3393,116 @@ export const Help: React.FC = () => {
                 enableShop={isShopEnabled}
             />
 
-            {/* Back to Top Button */}
+            {/* Tour Start Button - Floating (same style as Chatbot) */}
             <AnimatePresence>
-                {showBackToTop && (
+                {showTourButton && !showTour && (
                     <motion.button
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        onClick={scrollToTop}
-                        className="fixed bottom-40 right-4 z-30 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors lg:bottom-24 lg:right-6"
-                        aria-label="Voltar ao topo"
+                        key="tour-fab"
+                        variants={tourButtonVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        onClick={handleStartTour}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="fixed bottom-24 right-6 w-14 h-14 bg-black text-white rounded-full shadow-2xl flex items-center justify-center z-[70] hover:bg-accent hover:text-black transition-colors group"
+                        title="Tour Guiado da Central de Ajuda"
                     >
-                        <ChevronUp className="w-5 h-5 text-gray-600" />
+                        <BookOpen className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-black text-xs font-bold rounded-full flex items-center justify-center">
+                            ?
+                        </span>
                     </motion.button>
                 )}
             </AnimatePresence>
 
-            {/* Tour Start Button (Always visible) */}
-            <button
-                onClick={handleStartTour}
-                className="fixed bottom-24 right-4 z-40 hidden lg:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full shadow-lg hover:from-purple-700 hover:to-indigo-700 transition-all text-sm font-medium"
-                aria-label="Iniciar tour guiado"
-            >
-                <Book className="w-4 h-4" />
-                Tour Guiado
-            </button>
-
-            {/* Tour Overlay */}
+            {/* Tour Overlay - Premium Design */}
             <AnimatePresence>
                 {showTour && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
                         onClick={handleEndTour}
                     >
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative"
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                            className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            {/* Progress */}
-                            <div className="flex gap-1 mb-4">
-                                {tourSteps.map((_, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={`h-1 flex-1 rounded-full transition-colors ${idx <= tourStep ? 'bg-purple-600' : 'bg-gray-200'}`}
-                                    />
-                                ))}
+                            {/* Header with gradient */}
+                            <div className="bg-gradient-to-r from-black via-gray-800 to-black p-6">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-accent text-sm font-medium flex items-center gap-2">
+                                        <BookOpen className="w-4 h-4" />
+                                        Tour Guiado
+                                    </span>
+                                    <button
+                                        onClick={handleEndTour}
+                                        className="text-white/60 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-full"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <h3 className="text-2xl font-bold text-white">
+                                    {tourSteps[tourStep]?.title}
+                                </h3>
+                                {/* Progress bar */}
+                                <div className="flex gap-1 mt-4">
+                                    {tourSteps.map((_, idx) => (
+                                        <div
+                                            key={idx}
+                                            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${idx < tourStep ? 'bg-accent' :
+                                                    idx === tourStep ? 'bg-white' :
+                                                        'bg-white/20'
+                                                }`}
+                                        />
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Content */}
-                            <h3 className="text-xl font-bold mb-2">{tourSteps[tourStep]?.title}</h3>
-                            <p className="text-gray-600 mb-6">{tourSteps[tourStep]?.content}</p>
+                            <div className="p-6">
+                                <p className="text-gray-700 text-lg leading-relaxed mb-4">
+                                    {tourSteps[tourStep]?.content}
+                                </p>
 
-                            {/* Step indicator */}
-                            <p className="text-sm text-gray-400 mb-4">
-                                Passo {tourStep + 1} de {tourSteps.length}
-                            </p>
-
-                            {/* Navigation */}
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={handleEndTour}
-                                    className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                                >
-                                    Pular Tour
-                                </button>
-                                <div className="flex-1" />
-                                {tourStep > 0 && (
-                                    <button
-                                        onClick={handlePrevTourStep}
-                                        className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                                    >
-                                        Anterior
-                                    </button>
+                                {/* Tip box */}
+                                {tourSteps[tourStep]?.tip && (
+                                    <div className="bg-accent/10 border border-accent/30 rounded-xl p-4 mb-6">
+                                        <p className="text-sm text-gray-700 flex items-start gap-3">
+                                            <Lightbulb className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                                            <span>{tourSteps[tourStep]?.tip}</span>
+                                        </p>
+                                    </div>
                                 )}
-                                <button
-                                    onClick={handleNextTourStep}
-                                    className="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                                >
-                                    {tourStep === tourSteps.length - 1 ? 'Concluir' : 'Próximo'}
-                                </button>
+
+                                {/* Navigation */}
+                                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                                    <span className="text-sm text-gray-400 font-medium">
+                                        {tourStep + 1} de {tourSteps.length}
+                                    </span>
+                                    <div className="flex gap-2">
+                                        {tourStep > 0 && (
+                                            <button
+                                                onClick={handlePrevTourStep}
+                                                className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                                            >
+                                                Anterior
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={handleNextTourStep}
+                                            className="px-5 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-accent hover:text-black transition-colors"
+                                        >
+                                            {tourStep === tourSteps.length - 1 ? '✓ Concluir' : 'Próximo →'}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>
