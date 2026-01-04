@@ -769,8 +769,9 @@ export const Help: React.FC = () => {
 
     // Handler para abrir modal WhatsApp
     const handleWhatsAppClick = () => {
-        const userPhone = (currentUser as any)?.user_metadata?.phone || (currentUser as any)?.phone || '';
-        const userName = (currentUser as any)?.user_metadata?.name || '';
+        // Nome e telefone vêm da tabela profiles (carregada no fetchFullUserProfile)
+        const userPhone = currentUser?.phone || '';
+        const userName = currentUser?.name || '';
         setWhatsAppPhone(userPhone);
         setWhatsAppName(userName);
         setUseOtherNumber(false);
@@ -2753,7 +2754,7 @@ export const Help: React.FC = () => {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
-                                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                                        className="fixed top-0 left-0 right-0 bottom-0 w-full h-full bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
                                         onClick={() => setShowWhatsAppModal(false)}
                                     >
                                         <motion.div
