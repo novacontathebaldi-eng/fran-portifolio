@@ -1280,6 +1280,7 @@ export const Help: React.FC = () => {
                                 title="Como Navegar no Site"
                                 icon={<Home className="w-5 h-5" />}
                                 isActive={activeSection === 'navegacao'}
+                                forceOpen={openSections.has('navegacao')}
                                 defaultOpen={false}
                             >
                                 <div className="space-y-8">
@@ -1499,6 +1500,7 @@ export const Help: React.FC = () => {
                                 title="Login e Criar Conta"
                                 icon={<LogIn className="w-5 h-5" />}
                                 isActive={activeSection === 'autenticacao'}
+                                forceOpen={openSections.has('autenticacao')}
                             >
                                 <div className="space-y-8">
                                     {/* Criar Conta */}
@@ -1678,6 +1680,7 @@ export const Help: React.FC = () => {
                                 title="Área do Cliente"
                                 icon={<User className="w-5 h-5" />}
                                 isActive={activeSection === 'area-cliente'}
+                                forceOpen={openSections.has('area-cliente')}
                             >
                                 <div className="space-y-8">
                                     {/* Acesso Rápido */}
@@ -2105,6 +2108,7 @@ export const Help: React.FC = () => {
                                 title="Como Solicitar Orçamento"
                                 icon={<FileText className="w-5 h-5" />}
                                 isActive={activeSection === 'orcamento'}
+                                forceOpen={openSections.has('orcamento')}
                             >
                                 <div className="space-y-8">
                                     {/* Visão Geral */}
