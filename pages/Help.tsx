@@ -178,6 +178,44 @@ const InteractiveStep: React.FC<InteractiveStepProps> = ({
 };
 
 // ============================================
+// FAQ ITEM COMPONENT
+// ============================================
+
+interface FAQItemProps {
+    question: string;
+    answer: string;
+}
+
+const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+            >
+                <span className="font-medium text-gray-800">{question}</span>
+                <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                    >
+                        <p className="px-4 pb-4 text-gray-600 text-sm">{answer}</p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+// ============================================
 // TROUBLESHOOTING TABLE COMPONENT
 // ============================================
 
@@ -755,6 +793,66 @@ export const Help: React.FC = () => {
     const [whatsAppName, setWhatsAppName] = useState('');
     const [whatsAppStep, setWhatsAppStep] = useState<'confirm' | 'input' | 'sending' | 'success' | 'error'>('confirm');
     const [useOtherNumber, setUseOtherNumber] = useState(false);
+
+    // Estados do Tour Guiado
+    const [showTour, setShowTour] = useState(false);
+    const [tourStep, setTourStep] = useState(0);
+
+    // Tour steps configuration
+    const tourSteps = useMemo(() => [
+        { target: 'hero', title: '📚 Bem-vindo à Central de Ajuda!', content: 'Aqui você encontra tudo sobre o site Fran Siller Arquitetura.' },
+        { target: 'navegacao', title: '🧭 Navegação do Site', content: 'Conheça todas as páginas e recursos disponíveis.' },
+        { target: 'autenticacao', title: '🔐 Login e Conta', content: 'Saiba como criar conta, fazer login e recuperar sua senha.' },
+        { target: 'area-cliente', title: '👤 Área do Cliente', content: 'Gerencie seu perfil, endereços, orçamentos e agendamentos.' },
+        { target: 'suporte', title: '💬 Suporte e Contato', content: 'Entre em contato conosco por chat, WhatsApp ou formulário.' },
+        { target: 'faq', title: '❓ FAQ', content: 'Respostas para as perguntas mais frequentes.' },
+    ], []);
+
+    // Verificar se é primeira visita para mostrar tour
+    useEffect(() => {
+        const hasSeenTour = localStorage.getItem('help_tour_completed');
+        if (!hasSeenTour && !currentUser) {
+            // Mostrar toast convite para tour após 2 segundos
+            const timer = setTimeout(() => {
+                // Não mostrar automaticamente, deixar o botão
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [currentUser]);
+
+    const handleStartTour = () => {
+        setTourStep(0);
+        setShowTour(true);
+    };
+
+    const handleNextTourStep = () => {
+        if (tourStep < tourSteps.length - 1) {
+            setTourStep(tourStep + 1);
+            const nextStep = tourSteps[tourStep + 1];
+            const element = document.getElementById(nextStep.target);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        } else {
+            handleEndTour();
+        }
+    };
+
+    const handlePrevTourStep = () => {
+        if (tourStep > 0) {
+            setTourStep(tourStep - 1);
+            const prevStep = tourSteps[tourStep - 1];
+            const element = document.getElementById(prevStep.target);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    };
+
+    const handleEndTour = () => {
+        setShowTour(false);
+        localStorage.setItem('help_tour_completed', 'true');
+    };
 
     // Formatar telefone para display
     const formatPhoneDisplay = (phone: string) => {
@@ -2929,9 +3027,126 @@ export const Help: React.FC = () => {
                                 icon={<Shield className="w-5 h-5" />}
                                 isActive={activeSection === 'politicas'}
                             >
-                                <div className="text-gray-600 space-y-4">
-                                    <p>Conteúdo desta seção será adicionado no Prompt 5.</p>
-                                    <p className="text-sm text-gray-400">Inclui: Termos de uso, privacidade, cookies, LGPD.</p>
+                                <div className="space-y-8">
+                                    {/* Cards Resumidos */}
+                                    <div className="grid gap-6 md:grid-cols-2">
+                                        {/* Termos de Uso */}
+                                        <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="p-2 bg-black rounded-lg">
+                                                    <FileText className="w-5 h-5 text-white" />
+                                                </div>
+                                                <h4 className="font-bold text-lg">📜 Termos de Uso</h4>
+                                            </div>
+                                            <p className="text-gray-600 mb-4">Ao usar nosso site, você concorda em:</p>
+                                            <ul className="space-y-2 mb-6">
+                                                <li className="flex items-center gap-2 text-sm text-gray-600">
+                                                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                                                    Fornecer informações verdadeiras
+                                                </li>
+                                                <li className="flex items-center gap-2 text-sm text-gray-600">
+                                                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                                                    Manter sua senha confidencial
+                                                </li>
+                                                <li className="flex items-center gap-2 text-sm text-gray-600">
+                                                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                                                    Respeitar direitos autorais
+                                                </li>
+                                            </ul>
+                                            <Link
+                                                to="/terms"
+                                                className="inline-flex items-center gap-2 text-sm font-medium text-black hover:text-accent transition-colors"
+                                            >
+                                                Ver Termos Completos
+                                                <ArrowRight className="w-4 h-4" />
+                                            </Link>
+                                        </div>
+
+                                        {/* Política de Privacidade */}
+                                        <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="p-2 bg-blue-600 rounded-lg">
+                                                    <Shield className="w-5 h-5 text-white" />
+                                                </div>
+                                                <h4 className="font-bold text-lg">🔒 Política de Privacidade</h4>
+                                            </div>
+                                            <p className="text-gray-600 mb-4">Seus dados estão protegidos:</p>
+                                            <ul className="space-y-2 mb-6">
+                                                <li className="flex items-center gap-2 text-sm text-gray-600">
+                                                    <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                                    Coletamos apenas o necessário
+                                                </li>
+                                                <li className="flex items-center gap-2 text-sm text-gray-600">
+                                                    <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                                    Não vendemos suas informações
+                                                </li>
+                                                <li className="flex items-center gap-2 text-sm text-gray-600">
+                                                    <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                                    Você pode solicitar exclusão
+                                                </li>
+                                            </ul>
+                                            <Link
+                                                to="/privacy"
+                                                className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                                            >
+                                                Ver Política Completa
+                                                <ArrowRight className="w-4 h-4" />
+                                            </Link>
+                                        </div>
+                                    </div>
+
+                                    {/* Cookies */}
+                                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                                        <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                                            🍪 Sobre Cookies
+                                        </h4>
+                                        <div className="grid gap-3 sm:grid-cols-3">
+                                            <div className="flex items-start gap-2">
+                                                <CheckCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                                                <span className="text-sm text-gray-700">Usamos apenas cookies essenciais</span>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <CheckCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                                                <span className="text-sm text-gray-700">Para manter você logado</span>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <CheckCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                                                <span className="text-sm text-gray-700">Não usamos rastreadores</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* LGPD */}
+                                    <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+                                        <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                                            ✅ Seus Direitos (LGPD)
+                                        </h4>
+                                        <div className="grid gap-3 sm:grid-cols-2 mb-6">
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                                <span className="text-sm text-gray-700">Acessar seus dados</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                                <span className="text-sm text-gray-700">Corrigir informações</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                                <span className="text-sm text-gray-700">Solicitar exclusão</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                                <span className="text-sm text-gray-700">Revogar consentimentos</span>
+                                            </div>
+                                        </div>
+                                        <Link
+                                            to="/contact?subject=Exercício de Direitos LGPD"
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                                        >
+                                            <Mail className="w-4 h-4" />
+                                            Solicitar Exercício de Direitos
+                                        </Link>
+                                    </div>
                                 </div>
                             </HelpSection>
 
@@ -2942,9 +3157,96 @@ export const Help: React.FC = () => {
                                 icon={<HelpCircle className="w-5 h-5" />}
                                 isActive={activeSection === 'faq'}
                             >
-                                <div className="text-gray-600 space-y-4">
-                                    <p>Conteúdo desta seção será adicionado no Prompt 5.</p>
-                                    <p className="text-sm text-gray-400">Inclui: FAQ geral, dúvidas comuns sobre todos os serviços.</p>
+                                <div className="space-y-8">
+                                    {/* Sobre o Escritório */}
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-4 flex items-center gap-2 text-gray-800">
+                                            <Briefcase className="w-5 h-5 text-accent" />
+                                            Sobre o Escritório
+                                        </h4>
+                                        <div className="space-y-3">
+                                            <FAQItem
+                                                question="Onde fica o escritório?"
+                                                answer={isOfficeEnabled ? `Nosso escritório está localizado em ${siteContent?.office?.address || 'Santa Leopoldina, ES'}. ${siteContent?.office?.hoursDescription || ''}` : 'No momento estamos atendendo exclusivamente de forma remota.'}
+                                            />
+                                            <FAQItem
+                                                question="Qual o horário de atendimento?"
+                                                answer={siteContent?.office?.hoursDescription || 'Segunda a sexta, das 9h às 17h.'}
+                                            />
+                                            <FAQItem
+                                                question="Vocês atendem em todo o Brasil?"
+                                                answer="Sim! Realizamos projetos para todo o Brasil. Reuniões podem ser feitas presencialmente ou por videoconferência, e acompanhamos obras à distância com visitas técnicas quando necessário."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Sobre Projetos */}
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-4 flex items-center gap-2 text-gray-800">
+                                            <FolderOpen className="w-5 h-5 text-accent" />
+                                            Sobre Projetos
+                                        </h4>
+                                        <div className="space-y-3">
+                                            <FAQItem
+                                                question="Quanto custa um projeto?"
+                                                answer="O valor varia de acordo com o tipo de projeto, área, complexidade e localização. Solicite um orçamento personalizado e sem compromisso pelo formulário do site."
+                                            />
+                                            <FAQItem
+                                                question="Qual o prazo médio de um projeto?"
+                                                answer="O prazo depende da complexidade. Projetos residenciais levam em média 60-90 dias, enquanto projetos comerciais podem levar 90-120 dias. Prazos específicos são definidos na proposta de orçamento."
+                                            />
+                                            <FAQItem
+                                                question="Vocês acompanham a obra?"
+                                                answer="Sim! Oferecemos serviço de acompanhamento de obra para garantir que o projeto seja executado conforme planejado. Este serviço pode ser contratado separadamente ou junto com o projeto."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Sobre o Site */}
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-4 flex items-center gap-2 text-gray-800">
+                                            <Settings className="w-5 h-5 text-accent" />
+                                            Sobre o Site
+                                        </h4>
+                                        <div className="space-y-3">
+                                            <FAQItem
+                                                question="Esqueci minha senha, o que faço?"
+                                                answer="Na página de login, clique em 'Esqueci minha senha' e digite seu e-mail. Você receberá um link para criar uma nova senha. O link expira em 1 hora."
+                                            />
+                                            <FAQItem
+                                                question="Como altero meu e-mail de cadastro?"
+                                                answer="Por segurança, a alteração de e-mail deve ser solicitada através da página de Contato ou diretamente com nossa equipe."
+                                            />
+                                            <FAQItem
+                                                question="Como excluo minha conta?"
+                                                answer="Você pode solicitar a exclusão da conta a qualquer momento através da seção 'Meus Dados' na Área do Cliente, ou entrando em contato conosco. Seus dados serão removidos em até 30 dias."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Sobre a Loja (condicional) */}
+                                    {isShopEnabled && (
+                                        <div>
+                                            <h4 className="font-bold text-lg mb-4 flex items-center gap-2 text-gray-800">
+                                                <ShoppingBag className="w-5 h-5 text-accent" />
+                                                Sobre a Loja
+                                            </h4>
+                                            <div className="space-y-3">
+                                                <FAQItem
+                                                    question="Quais formas de pagamento são aceitas?"
+                                                    answer="Aceitamos PIX, cartões de crédito (parcelamento em até 12x), cartões de débito e boleto bancário."
+                                                />
+                                                <FAQItem
+                                                    question="Qual o prazo de entrega?"
+                                                    answer="O prazo varia conforme o produto e sua localização. Produtos em estoque são despachados em até 3 dias úteis. Produtos sob encomenda podem levar de 15 a 45 dias para produção."
+                                                />
+                                                <FAQItem
+                                                    question="Como rastrear meu pedido?"
+                                                    answer="Após o envio, você receberá o código de rastreio por e-mail e WhatsApp. Também pode acompanhar na seção 'Meus Pedidos' na Área do Cliente."
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </HelpSection>
                         </motion.div>
@@ -3022,6 +3324,81 @@ export const Help: React.FC = () => {
                     >
                         <ChevronUp className="w-5 h-5 text-gray-600" />
                     </motion.button>
+                )}
+            </AnimatePresence>
+
+            {/* Tour Start Button (Always visible) */}
+            <button
+                onClick={handleStartTour}
+                className="fixed bottom-24 right-4 z-40 hidden lg:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full shadow-lg hover:from-purple-700 hover:to-indigo-700 transition-all text-sm font-medium"
+                aria-label="Iniciar tour guiado"
+            >
+                <Book className="w-4 h-4" />
+                Tour Guiado
+            </button>
+
+            {/* Tour Overlay */}
+            <AnimatePresence>
+                {showTour && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4"
+                        onClick={handleEndTour}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Progress */}
+                            <div className="flex gap-1 mb-4">
+                                {tourSteps.map((_, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`h-1 flex-1 rounded-full transition-colors ${idx <= tourStep ? 'bg-purple-600' : 'bg-gray-200'}`}
+                                    />
+                                ))}
+                            </div>
+
+                            {/* Content */}
+                            <h3 className="text-xl font-bold mb-2">{tourSteps[tourStep]?.title}</h3>
+                            <p className="text-gray-600 mb-6">{tourSteps[tourStep]?.content}</p>
+
+                            {/* Step indicator */}
+                            <p className="text-sm text-gray-400 mb-4">
+                                Passo {tourStep + 1} de {tourSteps.length}
+                            </p>
+
+                            {/* Navigation */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleEndTour}
+                                    className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                                >
+                                    Pular Tour
+                                </button>
+                                <div className="flex-1" />
+                                {tourStep > 0 && (
+                                    <button
+                                        onClick={handlePrevTourStep}
+                                        className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                                    >
+                                        Anterior
+                                    </button>
+                                )}
+                                <button
+                                    onClick={handleNextTourStep}
+                                    className="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                                >
+                                    {tourStep === tourSteps.length - 1 ? 'Concluir' : 'Próximo'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>
