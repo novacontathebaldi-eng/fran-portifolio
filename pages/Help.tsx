@@ -1147,7 +1147,7 @@ export const Help: React.FC = () => {
                     top: elementTop - totalOffset,
                     behavior: 'smooth'
                 });
-            }, 200);
+            }, 350);
 
             setActiveSection(sectionId);
             window.history.replaceState(null, '', `#/help#${sectionId}`);
@@ -1227,7 +1227,7 @@ export const Help: React.FC = () => {
                 <div className="flex gap-8">
                     {/* Desktop Sidebar - Table of Contents */}
                     <aside className="hidden lg:block w-64 flex-shrink-0">
-                        <div className="sticky top-28 bg-white rounded-xl border border-gray-200 p-5 max-h-[calc(100vh-8rem)] overflow-y-auto">
+                        <div className="sticky top-24 bg-white rounded-xl border border-gray-200 p-5 max-h-[calc(100vh-7rem)] overflow-y-auto">
                             <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
                                 <Book className="w-5 h-5" />
                                 Índice
@@ -3219,6 +3219,7 @@ export const Help: React.FC = () => {
                                 title="Políticas e Termos"
                                 icon={<Shield className="w-5 h-5" />}
                                 isActive={activeSection === 'politicas'}
+                                forcedOpenKey={forcedOpenKey}
                             >
                                 <div className="space-y-8">
                                     {/* Cards Resumidos */}
@@ -3349,6 +3350,7 @@ export const Help: React.FC = () => {
                                 title="Perguntas Frequentes"
                                 icon={<HelpCircle className="w-5 h-5" />}
                                 isActive={activeSection === 'faq'}
+                                forcedOpenKey={forcedOpenKey}
                             >
                                 <div className="space-y-8">
                                     {/* Sobre o Escritório */}
