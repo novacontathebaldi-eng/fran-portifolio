@@ -1349,6 +1349,17 @@ export const DispatchesDashboard: React.FC = () => {
                                 onSave={saveConfig}
                                 isSaving={saving}
                             />
+                            <WhatsAppTemplateEditor
+                                templateKey="supportAtendimento"
+                                label="Atendimento ao Vivo"
+                                description="Mensagem enviada ao cliente quando solicita atendimento via site"
+                                variables={['nome']}
+                                value={config.whatsapp.templates.supportAtendimento}
+                                defaultValue={DEFAULT_TEMPLATES.supportAtendimento('{{nome}}')}
+                                onChange={(v) => updateWhatsApp('templates.supportAtendimento', v)}
+                                onSave={saveConfig}
+                                isSaving={saving}
+                            />
                         </>
                     )}
 

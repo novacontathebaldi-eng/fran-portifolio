@@ -375,6 +375,7 @@ export interface WhatsAppTemplates {
   newAppointmentAdmin: string | null;
   newContactAdmin: string | null;
   chatbotNoteAdmin: string | null;
+  supportAtendimento: string | null;
 }
 
 // Template de email customizável
@@ -478,6 +479,7 @@ export const defaultNotificationsConfig: NotificationsConfig = {
       newAppointmentAdmin: null,
       newContactAdmin: null,
       chatbotNoteAdmin: null,
+      supportAtendimento: null,
     },
   },
   email: {

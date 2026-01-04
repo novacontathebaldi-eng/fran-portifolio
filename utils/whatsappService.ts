@@ -159,6 +159,9 @@ _Fran Siller Arquitetura_`,
         const phoneInfo = phone ? `\n📞 Tel./WhatsApp: ${phone}` : '';
         return `🔔 *Lembrete de ${type}*\n\nVocê tem um(a) ${type} agendado(a):\n\n👤 Cliente: ${name}${emailInfo}${phoneInfo}\n📆 Data: ${date}\n⏰ Horário: ${time}`;
     },
+
+    supportAtendimento: (name: string) =>
+        `Olá ${name}! 👋\n\nTudo bem? Sou da equipe *Fran Siller Arquitetura* e recebi sua solicitação de atendimento pelo site.\n\nEstou à disposição para ajudá-lo(a) com qualquer dúvida sobre:\n• Nossos projetos e serviços\n• Orçamentos e prazos\n• Agendamento de reuniões\n• Qualquer outra questão\n\nComo posso ajudá-lo(a) hoje?\n\n_Atendimento iniciado via site • fransiller.othebaldi.me_`,
 };
 
 /**

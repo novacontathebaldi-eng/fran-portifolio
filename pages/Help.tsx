@@ -11,7 +11,7 @@ import {
     Headphones, Send, Store, X, Menu, Video, RefreshCw
 } from 'lucide-react';
 import { openBrevoChat } from '../utils/brevoConversations';
-import { sendWhatsAppMessage } from '../utils/whatsappService';
+import { sendWhatsAppMessage, getNotificationsConfig, processTemplate, DEFAULT_TEMPLATES } from '../utils/whatsappService';
 
 // ============================================
 // INTERFACES
@@ -752,6 +752,7 @@ export const Help: React.FC = () => {
     // Estados do modal WhatsApp
     const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
     const [whatsAppPhone, setWhatsAppPhone] = useState('');
+    const [whatsAppName, setWhatsAppName] = useState('');
     const [whatsAppStep, setWhatsAppStep] = useState<'confirm' | 'input' | 'sending' | 'success' | 'error'>('confirm');
     const [useOtherNumber, setUseOtherNumber] = useState(false);
 
@@ -769,19 +770,29 @@ export const Help: React.FC = () => {
     // Handler para abrir modal WhatsApp
     const handleWhatsAppClick = () => {
         const userPhone = (currentUser as any)?.user_metadata?.phone || (currentUser as any)?.phone || '';
+        const userName = (currentUser as any)?.user_metadata?.name || '';
         setWhatsAppPhone(userPhone);
+        setWhatsAppName(userName);
         setUseOtherNumber(false);
         setWhatsAppStep(currentUser ? 'confirm' : 'input');
         setShowWhatsAppModal(true);
     };
 
     // Handler para enviar mensagem via WuzAPI
-    const handleSendWhatsAppSupport = async (phone: string) => {
+    const handleSendWhatsAppSupport = async (phone: string, name: string) => {
         setWhatsAppStep('sending');
-        const userName = (currentUser as any)?.user_metadata?.name || (currentUser as any)?.email?.split('@')[0] || 'visitante';
-        const message = `Olá ${userName}! 👋\n\nSou da equipe Fran Siller Arquitetura e recebi sua solicitação de atendimento.\n\nComo posso ajudá-lo(a) hoje?\n\n_Atendimento iniciado via site._`;
+        const displayName = name || 'visitante';
 
         try {
+            // Buscar template configurado do banco
+            const config = await getNotificationsConfig();
+            const customTemplate = config.whatsapp.templates.supportAtendimento;
+
+            // Usar template customizado ou padrão
+            const message = customTemplate
+                ? processTemplate(customTemplate, { nome: displayName })
+                : DEFAULT_TEMPLATES.supportAtendimento(displayName);
+
             const success = await sendWhatsAppMessage(phone, message);
             setWhatsAppStep(success ? 'success' : 'error');
         } catch {
@@ -2776,9 +2787,15 @@ export const Help: React.FC = () => {
                                                             +55 {formatPhoneDisplay(whatsAppPhone)}
                                                         </span>
                                                     </div>
+                                                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                                                        <User className="w-5 h-5 text-accent" />
+                                                        <span className="font-medium text-lg">
+                                                            {whatsAppName || 'Nome não informado'}
+                                                        </span>
+                                                    </div>
                                                     <div className="space-y-3">
                                                         <button
-                                                            onClick={() => handleSendWhatsAppSupport(whatsAppPhone)}
+                                                            onClick={() => handleSendWhatsAppSupport(whatsAppPhone, whatsAppName)}
                                                             className="w-full py-3 px-4 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
                                                         >
                                                             <CheckCircle className="w-5 h-5" />
@@ -2806,6 +2823,18 @@ export const Help: React.FC = () => {
 
                                             {(whatsAppStep === 'input' || (!currentUser && whatsAppStep === 'confirm')) && (
                                                 <div className="space-y-4">
+                                                    {!currentUser && (
+                                                        <>
+                                                            <p className="text-gray-600">Digite seu nome:</p>
+                                                            <input
+                                                                type="text"
+                                                                value={whatsAppName}
+                                                                onChange={(e) => setWhatsAppName(e.target.value)}
+                                                                placeholder="Seu nome"
+                                                                className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-lg"
+                                                            />
+                                                        </>
+                                                    )}
                                                     <p className="text-gray-600">
                                                         {currentUser ? 'Digite o número que deseja usar:' : 'Digite seu número de WhatsApp:'}
                                                     </p>
@@ -2818,8 +2847,8 @@ export const Help: React.FC = () => {
                                                     />
                                                     <div className="space-y-3">
                                                         <button
-                                                            onClick={() => handleSendWhatsAppSupport(whatsAppPhone)}
-                                                            disabled={!whatsAppPhone || whatsAppPhone.replace(/\D/g, '').length < 10}
+                                                            onClick={() => handleSendWhatsAppSupport(whatsAppPhone, whatsAppName)}
+                                                            disabled={!whatsAppPhone || whatsAppPhone.replace(/\D/g, '').length < 10 || (!currentUser && !whatsAppName)}
                                                             className="w-full py-3 px-4 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                                         >
                                                             <CheckCircle className="w-5 h-5" />
