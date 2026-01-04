@@ -2307,6 +2307,7 @@ export const Help: React.FC = () => {
                                 title="Como Agendar Reunião"
                                 icon={<Calendar className="w-5 h-5" />}
                                 isActive={activeSection === 'agendamento'}
+                                forcedOpenKey={forcedOpenKey}
                             >
                                 <div className="space-y-8">
                                     {/* Tipos de Reunião */}
@@ -2559,6 +2560,7 @@ export const Help: React.FC = () => {
                                     title="Loja Online"
                                     icon={<ShoppingBag className="w-5 h-5" />}
                                     isActive={activeSection === 'loja'}
+                                    forcedOpenKey={forcedOpenKey}
                                 >
                                     <div className="space-y-8">
                                         {/* Navegando na Loja */}
@@ -2719,6 +2721,7 @@ export const Help: React.FC = () => {
                                 title="Suporte e Contato"
                                 icon={<Headphones className="w-5 h-5" />}
                                 isActive={activeSection === 'suporte'}
+                                forcedOpenKey={forcedOpenKey}
                             >
                                 <div className="space-y-8">
                                     {/* Atendimento - Condicional baseado em isHumanSupportEnabled */}
