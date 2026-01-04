@@ -2209,9 +2209,155 @@ export const Help: React.FC = () => {
                                     icon={<ShoppingBag className="w-5 h-5" />}
                                     isActive={activeSection === 'loja'}
                                 >
-                                    <div className="text-gray-600 space-y-4">
-                                        <p>Conteúdo desta seção será adicionado no Prompt 4.</p>
-                                        <p className="text-sm text-gray-400">Inclui: Navegação, compras, carrinho, pedidos.</p>
+                                    <div className="space-y-8">
+                                        {/* Navegando na Loja */}
+                                        <div>
+                                            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                                                <Store className="w-5 h-5 text-accent" />
+                                                Navegando na Loja
+                                            </h3>
+
+                                            <div className="space-y-4">
+                                                <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                                    <h4 className="font-bold text-black mb-3">Como Acessar</h4>
+                                                    <ul className="text-sm text-gray-600 space-y-2">
+                                                        <li className="flex items-center gap-2">
+                                                            <ArrowRight className="w-4 h-4 text-accent" />
+                                                            Menu principal → "Loja"
+                                                        </li>
+                                                        <li className="flex items-center gap-2">
+                                                            <ArrowRight className="w-4 h-4 text-accent" />
+                                                            Footer → "Loja Online"
+                                                        </li>
+                                                        <li className="flex items-center gap-2">
+                                                            <ArrowRight className="w-4 h-4 text-accent" />
+                                                            Chatbot pode mostrar produtos
+                                                        </li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                                    <h4 className="font-bold text-black mb-3">Recursos de Navegação</h4>
+                                                    <div className="grid sm:grid-cols-2 gap-3">
+                                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                            <CheckCircle className="w-4 h-4 text-green-500" />
+                                                            Grade ou lista de produtos
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                            <CheckCircle className="w-4 h-4 text-green-500" />
+                                                            Filtro por categoria
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                            <CheckCircle className="w-4 h-4 text-green-500" />
+                                                            Ordenação por preço
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                            <CheckCircle className="w-4 h-4 text-green-500" />
+                                                            Busca por nome
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                                    <h4 className="font-bold text-black mb-3">Cada Produto Mostra</h4>
+                                                    <div className="grid sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                                                        <div>📸 Foto principal</div>
+                                                        <div>📝 Nome e descrição</div>
+                                                        <div>💰 Preço</div>
+                                                        <div>✅ Disponibilidade</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-4">
+                                                <Link
+                                                    to="/shop"
+                                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors text-sm"
+                                                >
+                                                    <Store className="w-4 h-4" />
+                                                    Visitar a Loja
+                                                </Link>
+                                            </div>
+                                        </div>
+
+                                        {/* Comprando um Produto */}
+                                        <div>
+                                            <h3 className="font-bold text-lg mb-4">Comprando um Produto</h3>
+                                            <div className="space-y-4">
+                                                <InteractiveStep
+                                                    step={1}
+                                                    title="Escolha o Produto"
+                                                    description="Clique no produto para ver detalhes. Veja todas as fotos e leia a descrição completa."
+                                                    action={{ label: "Ver Loja", href: "/shop" }}
+                                                />
+                                                <InteractiveStep
+                                                    step={2}
+                                                    title="Adicione ao Carrinho"
+                                                    description="Selecione a quantidade desejada e clique em 'Adicionar ao Carrinho'. Continue comprando ou vá para o carrinho."
+                                                />
+                                                <InteractiveStep
+                                                    step={3}
+                                                    title="Revise o Carrinho"
+                                                    description="Veja todos os itens, ajuste quantidades, remova itens se necessário e confira o total."
+                                                />
+                                                <InteractiveStep
+                                                    step={4}
+                                                    title="Finalize o Checkout"
+                                                    description="É necessário fazer login para finalizar. Confirme o endereço de entrega, escolha o método de pagamento e finalize o pedido."
+                                                />
+                                                <InteractiveStep
+                                                    step={5}
+                                                    title="Acompanhe seu Pedido"
+                                                    description="Você receberá um e-mail de confirmação. Acompanhe o status do pedido na sua Área do Cliente."
+                                                    action={currentUser ? { label: "Meus Pedidos", href: "/profile/orders" } : undefined}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* FAQ Compacto */}
+                                        <div>
+                                            <h3 className="font-bold text-lg mb-4">Dúvidas sobre Compras</h3>
+                                            <TroubleshootingTable
+                                                problems={[
+                                                    {
+                                                        issue: "Como rastrear meu pedido?",
+                                                        solution: "Na Área do Cliente, seção 'Pedidos'. Você verá o status e código de rastreio quando disponível.",
+                                                        action: currentUser ? { label: "Ver Pedidos", href: "/profile/orders" } : undefined
+                                                    },
+                                                    {
+                                                        issue: "Posso cancelar um pedido?",
+                                                        solution: "Sim, entre em contato pelo chat ou WhatsApp o mais rápido possível."
+                                                    },
+                                                    {
+                                                        issue: "Quais formas de pagamento?",
+                                                        solution: "Pix e Cartão de Crédito."
+                                                    },
+                                                    {
+                                                        issue: "Qual o prazo de entrega?",
+                                                        solution: "Varia conforme o produto e sua localização. Calculado no checkout."
+                                                    }
+                                                ]}
+                                            />
+                                        </div>
+
+                                        {/* CTA */}
+                                        <div className="flex flex-wrap gap-3">
+                                            <Link
+                                                to="/shop"
+                                                className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors text-sm"
+                                            >
+                                                <ShoppingBag className="w-4 h-4" />
+                                                Ver Loja
+                                            </Link>
+                                            {currentUser && (
+                                                <Link
+                                                    to="/profile/orders"
+                                                    className="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-full font-medium hover:bg-gray-50 transition-colors text-sm"
+                                                >
+                                                    Meus Pedidos
+                                                </Link>
+                                            )}
+                                        </div>
                                     </div>
                                 </HelpSection>
                             )}
@@ -2223,9 +2369,243 @@ export const Help: React.FC = () => {
                                 icon={<Headphones className="w-5 h-5" />}
                                 isActive={activeSection === 'suporte'}
                             >
-                                <div className="text-gray-600 space-y-4">
-                                    <p>Conteúdo desta seção será adicionado no Prompt 4.</p>
-                                    <p className="text-sm text-gray-400">Inclui: Chat ao vivo, WhatsApp, e-mail, redes sociais.</p>
+                                <div className="space-y-8">
+                                    {/* Atendimento ao Vivo */}
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                                            <MessageCircle className="w-5 h-5 text-accent" />
+                                            Atendimento ao Vivo
+                                        </h3>
+
+                                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl border border-green-200 mb-4">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                                                <span className="font-medium text-green-800">Atendentes disponíveis</span>
+                                            </div>
+                                            <p className="text-sm text-gray-600 mb-4">
+                                                Como você prefere conversar?
+                                            </p>
+
+                                            <div className="grid sm:grid-cols-2 gap-4">
+                                                {/* Chat ao Vivo */}
+                                                <button
+                                                    onClick={() => openBrevoChat()}
+                                                    className="flex flex-col items-center gap-2 p-4 bg-white rounded-xl border border-gray-100 hover:border-accent hover:shadow-md transition-all group"
+                                                >
+                                                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-accent group-hover:text-white transition-colors">
+                                                        <MessageCircle className="w-6 h-6 text-blue-600 group-hover:text-white" />
+                                                    </div>
+                                                    <span className="font-bold text-black">Chat ao Vivo</span>
+                                                    <span className="text-xs text-gray-500">Resposta imediata</span>
+                                                </button>
+
+                                                {/* WhatsApp */}
+                                                <a
+                                                    href={`https://wa.me/${siteContent.office?.phone?.replace(/\D/g, '')}?text=${encodeURIComponent('Olá! Vim pelo site e gostaria de atendimento.')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex flex-col items-center gap-2 p-4 bg-white rounded-xl border border-gray-100 hover:border-green-500 hover:shadow-md transition-all group"
+                                                >
+                                                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center group-hover:bg-green-500 transition-colors">
+                                                        <Phone className="w-6 h-6 text-green-600 group-hover:text-white" />
+                                                    </div>
+                                                    <span className="font-bold text-black">WhatsApp</span>
+                                                    <span className="text-xs text-gray-500">Conversar pelo app</span>
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        {/* Informação sobre horário */}
+                                        <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                                            <div className="flex items-start gap-3">
+                                                <Clock className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                                                <div className="text-sm">
+                                                    <strong className="text-blue-800">Horário de Atendimento:</strong>
+                                                    <p className="text-blue-700 mt-1">
+                                                        {siteContent.office?.hoursDescription || 'Segunda a Sexta, 09h às 17h'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Outras Formas de Contato */}
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-4">Outras Formas de Contato</h3>
+
+                                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {/* E-mail */}
+                                            <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                                                        <Mail className="w-5 h-5 text-purple-600" />
+                                                    </div>
+                                                    <h4 className="font-bold">E-mail</h4>
+                                                </div>
+                                                <p className="text-sm text-gray-600 mb-3">
+                                                    {siteContent.office?.email || 'contato@fransiller.com.br'}
+                                                </p>
+                                                <a
+                                                    href={`mailto:${siteContent.office?.email || 'contato@fransiller.com.br'}`}
+                                                    className="inline-flex items-center gap-2 text-sm text-accent font-medium hover:underline"
+                                                >
+                                                    Enviar e-mail <ArrowRight className="w-3 h-3" />
+                                                </a>
+                                            </div>
+
+                                            {/* Telefone */}
+                                            <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                                        <Phone className="w-5 h-5 text-green-600" />
+                                                    </div>
+                                                    <h4 className="font-bold">Telefone</h4>
+                                                </div>
+                                                <p className="text-sm text-gray-600 mb-3">
+                                                    {siteContent.office?.phone || '+55 (27) 99667-0426'}
+                                                </p>
+                                                <a
+                                                    href={`tel:${siteContent.office?.phone?.replace(/\D/g, '')}`}
+                                                    className="inline-flex items-center gap-2 text-sm text-accent font-medium hover:underline"
+                                                >
+                                                    Ligar agora <ArrowRight className="w-3 h-3" />
+                                                </a>
+                                            </div>
+
+                                            {/* WhatsApp */}
+                                            <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                                                        <MessageCircle className="w-5 h-5 text-emerald-600" />
+                                                    </div>
+                                                    <h4 className="font-bold">WhatsApp</h4>
+                                                </div>
+                                                <p className="text-sm text-gray-600 mb-3">
+                                                    {siteContent.office?.phone || '+55 (27) 99667-0426'}
+                                                </p>
+                                                <a
+                                                    href={`https://wa.me/${siteContent.office?.phone?.replace(/\D/g, '')}?text=${encodeURIComponent('Olá! Vim pelo site e gostaria de mais informações.')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-2 text-sm text-accent font-medium hover:underline"
+                                                >
+                                                    Abrir WhatsApp <ArrowRight className="w-3 h-3" />
+                                                </a>
+                                            </div>
+
+                                            {/* Escritório (Condicional) */}
+                                            {isOfficeEnabled && (
+                                                <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                                    <div className="flex items-center gap-3 mb-3">
+                                                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                                            <MapPin className="w-5 h-5 text-orange-600" />
+                                                        </div>
+                                                        <h4 className="font-bold">Escritório</h4>
+                                                    </div>
+                                                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                                                        {siteContent.office?.address || 'Santa Leopoldina, ES'}
+                                                    </p>
+                                                    {siteContent.office?.mapsLink && (
+                                                        <a
+                                                            href={siteContent.office.mapsLink}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-2 text-sm text-accent font-medium hover:underline"
+                                                        >
+                                                            Ver no mapa <ExternalLink className="w-3 h-3" />
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Redes Sociais */}
+                                    {siteContent.office?.socialLinks && siteContent.office.socialLinks.length > 0 && (
+                                        <div>
+                                            <h3 className="font-bold text-lg mb-4">Redes Sociais</h3>
+                                            <div className="flex flex-wrap gap-3">
+                                                {siteContent.office.socialLinks.map((social, index) => {
+                                                    const getSocialIcon = (platform: string) => {
+                                                        switch (platform) {
+                                                            case 'instagram': return '📸';
+                                                            case 'facebook': return '👤';
+                                                            case 'linkedin': return '💼';
+                                                            case 'youtube': return '🎬';
+                                                            case 'twitter': return '🐦';
+                                                            case 'tiktok': return '🎵';
+                                                            case 'pinterest': return '📌';
+                                                            default: return '🌐';
+                                                        }
+                                                    };
+
+                                                    const getSocialLabel = (platform: string) => {
+                                                        return platform.charAt(0).toUpperCase() + platform.slice(1);
+                                                    };
+
+                                                    return (
+                                                        <a
+                                                            key={index}
+                                                            href={social.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors text-sm font-medium"
+                                                        >
+                                                            <span>{getSocialIcon(social.platform)}</span>
+                                                            {social.label || getSocialLabel(social.platform)}
+                                                        </a>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Concierge Digital */}
+                                    <div className="p-5 bg-gradient-to-r from-accent/10 to-transparent rounded-xl border border-accent/20">
+                                        <div className="flex items-start gap-4">
+                                            <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
+                                                <HelpCircle className="w-6 h-6 text-accent" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-black mb-1">Concierge Digital 24h</h4>
+                                                <p className="text-sm text-gray-600 mb-3">
+                                                    Nosso assistente virtual está disponível 24 horas para tirar suas dúvidas,
+                                                    mostrar projetos e ajudar você a navegar pelo site.
+                                                </p>
+                                                <button
+                                                    onClick={() => {
+                                                        // Abrir chatbot - procurar pelo botão do chatbot e clicar
+                                                        const chatButton = document.querySelector('[aria-label="Abrir assistente virtual"]');
+                                                        if (chatButton) {
+                                                            (chatButton as HTMLElement).click();
+                                                        }
+                                                    }}
+                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white rounded-full text-sm font-medium hover:bg-gray-800 transition-colors"
+                                                >
+                                                    <MessageCircle className="w-4 h-4" />
+                                                    Falar com o Concierge
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Formulário de Contato */}
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-4">Enviar Mensagem</h3>
+                                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                            <p className="text-sm text-gray-600 mb-3">
+                                                Prefere enviar uma mensagem por escrito? Use nosso formulário de contato
+                                                e responderemos o mais breve possível.
+                                            </p>
+                                            <Link
+                                                to="/contact"
+                                                className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors text-sm"
+                                            >
+                                                <Send className="w-4 h-4" />
+                                                Ir para Contato
+                                            </Link>
+                                        </div>
+                                    </div>
                                 </div>
                             </HelpSection>
 
