@@ -206,7 +206,7 @@ const normalizePhoneNumber = (phone: string): string => {
  * Envia mensagem via Edge Function do Supabase (seguro - token fica no servidor)
  * Com timeout de 30 segundos para evitar bloqueio da UI
  */
-const sendWhatsAppMessage = async (phone: string, message: string): Promise<boolean> => {
+export const sendWhatsAppMessage = async (phone: string, message: string): Promise<boolean> => {
     try {
         const cleanPhone = normalizePhoneNumber(phone);
 

@@ -11,6 +11,7 @@ import {
     Headphones, Send, Store, X, Menu, Video, RefreshCw
 } from 'lucide-react';
 import { openBrevoChat } from '../utils/brevoConversations';
+import { sendWhatsAppMessage } from '../utils/whatsappService';
 
 // ============================================
 // INTERFACES
@@ -747,6 +748,54 @@ export const Help: React.FC = () => {
     const hoursDescription = siteContent?.office?.hoursDescription || '';
     // Check if human support (Brevo live chat) is enabled
     const isHumanSupportEnabled = settings?.chatbotConfig?.transferToHumanEnabled ?? false;
+
+    // Estados do modal WhatsApp
+    const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+    const [whatsAppPhone, setWhatsAppPhone] = useState('');
+    const [whatsAppStep, setWhatsAppStep] = useState<'confirm' | 'input' | 'sending' | 'success' | 'error'>('confirm');
+    const [useOtherNumber, setUseOtherNumber] = useState(false);
+
+    // Formatar telefone para display
+    const formatPhoneDisplay = (phone: string) => {
+        const cleaned = phone.replace(/\D/g, '');
+        if (cleaned.length === 11) {
+            return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+        } else if (cleaned.length === 10) {
+            return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
+        }
+        return phone;
+    };
+
+    // Handler para abrir modal WhatsApp
+    const handleWhatsAppClick = () => {
+        const userPhone = (currentUser as any)?.user_metadata?.phone || (currentUser as any)?.phone || '';
+        setWhatsAppPhone(userPhone);
+        setUseOtherNumber(false);
+        setWhatsAppStep(currentUser ? 'confirm' : 'input');
+        setShowWhatsAppModal(true);
+    };
+
+    // Handler para enviar mensagem via WuzAPI
+    const handleSendWhatsAppSupport = async (phone: string) => {
+        setWhatsAppStep('sending');
+        const userName = (currentUser as any)?.user_metadata?.name || (currentUser as any)?.email?.split('@')[0] || 'visitante';
+        const message = `Olá ${userName}! 👋\n\nSou da equipe Fran Siller Arquitetura e recebi sua solicitação de atendimento.\n\nComo posso ajudá-lo(a) hoje?\n\n_Atendimento iniciado via site._`;
+
+        try {
+            const success = await sendWhatsAppMessage(phone, message);
+            setWhatsAppStep(success ? 'success' : 'error');
+        } catch {
+            setWhatsAppStep('error');
+        }
+    };
+
+    // Handler para abrir WhatsApp diretamente
+    const openWhatsAppDirect = () => {
+        const whatsappNumber = siteContent?.office?.phone?.replace(/\D/g, '');
+        const message = encodeURIComponent('Olá! Vim pelo site e gostaria de atendimento.');
+        window.open(`https://wa.me/55${whatsappNumber}?text=${message}`, '_blank');
+        setShowWhatsAppModal(false);
+    };
 
     // Table of Contents Items
     const tocItems: TableOfContentsItem[] = useMemo(() => [
@@ -2404,18 +2453,16 @@ export const Help: React.FC = () => {
                                                     </button>
 
                                                     {/* WhatsApp */}
-                                                    <a
-                                                        href={`https://wa.me/55${siteContent.office?.phone?.replace(/\D/g, '')}?text=${encodeURIComponent('Olá! Vim pelo site e gostaria de atendimento.')}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
+                                                    <button
+                                                        onClick={handleWhatsAppClick}
                                                         className="flex flex-col items-center gap-2 p-4 bg-white rounded-xl border border-gray-100 hover:border-green-500 hover:shadow-md transition-all group"
                                                     >
                                                         <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center group-hover:bg-green-500 transition-colors">
-                                                            <MessageCircle className="w-6 h-6 text-green-600 group-hover:text-white" />
+                                                            <Phone className="w-6 h-6 text-green-600 group-hover:text-white" />
                                                         </div>
                                                         <span className="font-bold text-black">WhatsApp</span>
                                                         <span className="text-xs text-gray-500">Conversar pelo app</span>
-                                                    </a>
+                                                    </button>
                                                 </div>
                                             </div>
                                         ) : (
@@ -2687,6 +2734,163 @@ export const Help: React.FC = () => {
                                     </div>
                                 </div>
                             </HelpSection>
+
+                            {/* Modal WhatsApp */}
+                            <AnimatePresence>
+                                {showWhatsAppModal && (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                                        onClick={() => setShowWhatsAppModal(false)}
+                                    >
+                                        <motion.div
+                                            initial={{ scale: 0.9, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            exit={{ scale: 0.9, opacity: 0 }}
+                                            className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {/* Header */}
+                                            <div className="flex items-center justify-between mb-6">
+                                                <h3 className="text-lg font-bold flex items-center gap-2">
+                                                    <Phone className="w-5 h-5 text-green-500" />
+                                                    📱 Continuar pelo WhatsApp
+                                                </h3>
+                                                <button
+                                                    onClick={() => setShowWhatsAppModal(false)}
+                                                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                                                >
+                                                    <X className="w-5 h-5" />
+                                                </button>
+                                            </div>
+
+                                            {/* Conteúdo baseado no estado */}
+                                            {whatsAppStep === 'confirm' && currentUser && !useOtherNumber && (
+                                                <div className="space-y-4">
+                                                    <p className="text-gray-600">Vamos usar o número da sua conta:</p>
+                                                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                                                        <Phone className="w-5 h-5 text-green-500" />
+                                                        <span className="font-medium text-lg">
+                                                            +55 {formatPhoneDisplay(whatsAppPhone)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        <button
+                                                            onClick={() => handleSendWhatsAppSupport(whatsAppPhone)}
+                                                            className="w-full py-3 px-4 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+                                                        >
+                                                            <CheckCircle className="w-5 h-5" />
+                                                            Continuar com este número
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setUseOtherNumber(true);
+                                                                setWhatsAppStep('input');
+                                                                setWhatsAppPhone('');
+                                                            }}
+                                                            className="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                                                        >
+                                                            ✏️ Usar outro número
+                                                        </button>
+                                                        <button
+                                                            onClick={openWhatsAppDirect}
+                                                            className="w-full py-3 px-4 border border-gray-200 text-gray-600 rounded-xl font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                                                        >
+                                                            💬 Prefiro mandar mensagem eu mesmo
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {(whatsAppStep === 'input' || (!currentUser && whatsAppStep === 'confirm')) && (
+                                                <div className="space-y-4">
+                                                    <p className="text-gray-600">
+                                                        {currentUser ? 'Digite o número que deseja usar:' : 'Digite seu número de WhatsApp:'}
+                                                    </p>
+                                                    <input
+                                                        type="tel"
+                                                        value={whatsAppPhone}
+                                                        onChange={(e) => setWhatsAppPhone(e.target.value)}
+                                                        placeholder="(27) 99999-9999"
+                                                        className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-lg"
+                                                    />
+                                                    <div className="space-y-3">
+                                                        <button
+                                                            onClick={() => handleSendWhatsAppSupport(whatsAppPhone)}
+                                                            disabled={!whatsAppPhone || whatsAppPhone.replace(/\D/g, '').length < 10}
+                                                            className="w-full py-3 px-4 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            <CheckCircle className="w-5 h-5" />
+                                                            {currentUser ? 'Continuar com este número' : 'Receber mensagem neste número'}
+                                                        </button>
+                                                        <button
+                                                            onClick={openWhatsAppDirect}
+                                                            className="w-full py-3 px-4 border border-gray-200 text-gray-600 rounded-xl font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                                                        >
+                                                            💬 Prefiro mandar mensagem eu mesmo
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {whatsAppStep === 'sending' && (
+                                                <div className="text-center py-8">
+                                                    <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                                                    <p className="text-gray-600">Enviando mensagem...</p>
+                                                </div>
+                                            )}
+
+                                            {whatsAppStep === 'success' && (
+                                                <div className="text-center py-8">
+                                                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                        <CheckCircle className="w-8 h-8 text-green-500" />
+                                                    </div>
+                                                    <h4 className="font-bold text-lg mb-2">✅ Mensagem enviada!</h4>
+                                                    <p className="text-gray-600 mb-4">
+                                                        Em breve você receberá uma mensagem no seu WhatsApp.
+                                                        <br />
+                                                        Fique de olho no seu celular! 📱
+                                                    </p>
+                                                    <button
+                                                        onClick={() => setShowWhatsAppModal(false)}
+                                                        className="py-2 px-6 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors"
+                                                    >
+                                                        Fechar
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {whatsAppStep === 'error' && (
+                                                <div className="text-center py-8">
+                                                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                        <XCircle className="w-8 h-8 text-red-500" />
+                                                    </div>
+                                                    <h4 className="font-bold text-lg mb-2">❌ Erro ao enviar</h4>
+                                                    <p className="text-gray-600 mb-4">
+                                                        Não foi possível enviar a mensagem. Tente novamente ou envie você mesmo.
+                                                    </p>
+                                                    <div className="flex gap-3 justify-center">
+                                                        <button
+                                                            onClick={() => setWhatsAppStep(currentUser ? 'confirm' : 'input')}
+                                                            className="py-2 px-4 bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200 transition-colors"
+                                                        >
+                                                            Tentar novamente
+                                                        </button>
+                                                        <button
+                                                            onClick={openWhatsAppDirect}
+                                                            className="py-2 px-4 bg-green-500 text-white rounded-full font-medium hover:bg-green-600 transition-colors"
+                                                        >
+                                                            Enviar eu mesmo
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
                             {/* Section: Políticas e Termos */}
                             <HelpSection
