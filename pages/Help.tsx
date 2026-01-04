@@ -25,7 +25,7 @@ interface HelpSectionProps {
     children: React.ReactNode;
     defaultOpen?: boolean;
     isActive?: boolean;
-    forceOpen?: boolean;
+    forcedOpenKey?: { id: string; key: number } | null;
     onToggle?: (id: string) => void;
 }
 
@@ -457,18 +457,18 @@ const HelpSection: React.FC<HelpSectionProps> = ({
     children,
     defaultOpen = false,
     isActive = false,
-    forceOpen = false,
+    forcedOpenKey = null,
     onToggle
 }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     const sectionRef = useRef<HTMLDivElement>(null);
 
-    // Sincronizar com forceOpen externo (apenas abrir, não impede fechar)
+    // Forçar abertura quando forcedOpenKey corresponde a este ID
     useEffect(() => {
-        if (forceOpen) {
+        if (forcedOpenKey && forcedOpenKey.id === id) {
             setIsOpen(true);
         }
-    }, [forceOpen]);
+    }, [forcedOpenKey, id]);
 
     const handleToggle = () => {
         const newState = !isOpen;
@@ -480,19 +480,6 @@ const HelpSection: React.FC<HelpSectionProps> = ({
     useEffect(() => {
         if (window.location.hash === `#${id}`) {
             setIsOpen(true);
-            setTimeout(() => {
-                if (sectionRef.current) {
-                    const isMobile = window.innerWidth < 1024;
-                    const headerOffset = isMobile ? 140 : 120;
-                    const elementPosition = sectionRef.current.getBoundingClientRect().top;
-                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-                    window.scrollTo({
-                        top: offsetPosition,
-                        behavior: 'smooth'
-                    });
-                }
-            }, 150);
         }
     }, [id]);
 
@@ -501,7 +488,7 @@ const HelpSection: React.FC<HelpSectionProps> = ({
             ref={sectionRef}
             id={id}
             variants={sectionVariants}
-            className={`bg-white rounded-xl border transition-colors duration-200 ${isActive ? 'border-black ring-2 ring-black/5' : 'border-gray-200'}`}
+            className={`bg-white rounded-xl border transition-colors duration-300 ${isActive ? 'border-black ring-2 ring-black/5' : 'border-gray-200'}`}
         >
             <button
                 onClick={handleToggle}
@@ -510,7 +497,7 @@ const HelpSection: React.FC<HelpSectionProps> = ({
                 aria-controls={`${id}-content`}
             >
                 <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'}`}>
+                    <div className={`p-2 rounded-lg transition-colors duration-300 ${isActive ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'}`}>
                         {icon}
                     </div>
                     <h2 className="text-lg font-bold text-black">{title}</h2>
@@ -840,7 +827,7 @@ const MobileStickyNav: React.FC<MobileStickyNavProps> = ({
     const filteredItems = items.filter(item => item.category !== 'Loja' || enableShop);
 
     return (
-        <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-200 lg:hidden">
+        <div className="sticky top-[80px] z-30 bg-white/95 backdrop-blur-sm border-b border-gray-200 lg:hidden">
             <div
                 ref={scrollContainerRef}
                 className="flex overflow-x-auto scrollbar-hide px-4 py-3 gap-2"
@@ -879,7 +866,7 @@ export const Help: React.FC = () => {
     const [showMobileTOC, setShowMobileTOC] = useState(false);
     const [showTourButton, setShowTourButton] = useState(true);
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-    const [openSections, setOpenSections] = useState<Set<string>>(new Set());
+    const [forcedOpenKey, setForcedOpenKey] = useState<{ id: string; key: number } | null>(null);
 
     // Refs for scroll tracking
     const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -1139,33 +1126,28 @@ export const Help: React.FC = () => {
         }
     }, [location.hash]);
 
-    // Navigate to section and toggle it open
+    // Navigate to section - always opens it and scrolls with offset
     const handleNavigateToSection = useCallback((sectionId: string) => {
         const element = document.getElementById(sectionId);
         if (element) {
-            // Toggle: se já está aberto, apenas faz scroll; senão abre
-            setOpenSections(prev => {
-                const newSet = new Set(prev);
-                if (!newSet.has(sectionId)) {
-                    newSet.add(sectionId);
-                }
-                return newSet;
-            });
+            // Força abertura com nova key (Date.now() garante re-execução do useEffect)
+            setForcedOpenKey({ id: sectionId, key: Date.now() });
 
-            // Calcular offset: header (80px) + barra sticky mobile (56px em telas pequenas)
+            // Calcular offset: header (80px) + barra sticky mobile (60px em telas pequenas) + margem
             const isMobile = window.innerWidth < 1024;
-            const headerOffset = isMobile ? 140 : 120; // header + sticky no mobile, só header no desktop
+            const headerHeight = 80;
+            const stickyNavHeight = isMobile ? 60 : 0;
+            const margin = 20;
+            const totalOffset = headerHeight + stickyNavHeight + margin;
 
             // Aguardar abertura e então fazer scroll com offset
             setTimeout(() => {
-                const elementPosition = element.getBoundingClientRect().top;
-                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
+                const elementTop = element.getBoundingClientRect().top + window.scrollY;
                 window.scrollTo({
-                    top: offsetPosition,
+                    top: elementTop - totalOffset,
                     behavior: 'smooth'
                 });
-            }, 150);
+            }, 200);
 
             setActiveSection(sectionId);
             window.history.replaceState(null, '', `#/help#${sectionId}`);
@@ -1314,7 +1296,7 @@ export const Help: React.FC = () => {
                                 title="Como Navegar no Site"
                                 icon={<Home className="w-5 h-5" />}
                                 isActive={activeSection === 'navegacao'}
-                                forceOpen={openSections.has('navegacao')}
+                                forcedOpenKey={forcedOpenKey}
                                 defaultOpen={false}
                             >
                                 <div className="space-y-8">
@@ -1534,7 +1516,7 @@ export const Help: React.FC = () => {
                                 title="Login e Criar Conta"
                                 icon={<LogIn className="w-5 h-5" />}
                                 isActive={activeSection === 'autenticacao'}
-                                forceOpen={openSections.has('autenticacao')}
+                                forcedOpenKey={forcedOpenKey}
                             >
                                 <div className="space-y-8">
                                     {/* Criar Conta */}
@@ -1714,7 +1696,7 @@ export const Help: React.FC = () => {
                                 title="Área do Cliente"
                                 icon={<User className="w-5 h-5" />}
                                 isActive={activeSection === 'area-cliente'}
-                                forceOpen={openSections.has('area-cliente')}
+                                forcedOpenKey={forcedOpenKey}
                             >
                                 <div className="space-y-8">
                                     {/* Acesso Rápido */}
@@ -2142,7 +2124,7 @@ export const Help: React.FC = () => {
                                 title="Como Solicitar Orçamento"
                                 icon={<FileText className="w-5 h-5" />}
                                 isActive={activeSection === 'orcamento'}
-                                forceOpen={openSections.has('orcamento')}
+                                forcedOpenKey={forcedOpenKey}
                             >
                                 <div className="space-y-8">
                                     {/* Visão Geral */}
