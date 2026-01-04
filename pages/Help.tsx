@@ -25,6 +25,7 @@ interface HelpSectionProps {
     children: React.ReactNode;
     defaultOpen?: boolean;
     isActive?: boolean;
+    forceOpen?: boolean;
     onToggle?: (id: string) => void;
 }
 
@@ -456,10 +457,18 @@ const HelpSection: React.FC<HelpSectionProps> = ({
     children,
     defaultOpen = false,
     isActive = false,
+    forceOpen = false,
     onToggle
 }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     const sectionRef = useRef<HTMLDivElement>(null);
+
+    // Sincronizar com forceOpen externo
+    useEffect(() => {
+        if (forceOpen && !isOpen) {
+            setIsOpen(true);
+        }
+    }, [forceOpen, isOpen]);
 
     const handleToggle = () => {
         const newState = !isOpen;
@@ -784,6 +793,69 @@ const MobileTOCDrawer: React.FC<MobileTOCDrawerProps> = ({
 };
 
 // ============================================
+// MOBILE STICKY NAV - Horizontal scrollable nav for mobile
+// ============================================
+
+interface MobileStickyNavProps {
+    items: TableOfContentsItem[];
+    activeSection: string;
+    onItemClick: (id: string) => void;
+    enableShop: boolean;
+}
+
+const MobileStickyNav: React.FC<MobileStickyNavProps> = ({
+    items,
+    activeSection,
+    onItemClick,
+    enableShop
+}) => {
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const activeButtonRef = useRef<HTMLButtonElement>(null);
+
+    // Auto-scroll para manter item ativo visível
+    useEffect(() => {
+        if (activeButtonRef.current && scrollContainerRef.current) {
+            const container = scrollContainerRef.current;
+            const button = activeButtonRef.current;
+            const containerRect = container.getBoundingClientRect();
+            const buttonRect = button.getBoundingClientRect();
+
+            // Se o botão ativo não estiver visível, fazer scroll
+            if (buttonRect.left < containerRect.left || buttonRect.right > containerRect.right) {
+                button.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+    }, [activeSection]);
+
+    const filteredItems = items.filter(item => item.category !== 'Loja' || enableShop);
+
+    return (
+        <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-200 lg:hidden">
+            <div
+                ref={scrollContainerRef}
+                className="flex overflow-x-auto scrollbar-hide px-4 py-3 gap-2"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+                {filteredItems.map(item => (
+                    <button
+                        key={item.id}
+                        ref={activeSection === item.id ? activeButtonRef : null}
+                        onClick={() => onItemClick(item.id)}
+                        className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${activeSection === item.id
+                            ? 'bg-black text-white shadow-md'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                    >
+                        <span className="opacity-80">{item.icon}</span>
+                        <span className="whitespace-nowrap">{item.title}</span>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// ============================================
 // MAIN HELP PAGE COMPONENT
 // ============================================
 
@@ -797,6 +869,7 @@ export const Help: React.FC = () => {
     const [showMobileTOC, setShowMobileTOC] = useState(false);
     const [showTourButton, setShowTourButton] = useState(true);
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+    const [openSections, setOpenSections] = useState<Set<string>>(new Set());
 
     // Refs for scroll tracking
     const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -1048,11 +1121,18 @@ export const Help: React.FC = () => {
         }
     }, [location.hash]);
 
-    // Navigate to section
+    // Navigate to section and open it
     const handleNavigateToSection = useCallback((sectionId: string) => {
         const element = document.getElementById(sectionId);
         if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Abrir a seção clicada
+            setOpenSections(prev => new Set([...prev, sectionId]));
+
+            // Aguardar abertura e então fazer scroll
+            setTimeout(() => {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+
             setActiveSection(sectionId);
             window.history.replaceState(null, '', `#/help#${sectionId}`);
         }
@@ -1117,6 +1197,14 @@ export const Help: React.FC = () => {
                     </motion.div>
                 </div>
             </section>
+
+            {/* Mobile Sticky Navigation */}
+            <MobileStickyNav
+                items={tocItems}
+                activeSection={activeSection}
+                onItemClick={handleNavigateToSection}
+                enableShop={isShopEnabled}
+            />
 
             {/* Main Content */}
             <div className="container mx-auto px-6 py-12">
@@ -3374,14 +3462,7 @@ export const Help: React.FC = () => {
                 </div>
             </div>
 
-            {/* Mobile TOC Button */}
-            <button
-                onClick={() => setShowMobileTOC(true)}
-                className="fixed bottom-24 left-4 z-40 lg:hidden w-12 h-12 rounded-full bg-black text-white shadow-lg flex items-center justify-center hover:bg-gray-800 transition-colors"
-                aria-label="Abrir índice"
-            >
-                <Book className="w-5 h-5" />
-            </button>
+
 
             {/* Mobile TOC Drawer */}
             <MobileTOCDrawer
@@ -3457,8 +3538,8 @@ export const Help: React.FC = () => {
                                         <div
                                             key={idx}
                                             className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${idx < tourStep ? 'bg-accent' :
-                                                    idx === tourStep ? 'bg-white' :
-                                                        'bg-white/20'
+                                                idx === tourStep ? 'bg-white' :
+                                                    'bg-white/20'
                                                 }`}
                                         />
                                     ))}
