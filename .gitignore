@@ -33,3 +33,5 @@ debug-supabase.js
 
 # Arquivo .gitignore
 *.code-workspace
+
+.agent
