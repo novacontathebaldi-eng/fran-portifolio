@@ -7,6 +7,7 @@ import { useProjects } from '../context/ProjectContext';
 import { useCart } from '../context/CartContext';
 import { Chatbot } from './Chatbot';
 import InstallButton from './InstallButton';
+import { SocialLinks } from './SocialLinks';
 import { useScrollLock } from '../hooks/useScrollLock';
 
 
@@ -383,15 +384,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </ul>
             </div>
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-widest mb-8 text-accent">Instalar App</h4>
-              <p className="text-xs text-gray-500 mb-4">Adicione à tela inicial do seu dispositivo.</p>
-              <InstallButton />
+              <h4 className="text-xs font-bold uppercase tracking-widest mb-8 text-accent">Siga-nos</h4>
+              <SocialLinks links={siteContent.office.socialLinks || []} iconSize="w-5 h-5" />
+              <div className="mt-8">
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-4 text-accent">Instalar App</h4>
+                <p className="text-xs text-gray-500 mb-4">Adicione à tela inicial do seu dispositivo.</p>
+                <InstallButton />
+              </div>
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4 text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
               <p>&copy; 2026 Fran Siller Arquitetura. Todos os direitos reservados.</p>
-              <span className="hidden md:inline text-gray-700">•</span>
+              <span className="hidden md:inline text-gray-700">&bull;</span>
               <p className="text-gray-500">
                 Desenvolvido por{' '}
                 <a
@@ -403,38 +408,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   Otávio Siller Thebaldi
                 </a>
               </p>
-            </div>
-            <div className="flex space-x-6">
-              {(siteContent.office.socialLinks || []).length > 0 ? (
-                (siteContent.office.socialLinks || []).map((link) => {
-                  // Tratamento especial para WhatsApp
-                  let href = link.url;
-                  if (link.platform === 'whatsapp') {
-                    const cleanNumber = link.url.replace(/\D/g, '');
-                    const message = encodeURIComponent('Olá! Vim pelo site e gostaria de mais informações.');
-                    href = `https://wa.me/${cleanNumber}?text=${message}`;
-                  } else if (!link.url.startsWith('http://') && !link.url.startsWith('https://')) {
-                    // Adiciona protocolo se não tiver
-                    href = `https://${link.url}`;
-                  }
-
-                  return (
-                    <a
-                      key={link.id}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-white cursor-pointer transition capitalize"
-                    >
-                      {link.label || link.platform}
-                    </a>
-                  );
-                })
-              ) : (
-                <>
-                  <span className="text-gray-600">Nenhuma rede social configurada</span>
-                </>
-              )}
             </div>
           </div>
         </div>
