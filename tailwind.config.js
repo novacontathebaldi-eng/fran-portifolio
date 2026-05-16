@@ -14,9 +14,9 @@ export default {
                 serif: ['Playfair Display', 'serif'],
             },
             colors: {
-                primary: '#1a1a1a',
-                secondary: '#6b7280',
-                accent: '#d4bbb0', // Architectural beige
+                primary: 'var(--color-primary, #1a1a1a)',
+                secondary: 'var(--color-secondary, #6b7280)',
+                accent: 'var(--color-accent, #d4bbb0)', // Architectural beige
             }
         }
     },

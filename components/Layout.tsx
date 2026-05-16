@@ -1,4 +1,4 @@
-
+﻿
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -195,9 +195,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Logo */}
           <Link to="/" onClick={handleLinkClick} className={`z-[60] relative transition-colors duration-300 pointer-events-auto flex items-center gap-2 ${logoClasses}`}>
-            <span className="text-3xl md:text-4xl font-serif font-bold tracking-tight">FS</span>
+            <span className="text-3xl md:text-4xl font-serif font-bold tracking-tight">{settings.branding?.brandInitials || 'FS'}</span>
             <span className="w-px h-6 bg-current opacity-30"></span>
-            <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] font-light">Arquitetura</span>
+            <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] font-light">{settings.branding?.brandTagline || 'Arquitetura'}</span>
           </Link>
 
           {/* Desktop Menu */}
@@ -325,7 +325,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             <div className="mt-8 text-xs text-gray-500 uppercase tracking-widest text-center">
-              Fran Siller Arquitetura
+              {settings.branding?.brandName || 'Escrit�rio de Arquitetura'}
             </div>
           </div>
         )
@@ -350,24 +350,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="md:col-span-1">
               <div className="mb-6 flex flex-col items-start leading-none group cursor-default">
-                <span className="text-2xl font-serif font-bold tracking-normal flex">
-                  {/* F - sempre visível */}
-                  <span>F</span>
-                  {/* "ran" - aparece no hover */}
-                  <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[1.5em] group-hover:opacity-100">ran</span>
-                  {/* Espaço entre palavras - aparece no hover */}
-                  <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 group-hover:max-w-[0.25em]">&nbsp;</span>
-                  {/* S - sempre visível */}
-                  <span>S</span>
-                  {/* "iller" - aparece no hover */}
-                  <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[2em] group-hover:opacity-100">iller</span>
+                <span className="text-2xl font-serif font-bold tracking-normal">
+                  {settings.branding?.brandShortName || 'O Arquiteto'}
                 </span>
-                <span className="text-xs uppercase tracking-[0.25em] font-medium text-gray-500">Arquitetura</span>
+                <span className="text-xs uppercase tracking-[0.25em] font-medium text-gray-500 mt-2">
+                  {settings.branding?.brandTagline || 'Arquitetura'}
+                </span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
-                Arquitetura que escuta o lugar e respeita quem o habita.
-                <br /><br />
-                Fran Siller atua com projetos residenciais, comerciais e culturais, valorizando o contexto regional e a identidade de cada cliente. Do conceito à execução, com envolvimento em cada etapa.
+                {settings.seo?.defaultDescription || 'Arquitetura que escuta o lugar e respeita quem o habita. Valorizamos o contexto regional e a identidade de cada cliente. Do conceito à execução, com envolvimento em cada etapa.'}
               </p>
             </div>
             <div className="md:col-start-3">
@@ -395,19 +386,23 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4 text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
-              <p>&copy; 2026 Fran Siller Arquitetura. Todos os direitos reservados.</p>
-              <span className="hidden md:inline text-gray-700">&bull;</span>
-              <p className="text-gray-500">
-                Desenvolvido por{' '}
-                <a
-                  href="https://othebaldi.me/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium hover:text-accent transition-colors"
-                >
-                  Otávio Siller Thebaldi
-                </a>
-              </p>
+              <p>&copy; {new Date().getFullYear()} {settings.legal?.companyLegalName || settings.branding?.brandName || 'Escrit�rio de Arquitetura'}. Todos os direitos reservados.</p>
+              {settings.branding?.developerCredits?.enabled !== false && (
+                <>
+                  <span className="hidden md:inline text-gray-700">&bull;</span>
+                  <p className="text-gray-500">
+                    Desenvolvido por{' '}
+                    <a
+                      href={settings.branding?.developerCredits?.url || "https://seu-dominio.com.br"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium hover:text-accent transition-colors"
+                    >
+                      {settings.branding?.developerCredits?.name || 'Otávio Thebaldi'}
+                    </a>
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>

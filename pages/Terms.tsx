@@ -1,9 +1,11 @@
-import React from 'react';
+﻿import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, FileText, CheckCircle, XCircle, AlertTriangle, Scale } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useProjects } from '../context/ProjectContext';
 
 export const Terms: React.FC = () => {
+    const { settings } = useProjects();
     return (
         <div className="min-h-screen pt-32 pb-24 bg-gray-50">
             <div className="container mx-auto px-6">
@@ -34,7 +36,7 @@ export const Terms: React.FC = () => {
 
                         <div className="prose prose-gray max-w-none">
                             <p className="text-lg text-gray-600 leading-relaxed mb-8">
-                                Ao utilizar o site da <strong>Fran Siller Arquitetura</strong>, você concorda
+                                Ao utilizar o site da <strong>{settings.branding?.brandName || 'nossa empresa'}</strong>, você concorda
                                 com os termos descritos abaixo. Leia atentamente.
                             </p>
 
@@ -112,7 +114,7 @@ export const Terms: React.FC = () => {
                                     <h2 className="text-xl font-bold mb-3">5. Propriedade Intelectual</h2>
                                     <p className="text-gray-600">
                                         Todo o conteúdo do site, incluindo textos, imagens, logotipos e projetos,
-                                        é de propriedade da Fran Siller Arquitetura e está protegido por direitos autorais.
+                                        é de propriedade da {settings.branding?.brandName || 'nossa empresa'} e está protegido por direitos autorais.
                                     </p>
                                 </div>
                             </div>
@@ -141,7 +143,7 @@ export const Terms: React.FC = () => {
                                     <h2 className="text-xl font-bold mb-3">7. Lei Aplicável</h2>
                                     <p className="text-gray-600">
                                         Estes termos são regidos pelas leis brasileiras. Para dúvidas ou questões,
-                                        entre em contato conosco antes de qualquer medida: contato@fransiller.com.br
+                                        entre em contato conosco antes de qualquer medida: contato@exemplo.com.br
                                     </p>
                                 </div>
                             </div>

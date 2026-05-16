@@ -28,6 +28,8 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "ARQUIVOS/BACK UP UP",
+    "supabase/functions"
   ]
 }

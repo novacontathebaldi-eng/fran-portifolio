@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ReactNode, ErrorInfo, Suspense, lazy } from 'react';
+﻿import React, { useState, useEffect, ReactNode, ErrorInfo, Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info, X, RefreshCw, Loader2 } from 'lucide-react';
@@ -150,6 +150,7 @@ interface SplashProps {
 }
 
 const Splash: React.FC<SplashProps> = ({ isDataReady, areComponentsReady, onComplete }) => {
+  const { settings } = useProjects();
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
@@ -190,10 +191,10 @@ const Splash: React.FC<SplashProps> = ({ isDataReady, areComponentsReady, onComp
       className={`fixed inset-0 bg-[#1a1a1a] flex items-center justify-center z-[100] text-white transition-opacity duration-500 ${isExiting ? 'opacity-0' : 'opacity-100'}`}
       role="status"
       aria-live="polite"
-      aria-label="Carregando site Fran Siller Arquitetura"
+      aria-label={`Carregando site ${settings?.branding?.brandName || 'do Arquitetura'}`}
     >
       <div className="text-center animate-pulse">
-        <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">Fran Siller</h1>
+        <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">{settings?.branding?.brandInitials || 'FS'}</h1>
         <div className="h-0.5 w-16 bg-accent mx-auto"></div>
         <p className="text-xs uppercase tracking-widest mt-4 text-gray-400">Arquitetura & Design</p>
       </div>
@@ -467,7 +468,7 @@ const App: React.FC = () => {
 
     // Console message
     console.log(
-      '%c✨ Fran Siller Arquitetura ✨',
+      '%c✨ Template White-Label ✨',
       'font-size: 20px; font-weight: bold; color: #D4AF37; text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.3);'
     );
     console.log(
@@ -475,11 +476,11 @@ const App: React.FC = () => {
       'font-size: 12px; color: #efefefff; font-style: italic;'
     );
     console.log(
-      '%c\n💼 Interessado em trabalhar conosco?\n📧 Entre em contato: https://fransiller.othebaldi.me/#/contact\n🌐 Portfólio: https://fransiller.othebaldi.me\n',
+      '%c\n💼 Interessado em trabalhar conosco?\n📧 Entre em contato: https://seu-dominio.com.br/#/contact\n🌐 Portfólio: https://seu-dominio.com.br\n',
       'font-size: 11px; color: #efefefff; line-height: 1.8;'
     );
     console.log(
-      '%c🏛️ Desenvolvido com excelência por oTHEBALDI\n📧 Contato: suporte@othebaldi.me\n🌐 Site: https://othebaldi.me',
+      '%c🏛️ Desenvolvido com excelência por oTHEBALDI\n📧 Contato: suporte@othebaldi.me\n🌐 Site: https://seu-dominio.com.br',
       'font-size: 10px; color: #efefefff;'
     );
   }, []);
@@ -501,7 +502,7 @@ const AppContent: React.FC = () => {
   const [isExiting, setIsExiting] = useState(false);
 
   // Preload images including hero video thumbnail
-  const { siteContent } = useProjects();
+  const { siteContent, settings } = useProjects();
 
   useEffect(() => {
     const PRELOAD_IMAGES = [
@@ -575,10 +576,10 @@ const AppContent: React.FC = () => {
           className={`fixed inset-0 bg-[#1a1a1a] flex items-center justify-center z-[9999] text-white transition-opacity duration-500 ${isExiting ? 'opacity-0' : 'opacity-100'}`}
           role="status"
           aria-live="polite"
-          aria-label="Carregando site Fran Siller Arquitetura"
+          aria-label={`Carregando site ${settings?.branding?.brandName || 'do Arquitetura'}`}
         >
           <div className="text-center animate-pulse">
-            <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">Fran Siller</h1>
+            <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">{settings?.branding?.brandInitials || 'FS'}</h1>
             <div className="h-0.5 w-16 bg-accent mx-auto"></div>
             <p className="text-xs uppercase tracking-widest mt-4 text-gray-400">Arquitetura & Design</p>
           </div>

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+﻿import React, { useRef, useState, useEffect } from 'react';
 import { ReactLenis } from 'lenis/react';
 import { motion, useMotionTemplate, useScroll, useTransform } from 'framer-motion';
 import { Users, Clock, Leaf, ArrowDown } from 'lucide-react';
@@ -26,7 +26,7 @@ const useIsMobile = () => {
 };
 
 export const About: React.FC = () => {
-  const { siteContent, projects, culturalProjects, isLoadingData } = useProjects();
+  const { siteContent, projects, culturalProjects, isLoadingData, settings } = useProjects();
   const { about } = siteContent;
   const isMobile = useIsMobile();
 
@@ -90,7 +90,7 @@ export const About: React.FC = () => {
                 <img src={about.profileImage} alt="Profile" className="w-full h-auto shadow-lg object-cover max-h-[400px] rounded-lg" loading="lazy" />
               </div>
               <div className="w-full">
-                <h2 className="text-2xl font-serif mb-4">Fran Siller</h2>
+                <h2 className="text-2xl font-serif mb-4">{settings?.branding?.ownerName || 'Arquiteto Principal'}</h2>
                 <p className="text-gray-500 uppercase tracking-widest text-[10px] font-bold mb-6">Arquiteta Principal & Fundadora</p>
                 <div className="prose text-secondary mb-6">
                   <p className="whitespace-pre-wrap leading-relaxed text-sm">{about.bio}</p>
@@ -188,7 +188,7 @@ export const About: React.FC = () => {
               transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-2xl md:text-4xl font-serif mb-4 md:mb-6">Fran Siller</h2>
+              <h2 className="text-2xl md:text-4xl font-serif mb-4 md:mb-6">{settings?.branding?.ownerName || 'Arquiteto Principal'}</h2>
               <p className="text-gray-500 uppercase tracking-widest text-[10px] md:text-xs font-bold mb-6 md:mb-8">Arquiteta Principal & Fundadora</p>
 
               <div className="prose text-secondary mb-6 md:mb-8">

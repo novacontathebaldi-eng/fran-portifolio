@@ -117,8 +117,8 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   aiConfig: {
     provider: 'gemini',
     useCustomSystemInstruction: false,
-    systemInstruction: `VOCÊ É O "CONCIERGE DIGITAL" DA FRAN SILLER ARQUITETURA...`,
-    defaultGreeting: "Olá {name}. Sou o Concierge Digital Fran Siller. Como posso tornar seu dia melhor?",
+    systemInstruction: `VOCÊ É O "CONCIERGE DIGITAL" DA Escrit�rio de Arquitetura...`,
+    defaultGreeting: "Olá {name}. Sou o Concierge Digital O Arquiteto. Como posso tornar seu dia melhor?",
     temperature: 0.7,
     contextLimit: 10, // Envia as últimas 10 mensagens como contexto para reduzir alucinações
     gemini: {
@@ -140,7 +140,6 @@ const DEFAULT_SETTINGS: GlobalSettings = {
     fallbackMessage: 'Desculpe, não consegui entender. Posso te ajudar de outra forma?',
     showQuickActionsOnOpen: true
   },
-  // WhatsApp Notification Config
   whatsappConfig: {
     enabled: true,
     recipientPhone: '352691214222',
@@ -148,6 +147,35 @@ const DEFAULT_SETTINGS: GlobalSettings = {
     notifyAppointment: true,
     notifyContact: true,
     notifyChatbot: true
+  },
+  branding: {
+    brandName: "Escrit�rio de Arquitetura",
+    brandShortName: "O Arquiteto",
+    brandInitials: "FS",
+    brandTagline: "Arquitetura & Design",
+    ownerName: "O Arquiteto",
+    siteUrl: "https://seu-dominio.com.br",
+    developerCredits: {
+      enabled: true,
+      name: "Otávio Thebaldi",
+      url: "https://seu-dominio.com.br"
+    }
+  },
+  theme: {
+    colorPrimary: "#D4AF37",
+    colorAccent: "#C7B6A5",
+    colorBackground: "#1a1a1a",
+    colorText: "#ffffff"
+  },
+  legal: {
+    companyLegalName: "Escrit�rio de Arquitetura LTDA",
+    documentNumber: "",
+    contactEmail: "contato@exemplo.com.br"
+  },
+  seo: {
+    defaultTitle: "O Arquiteto | Arquitetura & Design",
+    defaultDescription: "Escritório especializado em arquitetura de alto padrão, interiores e restauro do patrimônio capixaba.",
+    keywords: "Arquitetura, Interiores, Design, Santa Leopoldina, O Arquiteto, Projetos"
   }
 };
 
@@ -167,7 +195,7 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     heroTitle: 'Arquitetura que dialoga com o tempo, a memória e a paisagem',
     heroImage: 'https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/fotoheroabout.png',
     profileImage: 'https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/378557752_597176842380637_7080388795805736658_n..jpg',
-    bio: `Com mais de 15 anos de experiência no mercado de arquitetura de alto padrão, Fran Siller fundou seu escritório com uma premissa clara...`,
+    bio: `Com mais de 15 anos de experiência no mercado de arquitetura de alto padrão, O Arquiteto fundou seu escritório com uma premissa clara...`,
     stats: [
       { id: '1', value: '15+', label: 'Anos de Exp.' },
       { id: '2', value: '80+', label: 'Projetos' },
@@ -191,8 +219,8 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     mapsLink: 'https://maps.app.goo.gl/fxYnZFrFxKQshMfe9',
     mapQuery: '',
     hoursDescription: 'Segunda a Sexta, 09h às 17h',
-    email: 'contato@fransiller.com.br',
-    phone: '+55 (27) 99667-0426',
+    email: 'contato@exemplo.com.br',
+    phone: '+55 (11) 99999-9999',
     blocks: [],
     // Dynamic social links array - stored in database
     socialLinks: [],
@@ -258,6 +286,18 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Settings & Content
   const [settings, setSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS);
+  
+  // Theme Injection
+  useEffect(() => {
+    if (settings?.theme) {
+      const root = document.documentElement;
+      if (settings.theme.colorPrimary) root.style.setProperty('--color-primary', settings.theme.colorPrimary);
+      if (settings.theme.colorAccent) root.style.setProperty('--color-accent', settings.theme.colorAccent);
+      if (settings.theme.colorBackground) root.style.setProperty('--color-background', settings.theme.colorBackground);
+      if (settings.theme.colorText) root.style.setProperty('--color-text', settings.theme.colorText);
+    }
+  }, [settings?.theme]);
+
   const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
 
   // Shop / E-commerce State
@@ -376,6 +416,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         setSettings({
           ...DEFAULT_SETTINGS,
           ...savedBundle.global,
+          branding: { ...DEFAULT_SETTINGS.branding, ...(savedBundle.global.branding || {}) },
+          theme: { ...DEFAULT_SETTINGS.theme, ...(savedBundle.global.theme || {}) },
+          legal: { ...DEFAULT_SETTINGS.legal, ...(savedBundle.global.legal || {}) },
+          seo: { ...DEFAULT_SETTINGS.seo, ...(savedBundle.global.seo || {}) },
           aiConfig: {
             ...DEFAULT_SETTINGS.aiConfig,
             ...savedAiConfig,

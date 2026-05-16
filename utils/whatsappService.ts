@@ -1,4 +1,4 @@
-// src/utils/whatsappService.ts
+﻿// src/utils/whatsappService.ts
 // Serviço para enviar notificações via WhatsApp usando Edge Function do Supabase
 // A Edge Function mantém o token seguro no servidor
 
@@ -101,7 +101,7 @@ export const DEFAULT_TEMPLATES = {
     // CLIENTE
     welcome: (name: string) => `🎉 *Bem-vindo(a), ${name}!*
 
-Sua conta na *Fran Siller Arquitetura* foi criada com sucesso!
+Sua conta na *Escrit�rio de Arquitetura* foi criada com sucesso!
 
 Agora você pode:
 ✨ Solicitar orçamentos personalizados
@@ -109,26 +109,26 @@ Agora você pode:
 💬 Conversar com nossa assistente virtual
 📁 Acompanhar seus projetos
 
-Acesse: https://fransiller.othebaldi.me
+Acesse: https://seu-dominio.com.br
 
 Estamos à disposição para transformar seus sonhos em realidade! 🏠
 
-_Fran Siller Arquitetura_`,
+_Escrit�rio de Arquitetura_`,
 
     budgetConfirmationClient: (name: string, services: string) =>
-        `✅ *Olá ${name}!*\n\nRecebemos sua solicitação de orçamento para:\n🔧 ${services}\n\nNossa equipe analisará seu pedido e retornará em breve com todos os detalhes.\n\n_Fran Siller Arquitetura_`,
+        `✅ *Olá ${name}!*\n\nRecebemos sua solicitação de orçamento para:\n🔧 ${services}\n\nNossa equipe analisará seu pedido e retornará em breve com todos os detalhes.\n\n_Escrit�rio de Arquitetura_`,
 
     appointmentConfirmationClient: (name: string, type: string, date: string, time: string) =>
-        `✅ *Olá ${name}!*\n\nSua solicitação de *${type}* foi recebida!\n\n📆 Data: ${date}\n⏰ Horário: ${time}\n\n⏳ Aguarde a confirmação da nossa equipe.\n\n_Fran Siller Arquitetura_`,
+        `✅ *Olá ${name}!*\n\nSua solicitação de *${type}* foi recebida!\n\n📆 Data: ${date}\n⏰ Horário: ${time}\n\n⏳ Aguarde a confirmação da nossa equipe.\n\n_Escrit�rio de Arquitetura_`,
 
     contactConfirmationClient: (name: string) =>
-        `✅ *Olá ${name}!*\n\nRecebemos sua mensagem e retornaremos em breve.\n\nObrigada pelo contato!\n\n_Fran Siller Arquitetura_`,
+        `✅ *Olá ${name}!*\n\nRecebemos sua mensagem e retornaremos em breve.\n\nObrigada pelo contato!\n\n_Escrit�rio de Arquitetura_`,
 
     chatbotConfirmationClient: (name: string) =>
-        `✅ *Olá ${name}!*\n\nRecebemos seu recado e logo entraremos em contato!\n\nObrigada! 😊\n\n_Fran Siller Arquitetura_`,
+        `✅ *Olá ${name}!*\n\nRecebemos seu recado e logo entraremos em contato!\n\nObrigada! 😊\n\n_Escrit�rio de Arquitetura_`,
 
     reminderClient: (name: string, type: string, date: string, time: string) =>
-        `📅 *Lembrete de ${type}*\n\nOlá ${name}!\n\nLembramos que você tem um(a) *${type}* agendado(a) para:\n\n📆 Data: ${date}\n⏰ Horário: ${time}\n\nEm caso de dúvidas ou necessidade de reagendamento, entre em contato conosco.\n\n_Fran Siller Arquitetura_`,
+        `📅 *Lembrete de ${type}*\n\nOlá ${name}!\n\nLembramos que você tem um(a) *${type}* agendado(a) para:\n\n📆 Data: ${date}\n⏰ Horário: ${time}\n\nEm caso de dúvidas ou necessidade de reagendamento, entre em contato conosco.\n\n_Escrit�rio de Arquitetura_`,
 
     // ADMIN
     newBudgetAdmin: (name: string, city: string, services: string, email?: string, phone?: string, observations?: string) => {
@@ -161,7 +161,7 @@ _Fran Siller Arquitetura_`,
     },
 
     supportAtendimento: (name: string) =>
-        `Olá ${name}! 👋\n\nTudo bem? Sou da equipe *Fran Siller Arquitetura* e recebi sua solicitação de atendimento pelo site.\n\nEstou à disposição para ajudá-lo(a) com qualquer dúvida sobre:\n• Nossos projetos e serviços\n• Orçamentos e prazos\n• Agendamento de reuniões\n• Qualquer outra questão\n\nComo posso ajudá-lo(a) hoje?\n\n_Atendimento iniciado via site • fransiller.othebaldi.me_`,
+        `Olá ${name}! 👋\n\nTudo bem? Sou da equipe *Escrit�rio de Arquitetura* e recebi sua solicitação de atendimento pelo site.\n\nEstou à disposição para ajudá-lo(a) com qualquer dúvida sobre:\n• Nossos projetos e serviços\n• Orçamentos e prazos\n• Agendamento de reuniões\n• Qualquer outra questão\n\nComo posso ajudá-lo(a) hoje?\n\n_Atendimento iniciado via site • seu-dominio.com.br_`,
 };
 
 /**
@@ -611,7 +611,7 @@ export const testWhatsAppConnection = async (phonesToTest?: string[]): Promise<{
         return { success: false, sent: 0, failed: 0, error: 'Nenhum número de admin configurado' };
     }
 
-    const testMessage = '✅ *Teste de Conexão WhatsApp*\n\nEsta é uma mensagem de teste do sistema de notificações.\n\n_Fran Siller Arquitetura_';
+    const testMessage = '✅ *Teste de Conexão WhatsApp*\n\nEsta é uma mensagem de teste do sistema de notificações.\n\n_Escrit�rio de Arquitetura_';
 
     let sent = 0;
     let failed = 0;

@@ -1,4 +1,4 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+﻿import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -143,7 +143,7 @@ const toolDefinitions = [
 
 // === SYSTEM INSTRUCTION - REFORÇADO ===
 const DEFAULT_SYSTEM_INSTRUCTION = `
-Você é o Assistente Virtual da Fran Siller Arquitetura.
+Você é o Assistente Virtual da Escrit�rio de Arquitetura.
 
 ## REGRA #1 - A MAIS IMPORTANTE
 NUNCA, EM HIPÓTESE ALGUMA, use funções para:
@@ -192,7 +192,7 @@ Exemplos:
 - "sou engenheiro e não arquiteto" (se já falou de recado antes) → showContactForm com message: "Sou engenheiro e não arquiteto"
 
 ## SOBRE O ESCRITÓRIO
-- Fran Siller Arquitetura
+- Escrit�rio de Arquitetura
 - Projetos residenciais, comerciais e culturais
 - +15 anos de experiência
 `;

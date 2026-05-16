@@ -1,4 +1,4 @@
-
+﻿
 
 import { Project, ServicePackage, User, CulturalProject } from './types';
 
@@ -182,7 +182,7 @@ export const MOCK_USER_CLIENT: User = {
 
 export const MOCK_USER_ADMIN: User = {
   id: 'admin1',
-  name: 'Fran Siller',
+  name: 'O Arquiteto',
   email: 'admin@fran.com',
   role: 'admin',
   avatar: 'https://ui-avatars.com/api/?name=Fran+Siller&background=000&color=fff',

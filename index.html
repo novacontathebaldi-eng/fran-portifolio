@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -6,11 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Title and Description -->
-  <title>Fran Siller Arquitetura</title>
+  <title>%VITE_APP_TITLE%</title>
   <meta name="description"
-    content="Portfólio de Arquitetura e Design - Fran Siller. Projetos residenciais, comerciais e culturais com excelência em design e funcionalidade.">
-  <meta name="keywords" content="arquitetura, design, interiores, Fran Siller, portfólio">
-  <meta name="author" content="Fran Siller">
+    content="%VITE_APP_DESCRIPTION%">
+  <meta name="keywords" content="%VITE_APP_KEYWORDS%">
+  <meta name="author" content="%VITE_APP_AUTHOR%">
 
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -27,14 +27,14 @@
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Fran Siller">
+  <meta name="apple-mobile-web-app-title" content="%VITE_APP_TITLE%">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://fransiller.com/">
-  <meta property="og:title" content="Fran Siller Arquitetura">
+  <meta property="og:url" content="%VITE_APP_URL%">
+  <meta property="og:title" content="%VITE_APP_TITLE%">
   <meta property="og:description"
-    content="Portfólio de Arquitetura e Design - Fran Siller. Projetos residenciais, comerciais e culturais com excelência em design e funcionalidade.">
+    content="%VITE_APP_DESCRIPTION%">
   <meta property="og:image" content="/assets/icons/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -42,10 +42,10 @@
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://fransiller.com/">
-  <meta property="twitter:title" content="Fran Siller Arquitetura">
+  <meta property="twitter:url" content="%VITE_APP_URL%">
+  <meta property="twitter:title" content="%VITE_APP_TITLE%">
   <meta property="twitter:description"
-    content="Portfólio de Arquitetura e Design - Fran Siller. Projetos residenciais, comerciais e culturais com excelência em design e funcionalidade.">
+    content="%VITE_APP_DESCRIPTION%">
   <meta property="twitter:image" content="/assets/icons/og-image.png">
 
   <!-- Schema.org Structured Data for SEO -->
@@ -53,28 +53,26 @@
   {
     "@context": "https://schema.org",
     "@type": "ArchitectureFirm",
-    "name": "Fran Siller Arquitetura",
-    "description": "Escritório de Arquitetura e Design especializado em projetos residenciais, comerciais e culturais. Criando espaços que inspiram, funcionam e perduram.",
-    "url": "https://fransiller.othebaldi.me",
-    "logo": "https://fransiller.othebaldi.me/assets/icons/icon-512x512.png",
-    "image": "https://fransiller.othebaldi.me/assets/icons/og-image.png",
-    "priceRange": "$$",
+    "name": "%VITE_APP_TITLE%",
+    "description": "%VITE_APP_DESCRIPTION%",
+    "url": "%VITE_APP_URL%",
+    "logo": "%VITE_APP_URL%/assets/icons/icon-512x512.png",
+    "image": "%VITE_APP_URL%/assets/icons/og-image.png",
+    "priceRange": "",
     "address": {
       "@type": "PostalAddress",
       "addressCountry": "BR",
       "addressLocality": "Brasil"
     },
     "sameAs": [
-      "https://www.instagram.com/fransiller",
-      "https://www.linkedin.com/in/fransiller"
+      "%VITE_APP_SOCIAL_INSTAGRAM%",
+      "%VITE_APP_SOCIAL_LINKEDIN%"
     ],
     "knowsAbout": [
       "Arquitetura",
       "Design de Interiores",
       "Projetos Residenciais",
-      "Projetos Comerciais",
-      "Arquitetura Cultural",
-      "Design Contemporâneo"
+      "Projetos Comerciais"
     ],
     "makesOffer": {
       "@type": "Offer",

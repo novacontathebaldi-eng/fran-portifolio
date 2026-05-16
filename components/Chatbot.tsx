@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+﻿import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock, LogIn, ArrowRight, Archive, History, Loader2, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../context/ProjectContext';
@@ -468,7 +468,7 @@ const OfficeMapWidget = () => {
     );
   }
 
-  const mapQuery = office.mapQuery || office.address || 'Fran Siller Arquitetura';
+  const mapQuery = office.mapQuery || office.address || 'Escrit�rio de Arquitetura';
   const mapsUrl = office.mapsLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
 
   const handleOpenMaps = () => {

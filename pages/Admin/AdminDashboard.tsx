@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail, Star, Gift, AlertTriangle, Video, Wrench, CheckCircle } from 'lucide-react';
@@ -50,6 +50,9 @@ export const AdminDashboard: React.FC = () => {
     const urlTab = searchParams.get('tab') as AdminTab;
     const initialTab: AdminTab = urlTab && validTabs.includes(urlTab) ? urlTab : 'dashboard';
     const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
+
+    type SettingsTab = 'office' | 'branding' | 'theme' | 'legal' | 'seo';
+    const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsTab>('office');
 
     // Sync activeTab with URL changes (for browser back/forward)
     useEffect(() => {
@@ -1624,7 +1627,44 @@ export const AdminDashboard: React.FC = () => {
                     {activeTab === 'settings' && (
                         <div className="animate-fadeIn max-w-4xl">
                             <h2 className="text-3xl font-serif font-bold mb-8 text-black">Configurações Globais</h2>
-                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+
+                            {/* Settings Sub-Tabs */}
+                            <div className="flex overflow-x-auto space-x-2 border-b border-gray-200 mb-8 pb-2">
+                                <button 
+                                    onClick={() => setActiveSettingsTab('office')} 
+                                    className={`px-4 py-2 font-bold text-sm rounded-t-lg transition ${activeSettingsTab === 'office' ? 'border-b-2 border-black text-black' : 'text-gray-500 hover:text-black'}`}
+                                >
+                                    Geral / Escritório
+                                </button>
+                                <button 
+                                    onClick={() => setActiveSettingsTab('branding')} 
+                                    className={`px-4 py-2 font-bold text-sm rounded-t-lg transition ${activeSettingsTab === 'branding' ? 'border-b-2 border-black text-black' : 'text-gray-500 hover:text-black'}`}
+                                >
+                                    Identidade Visual
+                                </button>
+                                <button 
+                                    onClick={() => setActiveSettingsTab('theme')} 
+                                    className={`px-4 py-2 font-bold text-sm rounded-t-lg transition ${activeSettingsTab === 'theme' ? 'border-b-2 border-black text-black' : 'text-gray-500 hover:text-black'}`}
+                                >
+                                    Tema & Cores
+                                </button>
+                                <button 
+                                    onClick={() => setActiveSettingsTab('legal')} 
+                                    className={`px-4 py-2 font-bold text-sm rounded-t-lg transition ${activeSettingsTab === 'legal' ? 'border-b-2 border-black text-black' : 'text-gray-500 hover:text-black'}`}
+                                >
+                                    Jurídico
+                                </button>
+                                <button 
+                                    onClick={() => setActiveSettingsTab('seo')} 
+                                    className={`px-4 py-2 font-bold text-sm rounded-t-lg transition ${activeSettingsTab === 'seo' ? 'border-b-2 border-black text-black' : 'text-gray-500 hover:text-black'}`}
+                                >
+                                    SEO & Indexação
+                                </button>
+                            </div>
+
+                            {activeSettingsTab === 'office' && (
+                                <>
+                                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
                                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2"><MapPin className="w-5 h-5" /> Dados do Escritório</h3>
                                 <div>
                                     <label className="text-xs font-bold uppercase text-gray-500">Endereço Completo</label>
@@ -1646,7 +1686,7 @@ export const AdminDashboard: React.FC = () => {
                                 </div>
                                 <div>
                                     <label className="text-xs font-bold uppercase text-gray-500">Email Oficial</label>
-                                    <input value={contentForm.office.email || ''} onChange={e => handleOfficeChange('email', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="contato@fransiller.com.br" />
+                                    <input value={contentForm.office.email || ''} onChange={e => handleOfficeChange('email', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="contato@exemplo.com.br" />
                                 </div>
                                 <div>
                                     <label className="text-xs font-bold uppercase text-gray-500">Telefone / WhatsApp</label>
@@ -1800,6 +1840,130 @@ export const AdminDashboard: React.FC = () => {
                                     ))}
                                 </div>
                             </div>
+                                </>
+                            )}
+
+                            {activeSettingsTab === 'branding' && (
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+                                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2">Identidade Visual (Branding)</h3>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">Nome do Site / Marca</label>
+                                        <input value={settingsForm.branding?.brandName || ''} onChange={e => handleSettingsChange('branding.brandName', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: Escrit�rio de Arquitetura" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">Logo Header URL (Transparente)</label>
+                                        <input value={settingsForm.branding?.logoUrl || ''} onChange={e => handleSettingsChange('branding.logoUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://..." />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">Logo Footer URL (Transparente)</label>
+                                        <input value={settingsForm.branding?.footerLogoUrl || ''} onChange={e => handleSettingsChange('branding.footerLogoUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://..." />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">Logo Versão Escura URL (Opcional)</label>
+                                        <input value={settingsForm.branding?.darkLogoUrl || ''} onChange={e => handleSettingsChange('branding.darkLogoUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://..." />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">Ícone Favicon URL</label>
+                                        <input value={settingsForm.branding?.faviconUrl || ''} onChange={e => handleSettingsChange('branding.faviconUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://..." />
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeSettingsTab === 'theme' && (
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+                                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2">Tema & Cores</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-gray-500">Cor Principal (Primary)</label>
+                                            <div className="flex gap-2 items-center mt-1">
+                                                <input type="color" value={settingsForm.theme?.colorPrimary || '#000000'} onChange={e => handleSettingsChange('theme.colorPrimary', e.target.value)} className="w-10 h-10 border-0 p-0" />
+                                                <input value={settingsForm.theme?.colorPrimary || '#000000'} onChange={e => handleSettingsChange('theme.colorPrimary', e.target.value)} className="flex-1 border p-2 rounded bg-white" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-gray-500">Cor de Destaque (Accent)</label>
+                                            <div className="flex gap-2 items-center mt-1">
+                                                <input type="color" value={settingsForm.theme?.colorAccent || '#C7B6A5'} onChange={e => handleSettingsChange('theme.colorAccent', e.target.value)} className="w-10 h-10 border-0 p-0" />
+                                                <input value={settingsForm.theme?.colorAccent || '#C7B6A5'} onChange={e => handleSettingsChange('theme.colorAccent', e.target.value)} className="flex-1 border p-2 rounded bg-white" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-gray-500">Cor de Fundo (Background)</label>
+                                            <div className="flex gap-2 items-center mt-1">
+                                                <input type="color" value={settingsForm.theme?.colorBackground || '#FAFAFA'} onChange={e => handleSettingsChange('theme.colorBackground', e.target.value)} className="w-10 h-10 border-0 p-0" />
+                                                <input value={settingsForm.theme?.colorBackground || '#FAFAFA'} onChange={e => handleSettingsChange('theme.colorBackground', e.target.value)} className="flex-1 border p-2 rounded bg-white" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-gray-500">Cor do Texto (Text)</label>
+                                            <div className="flex gap-2 items-center mt-1">
+                                                <input type="color" value={settingsForm.theme?.colorText || '#111111'} onChange={e => handleSettingsChange('theme.colorText', e.target.value)} className="w-10 h-10 border-0 p-0" />
+                                                <input value={settingsForm.theme?.colorText || '#111111'} onChange={e => handleSettingsChange('theme.colorText', e.target.value)} className="flex-1 border p-2 rounded bg-white" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">Fonte Principal (Família)</label>
+                                        <input value={settingsForm.theme?.fontFamily || ''} onChange={e => handleSettingsChange('theme.fontFamily', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="'Inter', sans-serif" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">CSS Customizado (Injetado Globalmente)</label>
+                                        <textarea value={settingsForm.theme?.customCss || ''} onChange={e => handleSettingsChange('theme.customCss', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white font-mono text-sm h-32" placeholder=":root { ... }" />
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeSettingsTab === 'legal' && (
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+                                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2">Informações Jurídicas</h3>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">Razão Social</label>
+                                        <input value={settingsForm.legal?.companyLegalName || ''} onChange={e => handleSettingsChange('legal.companyLegalName', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: Escritório Arquitetura LTDA" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">CNPJ / Documento</label>
+                                        <input value={settingsForm.legal?.documentNumber || ''} onChange={e => handleSettingsChange('legal.documentNumber', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="00.000.000/0000-00" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">URL Política de Privacidade</label>
+                                        <input value={settingsForm.legal?.privacyPolicyUrl || ''} onChange={e => handleSettingsChange('legal.privacyPolicyUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="/privacidade" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">URL Termos de Uso</label>
+                                        <input value={settingsForm.legal?.termsOfServiceUrl || ''} onChange={e => handleSettingsChange('legal.termsOfServiceUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="/termos" />
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeSettingsTab === 'seo' && (
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+                                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2">SEO & Indexação</h3>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">Título Global Padrão (Meta Title)</label>
+                                        <input value={settingsForm.seo?.defaultTitle || ''} onChange={e => handleSettingsChange('seo.defaultTitle', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: O Arquiteto | Arquitetura de Alto Padrão" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">Descrição Global (Meta Description)</label>
+                                        <textarea value={settingsForm.seo?.defaultDescription || ''} onChange={e => handleSettingsChange('seo.defaultDescription', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white h-20" placeholder="Especialistas em projetos residenciais..." />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">Palavras-chave Padrão (Meta Keywords - Separe por vírgula)</label>
+                                        <input value={settingsForm.seo?.keywords || ''} onChange={e => handleSettingsChange('seo.keywords', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="arquitetura, interiores, luxo" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">Imagem de Compartilhamento (OG Image URL)</label>
+                                        <input value={settingsForm.seo?.ogImageUrl || ''} onChange={e => handleSettingsChange('seo.ogImageUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://..." />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">ID Google Analytics (Ex: G-XXXXXXXXXX)</label>
+                                        <input value={settingsForm.seo?.googleAnalyticsId || ''} onChange={e => handleSettingsChange('seo.googleAnalyticsId', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="G-" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-gray-500">ID Meta Pixel (Facebook Pixel)</label>
+                                        <input value={settingsForm.seo?.metaPixelId || ''} onChange={e => handleSettingsChange('seo.metaPixelId', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="1234567890" />
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="mt-8">
                                 <button onClick={saveSettings} disabled={saving} className="w-full bg-black text-white px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2 disabled:opacity-50">

@@ -1,9 +1,11 @@
-import React from 'react';
+﻿import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Shield, Database, MessageCircle, Cookie, Lock, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useProjects } from '../context/ProjectContext';
 
 export const PrivacyPolicy: React.FC = () => {
+    const { settings } = useProjects();
     return (
         <div className="min-h-screen pt-32 pb-24 bg-gray-50">
             <div className="container mx-auto px-6">
@@ -34,7 +36,7 @@ export const PrivacyPolicy: React.FC = () => {
 
                         <div className="prose prose-gray max-w-none">
                             <p className="text-lg text-gray-600 leading-relaxed mb-8">
-                                A <strong>Fran Siller Arquitetura</strong> está comprometida em proteger sua privacidade.
+                                A <strong>{settings.branding?.brandName || 'nossa empresa'}</strong> está comprometida em proteger sua privacidade.
                                 Esta política explica como coletamos, usamos e protegemos suas informações pessoais em
                                 conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018).
                             </p>
@@ -141,8 +143,8 @@ export const PrivacyPolicy: React.FC = () => {
                                         Para exercer seus direitos ou esclarecer dúvidas, entre em contato:
                                     </p>
                                     <p className="text-gray-600 mt-2">
-                                        <strong>E-mail:</strong> contato@fransiller.com.br<br />
-                                        <strong>WhatsApp:</strong> +55 (27) 99667-0426
+                                        <strong>E-mail:</strong> contato@exemplo.com.br<br />
+                                        <strong>WhatsApp:</strong> +55 (11) 99999-9999
                                     </p>
                                 </div>
                             </div>

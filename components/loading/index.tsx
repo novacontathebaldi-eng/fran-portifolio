@@ -1,8 +1,8 @@
-import React from 'react';
+﻿import React from 'react';
 
 /**
  * LoadingSpinner - Spinner reutilizável com variantes de tamanho
- * Segue a identidade visual Fran Siller (accent #d4bbb0)
+ * Segue a identidade visual O Arquiteto (accent #d4bbb0)
  */
 
 type SpinnerSize = 'sm' | 'md' | 'lg';
@@ -53,7 +53,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
 /**
  * LoadingScreen - Tela de loading para seções ou páginas inteiras
- * Design elegante alinhado com identidade visual Fran Siller
+ * Design elegante alinhado com identidade visual O Arquiteto
  */
 interface LoadingScreenProps {
     message?: string;

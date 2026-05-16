@@ -15,8 +15,8 @@ const WUZAPI_URL = Deno.env.get('WUZAPI_URL');
 const WUZAPI_TOKEN = Deno.env.get('WUZAPI_TOKEN');
 
 // Configurações de restart (estas são menos críticas, podem ficar no código)
-const VPS_RESTART_URL = 'http://54.232.81.168:8090/restart';
-const RESTART_SECRET = 'FranSillerRestart2025';
+const VPS_RESTART_URL = Deno.env.get('VPS_RESTART_URL') || 'http://54.232.81.168:8090/restart';
+const RESTART_SECRET = Deno.env.get('WUZAPI_RESTART_SECRET') || 'ApiRestartSecret2025';
 
 interface WuzAPIStatus {
     Connected: boolean;

@@ -1,4 +1,4 @@
-// supabase/functions/send-reminders/index.ts
+﻿// supabase/functions/send-reminders/index.ts
 // Edge Function para envio automático de lembretes de reunião
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -42,7 +42,7 @@ interface Profile {
 
 const DEFAULT_TEMPLATES = {
     reminderClient: (name: string, type: string, date: string, time: string) =>
-        `📅 *Lembrete de ${type}*\n\nOlá ${name}!\n\nLembramos que você tem um(a) *${type}* agendado(a) para:\n\n📆 Data: ${date}\n⏰ Horário: ${time}\n\nEm caso de dúvidas ou necessidade de reagendamento, entre em contato conosco.\n\n_Fran Siller Arquitetura_`,
+        `📅 *Lembrete de ${type}*\n\nOlá ${name}!\n\nLembramos que você tem um(a) *${type}* agendado(a) para:\n\n📆 Data: ${date}\n⏰ Horário: ${time}\n\nEm caso de dúvidas ou necessidade de reagendamento, entre em contato conosco.\n\n_Escrit�rio de Arquitetura_`,
 
     reminderAdmin: (name: string, type: string, date: string, time: string) =>
         `🔔 *Lembrete de ${type}*\n\nVocê tem um(a) ${type} agendado(a):\n\n👤 Cliente: ${name}\n📆 Data: ${date}\n⏰ Horário: ${time}`,

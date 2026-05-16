@@ -17,7 +17,7 @@ const getVimeoId = (url: string): string => {
 
 
 export const Home: React.FC = () => {
-  const { projects, culturalProjects, siteContent } = useProjects();
+  const { projects, culturalProjects, siteContent, settings } = useProjects();
   const isOfficeActive = siteContent?.office?.isActive !== false;
 
   // Get hero project
@@ -492,7 +492,7 @@ export const Home: React.FC = () => {
                 <div className="aspect-[3/4] max-w-md mx-auto lg:mx-0 overflow-hidden shadow-2xl">
                   <img
                     src={(siteContent.about as any).homeAboutImage || siteContent.about.profileImage}
-                    alt="Fran Siller - Arquiteta"
+                    alt={`${settings.branding?.ownerName || 'Arquiteto Responsável'} - Arquitetura`}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -508,7 +508,7 @@ export const Home: React.FC = () => {
               >
                 <p className="text-[#d4bbb0] text-sm tracking-[0.3em] uppercase mb-4">Sobre a Arquiteta</p>
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-light mb-6" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
-                  Fran Siller
+                  {settings.branding?.ownerName || 'Arquiteto Principal'}
                 </h2>
                 <p className="text-gray-600 text-base md:text-lg leading-relaxed mb-8 line-clamp-6">
                   {siteContent.about.bio}
@@ -535,7 +535,7 @@ export const Home: React.FC = () => {
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              title="Localização Fran Siller Arquitetura"
+              title={`Localização ${settings.branding?.brandName || 'do Escritório'}`}
             />
           </section>
         )}
