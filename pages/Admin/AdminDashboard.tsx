@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, LayoutDashboard, FolderOpen, Users, Settings, LogOut, FileText, Save, Brain, ShoppingBag, Menu, X, ChevronRight, MessageSquare, Check, Clock, Upload, ImageIcon, Folder, Download, ArrowLeft, Bot, ThumbsDown, Calendar, MapPin, Ban, Map, GripVertical, ArrowUp, ArrowDown, Type, Quote, LayoutGrid, Heading, Info, RefreshCw, Archive, Link as LinkIcon, ThumbsUp, ToggleLeft, ToggleRight, Search, Landmark, Loader2, History, Mail, Star, Gift, AlertTriangle, Video, Wrench, CheckCircle } from 'lucide-react';
@@ -658,8 +658,8 @@ export const AdminDashboard: React.FC = () => {
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 w-full bg-[#111] z-50 flex justify-between items-center p-4 border-b border-gray-800">
                 <div className="flex flex-col leading-none">
-                    <span className="text-xl font-serif font-bold tracking-widest">F<span className="text-accent">S</span></span>
-                    <span className="text-[7px] uppercase tracking-[0.2em] font-medium text-gray-500">Arquitetura</span>
+                    <span className="text-xl font-serif font-bold tracking-widest">{(settings.branding?.brandInitials || 'FS').charAt(0)}<span className="text-accent">{(settings.branding?.brandInitials || 'FS').charAt(1) || ''}</span></span>
+                    <span className="text-[7px] uppercase tracking-[0.2em] font-medium text-gray-500">{settings.branding?.brandTagline || 'Arquitetura'}</span>
                 </div>
                 <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-white">
                     {mobileMenuOpen ? <X /> : <Menu />}
@@ -679,8 +679,8 @@ export const AdminDashboard: React.FC = () => {
             <aside className={`fixed md:relative z-40 w-64 h-screen bg-[#111] border-r border-gray-800 flex flex-col transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} pt-16 md:pt-0`}>
                 <div className="p-8 hidden md:block shrink-0">
                     <div className="flex flex-col leading-none">
-                        <span className="text-2xl font-serif font-bold tracking-widest">F<span className="text-accent">S</span></span>
-                        <span className="text-[8px] uppercase tracking-[0.2em] font-medium text-gray-500">Arquitetura</span>
+                        <span className="text-2xl font-serif font-bold tracking-widest">{(settings.branding?.brandInitials || 'FS').charAt(0)}<span className="text-accent">{(settings.branding?.brandInitials || 'FS').charAt(1) || ''}</span></span>
+                        <span className="text-[8px] uppercase tracking-[0.2em] font-medium text-gray-500">{settings.branding?.brandTagline || 'Arquitetura'}</span>
                     </div>
                     <p className="text-xs text-gray-500 uppercase tracking-widest mt-2">Painel Administrativo</p>
                 </div>
@@ -830,7 +830,7 @@ export const AdminDashboard: React.FC = () => {
                         return (
                             <div className="animate-fadeIn">
                                 <div className="flex justify-between items-center mb-8">
-                                    <h2 className="text-3xl font-serif font-bold text-black">Bem-vinda, Fran.</h2>
+                                    <h2 className="text-3xl font-serif font-bold text-black">Bem-vindo(a){settings.branding?.ownerName ? `, ${settings.branding.ownerName}` : ''}.</h2>
                                     <button
                                         onClick={() => { setLocalEditingWidgets([...widgets]); setSelectedWidgetsToAdd([]); setShowEditDashboardModal(true); }}
                                         className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium text-gray-700 transition"

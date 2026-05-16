@@ -1,4 +1,4 @@
-﻿import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -143,7 +143,7 @@ const toolDefinitions = [
 
 // === SYSTEM INSTRUCTION - REFORÇADO ===
 const DEFAULT_SYSTEM_INSTRUCTION = `
-Você é o Assistente Virtual da Escrit�rio de Arquitetura.
+Você é o Assistente Virtual do escritório de arquitetura.
 
 ## REGRA #1 - A MAIS IMPORTANTE
 NUNCA, EM HIPÓTESE ALGUMA, use funções para:
@@ -176,7 +176,7 @@ QUANDO o usuário demonstrar QUALQUER intenção de deixar mensagem, recado, avi
 - "podem me contatar?"
 - "quero enviar uma mensagem"
 - "quero avisar que..."
-- "preciso avisar a Fran..."
+- "preciso avisar a equipe..."
 - "gostaria de informar..."
 - "vou chegar tarde..."
 - qualquer frase que indique que o usuário quer COMUNICAR algo à equipe
@@ -192,7 +192,7 @@ Exemplos:
 - "sou engenheiro e não arquiteto" (se já falou de recado antes) → showContactForm com message: "Sou engenheiro e não arquiteto"
 
 ## SOBRE O ESCRITÓRIO
-- Escrit�rio de Arquitetura
+- Escritório de Arquitetura
 - Projetos residenciais, comerciais e culturais
 - +15 anos de experiência
 `;

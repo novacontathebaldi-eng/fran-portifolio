@@ -1,4 +1,4 @@
-﻿
+
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -350,10 +350,35 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="md:col-span-1">
               <div className="mb-6 flex flex-col items-start leading-none group cursor-default">
-                <span className="text-2xl font-serif font-bold tracking-normal">
-                  {settings.branding?.brandShortName || 'O Arquiteto'}
+                <span className="text-2xl font-serif font-bold tracking-normal flex">
+                  {(() => {
+                    const fullName = settings.branding?.brandShortName || 'Fran Siller';
+                    const parts = fullName.split(' ').filter(Boolean);
+                    if (parts.length >= 2) {
+                      const first = parts[0];
+                      const second = parts[1];
+                      return (
+                        <>
+                          <span>{first.charAt(0)}</span>
+                          <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[4em] group-hover:opacity-100">{first.slice(1)}</span>
+                          <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 group-hover:max-w-[0.25em]">&nbsp;</span>
+                          <span>{second.charAt(0)}</span>
+                          <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[4em] group-hover:opacity-100">{second.slice(1)}</span>
+                        </>
+                      );
+                    } else if (parts.length === 1) {
+                      const word = parts[0];
+                      return (
+                        <>
+                          <span>{word.charAt(0)}</span>
+                          <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[6em] group-hover:opacity-100">{word.slice(1)}</span>
+                        </>
+                      );
+                    }
+                    return <span>{settings.branding?.brandInitials || 'FS'}</span>;
+                  })()}
                 </span>
-                <span className="text-xs uppercase tracking-[0.25em] font-medium text-gray-500 mt-2">
+                <span className="text-xs uppercase tracking-[0.25em] font-medium text-gray-500">
                   {settings.branding?.brandTagline || 'Arquitetura'}
                 </span>
               </div>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { MessageCircle, X, Send, Sparkles, User, MapPin, Phone, Instagram, Facebook, RefreshCw, CheckCircle, ExternalLink, Copy, ThumbsUp, ThumbsDown, Check, Calendar, ChevronLeft, ChevronRight, Clock, LogIn, ArrowRight, Archive, History, Loader2, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../context/ProjectContext';
@@ -1290,7 +1290,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen: externalIsOpen, onTogg
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#111] rounded-full"></span>
                 </div>
                 <div>
-                  <h3 className="font-serif font-bold text-sm tracking-wide">Assistente da Fran</h3>
+                  <h3 className="font-serif font-bold text-sm tracking-wide">{settings.branding?.brandShortName ? `Assistente ${settings.branding.brandShortName}` : 'Assistente Virtual'}</h3>
                   <span className="text-[10px] text-gray-400 block">Sempre disponível para você.</span>
                 </div>
               </div>

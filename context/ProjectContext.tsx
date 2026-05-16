@@ -117,8 +117,8 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   aiConfig: {
     provider: 'gemini',
     useCustomSystemInstruction: false,
-    systemInstruction: `VOCÊ É O "CONCIERGE DIGITAL" DA Escrit�rio de Arquitetura...`,
-    defaultGreeting: "Olá {name}. Sou o Concierge Digital O Arquiteto. Como posso tornar seu dia melhor?",
+    systemInstruction: `VOCÊ É O "CONCIERGE DIGITAL" do escritório de arquitetura. Seja profissional e acolhedor.`,
+    defaultGreeting: "Olá {name}! Sou o Assistente Virtual. Como posso ajudar?",
     temperature: 0.7,
     contextLimit: 10, // Envia as últimas 10 mensagens como contexto para reduzir alucinações
     gemini: {
@@ -149,11 +149,11 @@ const DEFAULT_SETTINGS: GlobalSettings = {
     notifyChatbot: true
   },
   branding: {
-    brandName: "Escrit�rio de Arquitetura",
-    brandShortName: "O Arquiteto",
+    brandName: "Fran Siller Arquitetura",
+    brandShortName: "Fran Siller",
     brandInitials: "FS",
-    brandTagline: "Arquitetura & Design",
-    ownerName: "O Arquiteto",
+    brandTagline: "Arquitetura",
+    ownerName: "Fran Siller",
     siteUrl: "https://seu-dominio.com.br",
     developerCredits: {
       enabled: true,
@@ -162,13 +162,13 @@ const DEFAULT_SETTINGS: GlobalSettings = {
     }
   },
   theme: {
-    colorPrimary: "#D4AF37",
-    colorAccent: "#C7B6A5",
-    colorBackground: "#1a1a1a",
-    colorText: "#ffffff"
+    colorPrimary: "#1a1a1a",
+    colorAccent: "#d4bbb0",
+    colorBackground: "#ffffff",
+    colorText: "#111827"
   },
   legal: {
-    companyLegalName: "Escrit�rio de Arquitetura LTDA",
+    companyLegalName: "Fran Siller Arquitetura LTDA",
     documentNumber: "",
     contactEmail: "contato@exemplo.com.br"
   },
