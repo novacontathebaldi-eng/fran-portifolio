@@ -34,15 +34,18 @@ VITE_APP_STORAGE_KEY=nome-do-cliente-auth
 ```
 
 ## 4. Substituições Manuais de SEO (Arquivos Estáticos)
-Atualmente, o projeto utiliza substituições `%VITE_*%` no `index.html`. Porém, para uma indexação correta no Google e boa experiência de Progressive Web App (PWA), você **precisa** editar manualmente os seguintes arquivos estáticos:
+Atualmente, o projeto utiliza valores padrão hardcoded no `index.html` (ex: "Fran Siller Arquitetura") para evitar que placeholders quebrem caso o `.env` não seja configurado. Para uma indexação correta no Google e boa experiência de Progressive Web App (PWA), você **precisa** editar manualmente os seguintes arquivos estáticos:
 
-1. **`public/manifest.json`**:
+1. **`index.html`**:
+   - Edite diretamente as tags `<title>`, `<meta name="description">`, `og:title`, etc. com os dados do cliente, OU configure as variáveis `VITE_APP_*` no `.env` (se usar plugin vite-plugin-html).
+
+2. **`public/manifest.json`**:
    - Atualize `name`, `short_name`, `description` e `theme_color`.
-2. **`public/robots.txt`** (se aplicável):
+3. **`public/robots.txt`** (se aplicável):
    - Atualize o link do sitemap para apontar para o domínio correto do novo cliente.
-3. **`public/sitemap.xml`**:
+4. **`public/sitemap.xml`**:
    - Troque as URLs base (`https://fransiller.com/` ou genéricas) para as URLs oficiais do novo site.
-4. **Imagens de marcação/Favicon**:
+5. **Imagens de marcação/Favicon**:
    - Substitua os arquivos `public/favicon.ico`, `public/assets/icons/apple-touch-icon.png`, `og-image.png`, etc., com a marca do cliente.
 
 ## 5. Personalização via Painel Admin

@@ -37,6 +37,106 @@ const uploadToSupabase = async (file: File): Promise<string> => {
     return data.publicUrl;
 };
 
+// Reusable Image Upload Component for Branding
+interface BrandingImageUploadProps {
+    label: string;
+    description?: string;
+    currentUrl: string;
+    onUploadComplete: (url: string) => void;
+    placeholder?: string;
+}
+
+const BrandingImageUpload: React.FC<BrandingImageUploadProps> = ({ label, description, currentUrl, onUploadComplete, placeholder }) => {
+    const [uploading, setUploading] = useState(false);
+    const [previewError, setPreviewError] = useState(false);
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            // Reusing the global uploadToSupabase which goes to storage-Fran
+            // We prepend branding/ to keep it organized
+            const fileExt = file.name.split('.').pop();
+            const fileName = `branding/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            
+            const { error: uploadError } = await supabase.storage
+                .from('storage-Fran')
+                .upload(fileName, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage
+                .from('storage-Fran')
+                .getPublicUrl(fileName);
+
+            onUploadComplete(data.publicUrl);
+            setPreviewError(false);
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            alert('Erro ao enviar imagem. Verifique o console.');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    return (
+        <div className="border border-gray-200 rounded-xl p-4 bg-gray-50 flex flex-col md:flex-row gap-6 items-start md:items-center">
+            <div className="flex-1">
+                <label className="text-sm font-bold text-black block mb-1">{label}</label>
+                {description && <p className="text-xs text-gray-500 mb-3">{description}</p>}
+                
+                <div className="flex gap-2 items-center">
+                    <input 
+                        type="text" 
+                        value={currentUrl} 
+                        onChange={(e) => { onUploadComplete(e.target.value); setPreviewError(false); }} 
+                        className="flex-1 border border-gray-300 p-2 rounded text-sm bg-white focus:outline-none focus:border-black" 
+                        placeholder={placeholder || "https://..."} 
+                    />
+                    <div className="relative overflow-hidden">
+                        <button disabled={uploading} className="bg-black text-white px-4 py-2 rounded text-sm font-bold hover:bg-accent hover:text-black transition whitespace-nowrap">
+                            {uploading ? 'Enviando...' : 'Fazer Upload'}
+                        </button>
+                        <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            disabled={uploading}
+                            className="absolute inset-0 opacity-0 cursor-pointer" 
+                        />
+                    </div>
+                </div>
+            </div>
+            
+            <div className="w-24 h-24 shrink-0 bg-white border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden shadow-sm relative group">
+                {currentUrl && !previewError ? (
+                    <img 
+                        src={currentUrl} 
+                        alt="Preview" 
+                        className="max-w-full max-h-full object-contain p-2" 
+                        onError={() => setPreviewError(true)}
+                    />
+                ) : (
+                    <div className="text-center text-gray-300 flex flex-col items-center">
+                        <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span className="text-[10px] font-medium">Sem imagem</span>
+                    </div>
+                )}
+                {currentUrl && !previewError && (
+                    <button 
+                        onClick={() => onUploadComplete('')}
+                        className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs font-bold"
+                    >
+                        Remover
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
+
 export const AdminDashboard: React.FC = () => {
     const { projects, deleteProject, updateProject, culturalProjects, deleteCulturalProject, updateCulturalProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, persistAllSettings, messages, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, updateAppointment, deleteAppointmentPermanently, currentUser, isLoadingData } = useProjects();
     const navigate = useNavigate();
@@ -1850,65 +1950,110 @@ export const AdminDashboard: React.FC = () => {
                                         <label className="text-xs font-bold uppercase text-gray-500">Nome do Site / Marca</label>
                                         <input value={settingsForm.branding?.brandName || ''} onChange={e => handleSettingsChange('branding.brandName', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: Escrit�rio de Arquitetura" />
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">Logo Header URL (Transparente)</label>
-                                        <input value={settingsForm.branding?.logoUrl || ''} onChange={e => handleSettingsChange('branding.logoUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://..." />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">Logo Footer URL (Transparente)</label>
-                                        <input value={settingsForm.branding?.footerLogoUrl || ''} onChange={e => handleSettingsChange('branding.footerLogoUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://..." />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">Logo Versão Escura URL (Opcional)</label>
-                                        <input value={settingsForm.branding?.darkLogoUrl || ''} onChange={e => handleSettingsChange('branding.darkLogoUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://..." />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">Ícone Favicon URL</label>
-                                        <input value={settingsForm.branding?.faviconUrl || ''} onChange={e => handleSettingsChange('branding.faviconUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://..." />
-                                    </div>
+                                    <BrandingImageUpload
+                                        label="Logo Principal (Menu/Header)"
+                                        description="Sugerido: PNG com fundo transparente. Usado no menu superior."
+                                        currentUrl={settingsForm.branding?.logoUrl || ''}
+                                        onUploadComplete={(url) => handleSettingsChange('branding.logoUrl', url)}
+                                        placeholder="URL da logo ou faça upload"
+                                    />
+                                    
+                                    <BrandingImageUpload
+                                        label="Logo Rodapé (Footer)"
+                                        description="Sugerido: PNG com fundo transparente. Usado no final da página principal."
+                                        currentUrl={settingsForm.branding?.footerLogoUrl || ''}
+                                        onUploadComplete={(url) => handleSettingsChange('branding.footerLogoUrl', url)}
+                                        placeholder="URL da logo do rodapé"
+                                    />
+                                    
+                                    <BrandingImageUpload
+                                        label="Logo Versão Escura (Opcional)"
+                                        description="Logo otimizada para fundos escuros (se o site tiver modo escuro)."
+                                        currentUrl={settingsForm.branding?.darkLogoUrl || ''}
+                                        onUploadComplete={(url) => handleSettingsChange('branding.darkLogoUrl', url)}
+                                        placeholder="URL da logo versão escura"
+                                    />
+                                    
+                                    <BrandingImageUpload
+                                        label="Ícone do Navegador (Favicon)"
+                                        description="Sugerido: Imagem quadrada (ex: 512x512). Aparece na aba do navegador e nos favoritos."
+                                        currentUrl={settingsForm.branding?.faviconUrl || ''}
+                                        onUploadComplete={(url) => handleSettingsChange('branding.faviconUrl', url)}
+                                        placeholder="URL do Favicon"
+                                    />
                                 </div>
                             )}
 
                             {activeSettingsTab === 'theme' && (
-                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-                                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2">Tema & Cores</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-xs font-bold uppercase text-gray-500">Cor Principal (Primary)</label>
-                                            <div className="flex gap-2 items-center mt-1">
-                                                <input type="color" value={settingsForm.theme?.colorPrimary || '#000000'} onChange={e => handleSettingsChange('theme.colorPrimary', e.target.value)} className="w-10 h-10 border-0 p-0" />
-                                                <input value={settingsForm.theme?.colorPrimary || '#000000'} onChange={e => handleSettingsChange('theme.colorPrimary', e.target.value)} className="flex-1 border p-2 rounded bg-white" />
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-8">
+                                    <div className="flex justify-between items-center border-b pb-2">
+                                        <h3 className="font-bold text-lg flex items-center gap-2 text-black">Tema & Cores</h3>
+                                        <button 
+                                            onClick={() => {
+                                                if(confirm('Restaurar as cores originais?')) {
+                                                    handleSettingsChange('theme.colorPrimary', '#1a1a1a');
+                                                    handleSettingsChange('theme.colorAccent', '#d4bbb0');
+                                                    handleSettingsChange('theme.colorBackground', '#ffffff');
+                                                    handleSettingsChange('theme.colorText', '#111827');
+                                                    handleSettingsChange('theme.fontFamily', 'Inter');
+                                                }
+                                            }}
+                                            className="text-xs text-gray-500 hover:text-black hover:underline"
+                                        >
+                                            Restaurar Padrões
+                                        </button>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="text-xs font-bold uppercase text-gray-500 mb-1 block">Cor Principal (Primary)</label>
+                                                <div className="flex gap-2 items-center">
+                                                    <input type="color" value={settingsForm.theme?.colorPrimary || '#1a1a1a'} onChange={e => handleSettingsChange('theme.colorPrimary', e.target.value)} className="w-12 h-12 border-0 p-0 rounded cursor-pointer" />
+                                                    <input value={settingsForm.theme?.colorPrimary || '#1a1a1a'} onChange={e => handleSettingsChange('theme.colorPrimary', e.target.value)} className="w-28 border border-gray-200 p-2 rounded bg-white text-sm focus:outline-none focus:border-black" />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold uppercase text-gray-500 mb-1 block">Cor de Destaque (Accent)</label>
+                                                <div className="flex gap-2 items-center">
+                                                    <input type="color" value={settingsForm.theme?.colorAccent || '#d4bbb0'} onChange={e => handleSettingsChange('theme.colorAccent', e.target.value)} className="w-12 h-12 border-0 p-0 rounded cursor-pointer" />
+                                                    <input value={settingsForm.theme?.colorAccent || '#d4bbb0'} onChange={e => handleSettingsChange('theme.colorAccent', e.target.value)} className="w-28 border border-gray-200 p-2 rounded bg-white text-sm focus:outline-none focus:border-black" />
+                                                </div>
                                             </div>
                                         </div>
-                                        <div>
-                                            <label className="text-xs font-bold uppercase text-gray-500">Cor de Destaque (Accent)</label>
-                                            <div className="flex gap-2 items-center mt-1">
-                                                <input type="color" value={settingsForm.theme?.colorAccent || '#C7B6A5'} onChange={e => handleSettingsChange('theme.colorAccent', e.target.value)} className="w-10 h-10 border-0 p-0" />
-                                                <input value={settingsForm.theme?.colorAccent || '#C7B6A5'} onChange={e => handleSettingsChange('theme.colorAccent', e.target.value)} className="flex-1 border p-2 rounded bg-white" />
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="text-xs font-bold uppercase text-gray-500 mb-1 block">Cor de Fundo (Background)</label>
+                                                <div className="flex gap-2 items-center">
+                                                    <input type="color" value={settingsForm.theme?.colorBackground || '#ffffff'} onChange={e => handleSettingsChange('theme.colorBackground', e.target.value)} className="w-12 h-12 border-0 p-0 rounded cursor-pointer" />
+                                                    <input value={settingsForm.theme?.colorBackground || '#ffffff'} onChange={e => handleSettingsChange('theme.colorBackground', e.target.value)} className="w-28 border border-gray-200 p-2 rounded bg-white text-sm focus:outline-none focus:border-black" />
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold uppercase text-gray-500">Cor de Fundo (Background)</label>
-                                            <div className="flex gap-2 items-center mt-1">
-                                                <input type="color" value={settingsForm.theme?.colorBackground || '#FAFAFA'} onChange={e => handleSettingsChange('theme.colorBackground', e.target.value)} className="w-10 h-10 border-0 p-0" />
-                                                <input value={settingsForm.theme?.colorBackground || '#FAFAFA'} onChange={e => handleSettingsChange('theme.colorBackground', e.target.value)} className="flex-1 border p-2 rounded bg-white" />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold uppercase text-gray-500">Cor do Texto (Text)</label>
-                                            <div className="flex gap-2 items-center mt-1">
-                                                <input type="color" value={settingsForm.theme?.colorText || '#111111'} onChange={e => handleSettingsChange('theme.colorText', e.target.value)} className="w-10 h-10 border-0 p-0" />
-                                                <input value={settingsForm.theme?.colorText || '#111111'} onChange={e => handleSettingsChange('theme.colorText', e.target.value)} className="flex-1 border p-2 rounded bg-white" />
+                                            <div>
+                                                <label className="text-xs font-bold uppercase text-gray-500 mb-1 block">Cor do Texto (Text)</label>
+                                                <div className="flex gap-2 items-center">
+                                                    <input type="color" value={settingsForm.theme?.colorText || '#111827'} onChange={e => handleSettingsChange('theme.colorText', e.target.value)} className="w-12 h-12 border-0 p-0 rounded cursor-pointer" />
+                                                    <input value={settingsForm.theme?.colorText || '#111827'} onChange={e => handleSettingsChange('theme.colorText', e.target.value)} className="w-28 border border-gray-200 p-2 rounded bg-white text-sm focus:outline-none focus:border-black" />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">Fonte Principal (Família)</label>
-                                        <input value={settingsForm.theme?.fontFamily || ''} onChange={e => handleSettingsChange('theme.fontFamily', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="'Inter', sans-serif" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">CSS Customizado (Injetado Globalmente)</label>
-                                        <textarea value={settingsForm.theme?.customCss || ''} onChange={e => handleSettingsChange('theme.customCss', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white font-mono text-sm h-32" placeholder=":root { ... }" />
+
+                                    <div className="border-t pt-6">
+                                        <label className="text-xs font-bold uppercase text-gray-500 block mb-2">Fonte Principal</label>
+                                        <select 
+                                            value={settingsForm.theme?.fontFamily || 'Inter'} 
+                                            onChange={e => handleSettingsChange('theme.fontFamily', e.target.value)} 
+                                            className="w-full md:w-1/2 border border-gray-200 p-2 rounded bg-white text-sm focus:outline-none focus:border-black"
+                                        >
+                                            <option value="Inter">Inter (Elegante e Neutra)</option>
+                                            <option value="Montserrat">Montserrat (Moderna)</option>
+                                            <option value="Playfair Display">Playfair Display (Serifada / Clássica)</option>
+                                            <option value="Roboto">Roboto (Clean)</option>
+                                            <option value="Lora">Lora (Serifada Leve)</option>
+                                            <option value="system-ui">Padrão do Sistema</option>
+                                        </select>
+                                        <p className="text-xs text-gray-400 mt-2">A fonte será aplicada a todo o site após salvar.</p>
                                     </div>
                                 </div>
                             )}
