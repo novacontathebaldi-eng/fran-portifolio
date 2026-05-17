@@ -409,6 +409,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </a>
               </p>
             </div>
+            <div className="flex items-center gap-4">
+              <Link to="/politica-privacidade" className="hover:text-white transition-colors">Política de Privacidade</Link>
+              <span className="text-gray-700">&bull;</span>
+              <Link to="/termos" className="hover:text-white transition-colors">Termos de Serviço</Link>
+            </div>
           </div>
         </div>
       </footer>

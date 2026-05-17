@@ -494,13 +494,13 @@ const App: React.FC = () => {
 };
 
 // AppContent - Has access to ProjectContext for Splash loading state
+// NOTE: Splash screen DISABLED temporarily for Google OAuth brand verification.
+// Google's bot needs to see "Fran Siller Arquitetura" immediately without any loading delay.
+// To re-enable: change showSplash default back to true and restore the timer logic below.
 const AppContent: React.FC = () => {
-  const { isLoadingData } = useProjects();
-  const [showSplash, setShowSplash] = useState(true);
-  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
+  const [showSplash] = useState(false); // DISABLED for Google verification
 
-  // Preload images including hero video thumbnail
+  // Preload images in background (non-blocking)
   const { siteContent } = useProjects();
 
   useEffect(() => {
@@ -523,42 +523,17 @@ const AppContent: React.FC = () => {
         /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/
       )?.[1];
       if (videoId) {
-        // Preload both max and hq quality thumbnails
         const thumbMax = new Image();
         thumbMax.src = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
         const thumbHq = new Image();
         thumbHq.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
       }
     }
-
-    // Minimum display time
-    const minTimer = setTimeout(() => setMinTimeElapsed(true), 2000);
-
-    // Safety timeout - force complete after 10s
-    const maxTimer = setTimeout(() => {
-      console.warn('[Splash] Force completing due to timeout');
-      setIsExiting(true);
-      setTimeout(() => setShowSplash(false), 500);
-    }, 10000);
-
-    return () => {
-      clearTimeout(minTimer);
-      clearTimeout(maxTimer);
-    };
   }, [siteContent?.heroBackground]);
-
-  // Complete when data is ready AND min time has passed
-  useEffect(() => {
-    if (minTimeElapsed && !isLoadingData && !isExiting) {
-      setIsExiting(true);
-      // Smooth fade out before hiding
-      setTimeout(() => setShowSplash(false), 500);
-    }
-  }, [minTimeElapsed, isLoadingData, isExiting]);
 
   return (
     <>
-      {/* Router ALWAYS renders - loads in background behind Splash */}
+      {/* Router renders immediately - no splash blocking */}
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ErrorBoundary>
           <ScrollToTop />
@@ -569,10 +544,10 @@ const AppContent: React.FC = () => {
         </ErrorBoundary>
       </Router>
 
-      {/* Splash as OVERLAY - covers everything until ready */}
+      {/* Splash DISABLED for Google OAuth brand verification */}
       {showSplash && (
         <div
-          className={`fixed inset-0 bg-[#1a1a1a] flex items-center justify-center z-[9999] text-white transition-opacity duration-500 ${isExiting ? 'opacity-0' : 'opacity-100'}`}
+          className="fixed inset-0 bg-[#1a1a1a] flex items-center justify-center z-[9999] text-white"
           role="status"
           aria-live="polite"
           aria-label="Carregando site Fran Siller Arquitetura"
