@@ -130,7 +130,7 @@ export interface Appointment {
   type: 'meeting' | 'visit';
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
-  location: string; // Address or 'Escritório O Arquiteto / Online'
+  location: string; // Address or 'Escritório / Online'
   meetingLink?: string; // New: For Google Meet/Zoom links
   status: 'pending' | 'confirmed' | 'cancelled' | 'rescheduling';
   createdAt: string;
