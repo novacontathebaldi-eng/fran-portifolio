@@ -496,7 +496,7 @@ const App: React.FC = () => {
 // AppContent - Has access to ProjectContext for Splash loading state
 const AppContent: React.FC = () => {
   const { isLoadingData } = useProjects();
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(false); // Temporarily disabled for Google Bot SEO
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
