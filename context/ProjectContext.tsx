@@ -129,6 +129,7 @@ const DEFAULT_SETTINGS: GlobalSettings = {
     }
   },
   chatbotConfig: {
+    botName: 'Assistente Virtual',
     quickActions: [
       { id: '1', label: 'Agendar Reunião', message: 'Olá! Gostaria de agendar uma reunião para conhecer melhor o escritório.', icon: 'Calendar', order: 1, active: true },
       { id: '2', label: 'Solicitar Orçamento', message: 'Olá! Preciso de um orçamento para um projeto de arquitetura.', icon: 'Receipt', order: 2, active: true },
@@ -149,6 +150,7 @@ const DEFAULT_SETTINGS: GlobalSettings = {
     notifyChatbot: true
   },
   branding: {
+    logoMode: "text",
     brandName: "Fran Siller Arquitetura",
     brandShortName: "Fran Siller",
     brandInitials: "FS",
@@ -170,7 +172,9 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   legal: {
     companyLegalName: "Fran Siller Arquitetura LTDA",
     documentNumber: "",
-    contactEmail: "contato@exemplo.com.br"
+    contactEmail: "contato@exemplo.com.br",
+    privacyPolicyContent: "",
+    termsOfServiceContent: ""
   },
   seo: {
     defaultTitle: "O Arquiteto | Arquitetura & Design",

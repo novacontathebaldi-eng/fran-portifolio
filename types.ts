@@ -1,4 +1,4 @@
-﻿
+
 
 export type BlockType = 'text' | 'heading' | 'image-full' | 'image-grid' | 'quote' | 'map' | 'details';
 
@@ -338,6 +338,7 @@ export interface ChatQuickAction {
 
 // Chatbot Configuration (managed via Admin Panel)
 export interface ChatbotConfig {
+  botName?: string;
   quickActions: ChatQuickAction[];
   welcomeMessage: string;
   transferToHumanEnabled: boolean;
@@ -520,6 +521,7 @@ export interface WhatsAppConfig {
 }
 
 export interface SiteBranding {
+  logoMode?: 'text' | 'image';
   brandName: string;
   brandShortName: string;
   brandInitials: string;
@@ -552,6 +554,8 @@ export interface SiteLegal {
   contactEmail: string;
   privacyPolicyUrl?: string;
   termsOfServiceUrl?: string;
+  privacyPolicyContent?: string;
+  termsOfServiceContent?: string;
 }
 
 export interface SiteSeo {

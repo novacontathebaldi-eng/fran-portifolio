@@ -1,11 +1,25 @@
-﻿import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, FileText, CheckCircle, XCircle, AlertTriangle, Scale } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useProjects } from '../context/ProjectContext';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 
 export const Terms: React.FC = () => {
     const { settings } = useProjects();
+    const customContent = settings.legal?.termsOfServiceContent;
+
+    const parsedContent = useMemo(() => {
+        if (!customContent || customContent.trim() === '') return null;
+        try {
+            return DOMPurify.sanitize(marked.parse(customContent) as string);
+        } catch (e) {
+            console.error("Error parsing markdown", e);
+            return null;
+        }
+    }, [customContent]);
+
     return (
         <div className="min-h-screen pt-32 pb-24 bg-gray-50">
             <div className="container mx-auto px-6">
@@ -30,10 +44,16 @@ export const Terms: React.FC = () => {
                             </div>
                             <div>
                                 <h1 className="text-3xl md:text-4xl font-serif">Termos de Uso</h1>
-                                <p className="text-gray-500 text-sm mt-1">Última atualização: 31 de dezembro de 2024</p>
+                                <p className="text-gray-500 text-sm mt-1">Última atualização: {new Date().toLocaleDateString('pt-BR')}</p>
                             </div>
                         </div>
 
+                        {parsedContent ? (
+                            <div 
+                                className="prose prose-gray max-w-none"
+                                dangerouslySetInnerHTML={{ __html: parsedContent }}
+                            />
+                        ) : (
                         <div className="prose prose-gray max-w-none">
                             <p className="text-lg text-gray-600 leading-relaxed mb-8">
                                 Ao utilizar o site da <strong>{settings.branding?.brandName || 'nossa empresa'}</strong>, você concorda
@@ -155,6 +175,7 @@ export const Terms: React.FC = () => {
                                 </p>
                             </div>
                         </div>
+                        )}
                     </div>
                 </motion.div>
             </div>

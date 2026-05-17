@@ -151,7 +151,7 @@ export const AdminDashboard: React.FC = () => {
     const initialTab: AdminTab = urlTab && validTabs.includes(urlTab) ? urlTab : 'dashboard';
     const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
 
-    type SettingsTab = 'office' | 'branding' | 'theme' | 'legal' | 'seo';
+    type SettingsTab = 'office' | 'branding' | 'theme' | 'legal' | 'seo' | 'chatbot';
     const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsTab>('office');
 
     // Sync activeTab with URL changes (for browser back/forward)
@@ -758,8 +758,14 @@ export const AdminDashboard: React.FC = () => {
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 w-full bg-[#111] z-50 flex justify-between items-center p-4 border-b border-gray-800">
                 <div className="flex flex-col leading-none">
-                    <span className="text-xl font-serif font-bold tracking-widest">{(settings.branding?.brandInitials || 'FS').charAt(0)}<span className="text-accent">{(settings.branding?.brandInitials || 'FS').charAt(1) || ''}</span></span>
-                    <span className="text-[7px] uppercase tracking-[0.2em] font-medium text-gray-500">{settings.branding?.brandTagline || 'Arquitetura'}</span>
+                    {settings.branding?.logoMode === 'image' && settings.branding?.logoUrl ? (
+                        <img src={settings.branding.logoUrl} alt="Logo" className="h-8 object-contain" />
+                    ) : (
+                        <>
+                            <span className="text-xl font-serif font-bold tracking-widest">{(settings.branding?.brandInitials || 'FS').charAt(0)}<span className="text-accent">{(settings.branding?.brandInitials || 'FS').charAt(1) || ''}</span></span>
+                            <span className="text-[7px] uppercase tracking-[0.2em] font-medium text-gray-500">{settings.branding?.brandTagline || 'Arquitetura'}</span>
+                        </>
+                    )}
                 </div>
                 <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-white">
                     {mobileMenuOpen ? <X /> : <Menu />}
@@ -779,8 +785,14 @@ export const AdminDashboard: React.FC = () => {
             <aside className={`fixed md:relative z-40 w-64 h-screen bg-[#111] border-r border-gray-800 flex flex-col transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} pt-16 md:pt-0`}>
                 <div className="p-8 hidden md:block shrink-0">
                     <div className="flex flex-col leading-none">
-                        <span className="text-2xl font-serif font-bold tracking-widest">{(settings.branding?.brandInitials || 'FS').charAt(0)}<span className="text-accent">{(settings.branding?.brandInitials || 'FS').charAt(1) || ''}</span></span>
-                        <span className="text-[8px] uppercase tracking-[0.2em] font-medium text-gray-500">{settings.branding?.brandTagline || 'Arquitetura'}</span>
+                        {settings.branding?.logoMode === 'image' && settings.branding?.logoUrl ? (
+                            <img src={settings.branding.logoUrl} alt="Logo" className="h-10 object-contain self-start" />
+                        ) : (
+                            <>
+                                <span className="text-2xl font-serif font-bold tracking-widest">{(settings.branding?.brandInitials || 'FS').charAt(0)}<span className="text-accent">{(settings.branding?.brandInitials || 'FS').charAt(1) || ''}</span></span>
+                                <span className="text-[8px] uppercase tracking-[0.2em] font-medium text-gray-500">{settings.branding?.brandTagline || 'Arquitetura'}</span>
+                            </>
+                        )}
                     </div>
                     <p className="text-xs text-gray-500 uppercase tracking-widest mt-2">Painel Administrativo</p>
                 </div>
@@ -1760,6 +1772,12 @@ export const AdminDashboard: React.FC = () => {
                                 >
                                     SEO & Indexação
                                 </button>
+                                <button 
+                                    onClick={() => setActiveSettingsTab('chatbot')} 
+                                    className={`px-4 py-2 font-bold text-sm rounded-t-lg transition ${activeSettingsTab === 'chatbot' ? 'border-b-2 border-black text-black' : 'text-gray-500 hover:text-black'}`}
+                                >
+                                    Chatbot & IA
+                                </button>
                             </div>
 
                             {activeSettingsTab === 'office' && (
@@ -1946,10 +1964,58 @@ export const AdminDashboard: React.FC = () => {
                             {activeSettingsTab === 'branding' && (
                                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
                                     <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2">Identidade Visual (Branding)</h3>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">Nome do Site / Marca</label>
-                                        <input value={settingsForm.branding?.brandName || ''} onChange={e => handleSettingsChange('branding.brandName', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: Escrit�rio de Arquitetura" />
+                                    
+                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">
+                                        <label className="text-sm font-bold uppercase text-gray-700 block mb-3">Modo de Exibição do Logo</label>
+                                        <div className="flex gap-6">
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input 
+                                                    type="radio" 
+                                                    name="logoMode" 
+                                                    value="text" 
+                                                    checked={settingsForm.branding?.logoMode === 'text' || !settingsForm.branding?.logoMode} 
+                                                    onChange={() => handleSettingsChange('branding.logoMode', 'text')} 
+                                                    className="w-4 h-4 text-black focus:ring-black"
+                                                />
+                                                <span className="text-sm font-medium">Texto / Iniciais</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input 
+                                                    type="radio" 
+                                                    name="logoMode" 
+                                                    value="image" 
+                                                    checked={settingsForm.branding?.logoMode === 'image'} 
+                                                    onChange={() => handleSettingsChange('branding.logoMode', 'image')} 
+                                                    className="w-4 h-4 text-black focus:ring-black"
+                                                />
+                                                <span className="text-sm font-medium">Imagem (Upload)</span>
+                                            </label>
+                                        </div>
                                     </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-6 border-b border-gray-100">
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-gray-500">Nome Completo do Site / Marca</label>
+                                            <input value={settingsForm.branding?.brandName || ''} onChange={e => handleSettingsChange('branding.brandName', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: Fran Siller Arquitetura" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-gray-500">Nome Curto (Footer)</label>
+                                            <input value={settingsForm.branding?.brandShortName || ''} onChange={e => handleSettingsChange('branding.brandShortName', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: Fran Siller" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-gray-500">Iniciais (Logo Header)</label>
+                                            <input value={settingsForm.branding?.brandInitials || ''} onChange={e => handleSettingsChange('branding.brandInitials', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: FS" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-gray-500">Tagline / Subtítulo</label>
+                                            <input value={settingsForm.branding?.brandTagline || ''} onChange={e => handleSettingsChange('branding.brandTagline', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: Arquitetura" />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="text-xs font-bold uppercase text-gray-500">Nome do Profissional Responsável (Efeito Hover do Footer)</label>
+                                            <input value={settingsForm.branding?.ownerName || ''} onChange={e => handleSettingsChange('branding.ownerName', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: A Arquiteta" />
+                                        </div>
+                                    </div>
+                                    
                                     <BrandingImageUpload
                                         label="Logo Principal (Menu/Header)"
                                         description="Sugerido: PNG com fundo transparente. Usado no menu superior."
@@ -2061,21 +2127,43 @@ export const AdminDashboard: React.FC = () => {
                             {activeSettingsTab === 'legal' && (
                                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
                                     <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2">Informações Jurídicas</h3>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">Razão Social</label>
-                                        <input value={settingsForm.legal?.companyLegalName || ''} onChange={e => handleSettingsChange('legal.companyLegalName', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: Escritório Arquitetura LTDA" />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-6 border-b border-gray-100">
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-gray-500">Razão Social</label>
+                                            <input value={settingsForm.legal?.companyLegalName || ''} onChange={e => handleSettingsChange('legal.companyLegalName', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: Escritório Arquitetura LTDA" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-gray-500">CNPJ / Documento</label>
+                                            <input value={settingsForm.legal?.documentNumber || ''} onChange={e => handleSettingsChange('legal.documentNumber', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="00.000.000/0000-00" />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">CNPJ / Documento</label>
-                                        <input value={settingsForm.legal?.documentNumber || ''} onChange={e => handleSettingsChange('legal.documentNumber', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="00.000.000/0000-00" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">URL Política de Privacidade</label>
-                                        <input value={settingsForm.legal?.privacyPolicyUrl || ''} onChange={e => handleSettingsChange('legal.privacyPolicyUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="/privacidade" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">URL Termos de Uso</label>
-                                        <input value={settingsForm.legal?.termsOfServiceUrl || ''} onChange={e => handleSettingsChange('legal.termsOfServiceUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="/termos" />
+                                    
+                                    <div className="space-y-6">
+                                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                            <div className="mb-2 flex justify-between items-end">
+                                                <label className="text-sm font-bold text-gray-700">Política de Privacidade</label>
+                                                <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded border">Suporta Markdown (*negrito*, ## títulos)</span>
+                                            </div>
+                                            <textarea 
+                                                value={settingsForm.legal?.privacyPolicyContent || ''} 
+                                                onChange={e => handleSettingsChange('legal.privacyPolicyContent', e.target.value)} 
+                                                className="w-full border p-3 rounded bg-white min-h-[250px] font-mono text-sm" 
+                                                placeholder="Deixe em branco para usar o texto padrão. Você pode usar Markdown aqui."
+                                            />
+                                        </div>
+
+                                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                            <div className="mb-2 flex justify-between items-end">
+                                                <label className="text-sm font-bold text-gray-700">Termos de Uso</label>
+                                                <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded border">Suporta Markdown (*negrito*, ## títulos)</span>
+                                            </div>
+                                            <textarea 
+                                                value={settingsForm.legal?.termsOfServiceContent || ''} 
+                                                onChange={e => handleSettingsChange('legal.termsOfServiceContent', e.target.value)} 
+                                                className="w-full border p-3 rounded bg-white min-h-[250px] font-mono text-sm" 
+                                                placeholder="Deixe em branco para usar o texto padrão. Você pode usar Markdown aqui."
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -2109,6 +2197,83 @@ export const AdminDashboard: React.FC = () => {
                                     </div>
                                 </div>
                             )}
+
+                            {activeSettingsTab === 'chatbot' && (
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+                                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2">Chatbot & IA</h3>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-6 border-b border-gray-100">
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-gray-500">Nome do Assistente Virtual</label>
+                                            <input 
+                                                value={settingsForm.chatbotConfig?.botName || ''} 
+                                                onChange={e => handleSettingsChange('chatbotConfig.botName', e.target.value)} 
+                                                className="w-full border p-2 rounded mt-1 bg-white" 
+                                                placeholder="Ex: Assistente Virtual" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-gray-500">Saudação Inicial do Chatbot</label>
+                                            <input 
+                                                value={settingsForm.chatbotConfig?.welcomeMessage || ''} 
+                                                onChange={e => handleSettingsChange('chatbotConfig.welcomeMessage', e.target.value)} 
+                                                className="w-full border p-2 rounded mt-1 bg-white" 
+                                                placeholder="Olá! Como posso ajudar você hoje?" 
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="text-xs font-bold uppercase text-gray-500">Mensagem de Erro/Fallback</label>
+                                            <input 
+                                                value={settingsForm.chatbotConfig?.fallbackMessage || ''} 
+                                                onChange={e => handleSettingsChange('chatbotConfig.fallbackMessage', e.target.value)} 
+                                                className="w-full border p-2 rounded mt-1 bg-white" 
+                                                placeholder="Desculpe, não consegui entender..." 
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-md mb-2 flex items-center justify-between">
+                                            Ações Rápidas (Quick Actions)
+                                            <span className="text-xs text-gray-500 font-normal">Ações que aparecem acima do chat</span>
+                                        </h4>
+                                        <div className="space-y-4">
+                                            {settingsForm.chatbotConfig?.quickActions?.map((action, index) => (
+                                                <div key={action.id || index} className="bg-gray-50 p-4 rounded-xl border border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-4 relative">
+                                                    <div>
+                                                        <label className="text-xs font-bold uppercase text-gray-500">Rótulo do Botão</label>
+                                                        <input 
+                                                            value={action.label} 
+                                                            onChange={(e) => {
+                                                                const newActions = [...(settingsForm.chatbotConfig?.quickActions || [])];
+                                                                newActions[index].label = e.target.value;
+                                                                handleSettingsChange('chatbotConfig.quickActions', newActions);
+                                                            }} 
+                                                            className="w-full border p-2 rounded mt-1 bg-white" 
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold uppercase text-gray-500">Mensagem a enviar</label>
+                                                        <input 
+                                                            value={action.message} 
+                                                            onChange={(e) => {
+                                                                const newActions = [...(settingsForm.chatbotConfig?.quickActions || [])];
+                                                                newActions[index].message = e.target.value;
+                                                                handleSettingsChange('chatbotConfig.quickActions', newActions);
+                                                            }} 
+                                                            className="w-full border p-2 rounded mt-1 bg-white" 
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <div className="text-xs text-gray-500 italic">
+                                                Nota: A adição/remoção de botões será feita em atualizações futuras.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
 
                             <div className="mt-8">
                                 <button onClick={saveSettings} disabled={saving} className="w-full bg-black text-white px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2 disabled:opacity-50">

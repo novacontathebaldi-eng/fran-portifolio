@@ -195,9 +195,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Logo */}
           <Link to="/" onClick={handleLinkClick} className={`z-[60] relative transition-colors duration-300 pointer-events-auto flex items-center gap-2 ${logoClasses}`}>
-            <span className="text-3xl md:text-4xl font-serif font-bold tracking-tight">{settings.branding?.brandInitials || 'FS'}</span>
-            <span className="w-px h-6 bg-current opacity-30"></span>
-            <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] font-light">{settings.branding?.brandTagline || 'Arquitetura'}</span>
+            {settings.branding?.logoMode === 'image' && settings.branding?.logoUrl ? (
+                <img 
+                  src={settings.branding.logoUrl} 
+                  alt={settings.branding?.brandName || 'Logo'} 
+                  className="h-8 md:h-10 object-contain"
+                />
+            ) : (
+                <>
+                  <span className="text-3xl md:text-4xl font-serif font-bold tracking-tight">{settings.branding?.brandInitials || 'FS'}</span>
+                  <span className="w-px h-6 bg-current opacity-30"></span>
+                  <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] font-light">{settings.branding?.brandTagline || 'Arquitetura'}</span>
+                </>
+            )}
           </Link>
 
           {/* Desktop Menu */}
@@ -350,37 +360,47 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="md:col-span-1">
               <div className="mb-6 flex flex-col items-start leading-none group cursor-default">
-                <span className="text-2xl font-serif font-bold tracking-normal flex">
-                  {(() => {
-                    const fullName = settings.branding?.brandShortName || 'Fran Siller';
-                    const parts = fullName.split(' ').filter(Boolean);
-                    if (parts.length >= 2) {
-                      const first = parts[0];
-                      const second = parts[1];
-                      return (
-                        <>
-                          <span>{first.charAt(0)}</span>
-                          <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[4em] group-hover:opacity-100">{first.slice(1)}</span>
-                          <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 group-hover:max-w-[0.25em]">&nbsp;</span>
-                          <span>{second.charAt(0)}</span>
-                          <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[4em] group-hover:opacity-100">{second.slice(1)}</span>
-                        </>
-                      );
-                    } else if (parts.length === 1) {
-                      const word = parts[0];
-                      return (
-                        <>
-                          <span>{word.charAt(0)}</span>
-                          <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[6em] group-hover:opacity-100">{word.slice(1)}</span>
-                        </>
-                      );
-                    }
-                    return <span>{settings.branding?.brandInitials || 'FS'}</span>;
-                  })()}
-                </span>
-                <span className="text-xs uppercase tracking-[0.25em] font-medium text-gray-500">
-                  {settings.branding?.brandTagline || 'Arquitetura'}
-                </span>
+                {settings.branding?.logoMode === 'image' && (settings.branding?.footerLogoUrl || settings.branding?.logoUrl) ? (
+                  <img 
+                    src={settings.branding.footerLogoUrl || settings.branding.logoUrl} 
+                    alt={settings.branding?.brandName || 'Logo'} 
+                    className="h-10 md:h-12 object-contain"
+                  />
+                ) : (
+                  <>
+                    <span className="text-2xl font-serif font-bold tracking-normal flex">
+                      {(() => {
+                        const fullName = settings.branding?.brandShortName || 'Fran Siller';
+                        const parts = fullName.split(' ').filter(Boolean);
+                        if (parts.length >= 2) {
+                          const first = parts[0];
+                          const second = parts[1];
+                          return (
+                            <>
+                              <span>{first.charAt(0)}</span>
+                              <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[4em] group-hover:opacity-100">{first.slice(1)}</span>
+                              <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 group-hover:max-w-[0.25em]">&nbsp;</span>
+                              <span>{second.charAt(0)}</span>
+                              <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[4em] group-hover:opacity-100">{second.slice(1)}</span>
+                            </>
+                          );
+                        } else if (parts.length === 1) {
+                          const word = parts[0];
+                          return (
+                            <>
+                              <span>{word.charAt(0)}</span>
+                              <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[6em] group-hover:opacity-100">{word.slice(1)}</span>
+                            </>
+                          );
+                        }
+                        return <span>{settings.branding?.brandInitials || 'FS'}</span>;
+                      })()}
+                    </span>
+                    <span className="text-xs uppercase tracking-[0.25em] font-medium text-gray-500">
+                      {settings.branding?.brandTagline || 'Arquitetura'}
+                    </span>
+                  </>
+                )}
               </div>
               <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
                 {settings.seo?.defaultDescription || 'Arquitetura que escuta o lugar e respeita quem o habita. Valorizamos o contexto regional e a identidade de cada cliente. Do conceito à execução, com envolvimento em cada etapa.'}
