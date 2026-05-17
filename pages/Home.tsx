@@ -165,7 +165,7 @@ export const Home: React.FC = () => {
         <div className="relative z-10 flex-1 flex items-start pt-28 md:items-center md:pt-0 justify-center text-center px-6">
           <div className="max-w-4xl">
 
-            {/* Elegant Tagline */}
+            {/* Elegant Tagline / Brand Name */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -181,7 +181,9 @@ export const Home: React.FC = () => {
                   transform: 'scale(1.2, 1.4)'
                 }}
               />
-              <span className="relative z-10">Arquitetura & Design</span>
+              <span className="relative z-10">
+                {settings?.branding?.brandName || 'Arquitetura & Design'}
+              </span>
             </motion.p>
 
             {/* Main Title - Clean & Bold */}

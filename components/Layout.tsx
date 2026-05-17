@@ -53,6 +53,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     setSearchOpen(false);
   }, [location]);
 
+  // Set dynamic document title based on global settings
+  useEffect(() => {
+    if (settings?.seo?.defaultTitle) {
+      document.title = settings.seo.defaultTitle;
+    } else if (settings?.branding?.brandName) {
+      document.title = settings.branding.brandName;
+    }
+  }, [settings?.seo?.defaultTitle, settings?.branding?.brandName]);
+
   // Lock body scroll when menu is open - using robust hook for iOS Safari support
   useScrollLock(isMenuOpen || isClosing);
 
