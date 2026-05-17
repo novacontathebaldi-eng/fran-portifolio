@@ -193,7 +193,7 @@ const Splash: React.FC<SplashProps> = ({ isDataReady, areComponentsReady, onComp
       aria-label="Carregando site Fran Siller Arquitetura"
     >
       <div className="text-center animate-pulse">
-        <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">Fran Siller</h1>
+        <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">Fran Siller Arquitetura</h1>
         <div className="h-0.5 w-16 bg-accent mx-auto"></div>
         <p className="text-xs uppercase tracking-widest mt-4 text-gray-400">Arquitetura & Design</p>
       </div>
@@ -578,7 +578,7 @@ const AppContent: React.FC = () => {
           aria-label="Carregando site Fran Siller Arquitetura"
         >
           <div className="text-center animate-pulse">
-            <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">Fran Siller</h1>
+            <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">Fran Siller Arquitetura</h1>
             <div className="h-0.5 w-16 bg-accent mx-auto"></div>
             <p className="text-xs uppercase tracking-widest mt-4 text-gray-400">Arquitetura & Design</p>
           </div>
