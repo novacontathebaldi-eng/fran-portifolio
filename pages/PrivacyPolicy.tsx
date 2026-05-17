@@ -1,25 +1,9 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Shield, Database, MessageCircle, Cookie, Lock, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useProjects } from '../context/ProjectContext';
-import DOMPurify from 'dompurify';
-import { marked } from 'marked';
 
 export const PrivacyPolicy: React.FC = () => {
-    const { settings } = useProjects();
-    const customContent = settings.legal?.privacyPolicyContent;
-
-    const parsedContent = useMemo(() => {
-        if (!customContent || customContent.trim() === '') return null;
-        try {
-            return DOMPurify.sanitize(marked.parse(customContent) as string);
-        } catch (e) {
-            console.error("Error parsing markdown", e);
-            return null;
-        }
-    }, [customContent]);
-
     return (
         <div className="min-h-screen pt-32 pb-24 bg-gray-50">
             <div className="container mx-auto px-6">
@@ -44,19 +28,13 @@ export const PrivacyPolicy: React.FC = () => {
                             </div>
                             <div>
                                 <h1 className="text-3xl md:text-4xl font-serif">Política de Privacidade</h1>
-                                <p className="text-gray-500 text-sm mt-1">Última atualização: {new Date().toLocaleDateString('pt-BR')}</p>
+                                <p className="text-gray-500 text-sm mt-1">Última atualização: 31 de dezembro de 2024</p>
                             </div>
                         </div>
 
-                        {parsedContent ? (
-                            <div 
-                                className="prose prose-gray max-w-none"
-                                dangerouslySetInnerHTML={{ __html: parsedContent }}
-                            />
-                        ) : (
                         <div className="prose prose-gray max-w-none">
                             <p className="text-lg text-gray-600 leading-relaxed mb-8">
-                                A <strong>{settings.branding?.brandName || 'nossa empresa'}</strong> está comprometida em proteger sua privacidade.
+                                A <strong>Fran Siller Arquitetura</strong> está comprometida em proteger sua privacidade.
                                 Esta política explica como coletamos, usamos e protegemos suas informações pessoais em
                                 conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018).
                             </p>
@@ -163,8 +141,8 @@ export const PrivacyPolicy: React.FC = () => {
                                         Para exercer seus direitos ou esclarecer dúvidas, entre em contato:
                                     </p>
                                     <p className="text-gray-600 mt-2">
-                                        <strong>E-mail:</strong> contato@exemplo.com.br<br />
-                                        <strong>WhatsApp:</strong> +55 (11) 99999-9999
+                                        <strong>E-mail:</strong> contato@fransiller.com.br<br />
+                                        <strong>WhatsApp:</strong> +55 (27) 99667-0426
                                     </p>
                                 </div>
                             </div>
@@ -176,7 +154,6 @@ export const PrivacyPolicy: React.FC = () => {
                                 </p>
                             </div>
                         </div>
-                        )}
                     </div>
                 </motion.div>
             </div>

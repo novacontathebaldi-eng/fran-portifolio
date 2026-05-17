@@ -142,8 +142,8 @@ export const MOCK_SERVICES: ServicePackage[] = [
 
 export const MOCK_USER_CLIENT: User = {
   id: 'u1',
-  name: 'Cliente Demo',
-  email: 'cliente.demo@example.com',
+  name: 'Cliente Exemplo',
+  email: 'cliente@exemplo.com.br',
   role: 'client',
   bio: 'Amante de arte e empreendedora.',
   projects: [MOCK_PROJECTS[0]],
@@ -182,11 +182,11 @@ export const MOCK_USER_CLIENT: User = {
 
 export const MOCK_USER_ADMIN: User = {
   id: 'admin1',
-  name: 'Arquiteto Responsável',
-  email: 'admin@cliente.com',
+  name: 'Fran Siller',
+  email: 'admin@fran.com',
   role: 'admin',
-  avatar: 'https://ui-avatars.com/api/?name=Arquiteto+Responsavel&background=000&color=fff',
-  bio: 'Arquiteto Principal',
+  avatar: 'https://ui-avatars.com/api/?name=Fran+Siller&background=000&color=fff',
+  bio: 'Arquiteta Principal',
   folders: [],
   memories: [],
   chats: []

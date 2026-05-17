@@ -130,7 +130,7 @@ export interface Appointment {
   type: 'meeting' | 'visit';
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
-  location: string; // Address or 'Escritório / Online'
+  location: string; // Address or 'Escritório Fran Siller / Online'
   meetingLink?: string; // New: For Google Meet/Zoom links
   status: 'pending' | 'confirmed' | 'cancelled' | 'rescheduling';
   createdAt: string;
@@ -338,7 +338,6 @@ export interface ChatQuickAction {
 
 // Chatbot Configuration (managed via Admin Panel)
 export interface ChatbotConfig {
-  botName?: string;
   quickActions: ChatQuickAction[];
   welcomeMessage: string;
   transferToHumanEnabled: boolean;
@@ -520,63 +519,12 @@ export interface WhatsAppConfig {
   notifyChatbot: boolean; // Notificar recados do chatbot
 }
 
-export interface SiteBranding {
-  logoMode?: 'text' | 'image';
-  brandName: string;
-  brandShortName: string;
-  brandInitials: string;
-  brandTagline: string;
-  ownerName: string;
-  siteUrl: string;
-  logoUrl?: string;
-  darkLogoUrl?: string;
-  footerLogoUrl?: string;
-  faviconUrl?: string;
-  developerCredits: {
-    enabled: boolean;
-    name: string;
-    url: string;
-  };
-}
-
-export interface SiteTheme {
-  colorPrimary: string;
-  colorAccent: string;
-  colorBackground: string;
-  colorText: string;
-  fontFamily?: string;
-  customCss?: string;
-}
-
-export interface SiteLegal {
-  companyLegalName: string;
-  documentNumber: string;
-  contactEmail: string;
-  privacyPolicyUrl?: string;
-  termsOfServiceUrl?: string;
-  privacyPolicyContent?: string;
-  termsOfServiceContent?: string;
-}
-
-export interface SiteSeo {
-  defaultTitle: string;
-  defaultDescription: string;
-  keywords: string;
-  ogImageUrl?: string;
-  googleAnalyticsId?: string;
-  metaPixelId?: string;
-}
-
 export interface GlobalSettings {
   enableShop: boolean;
   aiConfig: AIConfig;
   chatbotConfig?: ChatbotConfig;
   dashboardWidgets?: DashboardWidget[];
   whatsappConfig?: WhatsAppConfig; // NEW: WhatsApp notification settings
-  branding?: SiteBranding;
-  theme?: SiteTheme;
-  legal?: SiteLegal;
-  seo?: SiteSeo;
 }
 
 // ==================== AI PROVIDER TYPES ====================

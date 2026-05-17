@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, ArrowLeft, Check, Loader2, MapPin, CreditCard, MessageCircle, Home, Briefcase, MapPinned, Plus, User, X, Trash2 } from 'lucide-react';
@@ -187,7 +187,7 @@ export const Checkout: React.FC = () => {
     };
 
     const getWhatsAppLink = () => {
-        const phone = siteContent?.office?.phone?.replace(/\D/g, '') || '5511999999999';
+        const phone = siteContent?.office?.phone?.replace(/\D/g, '') || '5527996670426';
         const message = encodeURIComponent(
             `Olá! Acabei de fazer um pedido na loja:\n\n` +
             `🛒 Pedido: ${orderId}\n` +

@@ -53,15 +53,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     setSearchOpen(false);
   }, [location]);
 
-  // Set dynamic document title based on global settings
-  useEffect(() => {
-    if (settings?.seo?.defaultTitle) {
-      document.title = settings.seo.defaultTitle;
-    } else if (settings?.branding?.brandName) {
-      document.title = settings.branding.brandName;
-    }
-  }, [settings?.seo?.defaultTitle, settings?.branding?.brandName]);
-
   // Lock body scroll when menu is open - using robust hook for iOS Safari support
   useScrollLock(isMenuOpen || isClosing);
 
@@ -204,19 +195,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Logo */}
           <Link to="/" onClick={handleLinkClick} className={`z-[60] relative transition-colors duration-300 pointer-events-auto flex items-center gap-2 ${logoClasses}`}>
-            {settings.branding?.logoMode === 'image' && settings.branding?.logoUrl ? (
-                <img 
-                  src={settings.branding.logoUrl} 
-                  alt={settings.branding?.brandName || 'Logo'} 
-                  className="h-8 md:h-10 object-contain"
-                />
-            ) : (
-                <>
-                  <span className="text-3xl md:text-4xl font-serif font-bold tracking-tight">{settings.branding?.brandInitials || 'FS'}</span>
-                  <span className="w-px h-6 bg-current opacity-30"></span>
-                  <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] font-light">{settings.branding?.brandTagline || 'Arquitetura'}</span>
-                </>
-            )}
+            <span className="text-3xl md:text-4xl font-serif font-bold tracking-tight">FS</span>
+            <span className="w-px h-6 bg-current opacity-30"></span>
+            <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] font-light">Arquitetura</span>
           </Link>
 
           {/* Desktop Menu */}
@@ -344,7 +325,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             <div className="mt-8 text-xs text-gray-500 uppercase tracking-widest text-center">
-              {settings.branding?.brandName || 'Escrit�rio de Arquitetura'}
+              Fran Siller Arquitetura
             </div>
           </div>
         )
@@ -369,50 +350,24 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="md:col-span-1">
               <div className="mb-6 flex flex-col items-start leading-none group cursor-default">
-                {settings.branding?.logoMode === 'image' && (settings.branding?.footerLogoUrl || settings.branding?.logoUrl) ? (
-                  <img 
-                    src={settings.branding.footerLogoUrl || settings.branding.logoUrl} 
-                    alt={settings.branding?.brandName || 'Logo'} 
-                    className="h-10 md:h-12 object-contain"
-                  />
-                ) : (
-                  <>
-                    <span className="text-2xl font-serif font-bold tracking-normal flex">
-                      {(() => {
-                        const fullName = settings.branding?.brandShortName || 'Fran Siller';
-                        const parts = fullName.split(' ').filter(Boolean);
-                        if (parts.length >= 2) {
-                          const first = parts[0];
-                          const second = parts[1];
-                          return (
-                            <>
-                              <span>{first.charAt(0)}</span>
-                              <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[4em] group-hover:opacity-100">{first.slice(1)}</span>
-                              <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 group-hover:max-w-[0.25em]">&nbsp;</span>
-                              <span>{second.charAt(0)}</span>
-                              <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[4em] group-hover:opacity-100">{second.slice(1)}</span>
-                            </>
-                          );
-                        } else if (parts.length === 1) {
-                          const word = parts[0];
-                          return (
-                            <>
-                              <span>{word.charAt(0)}</span>
-                              <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[6em] group-hover:opacity-100">{word.slice(1)}</span>
-                            </>
-                          );
-                        }
-                        return <span>{settings.branding?.brandInitials || 'FS'}</span>;
-                      })()}
-                    </span>
-                    <span className="text-xs uppercase tracking-[0.25em] font-medium text-gray-500">
-                      {settings.branding?.brandTagline || 'Arquitetura'}
-                    </span>
-                  </>
-                )}
+                <span className="text-2xl font-serif font-bold tracking-normal flex">
+                  {/* F - sempre visível */}
+                  <span>F</span>
+                  {/* "ran" - aparece no hover */}
+                  <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[1.5em] group-hover:opacity-100">ran</span>
+                  {/* Espaço entre palavras - aparece no hover */}
+                  <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 group-hover:max-w-[0.25em]">&nbsp;</span>
+                  {/* S - sempre visível */}
+                  <span>S</span>
+                  {/* "iller" - aparece no hover */}
+                  <span className="inline-block overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[2em] group-hover:opacity-100">iller</span>
+                </span>
+                <span className="text-xs uppercase tracking-[0.25em] font-medium text-gray-500">Arquitetura</span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
-                {settings.seo?.defaultDescription || 'Arquitetura que escuta o lugar e respeita quem o habita. Valorizamos o contexto regional e a identidade de cada cliente. Do conceito à execução, com envolvimento em cada etapa.'}
+                Arquitetura que escuta o lugar e respeita quem o habita.
+                <br /><br />
+                Fran Siller atua com projetos residenciais, comerciais e culturais, valorizando o contexto regional e a identidade de cada cliente. Do conceito à execução, com envolvimento em cada etapa.
               </p>
             </div>
             <div className="md:col-start-3">
@@ -440,23 +395,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4 text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
-              <p>&copy; {new Date().getFullYear()} {settings.legal?.companyLegalName || settings.branding?.brandName || 'Escrit�rio de Arquitetura'}. Todos os direitos reservados.</p>
-              {settings.branding?.developerCredits?.enabled !== false && (
-                <>
-                  <span className="hidden md:inline text-gray-700">&bull;</span>
-                  <p className="text-gray-500">
-                    Desenvolvido por{' '}
-                    <a
-                      href={settings.branding?.developerCredits?.url || "https://seu-dominio.com.br"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium hover:text-accent transition-colors"
-                    >
-                      {settings.branding?.developerCredits?.name || 'Otávio Thebaldi'}
-                    </a>
-                  </p>
-                </>
-              )}
+              <p>&copy; 2026 Fran Siller Arquitetura. Todos os direitos reservados.</p>
+              <span className="hidden md:inline text-gray-700">&bull;</span>
+              <p className="text-gray-500">
+                Desenvolvido por{' '}
+                <a
+                  href="https://othebaldi.me/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium hover:text-accent transition-colors"
+                >
+                  Otávio Siller Thebaldi
+                </a>
+              </p>
             </div>
           </div>
         </div>

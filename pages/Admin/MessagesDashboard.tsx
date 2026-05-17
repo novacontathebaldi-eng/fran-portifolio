@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { normalizeString } from '../../utils/stringUtils';
 
 export const MessagesDashboard: React.FC = () => {
-    const { messages, updateMessageStatus, deleteMessage, showToast, settings } = useProjects();
+    const { messages, updateMessageStatus, deleteMessage, showToast } = useProjects();
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<Message['status'] | 'all'>('all');
     const [sourceFilter, setSourceFilter] = useState<Message['source'] | 'all'>('all');
@@ -238,7 +238,7 @@ export const MessagesDashboard: React.FC = () => {
                                                             )}
                                                             {msg.email && (
                                                                 <a
-                                                                    href={`mailto:${msg.email}?subject=Resposta: ${msg.subject || `Contato ${settings?.branding?.brandName || 'da Arquitetura'}`}`}
+                                                                    href={`mailto:${msg.email}?subject=Resposta: ${msg.subject || 'Contato Fran Siller'}`}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         updateMessageStatus(msg.id, 'replied');

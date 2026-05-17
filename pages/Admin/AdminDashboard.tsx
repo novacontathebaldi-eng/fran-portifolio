@@ -37,106 +37,6 @@ const uploadToSupabase = async (file: File): Promise<string> => {
     return data.publicUrl;
 };
 
-// Reusable Image Upload Component for Branding
-interface BrandingImageUploadProps {
-    label: string;
-    description?: string;
-    currentUrl: string;
-    onUploadComplete: (url: string) => void;
-    placeholder?: string;
-}
-
-const BrandingImageUpload: React.FC<BrandingImageUploadProps> = ({ label, description, currentUrl, onUploadComplete, placeholder }) => {
-    const [uploading, setUploading] = useState(false);
-    const [previewError, setPreviewError] = useState(false);
-
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setUploading(true);
-        try {
-            // Reusing the global uploadToSupabase which goes to storage-Fran
-            // We prepend branding/ to keep it organized
-            const fileExt = file.name.split('.').pop();
-            const fileName = `branding/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-            
-            const { error: uploadError } = await supabase.storage
-                .from('storage-Fran')
-                .upload(fileName, file);
-
-            if (uploadError) throw uploadError;
-
-            const { data } = supabase.storage
-                .from('storage-Fran')
-                .getPublicUrl(fileName);
-
-            onUploadComplete(data.publicUrl);
-            setPreviewError(false);
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            alert('Erro ao enviar imagem. Verifique o console.');
-        } finally {
-            setUploading(false);
-        }
-    };
-
-    return (
-        <div className="border border-gray-200 rounded-xl p-4 bg-gray-50 flex flex-col md:flex-row gap-6 items-start md:items-center">
-            <div className="flex-1">
-                <label className="text-sm font-bold text-black block mb-1">{label}</label>
-                {description && <p className="text-xs text-gray-500 mb-3">{description}</p>}
-                
-                <div className="flex gap-2 items-center">
-                    <input 
-                        type="text" 
-                        value={currentUrl} 
-                        onChange={(e) => { onUploadComplete(e.target.value); setPreviewError(false); }} 
-                        className="flex-1 border border-gray-300 p-2 rounded text-sm bg-white focus:outline-none focus:border-black" 
-                        placeholder={placeholder || "https://..."} 
-                    />
-                    <div className="relative overflow-hidden">
-                        <button disabled={uploading} className="bg-black text-white px-4 py-2 rounded text-sm font-bold hover:bg-accent hover:text-black transition whitespace-nowrap">
-                            {uploading ? 'Enviando...' : 'Fazer Upload'}
-                        </button>
-                        <input 
-                            type="file" 
-                            accept="image/*"
-                            onChange={handleFileChange}
-                            disabled={uploading}
-                            className="absolute inset-0 opacity-0 cursor-pointer" 
-                        />
-                    </div>
-                </div>
-            </div>
-            
-            <div className="w-24 h-24 shrink-0 bg-white border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden shadow-sm relative group">
-                {currentUrl && !previewError ? (
-                    <img 
-                        src={currentUrl} 
-                        alt="Preview" 
-                        className="max-w-full max-h-full object-contain p-2" 
-                        onError={() => setPreviewError(true)}
-                    />
-                ) : (
-                    <div className="text-center text-gray-300 flex flex-col items-center">
-                        <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        <span className="text-[10px] font-medium">Sem imagem</span>
-                    </div>
-                )}
-                {currentUrl && !previewError && (
-                    <button 
-                        onClick={() => onUploadComplete('')}
-                        className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs font-bold"
-                    >
-                        Remover
-                    </button>
-                )}
-            </div>
-        </div>
-    );
-};
-
 export const AdminDashboard: React.FC = () => {
     const { projects, deleteProject, updateProject, culturalProjects, deleteCulturalProject, updateCulturalProject, logout, siteContent, updateSiteContent, showToast, settings, updateSettings, persistAllSettings, messages, users, createClientFolder, renameClientFolder, deleteClientFolder, uploadFileToFolder, deleteClientFile, updateUser, aiFeedbacks, appointments, scheduleSettings, updateScheduleSettings, updateAppointmentStatus, updateAppointment, deleteAppointmentPermanently, currentUser, isLoadingData } = useProjects();
     const navigate = useNavigate();
@@ -150,9 +50,6 @@ export const AdminDashboard: React.FC = () => {
     const urlTab = searchParams.get('tab') as AdminTab;
     const initialTab: AdminTab = urlTab && validTabs.includes(urlTab) ? urlTab : 'dashboard';
     const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
-
-    type SettingsTab = 'office' | 'branding' | 'theme' | 'legal' | 'seo' | 'chatbot';
-    const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsTab>('office');
 
     // Sync activeTab with URL changes (for browser back/forward)
     useEffect(() => {
@@ -758,14 +655,8 @@ export const AdminDashboard: React.FC = () => {
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 w-full bg-[#111] z-50 flex justify-between items-center p-4 border-b border-gray-800">
                 <div className="flex flex-col leading-none">
-                    {settings.branding?.logoMode === 'image' && settings.branding?.logoUrl ? (
-                        <img src={settings.branding.logoUrl} alt="Logo" className="h-8 object-contain" />
-                    ) : (
-                        <>
-                            <span className="text-xl font-serif font-bold tracking-widest">{(settings.branding?.brandInitials || 'FS').charAt(0)}<span className="text-accent">{(settings.branding?.brandInitials || 'FS').charAt(1) || ''}</span></span>
-                            <span className="text-[7px] uppercase tracking-[0.2em] font-medium text-gray-500">{settings.branding?.brandTagline || 'Arquitetura'}</span>
-                        </>
-                    )}
+                    <span className="text-xl font-serif font-bold tracking-widest">F<span className="text-accent">S</span></span>
+                    <span className="text-[7px] uppercase tracking-[0.2em] font-medium text-gray-500">Arquitetura</span>
                 </div>
                 <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-white">
                     {mobileMenuOpen ? <X /> : <Menu />}
@@ -785,14 +676,8 @@ export const AdminDashboard: React.FC = () => {
             <aside className={`fixed md:relative z-40 w-64 h-screen bg-[#111] border-r border-gray-800 flex flex-col transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} pt-16 md:pt-0`}>
                 <div className="p-8 hidden md:block shrink-0">
                     <div className="flex flex-col leading-none">
-                        {settings.branding?.logoMode === 'image' && settings.branding?.logoUrl ? (
-                            <img src={settings.branding.logoUrl} alt="Logo" className="h-10 object-contain self-start" />
-                        ) : (
-                            <>
-                                <span className="text-2xl font-serif font-bold tracking-widest">{(settings.branding?.brandInitials || 'FS').charAt(0)}<span className="text-accent">{(settings.branding?.brandInitials || 'FS').charAt(1) || ''}</span></span>
-                                <span className="text-[8px] uppercase tracking-[0.2em] font-medium text-gray-500">{settings.branding?.brandTagline || 'Arquitetura'}</span>
-                            </>
-                        )}
+                        <span className="text-2xl font-serif font-bold tracking-widest">F<span className="text-accent">S</span></span>
+                        <span className="text-[8px] uppercase tracking-[0.2em] font-medium text-gray-500">Arquitetura</span>
                     </div>
                     <p className="text-xs text-gray-500 uppercase tracking-widest mt-2">Painel Administrativo</p>
                 </div>
@@ -942,7 +827,7 @@ export const AdminDashboard: React.FC = () => {
                         return (
                             <div className="animate-fadeIn">
                                 <div className="flex justify-between items-center mb-8">
-                                    <h2 className="text-3xl font-serif font-bold text-black">Bem-vindo(a){settings.branding?.ownerName ? `, ${settings.branding.ownerName}` : ''}.</h2>
+                                    <h2 className="text-3xl font-serif font-bold text-black">Bem-vinda, Fran.</h2>
                                     <button
                                         onClick={() => { setLocalEditingWidgets([...widgets]); setSelectedWidgetsToAdd([]); setShowEditDashboardModal(true); }}
                                         className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium text-gray-700 transition"
@@ -1739,50 +1624,7 @@ export const AdminDashboard: React.FC = () => {
                     {activeTab === 'settings' && (
                         <div className="animate-fadeIn max-w-4xl">
                             <h2 className="text-3xl font-serif font-bold mb-8 text-black">Configurações Globais</h2>
-
-                            {/* Settings Sub-Tabs */}
-                            <div className="flex overflow-x-auto space-x-2 border-b border-gray-200 mb-8 pb-2">
-                                <button 
-                                    onClick={() => setActiveSettingsTab('office')} 
-                                    className={`px-4 py-2 font-bold text-sm rounded-t-lg transition ${activeSettingsTab === 'office' ? 'border-b-2 border-black text-black' : 'text-gray-500 hover:text-black'}`}
-                                >
-                                    Geral / Escritório
-                                </button>
-                                <button 
-                                    onClick={() => setActiveSettingsTab('branding')} 
-                                    className={`px-4 py-2 font-bold text-sm rounded-t-lg transition ${activeSettingsTab === 'branding' ? 'border-b-2 border-black text-black' : 'text-gray-500 hover:text-black'}`}
-                                >
-                                    Identidade Visual
-                                </button>
-                                <button 
-                                    onClick={() => setActiveSettingsTab('theme')} 
-                                    className={`px-4 py-2 font-bold text-sm rounded-t-lg transition ${activeSettingsTab === 'theme' ? 'border-b-2 border-black text-black' : 'text-gray-500 hover:text-black'}`}
-                                >
-                                    Tema & Cores
-                                </button>
-                                <button 
-                                    onClick={() => setActiveSettingsTab('legal')} 
-                                    className={`px-4 py-2 font-bold text-sm rounded-t-lg transition ${activeSettingsTab === 'legal' ? 'border-b-2 border-black text-black' : 'text-gray-500 hover:text-black'}`}
-                                >
-                                    Jurídico
-                                </button>
-                                <button 
-                                    onClick={() => setActiveSettingsTab('seo')} 
-                                    className={`px-4 py-2 font-bold text-sm rounded-t-lg transition ${activeSettingsTab === 'seo' ? 'border-b-2 border-black text-black' : 'text-gray-500 hover:text-black'}`}
-                                >
-                                    SEO & Indexação
-                                </button>
-                                <button 
-                                    onClick={() => setActiveSettingsTab('chatbot')} 
-                                    className={`px-4 py-2 font-bold text-sm rounded-t-lg transition ${activeSettingsTab === 'chatbot' ? 'border-b-2 border-black text-black' : 'text-gray-500 hover:text-black'}`}
-                                >
-                                    Chatbot & IA
-                                </button>
-                            </div>
-
-                            {activeSettingsTab === 'office' && (
-                                <>
-                                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
                                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2"><MapPin className="w-5 h-5" /> Dados do Escritório</h3>
                                 <div>
                                     <label className="text-xs font-bold uppercase text-gray-500">Endereço Completo</label>
@@ -1804,7 +1646,7 @@ export const AdminDashboard: React.FC = () => {
                                 </div>
                                 <div>
                                     <label className="text-xs font-bold uppercase text-gray-500">Email Oficial</label>
-                                    <input value={contentForm.office.email || ''} onChange={e => handleOfficeChange('email', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="contato@exemplo.com.br" />
+                                    <input value={contentForm.office.email || ''} onChange={e => handleOfficeChange('email', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="contato@fransiller.com.br" />
                                 </div>
                                 <div>
                                     <label className="text-xs font-bold uppercase text-gray-500">Telefone / WhatsApp</label>
@@ -1958,322 +1800,6 @@ export const AdminDashboard: React.FC = () => {
                                     ))}
                                 </div>
                             </div>
-                                </>
-                            )}
-
-                            {activeSettingsTab === 'branding' && (
-                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-                                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2">Identidade Visual (Branding)</h3>
-                                    
-                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">
-                                        <label className="text-sm font-bold uppercase text-gray-700 block mb-3">Modo de Exibição do Logo</label>
-                                        <div className="flex gap-6">
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input 
-                                                    type="radio" 
-                                                    name="logoMode" 
-                                                    value="text" 
-                                                    checked={settingsForm.branding?.logoMode === 'text' || !settingsForm.branding?.logoMode} 
-                                                    onChange={() => handleSettingsChange('branding.logoMode', 'text')} 
-                                                    className="w-4 h-4 text-black focus:ring-black"
-                                                />
-                                                <span className="text-sm font-medium">Texto / Iniciais</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input 
-                                                    type="radio" 
-                                                    name="logoMode" 
-                                                    value="image" 
-                                                    checked={settingsForm.branding?.logoMode === 'image'} 
-                                                    onChange={() => handleSettingsChange('branding.logoMode', 'image')} 
-                                                    className="w-4 h-4 text-black focus:ring-black"
-                                                />
-                                                <span className="text-sm font-medium">Imagem (Upload)</span>
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-6 border-b border-gray-100">
-                                        <div>
-                                            <label className="text-xs font-bold uppercase text-gray-500">Nome Completo do Site / Marca</label>
-                                            <input value={settingsForm.branding?.brandName || ''} onChange={e => handleSettingsChange('branding.brandName', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: Fran Siller Arquitetura" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold uppercase text-gray-500">Nome Curto (Footer)</label>
-                                            <input value={settingsForm.branding?.brandShortName || ''} onChange={e => handleSettingsChange('branding.brandShortName', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: Fran Siller" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold uppercase text-gray-500">Iniciais (Logo Header)</label>
-                                            <input value={settingsForm.branding?.brandInitials || ''} onChange={e => handleSettingsChange('branding.brandInitials', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: FS" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold uppercase text-gray-500">Tagline / Subtítulo</label>
-                                            <input value={settingsForm.branding?.brandTagline || ''} onChange={e => handleSettingsChange('branding.brandTagline', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: Arquitetura" />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <label className="text-xs font-bold uppercase text-gray-500">Nome do Profissional Responsável (Efeito Hover do Footer)</label>
-                                            <input value={settingsForm.branding?.ownerName || ''} onChange={e => handleSettingsChange('branding.ownerName', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: A Arquiteta" />
-                                        </div>
-                                    </div>
-                                    
-                                    <BrandingImageUpload
-                                        label="Logo Principal (Menu/Header)"
-                                        description="Sugerido: PNG com fundo transparente. Usado no menu superior."
-                                        currentUrl={settingsForm.branding?.logoUrl || ''}
-                                        onUploadComplete={(url) => handleSettingsChange('branding.logoUrl', url)}
-                                        placeholder="URL da logo ou faça upload"
-                                    />
-                                    
-                                    <BrandingImageUpload
-                                        label="Logo Rodapé (Footer)"
-                                        description="Sugerido: PNG com fundo transparente. Usado no final da página principal."
-                                        currentUrl={settingsForm.branding?.footerLogoUrl || ''}
-                                        onUploadComplete={(url) => handleSettingsChange('branding.footerLogoUrl', url)}
-                                        placeholder="URL da logo do rodapé"
-                                    />
-                                    
-                                    <BrandingImageUpload
-                                        label="Logo Versão Escura (Opcional)"
-                                        description="Logo otimizada para fundos escuros (se o site tiver modo escuro)."
-                                        currentUrl={settingsForm.branding?.darkLogoUrl || ''}
-                                        onUploadComplete={(url) => handleSettingsChange('branding.darkLogoUrl', url)}
-                                        placeholder="URL da logo versão escura"
-                                    />
-                                    
-                                    <BrandingImageUpload
-                                        label="Ícone do Navegador (Favicon)"
-                                        description="Sugerido: Imagem quadrada (ex: 512x512). Aparece na aba do navegador e nos favoritos."
-                                        currentUrl={settingsForm.branding?.faviconUrl || ''}
-                                        onUploadComplete={(url) => handleSettingsChange('branding.faviconUrl', url)}
-                                        placeholder="URL do Favicon"
-                                    />
-                                </div>
-                            )}
-
-                            {activeSettingsTab === 'theme' && (
-                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-8">
-                                    <div className="flex justify-between items-center border-b pb-2">
-                                        <h3 className="font-bold text-lg flex items-center gap-2 text-black">Tema & Cores</h3>
-                                        <button 
-                                            onClick={() => {
-                                                if(confirm('Restaurar as cores originais?')) {
-                                                    handleSettingsChange('theme.colorPrimary', '#1a1a1a');
-                                                    handleSettingsChange('theme.colorAccent', '#d4bbb0');
-                                                    handleSettingsChange('theme.colorBackground', '#ffffff');
-                                                    handleSettingsChange('theme.colorText', '#111827');
-                                                    handleSettingsChange('theme.fontFamily', 'Inter');
-                                                }
-                                            }}
-                                            className="text-xs text-gray-500 hover:text-black hover:underline"
-                                        >
-                                            Restaurar Padrões
-                                        </button>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="text-xs font-bold uppercase text-gray-500 mb-1 block">Cor Principal (Primary)</label>
-                                                <div className="flex gap-2 items-center">
-                                                    <input type="color" value={settingsForm.theme?.colorPrimary || '#1a1a1a'} onChange={e => handleSettingsChange('theme.colorPrimary', e.target.value)} className="w-12 h-12 border-0 p-0 rounded cursor-pointer" />
-                                                    <input value={settingsForm.theme?.colorPrimary || '#1a1a1a'} onChange={e => handleSettingsChange('theme.colorPrimary', e.target.value)} className="w-28 border border-gray-200 p-2 rounded bg-white text-sm focus:outline-none focus:border-black" />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold uppercase text-gray-500 mb-1 block">Cor de Destaque (Accent)</label>
-                                                <div className="flex gap-2 items-center">
-                                                    <input type="color" value={settingsForm.theme?.colorAccent || '#d4bbb0'} onChange={e => handleSettingsChange('theme.colorAccent', e.target.value)} className="w-12 h-12 border-0 p-0 rounded cursor-pointer" />
-                                                    <input value={settingsForm.theme?.colorAccent || '#d4bbb0'} onChange={e => handleSettingsChange('theme.colorAccent', e.target.value)} className="w-28 border border-gray-200 p-2 rounded bg-white text-sm focus:outline-none focus:border-black" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="text-xs font-bold uppercase text-gray-500 mb-1 block">Cor de Fundo (Background)</label>
-                                                <div className="flex gap-2 items-center">
-                                                    <input type="color" value={settingsForm.theme?.colorBackground || '#ffffff'} onChange={e => handleSettingsChange('theme.colorBackground', e.target.value)} className="w-12 h-12 border-0 p-0 rounded cursor-pointer" />
-                                                    <input value={settingsForm.theme?.colorBackground || '#ffffff'} onChange={e => handleSettingsChange('theme.colorBackground', e.target.value)} className="w-28 border border-gray-200 p-2 rounded bg-white text-sm focus:outline-none focus:border-black" />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold uppercase text-gray-500 mb-1 block">Cor do Texto (Text)</label>
-                                                <div className="flex gap-2 items-center">
-                                                    <input type="color" value={settingsForm.theme?.colorText || '#111827'} onChange={e => handleSettingsChange('theme.colorText', e.target.value)} className="w-12 h-12 border-0 p-0 rounded cursor-pointer" />
-                                                    <input value={settingsForm.theme?.colorText || '#111827'} onChange={e => handleSettingsChange('theme.colorText', e.target.value)} className="w-28 border border-gray-200 p-2 rounded bg-white text-sm focus:outline-none focus:border-black" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="border-t pt-6">
-                                        <label className="text-xs font-bold uppercase text-gray-500 block mb-2">Fonte Principal</label>
-                                        <select 
-                                            value={settingsForm.theme?.fontFamily || 'Inter'} 
-                                            onChange={e => handleSettingsChange('theme.fontFamily', e.target.value)} 
-                                            className="w-full md:w-1/2 border border-gray-200 p-2 rounded bg-white text-sm focus:outline-none focus:border-black"
-                                        >
-                                            <option value="Inter">Inter (Elegante e Neutra)</option>
-                                            <option value="Montserrat">Montserrat (Moderna)</option>
-                                            <option value="Playfair Display">Playfair Display (Serifada / Clássica)</option>
-                                            <option value="Roboto">Roboto (Clean)</option>
-                                            <option value="Lora">Lora (Serifada Leve)</option>
-                                            <option value="system-ui">Padrão do Sistema</option>
-                                        </select>
-                                        <p className="text-xs text-gray-400 mt-2">A fonte será aplicada a todo o site após salvar.</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeSettingsTab === 'legal' && (
-                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-                                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2">Informações Jurídicas</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-6 border-b border-gray-100">
-                                        <div>
-                                            <label className="text-xs font-bold uppercase text-gray-500">Razão Social</label>
-                                            <input value={settingsForm.legal?.companyLegalName || ''} onChange={e => handleSettingsChange('legal.companyLegalName', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: Escritório Arquitetura LTDA" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold uppercase text-gray-500">CNPJ / Documento</label>
-                                            <input value={settingsForm.legal?.documentNumber || ''} onChange={e => handleSettingsChange('legal.documentNumber', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="00.000.000/0000-00" />
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="space-y-6">
-                                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                            <div className="mb-2 flex justify-between items-end">
-                                                <label className="text-sm font-bold text-gray-700">Política de Privacidade</label>
-                                                <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded border">Suporta Markdown (*negrito*, ## títulos)</span>
-                                            </div>
-                                            <textarea 
-                                                value={settingsForm.legal?.privacyPolicyContent || ''} 
-                                                onChange={e => handleSettingsChange('legal.privacyPolicyContent', e.target.value)} 
-                                                className="w-full border p-3 rounded bg-white min-h-[250px] font-mono text-sm" 
-                                                placeholder="Deixe em branco para usar o texto padrão. Você pode usar Markdown aqui."
-                                            />
-                                        </div>
-
-                                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                            <div className="mb-2 flex justify-between items-end">
-                                                <label className="text-sm font-bold text-gray-700">Termos de Uso</label>
-                                                <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded border">Suporta Markdown (*negrito*, ## títulos)</span>
-                                            </div>
-                                            <textarea 
-                                                value={settingsForm.legal?.termsOfServiceContent || ''} 
-                                                onChange={e => handleSettingsChange('legal.termsOfServiceContent', e.target.value)} 
-                                                className="w-full border p-3 rounded bg-white min-h-[250px] font-mono text-sm" 
-                                                placeholder="Deixe em branco para usar o texto padrão. Você pode usar Markdown aqui."
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeSettingsTab === 'seo' && (
-                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-                                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2">SEO & Indexação</h3>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">Título Global Padrão (Meta Title)</label>
-                                        <input value={settingsForm.seo?.defaultTitle || ''} onChange={e => handleSettingsChange('seo.defaultTitle', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="Ex: O Arquiteto | Arquitetura de Alto Padrão" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">Descrição Global (Meta Description)</label>
-                                        <textarea value={settingsForm.seo?.defaultDescription || ''} onChange={e => handleSettingsChange('seo.defaultDescription', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white h-20" placeholder="Especialistas em projetos residenciais..." />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">Palavras-chave Padrão (Meta Keywords - Separe por vírgula)</label>
-                                        <input value={settingsForm.seo?.keywords || ''} onChange={e => handleSettingsChange('seo.keywords', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="arquitetura, interiores, luxo" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">Imagem de Compartilhamento (OG Image URL)</label>
-                                        <input value={settingsForm.seo?.ogImageUrl || ''} onChange={e => handleSettingsChange('seo.ogImageUrl', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="https://..." />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">ID Google Analytics (Ex: G-XXXXXXXXXX)</label>
-                                        <input value={settingsForm.seo?.googleAnalyticsId || ''} onChange={e => handleSettingsChange('seo.googleAnalyticsId', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="G-" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-gray-500">ID Meta Pixel (Facebook Pixel)</label>
-                                        <input value={settingsForm.seo?.metaPixelId || ''} onChange={e => handleSettingsChange('seo.metaPixelId', e.target.value)} className="w-full border p-2 rounded mt-1 bg-white" placeholder="1234567890" />
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeSettingsTab === 'chatbot' && (
-                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-                                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-black border-b pb-2">Chatbot & IA</h3>
-                                    
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-6 border-b border-gray-100">
-                                        <div>
-                                            <label className="text-xs font-bold uppercase text-gray-500">Nome do Assistente Virtual</label>
-                                            <input 
-                                                value={settingsForm.chatbotConfig?.botName || ''} 
-                                                onChange={e => handleSettingsChange('chatbotConfig.botName', e.target.value)} 
-                                                className="w-full border p-2 rounded mt-1 bg-white" 
-                                                placeholder="Ex: Assistente Virtual" 
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold uppercase text-gray-500">Saudação Inicial do Chatbot</label>
-                                            <input 
-                                                value={settingsForm.chatbotConfig?.welcomeMessage || ''} 
-                                                onChange={e => handleSettingsChange('chatbotConfig.welcomeMessage', e.target.value)} 
-                                                className="w-full border p-2 rounded mt-1 bg-white" 
-                                                placeholder="Olá! Como posso ajudar você hoje?" 
-                                            />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <label className="text-xs font-bold uppercase text-gray-500">Mensagem de Erro/Fallback</label>
-                                            <input 
-                                                value={settingsForm.chatbotConfig?.fallbackMessage || ''} 
-                                                onChange={e => handleSettingsChange('chatbotConfig.fallbackMessage', e.target.value)} 
-                                                className="w-full border p-2 rounded mt-1 bg-white" 
-                                                placeholder="Desculpe, não consegui entender..." 
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <h4 className="font-bold text-md mb-2 flex items-center justify-between">
-                                            Ações Rápidas (Quick Actions)
-                                            <span className="text-xs text-gray-500 font-normal">Ações que aparecem acima do chat</span>
-                                        </h4>
-                                        <div className="space-y-4">
-                                            {settingsForm.chatbotConfig?.quickActions?.map((action, index) => (
-                                                <div key={action.id || index} className="bg-gray-50 p-4 rounded-xl border border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-4 relative">
-                                                    <div>
-                                                        <label className="text-xs font-bold uppercase text-gray-500">Rótulo do Botão</label>
-                                                        <input 
-                                                            value={action.label} 
-                                                            onChange={(e) => {
-                                                                const newActions = [...(settingsForm.chatbotConfig?.quickActions || [])];
-                                                                newActions[index].label = e.target.value;
-                                                                handleSettingsChange('chatbotConfig.quickActions', newActions);
-                                                            }} 
-                                                            className="w-full border p-2 rounded mt-1 bg-white" 
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-xs font-bold uppercase text-gray-500">Mensagem a enviar</label>
-                                                        <input 
-                                                            value={action.message} 
-                                                            onChange={(e) => {
-                                                                const newActions = [...(settingsForm.chatbotConfig?.quickActions || [])];
-                                                                newActions[index].message = e.target.value;
-                                                                handleSettingsChange('chatbotConfig.quickActions', newActions);
-                                                            }} 
-                                                            className="w-full border p-2 rounded mt-1 bg-white" 
-                                                        />
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            <div className="text-xs text-gray-500 italic">
-                                                Nota: A adição/remoção de botões será feita em atualizações futuras.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
 
                             <div className="mt-8">
                                 <button onClick={saveSettings} disabled={saving} className="w-full bg-black text-white px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-accent hover:text-black transition flex items-center justify-center gap-2 disabled:opacity-50">

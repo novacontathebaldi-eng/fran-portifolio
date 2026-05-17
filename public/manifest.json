@@ -1,7 +1,7 @@
-﻿{
-    "name": "Template de Arquitetura",
-    "short_name": "Template",
-    "description": "Portfólio e Sistema - Base White-Label",
+{
+    "name": "Fran Siller Arquitetura",
+    "short_name": "Fran Siller",
+    "description": "Portfólio de Arquitetura e Design - Fran Siller",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#000000",

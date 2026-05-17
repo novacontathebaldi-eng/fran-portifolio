@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
@@ -175,7 +175,7 @@ const Login: React.FC = () => {
 };
 
 const Register: React.FC = () => {
-  const { registerUser, settings } = useProjects();
+  const { registerUser } = useProjects();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
@@ -227,7 +227,7 @@ const Register: React.FC = () => {
   return (
     <div className="max-w-md w-full mx-auto animate-fadeIn">
       <h2 className="text-3xl font-serif mb-2">Criar Conta</h2>
-      <p className="text-secondary mb-8">Comece sua jornada com {settings?.branding?.brandName || 'nossa equipe'}.</p>
+      <p className="text-secondary mb-8">Comece sua jornada com Fran Siller Arquitetura.</p>
 
       {error && (
         <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm flex items-center gap-2 animate-fadeIn">

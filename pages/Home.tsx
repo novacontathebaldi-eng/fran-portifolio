@@ -17,7 +17,7 @@ const getVimeoId = (url: string): string => {
 
 
 export const Home: React.FC = () => {
-  const { projects, culturalProjects, siteContent, settings } = useProjects();
+  const { projects, culturalProjects, siteContent } = useProjects();
   const isOfficeActive = siteContent?.office?.isActive !== false;
 
   // Get hero project
@@ -165,7 +165,7 @@ export const Home: React.FC = () => {
         <div className="relative z-10 flex-1 flex items-start pt-28 md:items-center md:pt-0 justify-center text-center px-6">
           <div className="max-w-4xl">
 
-            {/* Elegant Tagline / Brand Name */}
+            {/* Elegant Tagline */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -181,9 +181,7 @@ export const Home: React.FC = () => {
                   transform: 'scale(1.2, 1.4)'
                 }}
               />
-              <span className="relative z-10">
-                {settings?.branding?.brandName || 'Arquitetura & Design'}
-              </span>
+              <span className="relative z-10">Arquitetura & Design</span>
             </motion.p>
 
             {/* Main Title - Clean & Bold */}
@@ -494,7 +492,7 @@ export const Home: React.FC = () => {
                 <div className="aspect-[3/4] max-w-md mx-auto lg:mx-0 overflow-hidden shadow-2xl">
                   <img
                     src={(siteContent.about as any).homeAboutImage || siteContent.about.profileImage}
-                    alt={`${settings.branding?.ownerName || 'Arquiteto Responsável'} - Arquitetura`}
+                    alt="Fran Siller - Arquiteta"
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -510,7 +508,7 @@ export const Home: React.FC = () => {
               >
                 <p className="text-[#d4bbb0] text-sm tracking-[0.3em] uppercase mb-4">Sobre a Arquiteta</p>
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-light mb-6" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
-                  {settings.branding?.ownerName || 'Arquiteto Principal'}
+                  Fran Siller
                 </h2>
                 <p className="text-gray-600 text-base md:text-lg leading-relaxed mb-8 line-clamp-6">
                   {siteContent.about.bio}
@@ -537,7 +535,7 @@ export const Home: React.FC = () => {
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              title={`Localização ${settings.branding?.brandName || 'do Escritório'}`}
+              title="Localização Fran Siller Arquitetura"
             />
           </section>
         )}

@@ -150,7 +150,6 @@ interface SplashProps {
 }
 
 const Splash: React.FC<SplashProps> = ({ isDataReady, areComponentsReady, onComplete }) => {
-  const { settings } = useProjects();
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
@@ -191,10 +190,10 @@ const Splash: React.FC<SplashProps> = ({ isDataReady, areComponentsReady, onComp
       className={`fixed inset-0 bg-[#1a1a1a] flex items-center justify-center z-[100] text-white transition-opacity duration-500 ${isExiting ? 'opacity-0' : 'opacity-100'}`}
       role="status"
       aria-live="polite"
-      aria-label={`Carregando site ${settings?.branding?.brandName || 'do Arquitetura'}`}
+      aria-label="Carregando site Fran Siller Arquitetura"
     >
       <div className="text-center animate-pulse">
-        <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">{settings?.branding?.brandInitials || 'FS'}</h1>
+        <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">Fran Siller</h1>
         <div className="h-0.5 w-16 bg-accent mx-auto"></div>
         <p className="text-xs uppercase tracking-widest mt-4 text-gray-400">Arquitetura & Design</p>
       </div>
@@ -466,6 +465,23 @@ const App: React.FC = () => {
     // Register immediately - don't wait for load event (it already fired)
     registerSW();
 
+    // Console message
+    console.log(
+      '%c✨ Fran Siller Arquitetura ✨',
+      'font-size: 20px; font-weight: bold; color: #D4AF37; text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.3);'
+    );
+    console.log(
+      '%cCriando espaços que inspiram, funcionam e perduram.',
+      'font-size: 12px; color: #efefefff; font-style: italic;'
+    );
+    console.log(
+      '%c\n💼 Interessado em trabalhar conosco?\n📧 Entre em contato: https://fransiller.othebaldi.me/#/contact\n🌐 Portfólio: https://fransiller.othebaldi.me\n',
+      'font-size: 11px; color: #efefefff; line-height: 1.8;'
+    );
+    console.log(
+      '%c🏛️ Desenvolvido com excelência por oTHEBALDI\n📧 Contato: suporte@othebaldi.me\n🌐 Site: https://othebaldi.me',
+      'font-size: 10px; color: #efefefff;'
+    );
   }, []);
 
   return (
@@ -485,7 +501,7 @@ const AppContent: React.FC = () => {
   const [isExiting, setIsExiting] = useState(false);
 
   // Preload images including hero video thumbnail
-  const { siteContent, settings } = useProjects();
+  const { siteContent } = useProjects();
 
   useEffect(() => {
     const PRELOAD_IMAGES = [
@@ -531,34 +547,6 @@ const AppContent: React.FC = () => {
     };
   }, [siteContent?.heroBackground]);
 
-  // Dynamic console branding
-  useEffect(() => {
-    if (isLoadingData || !settings?.branding) return;
-
-    // Log the brand dynamically
-    console.log(
-      `%c✨ ${settings.branding.brandName} ✨`,
-      'font-size: 20px; font-weight: bold; color: #D4AF37; text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.3);'
-    );
-    
-    if (settings.branding.brandTagline) {
-      console.log(
-        `%c${settings.branding.brandTagline}`,
-        'font-size: 12px; color: #efefefff; font-style: italic;'
-      );
-    }
-    
-    // Log developer credits if enabled
-    if (settings.branding.developerCredits?.enabled) {
-      const devName = settings.branding.developerCredits.name || 'Desenvolvedor';
-      const devUrl = settings.branding.developerCredits.url || '';
-      console.log(
-        `%c🏛️ Desenvolvido por ${devName}\n🌐 ${devUrl}`,
-        'font-size: 10px; color: #efefefff;'
-      );
-    }
-  }, [isLoadingData, settings?.branding]);
-
   // Complete when data is ready AND min time has passed
   useEffect(() => {
     if (minTimeElapsed && !isLoadingData && !isExiting) {
@@ -587,10 +575,10 @@ const AppContent: React.FC = () => {
           className={`fixed inset-0 bg-[#1a1a1a] flex items-center justify-center z-[9999] text-white transition-opacity duration-500 ${isExiting ? 'opacity-0' : 'opacity-100'}`}
           role="status"
           aria-live="polite"
-          aria-label={`Carregando site ${settings?.branding?.brandName || 'do Arquitetura'}`}
+          aria-label="Carregando site Fran Siller Arquitetura"
         >
           <div className="text-center animate-pulse">
-            <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">{settings?.branding?.brandInitials || 'FS'}</h1>
+            <h1 className="text-4xl font-serif tracking-widest mb-2 uppercase">Fran Siller</h1>
             <div className="h-0.5 w-16 bg-accent mx-auto"></div>
             <p className="text-xs uppercase tracking-widest mt-4 text-gray-400">Arquitetura & Design</p>
           </div>

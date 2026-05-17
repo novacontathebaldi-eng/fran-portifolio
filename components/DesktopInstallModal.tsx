@@ -61,7 +61,7 @@ const DesktopInstallModal: React.FC<DesktopInstallModalProps> = ({ isOpen, onClo
                                 <div className="flex items-center gap-2">
                                     <div className="flex items-center gap-1 text-xs text-gray-400 flex-1">
                                         <span>🔒</span>
-                                        <span>seu-dominio.com.br</span>
+                                        <span>fransiller.othebaldi.me</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="relative">

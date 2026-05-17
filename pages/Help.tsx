@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../context/ProjectContext';
@@ -895,7 +895,7 @@ export const Help: React.FC = () => {
         {
             target: 'hero',
             title: '👋 Bem-vindo à Central de Ajuda!',
-            content: `Este guia interativo vai te mostrar tudo sobre o site da ${settings.branding?.brandName || 'arquitetura'}.`,
+            content: 'Este guia interativo vai te mostrar tudo sobre o site da Fran Siller Arquitetura.',
             tip: 'Você pode iniciar este tour a qualquer momento clicando no botão flutuante.'
         },
         {
@@ -1318,7 +1318,7 @@ export const Help: React.FC = () => {
                                             />
                                             <SiteMapItem
                                                 icon={<User className="w-4 h-4" />}
-                                                label={`Sobre a ${settings.branding?.brandName || 'Empresa'}`}
+                                                label="Sobre a Fran Siller"
                                                 href="/about"
                                                 description="Conheça a arquiteta"
                                             />
@@ -2345,7 +2345,7 @@ export const Help: React.FC = () => {
                                                         </div>
                                                     </div>
                                                     <ul className="text-sm text-gray-600 space-y-1">
-                                                        <li>• No escritório {settings.branding?.brandName || 'de arquitetura'}</li>
+                                                        <li>• No escritório Fran Siller</li>
                                                         <li>• Conheça o espaço pessoalmente</li>
                                                         <li>• Ideal para apresentação de projetos</li>
                                                     </ul>
@@ -2800,7 +2800,7 @@ export const Help: React.FC = () => {
 
                                                     {/* Enviar E-mail */}
                                                     <a
-                                                        href={`mailto:${siteContent.office?.email || 'contato@exemplo.com.br'}`}
+                                                        href={`mailto:${siteContent.office?.email || 'contato@fransiller.com.br'}`}
                                                         className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-400 hover:shadow-md transition-all group"
                                                     >
                                                         <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center group-hover:bg-purple-500 transition-colors">
@@ -2808,7 +2808,7 @@ export const Help: React.FC = () => {
                                                         </div>
                                                         <div>
                                                             <span className="font-bold text-black block">📧 Enviar e-mail</span>
-                                                            <span className="text-xs text-gray-500">{siteContent.office?.email || 'contato@exemplo.com.br'}</span>
+                                                            <span className="text-xs text-gray-500">{siteContent.office?.email || 'contato@fransiller.com.br'}</span>
                                                         </div>
                                                     </a>
 
@@ -2857,10 +2857,10 @@ export const Help: React.FC = () => {
                                                     <h4 className="font-bold">E-mail</h4>
                                                 </div>
                                                 <p className="text-sm text-gray-600 mb-3">
-                                                    {siteContent.office?.email || 'contato@exemplo.com.br'}
+                                                    {siteContent.office?.email || 'contato@fransiller.com.br'}
                                                 </p>
                                                 <a
-                                                    href={`mailto:${siteContent.office?.email || 'contato@exemplo.com.br'}`}
+                                                    href={`mailto:${siteContent.office?.email || 'contato@fransiller.com.br'}`}
                                                     className="inline-flex items-center gap-2 text-sm text-accent font-medium hover:underline"
                                                 >
                                                     Enviar e-mail <ArrowRight className="w-3 h-3" />
@@ -2876,7 +2876,7 @@ export const Help: React.FC = () => {
                                                     <h4 className="font-bold">Telefone</h4>
                                                 </div>
                                                 <p className="text-sm text-gray-600 mb-3">
-                                                    {siteContent.office?.phone || '+55 (11) 99999-9999'}
+                                                    {siteContent.office?.phone || '+55 (27) 99667-0426'}
                                                 </p>
                                                 <a
                                                     href={`tel:${siteContent.office?.phone?.replace(/\D/g, '')}`}
@@ -2895,7 +2895,7 @@ export const Help: React.FC = () => {
                                                     <h4 className="font-bold">WhatsApp</h4>
                                                 </div>
                                                 <p className="text-sm text-gray-600 mb-3">
-                                                    {siteContent.office?.phone || '+55 (11) 99999-9999'}
+                                                    {siteContent.office?.phone || '+55 (27) 99667-0426'}
                                                 </p>
                                                 <a
                                                     href={`https://wa.me/${siteContent.office?.phone?.replace(/\D/g, '')}?text=${encodeURIComponent('Olá! Vim pelo site e gostaria de mais informações.')}`}
@@ -3474,7 +3474,7 @@ export const Help: React.FC = () => {
                             <p className="mt-6 text-xs text-gray-400">
                                 Desenvolvido por{' '}
                                 <a
-                                    href="https://seu-dominio.com.br"
+                                    href="https://othebaldi.me/"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="hover:text-accent transition-colors"

@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useProjects } from '../context/ProjectContext';
 import { Settings, Package, Heart, LogOut, FileText, Download, Clock, CheckCircle, Brain, Trash2, Edit2, Plus, MessageSquare, Folder, Image, Video, ArrowLeft, X, Save, Calendar, MapPin, ExternalLink, Ban, UserCircle, Upload, Home, Briefcase, Video as VideoIcon, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Lock, Receipt, ShoppingBag } from 'lucide-react';
@@ -458,7 +458,7 @@ export const ClientArea: React.FC = () => {
                                     {appt.type === 'visit' ? 'Visita Técnica' : 'Reunião de Alinhamento'}
                                     {isOnline && <span className="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full uppercase">Online</span>}
                                   </h3>
-                                  <p className="text-gray-500 text-sm mt-1">{isVisit ? 'Local da Obra' : (isOnline ? 'Videoconferência' : `Escritório ${settings?.branding?.brandName || 'da Arquitetura'}`)}</p>
+                                  <p className="text-gray-500 text-sm mt-1">{isVisit ? 'Local da Obra' : (isOnline ? 'Videoconferência' : 'Escritório Fran Siller')}</p>
                                 </div>
 
                                 <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-lg">

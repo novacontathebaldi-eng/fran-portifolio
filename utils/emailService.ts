@@ -1,4 +1,4 @@
-﻿// src/utils/emailService.ts
+// src/utils/emailService.ts
 
 import { supabase } from '../supabaseClient';
 import { getNotificationsConfig, clearNotificationsConfigCache, queueNotifications, DEFAULT_TEMPLATES, processTemplate as processWhatsAppTemplate } from './whatsappService';
@@ -184,11 +184,11 @@ export const getBaseTemplate = (title: string, color: string, content: string) =
     <div class="content">
       ${content}
       <div style="text-align: center;">
-        <a href="https://seu-dominio.com.br/#/admin" class="btn" style="color: #ffffff;">Acessar Painel Admin</a>
+        <a href="https://fransiller.othebaldi.me/#/admin" class="btn" style="color: #ffffff;">Acessar Painel Admin</a>
       </div>
     </div>
     <div class="footer">
-      <p>Escrit�rio de Arquitetura - Sistema de Notificações</p>
+      <p>Fran Siller Arquitetura - Sistema de Notificações</p>
       <p>Desenvolvido por Otávio Thebaldi</p>
     </div>
   </div>

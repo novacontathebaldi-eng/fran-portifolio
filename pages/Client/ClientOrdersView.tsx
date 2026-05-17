@@ -135,7 +135,7 @@ export const ClientOrdersView: React.FC<ClientOrdersViewProps> = ({ showToast, c
     const handleWhatsAppSupport = (order: ShopOrder) => {
         const phone = siteContent?.office?.whatsapp || '5511999999999';
         const message = encodeURIComponent(
-            `Olá, preciso de ajuda com o meu pedido #${order.id.slice(0, 8).toUpperCase()} feito no site ${settings?.branding?.brandName || 'da Arquitetura'}.\n\nDetalhes:\n- Data: ${formatDate(order.created_at)}\n- Total: ${formatPrice(order.total)}\n- Status: ${statusConfig[order.status]?.label || order.status}`
+            `Olá, preciso de ajuda com o meu pedido #${order.id.slice(0, 8).toUpperCase()} feito no site Fran Siller Arquitetura.\n\nDetalhes:\n- Data: ${formatDate(order.created_at)}\n- Total: ${formatPrice(order.total)}\n- Status: ${statusConfig[order.status]?.label || order.status}`
         );
         window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${message}`, '_blank');
     };
@@ -155,7 +155,8 @@ export const ClientOrdersView: React.FC<ClientOrdersViewProps> = ({ showToast, c
                 phone: client?.phone,
                 subject: `Suporte Pedido #${showSupportModal.id.slice(0, 8).toUpperCase()}`,
                 message: `${supportMessage}\n\n---\n[Metadados do Pedido]\nID: ${showSupportModal.id}\nTotal: ${showSupportModal.total}\nStatus: ${showSupportModal.status}`,
-                source: 'contact_form'
+                source: 'contact_form',
+                status: 'new'
             });
 
             // Success assumed if no error thrown
