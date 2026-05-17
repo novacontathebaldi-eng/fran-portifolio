@@ -1,4 +1,4 @@
-﻿
+
 
 import { Project, ServicePackage, User, CulturalProject } from './types';
 
@@ -142,8 +142,8 @@ export const MOCK_SERVICES: ServicePackage[] = [
 
 export const MOCK_USER_CLIENT: User = {
   id: 'u1',
-  name: 'Cliente Exemplo',
-  email: 'cliente@exemplo.com.br',
+  name: 'Cliente Vip',
+  email: 'cliente@vip.com',
   role: 'client',
   bio: 'Amante de arte e empreendedora.',
   projects: [MOCK_PROJECTS[0]],
@@ -182,8 +182,8 @@ export const MOCK_USER_CLIENT: User = {
 
 export const MOCK_USER_ADMIN: User = {
   id: 'admin1',
-  name: 'O Arquiteto',
-  email: 'admin@fran.com',
+  name: 'Fran Siller',
+  email: 'contato@fransiller.com.br',
   role: 'admin',
   avatar: 'https://ui-avatars.com/api/?name=Fran+Siller&background=000&color=fff',
   bio: 'Arquiteta Principal',

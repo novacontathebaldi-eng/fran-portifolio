@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, ReactNode, ErrorInfo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, ReactNode, ErrorInfo, Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info, X, RefreshCw, Loader2 } from 'lucide-react';
@@ -466,23 +466,6 @@ const App: React.FC = () => {
     // Register immediately - don't wait for load event (it already fired)
     registerSW();
 
-    // Console message
-    console.log(
-      '%c✨ Template White-Label ✨',
-      'font-size: 20px; font-weight: bold; color: #D4AF37; text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.3);'
-    );
-    console.log(
-      '%cCriando espaços que inspiram, funcionam e perduram.',
-      'font-size: 12px; color: #efefefff; font-style: italic;'
-    );
-    console.log(
-      '%c\n💼 Interessado em trabalhar conosco?\n📧 Entre em contato: https://seu-dominio.com.br/#/contact\n🌐 Portfólio: https://seu-dominio.com.br\n',
-      'font-size: 11px; color: #efefefff; line-height: 1.8;'
-    );
-    console.log(
-      '%c🏛️ Desenvolvido com excelência por oTHEBALDI\n📧 Contato: suporte@othebaldi.me\n🌐 Site: https://seu-dominio.com.br',
-      'font-size: 10px; color: #efefefff;'
-    );
   }, []);
 
   return (
@@ -547,6 +530,34 @@ const AppContent: React.FC = () => {
       clearTimeout(maxTimer);
     };
   }, [siteContent?.heroBackground]);
+
+  // Dynamic console branding
+  useEffect(() => {
+    if (isLoadingData || !settings?.branding) return;
+
+    // Log the brand dynamically
+    console.log(
+      `%c✨ ${settings.branding.brandName} ✨`,
+      'font-size: 20px; font-weight: bold; color: #D4AF37; text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.3);'
+    );
+    
+    if (settings.branding.brandTagline) {
+      console.log(
+        `%c${settings.branding.brandTagline}`,
+        'font-size: 12px; color: #efefefff; font-style: italic;'
+      );
+    }
+    
+    // Log developer credits if enabled
+    if (settings.branding.developerCredits?.enabled) {
+      const devName = settings.branding.developerCredits.name || 'Desenvolvedor';
+      const devUrl = settings.branding.developerCredits.url || '';
+      console.log(
+        `%c🏛️ Desenvolvido por ${devName}\n🌐 ${devUrl}`,
+        'font-size: 10px; color: #efefefff;'
+      );
+    }
+  }, [isLoadingData, settings?.branding]);
 
   // Complete when data is ready AND min time has passed
   useEffect(() => {
