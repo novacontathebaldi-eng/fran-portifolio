@@ -195,7 +195,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Logo */}
           <Link to="/" onClick={handleLinkClick} className={`z-[60] relative transition-colors duration-300 pointer-events-auto flex items-center gap-2 ${logoClasses}`}>
-            <span className="text-3xl md:text-4xl font-serif font-bold tracking-tight">FS</span>
+            <span className="text-xl md:text-2xl font-serif font-bold tracking-tight">Fran Siller</span>
             <span className="w-px h-6 bg-current opacity-30"></span>
             <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] font-light">Arquitetura</span>
           </Link>
@@ -395,7 +395,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4 text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
-              <p>&copy; 2026 Fran Siller Arquitetura. Todos os direitos reservados.</p>
+              <p>&copy; {new Date().getFullYear()} Fran Siller Arquitetura. Todos os direitos reservados.</p>
+              <span className="hidden md:inline text-gray-700">&bull;</span>
+              <div className="flex items-center gap-3">
+                <Link to="/politica-privacidade" className="hover:text-white transition">Política de Privacidade</Link>
+                <span>|</span>
+                <Link to="/termos" className="hover:text-white transition">Termos de Uso</Link>
+              </div>
               <span className="hidden md:inline text-gray-700">&bull;</span>
               <p className="text-gray-500">
                 Desenvolvido por{' '}
