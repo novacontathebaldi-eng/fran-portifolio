@@ -2,8 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, FileText, CheckCircle, XCircle, AlertTriangle, Scale } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useProjects } from '../context/ProjectContext';
 
 export const Terms: React.FC = () => {
+    const { siteContent } = useProjects();
+    const { office } = siteContent;
+
     return (
         <div className="min-h-screen pt-32 pb-24 bg-gray-50">
             <div className="container mx-auto px-6">
@@ -141,7 +145,12 @@ export const Terms: React.FC = () => {
                                     <h2 className="text-xl font-bold mb-3">7. Lei Aplicável</h2>
                                     <p className="text-gray-600">
                                         Estes termos são regidos pelas leis brasileiras. Para dúvidas ou questões,
-                                        entre em contato conosco antes de qualquer medida: contato@fransiller.com.br
+                                        entre em contato conosco antes de qualquer medida
+                                        {office.email ? (
+                                            <> pelo e-mail <a href={`mailto:${office.email}`} className="text-black underline hover:text-gray-600">{office.email}</a>.</>
+                                        ) : (
+                                            <> pelos canais oficiais informados na <Link to="/contact" className="text-black underline hover:text-gray-600">página de contato</Link>.</>
+                                        )}
                                     </p>
                                 </div>
                             </div>

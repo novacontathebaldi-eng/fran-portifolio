@@ -191,8 +191,8 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     mapsLink: 'https://maps.app.goo.gl/fxYnZFrFxKQshMfe9',
     mapQuery: '',
     hoursDescription: 'Segunda a Sexta, 09h às 17h',
-    email: 'contato@fransiller.com.br',
-    phone: '+55 (27) 99667-0426',
+    email: '',
+    phone: '',
     blocks: [],
     // Dynamic social links array - stored in database
     socialLinks: [],

@@ -2,8 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Shield, Database, MessageCircle, Cookie, Lock, Mail, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useProjects } from '../context/ProjectContext';
 
 export const PrivacyPolicy: React.FC = () => {
+    const { siteContent } = useProjects();
+    const { office } = siteContent;
+
     return (
         <div className="min-h-screen pt-32 pb-24 bg-gray-50">
             <div className="container mx-auto px-6">
@@ -150,9 +154,13 @@ export const PrivacyPolicy: React.FC = () => {
                                     </p>
                                     <p className="text-gray-600 mb-4">
                                         O pedido de exclusão pode ser feito pelo e-mail{' '}
-                                        <a href="mailto:contato@fransiller.com.br" className="text-black underline hover:text-gray-600">
-                                            contato@fransiller.com.br
-                                        </a>.
+                                        {office.email ? (
+                                            <a href={`mailto:${office.email}`} className="text-black underline hover:text-gray-600">
+                                                {office.email}
+                                            </a>
+                                        ) : (
+                                            <span className="text-gray-500">disponível na página de Contato</span>
+                                        )}.
                                     </p>
 
                                     <h3 className="text-lg font-semibold mb-2 mt-6">2.7 Segurança</h3>
@@ -262,8 +270,15 @@ export const PrivacyPolicy: React.FC = () => {
                                         Para exercer seus direitos ou esclarecer dúvidas, entre em contato:
                                     </p>
                                     <p className="text-gray-600 mt-2">
-                                        <strong>E-mail:</strong> contato@fransiller.com.br<br />
-                                        <strong>WhatsApp:</strong> +55 (27) 99667-0426
+                                        {office.email && (
+                                            <><strong>E-mail:</strong> <a href={`mailto:${office.email}`} className="text-black underline hover:text-gray-600">{office.email}</a><br /></>
+                                        )}
+                                        {office.phone && (
+                                            <><strong>WhatsApp / Telefone:</strong> {office.phone}<br /></>
+                                        )}
+                                        {!office.email && !office.phone && (
+                                            <>Consulte os canais de contato disponíveis na <Link to="/contact" className="text-black underline hover:text-gray-600">página de contato</Link>.</>
+                                        )}
                                     </p>
                                 </div>
                             </div>
