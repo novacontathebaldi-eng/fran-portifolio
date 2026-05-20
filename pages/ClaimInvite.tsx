@@ -184,7 +184,7 @@ export const ClaimInvite: React.FC = () => {
             {/* Left Banner - Same as Auth */}
             <div className="hidden lg:flex w-1/2 bg-[#1a1a1a] items-center justify-center relative overflow-hidden">
                 <img
-                    src="https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/fundo-login.png"
+                    src="https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/fundo-login.png"
                     className="absolute inset-0 w-full h-full object-cover opacity-50"
                     alt=""
                 />

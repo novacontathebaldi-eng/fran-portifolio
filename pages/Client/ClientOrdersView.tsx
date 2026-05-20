@@ -155,8 +155,7 @@ export const ClientOrdersView: React.FC<ClientOrdersViewProps> = ({ showToast, c
                 phone: client?.phone,
                 subject: `Suporte Pedido #${showSupportModal.id.slice(0, 8).toUpperCase()}`,
                 message: `${supportMessage}\n\n---\n[Metadados do Pedido]\nID: ${showSupportModal.id}\nTotal: ${showSupportModal.total}\nStatus: ${showSupportModal.status}`,
-                source: 'contact_form',
-                status: 'new'
+                source: 'contact_form'
             });
 
             // Success assumed if no error thrown

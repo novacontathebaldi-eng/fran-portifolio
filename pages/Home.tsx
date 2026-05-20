@@ -165,26 +165,6 @@ export const Home: React.FC = () => {
         <div className="relative z-10 flex-1 flex items-start pt-28 md:items-center md:pt-0 justify-center text-center px-6">
           <div className="max-w-4xl">
 
-            {/* Brand Name - Visible H1 for Google OAuth verification */}
-            <motion.h1
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1 }}
-              className="relative text-white text-2xl md:text-3xl tracking-[0.3em] uppercase mb-4 font-light"
-              style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif" }}
-            >
-              {/* Subtle dark glow behind text */}
-              <span
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 40%, transparent 70%)',
-                  filter: 'blur(12px)',
-                  transform: 'scale(1.3, 1.5)'
-                }}
-              />
-              <span className="relative z-10">Fran Siller Arquitetura</span>
-            </motion.h1>
-
             {/* Elegant Tagline */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -205,7 +185,7 @@ export const Home: React.FC = () => {
             </motion.p>
 
             {/* Main Title - Clean & Bold */}
-            <motion.h2
+            <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
@@ -214,7 +194,7 @@ export const Home: React.FC = () => {
             >
               Projetamos espaços<br />
               <span className="italic text-[#d4bbb0]">que contam histórias</span>
-            </motion.h2>
+            </motion.h1>
 
             {/* Subtitle */}
             <motion.p
