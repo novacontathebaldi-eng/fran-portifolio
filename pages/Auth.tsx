@@ -10,7 +10,7 @@ export const Auth: React.FC = () => {
     <div className="min-h-screen flex font-sans">
       {/* Left Banner */}
       <div className="hidden lg:flex w-1/2 bg-[#1a1a1a] items-center justify-center relative overflow-hidden">
-        <img src="https://pycvlkcxgfwsquzolkzw.supabase.co/storage/v1/object/public/storage-Fran/fundo-login.png" className="absolute inset-0 w-full h-full object-cover opacity-50" />
+        <img src="https://qtlntypxagxhzlzpemvx.supabase.co/storage/v1/object/public/storage-Fran/fundo-login.png" className="absolute inset-0 w-full h-full object-cover opacity-50" />
         <div className="relative z-10 text-white p-12 max-w-lg">
           <h1 className="text-5xl font-serif mb-6">Bem-vindo ao seu espaço.</h1>
           <p className="text-gray-300 text-lg leading-relaxed">
